@@ -28,7 +28,7 @@ export default function HeroSection() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowBackground(true);
-    }, 1000);
+    }, 650);
     return () => clearTimeout(timer);
   }, []);
   useMotionValueEvent(scrollY, "change", (latest) => {
@@ -82,7 +82,7 @@ export default function HeroSection() {
           viewBox="0 0 120 120"
           initial={{ opacity: 0 }}
           animate={showBackground ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 1, delay: 0.14 }}
         >
           <motion.path
             d="M30 60 Q15 35,50 25 Q85 15,95 50 Q105 75,80 90 Q55 105,30 85"
@@ -98,8 +98,8 @@ export default function HeroSection() {
                 : { pathLength: 0, opacity: 0 }
             }
             transition={{
-              pathLength: { duration: 0.5, ease: "easeOut", delay: 0.1 },
-              opacity: { duration: 0.4 },
+              pathLength: { duration: 0.35, ease: "easeOut", delay: 0.1 },
+              opacity: { duration: 1 },
             }}
           />
         </motion.svg>
@@ -109,7 +109,7 @@ export default function HeroSection() {
           viewBox="0 0 140 100"
           initial={{ opacity: 0 }}
           animate={showBackground ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          transition={{ duration: 1, delay: 0.14 }}
         >
           <motion.path
             d="M120 70 Q90 40,50 65 T20 45"
@@ -125,8 +125,8 @@ export default function HeroSection() {
                 : { pathLength: 0, opacity: 0 }
             }
             transition={{
-              pathLength: { duration: 0.5, delay: 0.2, ease: "easeOut" },
-              opacity: { duration: 0.01 },
+              pathLength: { duration: 0.35, delay: 0.14, ease: "easeOut" },
+              opacity: { duration: 1 },
             }}
           />
         </motion.svg>
@@ -137,14 +137,14 @@ export default function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.65 }}
+          transition={{ duration: 0.45 }}
           className="space-y-5 text-center "
         >
           <motion.h1
             className="bg-gradient-to-r from-primary/80 via-primary to-primary/80  bg-clip-text text-transparent leading-[50px] text-[46px] md:text-8xl Desktop:text-[100px] font-bold tracking-tight"
             initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.65, delay: 0.15 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
           >
             <span>Simple, Structured</span>
             <br />
@@ -152,7 +152,7 @@ export default function HeroSection() {
               className="relative inline-block px-2"
               initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
             >
               <span className="bg-gradient-to-r from-primary/80 via-primary to-primary/80 bg-clip-text">
                 Note Taking
@@ -176,7 +176,7 @@ export default function HeroSection() {
                       ? { pathLength: 1, opacity: 1 }
                       : { pathLength: 0, opacity: 0 }
                   }
-                  transition={{ duration: 0.7, ease: "easeOut", delay: 0.2 }}
+                  transition={{ duration: 1, ease: "easeOut", delay: 0.14 }}
                 />
               </motion.svg>
             </motion.span>
@@ -185,7 +185,7 @@ export default function HeroSection() {
             className="mx-auto max-w-2xl text-lg md:text-2xl text-muted-foreground font-bold"
             initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.65, delay: 0.3 }}
+            transition={{ duration: 0.45, delay: 0.2 }}
           >
             Notevo helps you capture your thoughts{" "}
             <br className=" hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
@@ -195,7 +195,7 @@ export default function HeroSection() {
             className="flex gap-4 justify-center items-center"
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.65, delay: 0.45 }}
+            transition={{ duration: 0.45, delay: 0.3 }}
           >
             <Button
               asChild
@@ -233,7 +233,7 @@ export default function HeroSection() {
             className="flex items-center justify-center gap-8 pb-2"
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.65, delay: 0.6 }}
+            transition={{ duration: 0.45, delay: 0.42 }}
           >
             <div className="flex -space-x-4">
               {status === "LoadingFirstPage" ? (
@@ -242,7 +242,7 @@ export default function HeroSection() {
                     key={index}
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    transition={{ delay: 0.8 + index * 0.1 }}
+                    transition={{ delay: 0.6 + index * 0.08 }}
                   >
                     <Avatar className="w-10 h-10">
                       <AvatarFallback className="bg-primary/20 rounded-full animate-pulse" />
@@ -259,7 +259,7 @@ export default function HeroSection() {
                         key={user._id}
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
-                        transition={{ delay: 0.8 + indx * 0.1 }}
+                        transition={{ delay: 0.6 + indx * 0.08 }}
                       >
                         <Avatar className="w-10 h-10">
                           <AvatarImage
@@ -277,7 +277,7 @@ export default function HeroSection() {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 1.2 }}
+                      transition={{ delay: 1.0 }}
                     >
                       <Avatar className="w-10 h-10">
                         <AvatarFallback className="text-sm font-medium rounded-full">
@@ -305,7 +305,7 @@ export default function HeroSection() {
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.75, delay: 0.55 }}
+          transition={{ duration: 0.55, delay: 0.38 }}
           className=" relative w-full p-1 Desktop:p-2 rounded-lg bg-gradient-to-t from-transparent from-10% to-primary/50 backdrop-blur-lg"
         >
           <Image
