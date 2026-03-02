@@ -280,6 +280,11 @@ html {
   }
 }
 
+.frosted-area {
+  backdrop-filter: blur(10px);
+  mask-image: linear-gradient(to top, black 10%, black 5%, black 3%, black 0%, transparent 100%);
+}
+
 .cursor-blink {
   animation: blink 1s step-end infinite;
 }

@@ -3,9 +3,16 @@ import Section from "../ui/Section";
 import { LiaQuoteLeftSolid } from "react-icons/lia";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { NOISE_PNG } from "@/lib/data";
+import { cn } from "@/lib/utils";
 export default function MoreAboutMe() {
   return (
-    <Section sectionId="about">
+    <section
+      id="about"
+      className={cn(
+        "px-4 sm:px-6 md:px-8",
+        "py-12 sm:py-16 md:py-20 Desktop:py-24",
+      )}
+    >
       <MaxWContainer>
         <div className="relative pt-10">
           {/* Stacked paper layers behind */}
@@ -91,6 +98,6 @@ export default function MoreAboutMe() {
           </div>
         </div>
       </MaxWContainer>
-    </Section>
+    </section>
   );
 }

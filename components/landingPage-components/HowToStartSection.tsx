@@ -9,7 +9,7 @@ import SectionHeading from "./SectionHeading";
 import Section from "@/components/ui/Section";
 import Link from "next/link";
 import { FolderClosed, FolderX, Clock } from "lucide-react";
-
+import { cn } from "@/lib/utils";
 interface Step {
   id: string;
   StepNum: string;
@@ -432,7 +432,14 @@ export default function HowToStartSection() {
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   return (
-    <Section sectionId="how-to-start" className="relative Desktop:pt-0">
+    <section
+      id="how-to-start"
+      className={cn(
+        "px-4 sm:px-6 md:px-8",
+        "py-12 sm:py-16 md:py-20 Desktop:py-24",
+        "relative Desktop:pt-0",
+      )}
+    >
       <div className="container relative z-10 mx-auto px-4">
         <SectionHeading
           SectionTitle="How To Start"
@@ -467,7 +474,7 @@ export default function HowToStartSection() {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="group relative bg-card rounded-lg border border-border overflow-hidden hover:border-primary/50 flex flex-col"
                 >
                   {/* Preview area */}
@@ -534,6 +541,6 @@ export default function HowToStartSection() {
           </p>
         </div>
       </div>
-    </Section>
+    </section>
   );
 }

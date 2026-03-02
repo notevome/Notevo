@@ -1,61 +1,142 @@
 "use client";
 import { cn } from "../../lib/utils";
 import { motion, useAnimation } from "framer-motion";
-import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
+import { useEffect, useRef, useState } from "react";
 
 interface SectionProps {
   sectionId?: string;
   className?: string;
   children: React.ReactNode;
-  threshold?: number;
-  delay?: number;
   initialY?: number;
+  initialMargin?: number;
+  initialRadius?: number;
+  initialMarginMobile?: number;
+  initialRadiusMobile?: number;
+  duration?: number;
+  preloadOffset?: number;
 }
+
 export default function Section({
   sectionId,
   children,
   className,
-  threshold = 0.2,
-  delay = 0.2,
-  initialY = 50,
+  initialY = 90,
+  initialMargin = 90,
+  initialRadius = 30,
+  initialMarginMobile = 12,
+  initialRadiusMobile = 12,
+  duration = 0.3,
+  preloadOffset = 150,
 }: SectionProps) {
   const controls = useAnimation();
+
   const { ref, inView } = useInView({
-    triggerOnce: true,
-    threshold,
+    triggerOnce: false,
+    threshold: 0.4,
+    rootMargin: `${preloadOffset}px 0px ${preloadOffset}px 0px`,
   });
+
+  const lastScrollY = useRef(0);
+  const scrollingDown = useRef(true);
+  const isFirstLoad = useRef(true);
+
+  useEffect(() => {
+    lastScrollY.current = window.scrollY;
+    const handleScroll = () => {
+      const current = window.scrollY;
+      scrollingDown.current = current > lastScrollY.current;
+      lastScrollY.current = current;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+  );
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const activeMargin = isMobile ? initialMarginMobile : initialMargin;
+  const activeRadius = isMobile ? initialRadiusMobile : initialRadius;
+  const resolvedDuration = duration ?? (isMobile ? 0.3 : 0.5);
 
   useEffect(() => {
     if (inView) {
-      controls.start({ y: 0, opacity: 1 });
+      if (isFirstLoad.current) {
+        // On first load, if already in view — just show instantly, no animation
+        isFirstLoad.current = false;
+        controls.set({
+          y: 0,
+          opacity: 1,
+          marginLeft: 0,
+          marginRight: 0,
+          borderRadius: 0,
+        });
+        return;
+      }
+
+      const fromY = scrollingDown.current ? initialY : -initialY;
+      controls.set({
+        y: fromY,
+        opacity: 1,
+        marginLeft: activeMargin,
+        marginRight: activeMargin,
+        borderRadius: activeRadius,
+      });
+      controls.start({
+        y: 0,
+        opacity: 1,
+        marginLeft: 0,
+        marginRight: 0,
+        borderRadius: 0,
+        transition: { ease: "easeOut", duration: resolvedDuration },
+      });
     } else {
-      controls.start({ y: initialY, opacity: 0 });
+      if (isFirstLoad.current) {
+        // On first load, if out of view — set to hidden instantly, no animation
+        isFirstLoad.current = false;
+        controls.set({
+          y: initialY,
+          opacity: 1,
+          marginLeft: activeMargin,
+          marginRight: activeMargin,
+          borderRadius: activeRadius,
+        });
+        return;
+      }
+
+      const toY = scrollingDown.current ? -initialY : initialY;
+      controls.start({
+        y: toY,
+        opacity: 1,
+        marginLeft: activeMargin,
+        marginRight: activeMargin,
+        borderRadius: activeRadius,
+        transition: { ease: "easeIn", duration: resolvedDuration },
+      });
     }
-  }, [controls, inView, initialY]);
+  }, [inView]);
 
   return (
-    <motion.section
+    <motion.div
       ref={ref}
-      initial={{ y: initialY, opacity: 0 }}
-      animate={controls}
-      transition={{
-        ease: "easeOut",
-        delay,
-        // duration: 0.5,
-        ...(typeof window !== "undefined" && window.innerWidth < 768
-          ? { duration: 0.3 }
-          : { duration: 0.5 }),
-      }}
       id={sectionId}
+      // No `initial` prop — controls.set handles the starting state
+      // This prevents the jump on first load
+      animate={controls}
       className={cn(
-        "w-full",
         "px-4 sm:px-6 md:px-8",
-        "py-12 sm:py-16 md:py-20 Desktop:py-24 ",
+        "py-12 sm:py-16 md:py-20 Desktop:py-24",
         className,
       )}
     >
       {children}
-    </motion.section>
+    </motion.div>
   );
 }
