@@ -91,7 +91,7 @@ function NoteItem({ note, onClick, isSelected }: any) {
     <div
       onClick={onClick}
       className={`flex items-center py-2 px-3 cursor-pointer rounded-lg transition-colors ${
-        isSelected ? "bg-primary/10" : "hover:bg-primary/10"
+        isSelected ? "bg-primary/20" : "hover:bg-primary/10"
       }`}
     >
       <div className="flex w-full items-center">
@@ -405,14 +405,21 @@ export default function SearchDialog({
 
         {/* Footer */}
         <DialogFooter className="border-t border-border px-4 py-3">
-          <span className="inline-flex gap-1">
-            <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
-              <ArrowDownUp size={16} /> Navigate
-            </kbd>
-            <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
-              <Undo2 size={16} /> Open
-            </kbd>
-          </span>
+          <div className=" w-full flex justify-between items-center">
+            <span className=" space-x-2">
+              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
+                <ArrowDownUp size={16} /> Navigate
+              </kbd>
+              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
+                <Undo2 size={16} /> Open
+              </kbd>
+            </span>
+            <span>
+              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
+                <p className=" font-extrabold">ESC</p> Close
+              </kbd>
+            </span>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
