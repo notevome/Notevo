@@ -720,7 +720,9 @@ html {
 .code-block-content {
   margin: 0;
   padding: 1rem;
-  overflow-x: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  word-break: break-word;
   background-color: hsl(var(--card));
   font-family: "JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Menlo, Consolas, "Courier New", monospace;
   font-size: 0.875rem;
