@@ -530,6 +530,22 @@ export default function WorkingSpacePage() {
     }
   };
 
+  // Auto-navigate to newly created table
+  const prevTableIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!tables) return;
+    const currentIds = new Set(tables.map((t) => t._id));
+    const prevIds = prevTableIdsRef.current;
+    prevTableIdsRef.current = currentIds;
+    // Skip on initial load
+    if (prevIds === null) return;
+    // Find the table that wasn't there before
+    const newTable = tables.find((t) => !prevIds.has(t._id));
+    if (newTable) {
+      handleTabChange(newTable._id);
+    }
+  }, [tables]);
+
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
