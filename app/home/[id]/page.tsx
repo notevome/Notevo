@@ -7,6 +7,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  Pencil,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
@@ -15,6 +16,7 @@ import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+import { z } from "zod";
 
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
@@ -32,11 +34,31 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getContentPreview } from "@/lib/getContentPreview";
 import { cn } from "@/lib/utils";
 import { usePaginatedQuery } from "convex/react";
+
+// ─── Zod Schemas ───────────────────────────────────────────────────────────────
+
+const workspaceNameSchema = z
+  .string()
+  .min(1, "Name cannot be empty")
+  .max(30, "Name must be 30 characters or less");
+
+const noteTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(55, "Title must be 55 characters or less");
+
+const tableNameSchema = z
+  .string()
+  .min(1, "Name cannot be empty")
+  .max(30, "Name must be 30 characters or less");
+
+// ─── Types ─────────────────────────────────────────────────────────────────────
 
 type ViewMode = "grid" | "list";
 
@@ -90,6 +112,148 @@ const STORAGE_KEYS = {
   ACTIVE_TABLE: "notevo_active_table",
 };
 
+// ─── Table Tab ─────────────────────────────────────────────────────────────────
+
+function TableTab({ table }: { table: any }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState(table.name || "Untitled");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const updateTable = useMutation(
+    api.notesTables.updateTable,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id, name } = args;
+    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    if (workspaces && Array.isArray(workspaces)) {
+      for (const ws of workspaces) {
+        const tables = local.getQuery(api.notesTables.getTables, {
+          workingSpaceId: ws._id,
+        });
+        if (tables && Array.isArray(tables)) {
+          const found = tables.some((t: any) => t._id === _id);
+          if (found) {
+            local.setQuery(
+              api.notesTables.getTables,
+              { workingSpaceId: ws._id },
+              tables.map((t: any) =>
+                t._id === _id
+                  ? { ...t, name: name ?? t.name, updatedAt: Date.now() }
+                  : t,
+              ),
+            );
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setEditedName(table.name || "Untitled");
+      setNameError(null);
+      setIsEditing(true);
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+    },
+    [table.name],
+  );
+
+  const handleBlur = useCallback(async () => {
+    const result = tableNameSchema.safeParse(editedName.trim());
+    if (!result.success) {
+      setIsEditing(false);
+      setEditedName(table.name || "Untitled");
+      setNameError(null);
+      return;
+    }
+    const trimmed = result.data;
+    if (trimmed !== (table.name || "Untitled")) {
+      try {
+        await updateTable({ _id: table._id, name: trimmed });
+      } catch (error) {
+        console.error("Error updating table name:", error);
+        setEditedName(table.name || "Untitled");
+      }
+    }
+    setIsEditing(false);
+    setNameError(null);
+  }, [editedName, table.name, table._id, updateTable]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        inputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        setIsEditing(false);
+        setEditedName(table.name || "Untitled");
+        setNameError(null);
+      }
+    },
+    [table.name],
+  );
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-1 px-1 flex-shrink-0">
+        <Input
+          ref={inputRef}
+          value={editedName}
+          onChange={(e) => {
+            const val = e.target.value;
+            setEditedName(val);
+            const result = tableNameSchema.safeParse(val.trim());
+            setNameError(
+              result.success ? null : result.error.errors[0].message,
+            );
+          }}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          className={cn(
+            "h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[80px] max-w-[160px]",
+            nameError
+              ? "border border-destructive"
+              : "border border-primary/20",
+          )}
+        />
+        {nameError && (
+          <p className="text-xs text-destructive whitespace-nowrap">
+            {nameError}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <TabsTrigger
+      value={table._id}
+      data-tab-id={table._id}
+      className="group/tab px-4 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
+      onDoubleClick={handleDoubleClick}
+      title="Double-click to rename"
+    >
+      {table.name}
+      <span
+        role="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDoubleClick(e as any);
+        }}
+        className="opacity-0 group-hover/tab:opacity-60 hover:!opacity-100 transition-opacity duration-150 text-muted-foreground hover:text-foreground"
+        title="Rename"
+      >
+        <Pencil className="h-3 w-3" />
+      </span>
+    </TabsTrigger>
+  );
+}
+
 // ─── Slider Tab List ───────────────────────────────────────────────────────────
 
 interface SliderTabsListProps {
@@ -128,7 +292,6 @@ function SliderTabsList({
     };
   }, [checkScroll, tables]);
 
-  // When active tab changes, scroll it into view
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -161,11 +324,9 @@ function SliderTabsList({
     });
   };
 
-  // Single layout — scrolls automatically when content overflows
   return (
     <div className=" relative py-5">
       <div className=" absolute -top-3 left-0 w-full Desktop:max-w-[900px] Desktop:w-fit">
-        {/* Left arrow */}
         <Button
           variant="ghost"
           size="icon"
@@ -181,7 +342,6 @@ function SliderTabsList({
           <ChevronLeft className="h-3.5 w-3.5" />
         </Button>
 
-        {/* Right arrow */}
         <Button
           variant="ghost"
           size="icon"
@@ -197,7 +357,6 @@ function SliderTabsList({
           <ChevronRight className="h-3.5 w-3.5" />
         </Button>
 
-        {/* Left fade */}
         <div
           className="absolute left-0 top-0 bottom-0 w-40 z-10 pointer-events-none rounded-l-lg transition-opacity duration-200"
           style={{
@@ -206,7 +365,6 @@ function SliderTabsList({
               "linear-gradient(to right, hsl(var(--card)) 30%, transparent)",
           }}
         />
-        {/* Right fade */}
         <div
           className="absolute right-0 top-0 bottom-0 w-40 z-10 pointer-events-none rounded-r-lg transition-opacity duration-200"
           style={{
@@ -216,7 +374,6 @@ function SliderTabsList({
           }}
         />
 
-        {/* TabsList — naturally sized, clips + scrolls when content overflows */}
         <TabsList
           className="flex justify-start items-center px-1 py-6 bg-card/90 backdrop-blur-sm rounded-lg border border-border w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
@@ -233,14 +390,7 @@ function SliderTabsList({
             }
           >
             {tables.map((table) => (
-              <TabsTrigger
-                key={table._id}
-                value={table._id}
-                data-tab-id={table._id}
-                className="px-4 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0"
-              >
-                {table.name}
-              </TabsTrigger>
+              <TableTab key={table._id} table={table} />
             ))}
           </div>
         </TabsList>
@@ -266,6 +416,83 @@ export default function WorkingSpacePage() {
     api.notesTables.getTables,
     workingSpaceId ? { workingSpaceId } : "skip",
   );
+
+  // --- Workspace inline rename ---
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const updateWorkingSpace = useMutation(
+    api.workingSpaces.updateWorkingSpace,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id, name } = args;
+    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    if (workspaces && Array.isArray(workspaces)) {
+      local.setQuery(
+        api.workingSpaces.getRecentWorkingSpaces,
+        {},
+        workspaces.map((ws: any) =>
+          ws._id === _id
+            ? { ...ws, name: name ?? ws.name, updatedAt: Date.now() }
+            : ws,
+        ),
+      );
+    }
+    const ws = local.getQuery(api.workingSpaces.getWorkingSpaceById, { _id });
+    if (ws) {
+      local.setQuery(
+        api.workingSpaces.getWorkingSpaceById,
+        { _id },
+        { ...ws, name: name ?? ws.name, updatedAt: Date.now() },
+      );
+    }
+  });
+
+  const handleNameDoubleClick = useCallback(() => {
+    if (!workspace) return;
+    setEditedName(workspace.name || "Untitled");
+    setNameError(null);
+    setIsEditingName(true);
+    requestAnimationFrame(() => {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    });
+  }, [workspace]);
+
+  const handleNameBlur = useCallback(async () => {
+    const result = workspaceNameSchema.safeParse(editedName.trim());
+    if (!result.success) {
+      setIsEditingName(false);
+      setEditedName(workspace?.name || "Untitled");
+      setNameError(null);
+      return;
+    }
+    const trimmed = result.data;
+    if (trimmed !== (workspace?.name || "Untitled")) {
+      try {
+        await updateWorkingSpace({ _id: workingSpaceId, name: trimmed });
+      } catch (error) {
+        console.error("Error updating workspace name:", error);
+      }
+    }
+    setIsEditingName(false);
+    setNameError(null);
+  }, [editedName, workspace?.name, workingSpaceId, updateWorkingSpace]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        nameInputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        setIsEditingName(false);
+        setEditedName(workspace?.name || "Untitled");
+        setNameError(null);
+      }
+    },
+    [workspace?.name],
+  );
+  // -------------------------------------------------------------------------
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
@@ -343,9 +570,45 @@ export default function WorkingSpacePage() {
               <div className="flex-1">
                 <h1 className="text-3xl md:text-4xl font-bold mb-2">
                   {!workspace ? (
-                    <div className="bg-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
+                    <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
+                  ) : isEditingName ? (
+                    <div className="flex flex-col gap-1">
+                      <Input
+                        ref={nameInputRef}
+                        value={editedName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditedName(val);
+                          const result = workspaceNameSchema.safeParse(
+                            val.trim(),
+                          );
+                          setNameError(
+                            result.success
+                              ? null
+                              : result.error.errors[0].message,
+                          );
+                        }}
+                        onBlur={handleNameBlur}
+                        onKeyDown={handleNameKeyDown}
+                        className={cn(
+                          "text-3xl md:text-4xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full max-w-md",
+                          nameError
+                            ? "border border-destructive"
+                            : "border border-primary/20",
+                        )}
+                      />
+                      {nameError && (
+                        <p className="text-xs text-destructive">{nameError}</p>
+                      )}
+                    </div>
                   ) : (
-                    workspace.name
+                    <span
+                      onDoubleClick={handleNameDoubleClick}
+                      title="Double-click to rename"
+                      className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/20 transition-colors duration-150"
+                    >
+                      {workspace.name}
+                    </span>
                   )}
                 </h1>
                 <div className="flex items-center gap-4 text-sm">
@@ -369,7 +632,6 @@ export default function WorkingSpacePage() {
             onValueChange={handleTabChange}
             className="mt-6"
           >
-            {/* Slider Tab Bar */}
             <div className="mb-6">
               <SliderTabsList
                 tables={tables}
@@ -581,6 +843,74 @@ export function NotesDroppableContainer({
 function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const isEmpty = !note.body || note.body.trim() === "";
 
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
+
+  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+    (local, args) => {
+      const { _id, title } = args;
+      const existing = local.getQuery(api.notes.getNoteById, { _id });
+      if (existing) {
+        local.setQuery(
+          api.notes.getNoteById,
+          { _id },
+          {
+            ...existing,
+            title: title ?? existing.title,
+            updatedAt: Date.now(),
+          },
+        );
+      }
+    },
+  );
+
+  const handleDoubleClick = useCallback(() => {
+    setEditedTitle(note.title || "Untitled");
+    setTitleError(null);
+    setIsEditingTitle(true);
+    requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    });
+  }, [note.title]);
+
+  const handleTitleBlur = useCallback(async () => {
+    const result = noteTitleSchema.safeParse(editedTitle.trim());
+    if (!result.success) {
+      setIsEditingTitle(false);
+      setEditedTitle(note.title || "Untitled");
+      setTitleError(null);
+      return;
+    }
+    const trimmed = result.data;
+    if (trimmed !== (note.title || "Untitled")) {
+      try {
+        await updateNote({ _id: note._id, title: trimmed });
+      } catch (error) {
+        console.error("Error updating note title:", error);
+        setEditedTitle(note.title || "Untitled");
+      }
+    }
+    setIsEditingTitle(false);
+    setTitleError(null);
+  }, [editedTitle, note.title, note._id, updateNote]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        titleInputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        setIsEditingTitle(false);
+        setEditedTitle(note.title || "Untitled");
+        setTitleError(null);
+      }
+    },
+    [note.title],
+  );
+
   return (
     <Card
       className={cn(
@@ -592,9 +922,48 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-semibold text-foreground line-clamp-2 flex-1">
-            {note.title || "Untitled"}
-          </CardTitle>
+          {isEditingTitle ? (
+            <div className="flex-1 flex flex-col gap-1">
+              <Textarea
+                ref={titleInputRef as React.RefObject<HTMLTextAreaElement>}
+                value={editedTitle}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditedTitle(val);
+                  const result = noteTitleSchema.safeParse(val.trim());
+                  setTitleError(
+                    result.success ? null : result.error.errors[0].message,
+                  );
+                }}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                rows={1}
+                style={{ resize: "none", overflow: "hidden" }}
+                onInput={(e) => {
+                  const el = e.currentTarget;
+                  el.style.height = "auto";
+                  el.style.height = `${el.scrollHeight}px`;
+                }}
+                className={cn(
+                  "text-base font-semibold min-h-[50px] py-1 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                  titleError
+                    ? "border border-destructive"
+                    : "border border-primary/20",
+                )}
+              />
+              {titleError && (
+                <p className="text-xs text-destructive">{titleError}</p>
+              )}
+            </div>
+          ) : (
+            <CardTitle
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-2 "
+              onDoubleClick={handleDoubleClick}
+              title="Double-click to rename"
+            >
+              {note.title || "Untitled"}
+            </CardTitle>
+          )}
           <NoteSettings
             noteId={note._id}
             noteTitle={note.title}
@@ -603,6 +972,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             DropdownMenuContentAlign="start"
             TooltipContentAlign="start"
             onDelete={onDelete}
+            BtnClassName="pt-0"
           />
         </div>
       </CardHeader>
@@ -646,6 +1016,72 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const isEmpty = !note.body || note.body.trim() === "";
 
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
+  const [titleError, setTitleError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+    (local, args) => {
+      const { _id, title } = args;
+      const existing = local.getQuery(api.notes.getNoteById, { _id });
+      if (existing) {
+        local.setQuery(
+          api.notes.getNoteById,
+          { _id },
+          {
+            ...existing,
+            title: title ?? existing.title,
+            updatedAt: Date.now(),
+          },
+        );
+      }
+    },
+  );
+
+  const handleDoubleClick = useCallback(() => {
+    setEditedTitle(note.title || "Untitled");
+    setTitleError(null);
+    setIsEditingTitle(true);
+    requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    });
+  }, [note.title]);
+
+  const handleTitleBlur = useCallback(async () => {
+    const result = noteTitleSchema.safeParse(editedTitle.trim());
+    if (!result.success) {
+      setIsEditingTitle(false);
+      setEditedTitle(note.title || "Untitled");
+      setTitleError(null);
+      return;
+    }
+    const trimmed = result.data;
+    if (trimmed !== (note.title || "Untitled")) {
+      try {
+        await updateNote({ _id: note._id, title: trimmed });
+      } catch (error) {
+        console.error("Error updating note title:", error);
+        setEditedTitle(note.title || "Untitled");
+      }
+    }
+    setIsEditingTitle(false);
+    setTitleError(null);
+  }, [editedTitle, note.title, note._id, updateNote]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") titleInputRef.current?.blur();
+      else if (e.key === "Escape") {
+        setIsEditingTitle(false);
+        setEditedTitle(note.title || "Untitled");
+        setTitleError(null);
+      }
+    },
+    [note.title],
+  );
+
   return (
     <Card
       className={cn(
@@ -662,9 +1098,41 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           </div>
 
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-foreground mb-1 truncate">
-              {note.title || "Untitled"}
-            </h3>
+            {isEditingTitle ? (
+              <>
+                <Input
+                  ref={titleInputRef}
+                  value={editedTitle}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditedTitle(val);
+                    const result = noteTitleSchema.safeParse(val.trim());
+                    setTitleError(
+                      result.success ? null : result.error.errors[0].message,
+                    );
+                  }}
+                  onBlur={handleTitleBlur}
+                  onKeyDown={handleTitleKeyDown}
+                  className={cn(
+                    "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 max-w-[20rem] mb-1",
+                    titleError
+                      ? "border border-destructive"
+                      : "border border-primary/20",
+                  )}
+                />
+                {titleError && (
+                  <p className="text-xs text-destructive mb-1">{titleError}</p>
+                )}
+              </>
+            ) : (
+              <h3
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 hover:px-2 w-fit mb-1"
+                onDoubleClick={handleDoubleClick}
+                title="Double-click to rename"
+              >
+                {note.title || "Untitled"}
+              </h3>
+            )}
             {isEmpty ? (
               <p className="text-sm text-muted-foreground italic">
                 No content yet. Click to start writing...
@@ -693,6 +1161,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               DropdownMenuContentAlign="start"
               TooltipContentAlign="start"
               onDelete={onDelete}
+              BtnClassName="pt-0"
             />
             <Button
               variant="ghost"

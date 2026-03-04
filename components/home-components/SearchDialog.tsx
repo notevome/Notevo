@@ -244,10 +244,10 @@ export default function SearchDialog({
             <div className="w-full flex items-center justify-between gap-1">
               Search
               <span className="inline-flex gap-1">
-                <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-5 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-[10px] font-medium text-primary">
+                <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-mute px-1.5 font-mono text-[10px] font-medium text-primary">
                   <span className="text-xs">Ctrl</span>
                 </kbd>
-                <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-5 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-[10px] font-medium text-primary">
+                <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-mute px-1.5 font-mono text-[10px] font-medium text-primary">
                   <span className="text-xs">K</span>
                 </kbd>
               </span>

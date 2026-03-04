@@ -3,16 +3,12 @@ import {
   Clock,
   FileText,
   Plus,
-  Sparkles,
-  Notebook,
-  PenSquare,
-  Folder,
-  Star,
   ChevronLeft,
   ChevronRight,
   FolderClosed,
+  Star,
 } from "lucide-react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
@@ -32,12 +28,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
 } from "@/lib/parse-tiptap-content";
 import { cn } from "@/lib/utils";
 import { usePaginatedQuery } from "convex/react";
+import { z } from "zod";
+
+// ─── Zod Schemas ───────────────────────────────────────────────────────────────
+
+const workspaceNameSchema = z
+  .string()
+  .min(1, "Name cannot be empty")
+  .max(30, "Name must be 30 characters or less");
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function home() {
   const viewer = useQuery(api.users.viewer);
@@ -106,7 +113,7 @@ export default function home() {
 
   return (
     <MaxWContainer className="relative my-5">
-      {/* Enhanced Hero Section */}
+      {/* Hero Section */}
       <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
         <header className="relative max-w-3xl mx-auto text-center">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
@@ -241,19 +248,19 @@ export default function home() {
   );
 }
 
+// ─── Skeletons ─────────────────────────────────────────────────────────────────
+
 function WorkspaceCardSkeleton() {
   return (
     <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit">
       <CardHeader className="pb-3 relative">
         <div className="h-5 bg-primary/20 rounded-lg w-3/4 animate-pulse"></div>
       </CardHeader>
-
       <CardContent className="pb-3">
         <div className="h-20 flex items-center justify-center">
           <div className="h-14 w-14 bg-primary/20 rounded-full animate-pulse"></div>
         </div>
       </CardContent>
-
       <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="h-4 bg-primary/20 rounded-lg w-24 animate-pulse"></div>
         <div className="h-7 bg-primary/20 rounded-lg w-16 animate-pulse"></div>
@@ -264,7 +271,7 @@ function WorkspaceCardSkeleton() {
 
 function NoteCardSkeleton() {
   return (
-    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-[225px] ">
+    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-[225px]">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
@@ -273,13 +280,11 @@ function NoteCardSkeleton() {
           </div>
         </div>
       </CardHeader>
-
       <CardContent className="pb-3 space-y-2">
         <div className="h-3 bg-primary/20 rounded-lg w-full animate-pulse"></div>
         <div className="h-3 bg-primary/20 rounded-lg w-5/6 animate-pulse"></div>
         <div className="h-3 bg-primary/20 rounded-lg w-4/6 animate-pulse"></div>
       </CardContent>
-
       <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="h-4 bg-primary/20 rounded-lg w-24 animate-pulse"></div>
         <div className="h-7 bg-primary/20 rounded-lg w-16 animate-pulse"></div>
@@ -287,6 +292,8 @@ function NoteCardSkeleton() {
     </Card>
   );
 }
+
+// ─── Slider ────────────────────────────────────────────────────────────────────
 
 function Slider({ children }: { children: React.ReactNode }) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -297,7 +304,6 @@ function Slider({ children }: { children: React.ReactNode }) {
   const checkScroll = () => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
     const hasOverflow = container.scrollWidth > container.clientWidth;
     setCanScrollLeft(container.scrollLeft > 10);
     setCanScrollRight(
@@ -313,20 +319,11 @@ function Slider({ children }: { children: React.ReactNode }) {
 
     checkScroll();
 
-    const resizeObserver = new ResizeObserver(() => {
-      checkScroll();
-    });
-
-    const mutationObserver = new MutationObserver(() => {
-      checkScroll();
-    });
+    const resizeObserver = new ResizeObserver(() => checkScroll());
+    const mutationObserver = new MutationObserver(() => checkScroll());
 
     resizeObserver.observe(container);
-    mutationObserver.observe(container, {
-      childList: true,
-      subtree: true,
-    });
-
+    mutationObserver.observe(container, { childList: true, subtree: true });
     container.addEventListener("scroll", checkScroll);
     window.addEventListener("resize", checkScroll);
 
@@ -341,27 +338,20 @@ function Slider({ children }: { children: React.ReactNode }) {
   const scroll = (direction: "left" | "right") => {
     const container = scrollContainerRef.current;
     if (!container) return;
-
-    const scrollAmount = 320;
-    const newScrollLeft =
-      direction === "left"
-        ? container.scrollLeft - scrollAmount
-        : container.scrollLeft + scrollAmount;
-
     container.scrollTo({
-      left: newScrollLeft,
+      left:
+        direction === "left"
+          ? container.scrollLeft - 320
+          : container.scrollLeft + 320,
       behavior: "smooth",
     });
   };
 
   return (
     <div ref={wrapperRef} className="relative w-full h-[250px] group">
-      {/* Left gradient fade */}
       {canScrollLeft && (
         <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-
-      {/* Left scroll button */}
       {canScrollLeft && (
         <Button
           size="icon"
@@ -372,24 +362,17 @@ function Slider({ children }: { children: React.ReactNode }) {
         </Button>
       )}
 
-      {/* Scrollable container - ABSOLUTE POSITIONED */}
       <div
         ref={scrollContainerRef}
         className="absolute inset-0 flex gap-4 h-fit overflow-x-auto scrollbar-hide scroll-smooth"
-        style={{
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-        }}
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}
       </div>
 
-      {/* Right gradient fade */}
       {canScrollRight && (
         <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-
-      {/* Right scroll button */}
       {canScrollRight && (
         <Button
           size="icon"
@@ -402,6 +385,8 @@ function Slider({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+// ─── Workspace Card ────────────────────────────────────────────────────────────
 
 interface Workspace {
   _id: Id<"workingSpaces">;
@@ -424,14 +409,119 @@ function WorkspaceCard({
   handleCreateWorkingSpace,
   loading,
 }: WorkspaceCardProps) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  const updateWorkingSpace = useMutation(
+    api.workingSpaces.updateWorkingSpace,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id, name } = args;
+    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    if (workspaces && Array.isArray(workspaces)) {
+      local.setQuery(
+        api.workingSpaces.getRecentWorkingSpaces,
+        {},
+        workspaces.map((ws: any) =>
+          ws._id === _id
+            ? { ...ws, name: name ?? ws.name, updatedAt: Date.now() }
+            : ws,
+        ),
+      );
+    }
+    const ws = local.getQuery(api.workingSpaces.getWorkingSpaceById, { _id });
+    if (ws) {
+      local.setQuery(
+        api.workingSpaces.getWorkingSpaceById,
+        { _id },
+        { ...ws, name: name ?? ws.name, updatedAt: Date.now() },
+      );
+    }
+  });
+
+  const handleNameDoubleClick = useCallback(() => {
+    setEditedName(workspace.name || "Untitled");
+    setNameError(null);
+    setIsEditingName(true);
+    requestAnimationFrame(() => {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    });
+  }, [workspace.name]);
+
+  const handleNameBlur = useCallback(async () => {
+    const result = workspaceNameSchema.safeParse(editedName.trim());
+    if (!result.success) {
+      setIsEditingName(false);
+      setEditedName(workspace.name || "Untitled");
+      setNameError(null);
+      return;
+    }
+    const trimmed = result.data;
+    if (trimmed !== (workspace.name || "Untitled")) {
+      try {
+        await updateWorkingSpace({ _id: workspace._id, name: trimmed });
+      } catch (error) {
+        console.error("Error updating workspace name:", error);
+        setEditedName(workspace.name || "Untitled");
+      }
+    }
+    setIsEditingName(false);
+    setNameError(null);
+  }, [editedName, workspace.name, workspace._id, updateWorkingSpace]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        nameInputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        setIsEditingName(false);
+        setEditedName(workspace.name || "Untitled");
+        setNameError(null);
+      }
+    },
+    [workspace.name],
+  );
+
   return (
     <Card className="group relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3 relative">
-        <CardTitle className="text-base font-semibold text-foreground">
-          {workspace.name.length > 20
-            ? `${workspace.name.substring(0, 20)}...`
-            : workspace.name}
-        </CardTitle>
+        {isEditingName ? (
+          <div className="flex flex-col gap-1 pr-8">
+            <Input
+              ref={nameInputRef}
+              value={editedName}
+              onChange={(e) => {
+                const val = e.target.value;
+                setEditedName(val);
+                const result = workspaceNameSchema.safeParse(val.trim());
+                setNameError(
+                  result.success ? null : result.error.errors[0].message,
+                );
+              }}
+              onBlur={handleNameBlur}
+              onKeyDown={handleNameKeyDown}
+              className={cn(
+                "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full",
+                nameError
+                  ? "border border-destructive"
+                  : "border border-primary/20",
+              )}
+            />
+            {nameError && (
+              <p className="text-xs text-destructive">{nameError}</p>
+            )}
+          </div>
+        ) : (
+          <CardTitle
+            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-8"
+            onDoubleClick={handleNameDoubleClick}
+            title="Double-click to rename"
+          >
+            {workspace.name || "Untitled"}
+          </CardTitle>
+        )}
         <div className="absolute top-3 right-3">
           <WorkingSpaceSettings
             workingSpaceId={workspace._id}
@@ -450,7 +540,7 @@ function WorkspaceCard({
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
-            <span>{`${new Date(workspace.updatedAt).toLocaleDateString()}`}</span>
+            <span>{new Date(workspace.updatedAt).toLocaleDateString()}</span>
           ) : (
             <SkeletonTextAnimation className="w-20" />
           )}
@@ -467,6 +557,8 @@ function WorkspaceCard({
     </Card>
   );
 }
+
+// ─── Note Card ─────────────────────────────────────────────────────────────────
 
 interface Note {
   _id: Id<"notes">;
@@ -486,7 +578,6 @@ interface Note {
 function NoteCard({ note }: { note: Note }) {
   const getContentPreview = (content: any) => {
     if (!content) return "No content yet. Click to start writing...";
-
     try {
       const plainText = parseTiptapContentExtractText(content);
       return plainText
@@ -538,7 +629,7 @@ function NoteCard({ note }: { note: Note }) {
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
-            <span>{`${new Date(note.updatedAt).toLocaleDateString()}`}</span>
+            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
           ) : (
             <SkeletonTextAnimation className="w-20" />
           )}
