@@ -355,7 +355,8 @@ function Slider({ children }: { children: React.ReactNode }) {
       {canScrollLeft && (
         <Button
           size="icon"
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          variant="ghost"
+          className="absolute left-0 top-[40%] -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={() => scroll("left")}
         >
           <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -376,7 +377,8 @@ function Slider({ children }: { children: React.ReactNode }) {
       {canScrollRight && (
         <Button
           size="icon"
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          variant="ghost"
+          className="absolute right-0 top-[40%] -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={() => scroll("right")}
         >
           <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />

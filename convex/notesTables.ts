@@ -26,19 +26,6 @@ export const createTable = mutation({
       throw new Error("Not authorized to create tables in this workspace");
     }
 
-    // Check if a table with this name already exists
-    const existingTable = await ctx.db
-      .query("notesTables")
-      .withIndex("by_workingSpaceId", (q) =>
-        q.eq("workingSpaceId", workingSpaceId),
-      )
-      .filter((q) => q.eq(q.field("name"), name))
-      .first();
-
-    if (existingTable) {
-      return existingTable._id;
-    }
-
     const generateSlugName = generateSlug(name);
     // Check if the slug already exists and add incremental number if it does
     let slug = generateSlugName;
