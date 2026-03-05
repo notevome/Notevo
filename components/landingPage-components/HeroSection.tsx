@@ -12,6 +12,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { NOISE_PNG } from "@/lib/data";
 import { PaperPieceIcon } from "../ui/paper-pice";
+import { Badge } from "../ui/badge";
 
 export default function HeroSection() {
   const { results, status } = usePaginatedQuery(
@@ -138,8 +139,12 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.45 }}
-          className="space-y-5 text-center "
+          className=" relative space-y-3 text-center "
         >
+          <Badge className=" absolute -top-7 w-fit text-nowrap text-sm left-1/2 -translate-x-1/2 z-50 bg-secondary text-secondary-foreground shadow-xl shadow-black/30">
+            {" "}
+            we're working on adding AI coming soon 🤞🏽
+          </Badge>
           <motion.h1
             className="bg-gradient-to-r from-primary/80 via-primary to-primary/80  bg-clip-text text-transparent leading-[50px] text-[46px] md:text-8xl Desktop:text-[100px] font-bold tracking-tight"
             initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
@@ -302,6 +307,7 @@ export default function HeroSection() {
             </p>
           </motion.div>
         </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
