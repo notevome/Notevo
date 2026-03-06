@@ -86,7 +86,22 @@ function SearchLoadingSkeleton() {
   );
 }
 
-function NoteItem({ note, onClick, isSelected }: any) {
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const index = text.toLowerCase().indexOf(query.toLowerCase());
+  if (index === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, index)}
+      <span className="text-secondary bg-secondary-foreground font-extrabold">
+        {text.slice(index, index + query.length)}
+      </span>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
+function NoteItem({ note, onClick, isSelected, query }: any) {
   return (
     <div
       onClick={onClick}
@@ -100,7 +115,7 @@ function NoteItem({ note, onClick, isSelected }: any) {
         </div>
         <div className="flex-1 overflow-hidden">
           <p className="font-medium truncate text-foreground">
-            {note.title || "Untitled"}
+            <HighlightedText text={note.title || "Untitled"} query={query} />
           </p>
           <p className="text-xs text-muted-foreground truncate">
             {note.workingSpacesSlug || "Personal"}
@@ -331,6 +346,7 @@ export default function SearchDialog({
                       note={note}
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
+                      query={debouncedQuery}
                     />
                   ))}
                 </div>
@@ -347,6 +363,7 @@ export default function SearchDialog({
                       note={note}
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
+                      query={debouncedQuery}
                     />
                   ))}
                 </div>
@@ -363,6 +380,7 @@ export default function SearchDialog({
                       note={note}
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
+                      query={debouncedQuery}
                     />
                   ))}
                 </div>
@@ -379,6 +397,7 @@ export default function SearchDialog({
                       note={note}
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
+                      query={debouncedQuery}
                     />
                   ))}
                 </div>
@@ -395,6 +414,7 @@ export default function SearchDialog({
                       note={note}
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
+                      query={debouncedQuery}
                     />
                   ))}
                 </div>
