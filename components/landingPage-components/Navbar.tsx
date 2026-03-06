@@ -7,11 +7,13 @@ import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotevoLogo from "@/public/Notevo-logo.svg";
+import { useMediaQuery } from "react-responsive";
 
 export default function Navbar() {
   const { scrollY } = useScroll();
   const [inView, setInView] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isMobile = useMediaQuery({ maxWidth: 640 });
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (latest > 90) {
@@ -36,7 +38,7 @@ export default function Navbar() {
             : "border-transparent bg-transparent",
         )}
         animate={{
-          width: inView ? "60%" : "90%",
+          width: inView && !isMobile ? "60%" : "90%",
         }}
         transition={{
           ease: "easeInOut",

@@ -53,11 +53,11 @@ export default function Section({
   }, []);
 
   const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 768 : false,
+    typeof window !== "undefined" ? window.innerWidth < 640 : false,
   );
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
+    const check = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
