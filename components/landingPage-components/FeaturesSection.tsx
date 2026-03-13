@@ -1,18 +1,20 @@
 "use client";
 import { Features } from "@/lib/data";
 import { motion } from "framer-motion";
-import Image from "next/image";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import SectionHeading from "./SectionHeading";
 import Section from "../ui/Section";
-import NotevoLightNotePic from "@/public/NotevoLightNotePic.svg";
-import NotevoLightWorkingspacePagePic from "@/public/NotevoLightWorkingspacePagePic.svg";
-import { StaticImageData } from "next/image";
 import { NOISE_PNG } from "@/lib/data";
 
-const featureImages: Record<string, StaticImageData> = {
-  "Rich Text Editor": NotevoLightNotePic,
-  "Simple Organization": NotevoLightWorkingspacePagePic,
+const featureVideos: Record<string, string> = {
+  "Rich Text Editor":
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
+  "Simple Organization":
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
+  "Publish Your Notes":
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
+  "Download Your Stuff":
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
 };
 
 const containerVariants = {
@@ -53,14 +55,13 @@ export default function FeaturesSection() {
       <MaxWContainer className="relative z-10">
         <SectionHeading
           SectionTitle="Features you'll love"
-          SectionSubTitle="Everything you need to take your notes without the hassle.
-"
+          SectionSubTitle="Everything you need to take your notes without the hassle."
         />
 
         <div className="space-y-24">
           {Features.map((feature, index) => {
             const isEven = index % 2 === 0;
-            const image = featureImages[feature.title];
+            const videoSrc = featureVideos[feature.title];
             return (
               <motion.div
                 key={index}
@@ -72,7 +73,7 @@ export default function FeaturesSection() {
                   isEven ? "md:flex-row" : "md:flex-row-reverse"
                 } gap-8 md:gap-12 items-center`}
               >
-                {/* Image Side */}
+                {/* Video Side */}
                 <motion.div
                   variants={itemVariants(isEven ? -40 : 40)}
                   className="w-full md:w-2/3"
@@ -80,10 +81,16 @@ export default function FeaturesSection() {
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/30 from-50% to-transparent border-border rounded-lg" />
                     <div className="relative bg-gradient-to-br from-primary/10 from-50% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`${feature.title} demo`}
+                      <video
+                        src={videoSrc}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        disablePictureInPicture
+                        disableRemotePlayback
                         className="w-full h-full object-cover rounded-lg"
+                        style={{ pointerEvents: "none" }}
                       />
                     </div>
                   </div>
@@ -94,7 +101,7 @@ export default function FeaturesSection() {
                   variants={itemVariants(isEven ? 40 : -40)}
                   className="w-full md:w-1/2 "
                 >
-                  <div className=" Desktop:h-96 flex flex-col justify-end items-start">
+                  <div className=" Desktop:h-80 flex flex-col justify-end items-start">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="relative bg-primary/10 rounded-lg p-3">
                         <feature.icon className="w-8 h-8 text-primary" />

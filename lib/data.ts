@@ -1,6 +1,13 @@
 import { IoLogoVercel } from "react-icons/io5";
 import { BsStars } from "react-icons/bs";
-import { Brain, Cloud, FileText, LayoutGrid, Activity } from "lucide-react";
+import {
+  Brain,
+  Cloud,
+  FileText,
+  LayoutGrid,
+  Activity,
+  FileDown,
+} from "lucide-react";
 
 export const NavLinks = [
   // {
@@ -135,6 +142,18 @@ export const Features = [
     description:
       "Organize your thoughts, manage your workspaces, and boost your productivity with Notevo's intuitive organization system.",
     icon: LayoutGrid,
+  },
+  {
+    title: "Publish Your Notes",
+    description:
+      "Share your notes with the world in one click. Publish any note as a public page and let others read, explore, and benefit from your ideas.",
+    icon: Cloud,
+  },
+  {
+    title: "Download Your Stuff",
+    description:
+      "Export and download your notes anytime, anywhere. Keep a local copy of everything you create — your data, your way.",
+    icon: FileDown,
   },
 ] as const;
 
