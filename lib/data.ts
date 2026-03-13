@@ -152,7 +152,7 @@ export const Features = [
   {
     title: "Download Your Stuff",
     description:
-      "Export and download your notes anytime, anywhere. Keep a local copy of everything you create — your data, your way.",
+      "Export and download your notes anytime, anywhere. Keep a local copy of everything you create your data, your way.",
     icon: FileDown,
   },
 ] as const;
