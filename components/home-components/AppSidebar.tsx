@@ -76,19 +76,41 @@ import { date } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { useHomeData } from "@/components/home-components/HomeDataContext";
 // --- Skeleton Sidebar Component ---
-const SkeletonSidebar = () => {
+const SkeletonSidebar = ({
+  sidebarWidth,
+  open,
+}: {
+  sidebarWidth: number;
+  open: boolean;
+}) => {
   return (
-    <Sidebar className="border-border group">
+    <Sidebar
+      variant="inset"
+      className="group bg-muted"
+      style={{
+        width: `${sidebarWidth}px`,
+      }}
+    >
       <SidebarHeader className=" text-foreground border-b border-border">
         <div className=" w-full flex items-center justify-between p-1.5">
           <div className="flex items-center justify-start gap-2">
-            <SkeletonTextAnimation className="w-20 h-4 mx-0" />
-            <SkeletonTextAnimation className="w-8 h-3 mx-0" />
+            {open ? (
+              <>
+                <SkeletonTextAnimation className="w-20 h-4 mx-0" />
+                <SkeletonTextAnimation className="w-8 h-3 mx-0" />
+              </>
+            ) : (
+              <SkeletonSmImgAnimation className="h-6 w-6" />
+            )}
           </div>
           <SkeletonTextAnimation className="w-full mx-0 h-6" />
         </div>
         <div className="my-1">
-          <SkeletonTextAnimation className="w-full mx-0 h-8" />
+          {open ? (
+            <SkeletonTextAnimation className="w-full mx-0 h-8" />
+          ) : (
+            <SkeletonTextAnimation className="w-8 mx-0 h-8" />
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent className="text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent group-hover:scrollbar-thumb-primary/20">
@@ -99,10 +121,14 @@ const SkeletonSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation text_className="w-full h-5" />
+                <SkeletonTextAndIconAnimation
+                  text_className={open ? "w-full h-5" : "hidden"}
+                />
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation text_className="w-full h-5" />
+                <SkeletonTextAndIconAnimation
+                  text_className={open ? "w-full h-5" : "hidden"}
+                />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
@@ -114,10 +140,14 @@ const SkeletonSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation text_className="w-full h-5" />
+                <SkeletonTextAndIconAnimation
+                  text_className={open ? "w-full h-5" : "hidden"}
+                />
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation text_className="w-full h-5" />
+                <SkeletonTextAndIconAnimation
+                  text_className={open ? "w-full h-5" : "hidden"}
+                />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
@@ -129,10 +159,12 @@ const SkeletonSidebar = () => {
             <div className="my-2">
               <div className="border-none w-full h-15 flex items-center justify-between">
                 <SkeletonSmImgAnimation className="h-8 w-8" />
-                <div className="flex flex-col items-start justify-center">
-                  <SkeletonTextAnimation className="w-28 h-4 mx-0" />
-                  <SkeletonTextAnimation className="w-20 h-3 mt-1 mx-0" />
-                </div>
+                {open ? (
+                  <div className="flex flex-col items-start justify-center">
+                    <SkeletonTextAnimation className="w-28 h-4 mx-0" />
+                    <SkeletonTextAnimation className="w-20 h-3 mt-1 mx-0" />
+                  </div>
+                ) : null}
               </div>
             </div>
           </SidebarMenuItem>
@@ -502,6 +534,35 @@ const PinnedNotesList = memo(function PinnedNotesList({
   status,
   loadMore,
 }: PinnedNotesListProps) {
+  if (status === "LoadingFirstPage") {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+          <span>Pinned Notes</span>
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
   if (favoriteNotes.length === 0) {
     return null;
   }
@@ -1115,7 +1176,7 @@ const AppSidebar = React.memo(function AppSidebar() {
   }, [signOut]);
 
   if (isSidebarLoading) {
-    return <SkeletonSidebar />;
+    return <SkeletonSidebar sidebarWidth={sidebarWidth} open={open} />;
   }
 
   return (
