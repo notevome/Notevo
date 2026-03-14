@@ -36,14 +36,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMutation, insertAtBottomIfLoaded } from "convex/react";
-import { useQuery } from "@/cache/useQuery";
+import { useMutation, insertAtBottomIfLoaded, usePreloadedQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { Button } from "@/components/ui/button";
 import { useState, useCallback, memo, useRef, useMemo, useEffect } from "react";
 import Link from "next/link";
+import IntentPrefetchLink from "@/components/ui/IntentPrefetchLink";
 import SearchDialog from "./SearchDialog";
 import LoadingAnimation from "../ui/LoadingAnimation";
 import SkeletonTextAnimation from "../ui/SkeletonTextAnimation";
@@ -74,6 +74,7 @@ import {
 import { usePaginatedQuery } from "convex/react";
 import { date } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
+import { useHomeData } from "@/components/home-components/HomeDataContext";
 // --- Skeleton Sidebar Component ---
 const SkeletonSidebar = () => {
   return (
@@ -432,7 +433,7 @@ const PinnedNoteItem = memo(
                       asChild
                       onDoubleClick={handleDoubleClick}
                     >
-                      <Link
+                      <IntentPrefetchLink
                         href={noteHref}
                         className="flex items-center gap-2 flex-grow min-w-0"
                       >
@@ -450,7 +451,7 @@ const PinnedNoteItem = memo(
                         <span className={textClassName}>
                           {formatWorkspaceName(note.title || "Untitled")}
                         </span>
-                      </Link>
+                      </IntentPrefetchLink>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -695,7 +696,7 @@ const WorkspaceItem = memo(
                       asChild
                       onDoubleClick={handleDoubleClick}
                     >
-                      <Link
+                      <IntentPrefetchLink
                         href={workspaceHref}
                         className="flex items-center gap-2 flex-grow min-w-0"
                       >
@@ -713,7 +714,7 @@ const WorkspaceItem = memo(
                         <span className={textClassName}>
                           {formatWorkspaceName(workingSpace.name || "Untitled")}
                         </span>
-                      </Link>
+                      </IntentPrefetchLink>
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
@@ -986,8 +987,9 @@ const AppSidebar = React.memo(function AppSidebar() {
     },
   );
 
-  const getWorkingSpaces = useQuery(api.workingSpaces.getRecentWorkingSpaces);
-  const User = useQuery(api.users.viewer);
+  const { preloadedRecentWorkspaces, preloadedViewer } = useHomeData();
+  const getWorkingSpaces = usePreloadedQuery(preloadedRecentWorkspaces) as any;
+  const User = usePreloadedQuery(preloadedViewer) as any;
   const { results, status, loadMore } = usePaginatedQuery(
     api.notes.getFavNotes,
     {},

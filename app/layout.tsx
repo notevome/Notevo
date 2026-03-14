@@ -59,7 +59,12 @@ export default function RootLayout({
         <Providers>
           <ConvexAuthNextjsServerProvider>
             <ConvexClientProvider>
-              <ConvexQueryCacheProvider expiration={1000000}>
+              <ConvexQueryCacheProvider
+                // Keep a small number of recently-used query subscriptions alive briefly to reduce
+                // navigation flicker, but avoid runaway idle subscriptions (bandwidth).
+                expiration={60_000}
+                maxIdleEntries={20}
+              >
                 {children}
               </ConvexQueryCacheProvider>
             </ConvexClientProvider>

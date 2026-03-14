@@ -39,6 +39,7 @@ export default defineSchema({
     workingSpaceId: v.optional(v.id("workingSpaces")),
     userId: v.optional(v.id("users")),
     body: v.optional(v.string()),
+    preview: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
     published: v.optional(v.boolean()),
     createdAt: v.number(),

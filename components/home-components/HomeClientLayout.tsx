@@ -22,6 +22,10 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
 import PublicNote from "../PublicNote";
 import { motion } from "framer-motion";
+import {
+  HomeDataProvider,
+  type HomeDataContextValue,
+} from "@/components/home-components/HomeDataContext";
 
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
@@ -108,13 +112,23 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
 
 HomeContent.displayName = "homeContent";
 
-const HomeClientLayout = memo(({ children }: { children: ReactNode }) => {
+const HomeClientLayout = memo(
+  ({
+    children,
+    homeData,
+  }: {
+    children: ReactNode;
+    homeData: HomeDataContextValue;
+  }) => {
   return (
     <SidebarProvider>
-      <HomeContent>{children}</HomeContent>
+      <HomeDataProvider value={homeData}>
+        <HomeContent>{children}</HomeContent>
+      </HomeDataProvider>
     </SidebarProvider>
   );
-});
+  },
+);
 
 HomeClientLayout.displayName = "homeClientLayout";
 

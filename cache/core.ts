@@ -67,6 +67,7 @@ export class CacheRegistry {
   timeout: number;
   maxIdleEntries: number;
   idle: number;
+  #debugInterval: number | null;
 
   constructor(convex: ConvexReactClient, options: ConvexQueryCacheOptions) {
     this.queries = new Map();
@@ -75,6 +76,7 @@ export class CacheRegistry {
     this.idle = 0;
     this.timeout = options.expiration ?? DEFAULT_EXPIRATION_MS;
     this.maxIdleEntries = options.maxIdleEntries ?? DEFAULT_MAX_ENTRIES;
+    this.#debugInterval = null;
     if (options.debug ?? false) {
       const weakThis = new WeakRef(this);
       const debugInterval = setInterval(() => {
@@ -85,6 +87,7 @@ export class CacheRegistry {
           r.debug();
         }
       }, 3000);
+      this.#debugInterval = Number(debugInterval);
     }
   }
   #getQueryEntry(
@@ -180,5 +183,22 @@ export class CacheRegistry {
       );
     }
     console.log("~~~~~~~~~~~~~~~~~~~~~~");
+  }
+
+  destroy() {
+    for (const cq of this.queries.values()) {
+      if (cq.evictTimer !== null) {
+        clearTimeout(cq.evictTimer);
+      }
+      cq.unsub?.();
+    }
+    this.queries.clear();
+    this.subs.clear();
+    this.idle = 0;
+
+    if (this.#debugInterval !== null) {
+      clearInterval(this.#debugInterval);
+      this.#debugInterval = null;
+    }
   }
 }

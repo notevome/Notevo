@@ -101,10 +101,15 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
-function NoteItem({ note, onClick, isSelected, query }: any) {
+function NoteItem({ note, onClick, isSelected, query, onIntentPrefetch }: any) {
+  const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
   return (
     <div
       onClick={onClick}
+      onPointerEnter={() => onIntentPrefetch?.(href)}
+      onMouseEnter={() => onIntentPrefetch?.(href)}
+      onFocus={() => onIntentPrefetch?.(href)}
+      onTouchStart={() => onIntentPrefetch?.(href)}
       className={`flex items-center py-2 px-3 cursor-pointer rounded-lg transition-colors ${
         isSelected ? "bg-primary/20" : "hover:bg-primary/10"
       }`}
@@ -142,6 +147,16 @@ export default function SearchDialog({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const router = useRouter();
+  const prefetchedRef = useRef<Set<string>>(new Set());
+
+  const prefetchOnce = useCallback(
+    (href: string) => {
+      if (prefetchedRef.current.has(href)) return;
+      prefetchedRef.current.add(href);
+      router.prefetch(href);
+    },
+    [router],
+  );
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsScrollRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
@@ -234,6 +249,14 @@ export default function SearchDialog({
   const isDebouncing = query !== debouncedQuery;
   const hasResults = allNotes.length > 0;
   const isLoading = isDebouncing || status === "LoadingFirstPage";
+
+  // Prefetch the currently selected item so Enter navigation feels instant.
+  useEffect(() => {
+    if (!open) return;
+    const note = allNotes[selectedIndex];
+    if (!note) return;
+    prefetchOnce(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+  }, [open, allNotes, selectedIndex, prefetchOnce]);
   // When dialog opens, wait for animation then measure
   useEffect(() => {
     if (!open) return;
@@ -347,6 +370,7 @@ export default function SearchDialog({
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
                       query={debouncedQuery}
+                      onIntentPrefetch={prefetchOnce}
                     />
                   ))}
                 </div>
@@ -364,6 +388,7 @@ export default function SearchDialog({
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
                       query={debouncedQuery}
+                      onIntentPrefetch={prefetchOnce}
                     />
                   ))}
                 </div>
@@ -381,6 +406,7 @@ export default function SearchDialog({
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
                       query={debouncedQuery}
+                      onIntentPrefetch={prefetchOnce}
                     />
                   ))}
                 </div>
@@ -398,6 +424,7 @@ export default function SearchDialog({
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
                       query={debouncedQuery}
+                      onIntentPrefetch={prefetchOnce}
                     />
                   ))}
                 </div>
@@ -415,6 +442,7 @@ export default function SearchDialog({
                       onClick={() => handleItemClick(note)}
                       isSelected={allNotes.indexOf(note) === selectedIndex}
                       query={debouncedQuery}
+                      onIntentPrefetch={prefetchOnce}
                     />
                   ))}
                 </div>

@@ -1,6 +1,6 @@
 "use client";
 import { useConvex } from "convex/react";
-import { createContext, FC, PropsWithChildren } from "react";
+import { createContext, FC, PropsWithChildren, useEffect, useMemo } from "react";
 import { CacheRegistry, ConvexQueryCacheOptions } from "./core";
 
 export const ConvexQueryCacheContext = createContext({
@@ -17,7 +17,7 @@ export const ConvexQueryCacheContext = createContext({
  */
 export const ConvexQueryCacheProvider: FC<
   PropsWithChildren<ConvexQueryCacheOptions>
-> = ({ children, ...options }) => {
+> = ({ children, expiration, maxIdleEntries, debug }) => {
   const convex = useConvex();
   if (convex === undefined) {
     throw new Error(
@@ -26,7 +26,17 @@ export const ConvexQueryCacheProvider: FC<
         "See https://docs.convex.dev/quick-start#set-up-convex-in-your-react-app",
     );
   }
-  const registry = new CacheRegistry(convex, options);
+
+  // Keep the registry stable so we don't resubscribe to every query on every render.
+  const registry = useMemo(() => {
+    return new CacheRegistry(convex, { expiration, maxIdleEntries, debug });
+  }, [convex, expiration, maxIdleEntries, debug]);
+
+  // Ensure we tear down any subscriptions/timers if this provider ever unmounts.
+  useEffect(() => {
+    return () => registry.destroy();
+  }, [registry]);
+
   return (
     <ConvexQueryCacheContext.Provider value={{ registry }}>
       {children}

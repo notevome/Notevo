@@ -3,6 +3,25 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
 import { paginationOptsValidator } from "convex/server";
+import { extractTextFromTiptap, truncateText } from "../lib/parse-tiptap-content";
+
+const NOTE_PREVIEW_MAX_CHARS = 200;
+
+function computeNotePreview(body: string | undefined): string | undefined {
+  if (!body) return undefined;
+  const text = extractTextFromTiptap(body).replace(/\s+/g, " ").trim();
+  if (!text) return undefined;
+  return truncateText(text, NOTE_PREVIEW_MAX_CHARS);
+}
+
+function toNoteListItem(note: any) {
+  // Strip the heavy `body` field from list payloads to reduce bandwidth.
+  // Pages that need the full content should call `getNoteById`.
+  const preview = note.preview ?? computeNotePreview(note.body);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { body, ...rest } = note;
+  return { ...rest, preview };
+}
 
 export const createNote = mutation({
   args: {
@@ -61,6 +80,7 @@ export const createNote = mutation({
       workingSpaceId: workingSpaceId,
       favorite: false,
       published: false,
+      preview: undefined,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -115,6 +135,8 @@ export const updateNote = mutation({
       ...note,
       title: title ?? note.title,
       body: body ?? note.body,
+      preview:
+        body !== undefined ? computeNotePreview(body) : (note as any).preview,
       slug: slug,
       updatedAt: Date.now(),
       order: order ?? note.order,
@@ -222,11 +244,16 @@ export const getNotesByTableId = query({
     const { notesTableId, paginationOpts } = args;
 
     // Get notes that belong to both the authenticated user and the specified workspace
-    return await ctx.db
+    const result = await ctx.db
       .query("notes")
       .withIndex("by_notesTableId", (q) => q.eq("notesTableId", notesTableId))
       .order("desc")
       .paginate(paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map(toNoteListItem),
+    };
   },
 });
 
@@ -256,18 +283,23 @@ export const getNoteByUserId = query({
       });
 
       return {
-        page: matchedNotes,
+        page: matchedNotes.map(toNoteListItem),
         continueCursor: "",
         isDone: true,
       };
     }
 
     // No search query - return paginated results
-    return await ctx.db
+    const result = await ctx.db
       .query("notes")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .paginate(paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map(toNoteListItem),
+    };
   },
 });
 
@@ -300,11 +332,16 @@ export const getFavNotes = query({
     if (!userId) {
       throw new ConvexError("Not authenticated");
     }
-    return await ctx.db
+    const result = await ctx.db
       .query("notes")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("favorite"), true))
       .order("desc")
       .paginate(paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map(toNoteListItem),
+    };
   },
 });
