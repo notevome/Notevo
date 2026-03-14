@@ -10,7 +10,9 @@ import {
   Pencil,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { type Preloaded, useMutation, usePaginatedQuery, usePreloadedQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
+import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { z } from "zod";
@@ -54,6 +56,13 @@ const tableNameSchema = z
   .string()
   .min(1, "Name cannot be empty")
   .max(30, "Name must be 30 characters or less");
+
+const workspacePageMemoryCache = new Map<
+  string,
+  { workspace?: any; tables?: any }
+>();
+
+const tableNotesMemoryCache = new Map<string, any[]>();
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -401,18 +410,35 @@ function SliderTabsList({
 
 export default function WorkingSpacePageClient({
   workingSpaceId,
-  preloadedWorkspace,
-  preloadedTables,
 }: {
   workingSpaceId: Id<"workingSpaces">;
-  preloadedWorkspace: Preloaded<typeof api.workingSpaces.getWorkingSpaceById>;
-  preloadedTables: Preloaded<typeof api.notesTables.getTables>;
 }) {
-  const workspace = usePreloadedQuery(preloadedWorkspace) as any;
+  const cached = workspacePageMemoryCache.get(
+    workingSpaceId as unknown as string,
+  );
+  const workspaceQuery = useQuery(api.workingSpaces.getWorkingSpaceById, {
+    _id: workingSpaceId,
+  }) as any;
+  const tablesQuery = useQuery(api.notesTables.getTables, {
+    workingSpaceId,
+  }) as any;
+
+  const workspace = workspaceQuery ?? cached?.workspace;
   const workingSpacesSlug: string | undefined =
     workspace && (workspace.slug as string);
 
-  const tables = usePreloadedQuery(preloadedTables) as any;
+  const tables = tablesQuery !== undefined ? tablesQuery : cached?.tables;
+
+  useEffect(() => {
+    const key = workingSpaceId as unknown as string;
+    const prev = workspacePageMemoryCache.get(key) ?? {};
+    if (workspaceQuery !== undefined || tablesQuery !== undefined) {
+      workspacePageMemoryCache.set(key, {
+        workspace: workspaceQuery !== undefined ? workspaceQuery : prev.workspace,
+        tables: tablesQuery !== undefined ? tablesQuery : prev.tables,
+      });
+    }
+  }, [workingSpaceId, workspaceQuery, tablesQuery]);
 
   // --- Workspace inline rename ---
   const [isEditingName, setIsEditingName] = useState(false);
@@ -697,6 +723,16 @@ export function NotesDroppableContainer({
     { initialNumItems: 5 },
   );
 
+  const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (status !== "LoadingFirstPage") {
+      tableNotesMemoryCache.set(tableId as unknown as string, results);
+    }
+  }, [results, status, tableId]);
+
+  const stableResults =
+    status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
+
   const [deletedNoteIds, setDeletedNoteIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -704,7 +740,7 @@ export function NotesDroppableContainer({
   }, [tableId]);
 
   const filteredNotes = useMemo(() => {
-    const notDeletedNotes = results.filter(
+    const notDeletedNotes = stableResults.filter(
       (note) => note && !deletedNoteIds.has(note._id),
     );
     if (!searchQuery.trim()) return notDeletedNotes;
@@ -716,7 +752,7 @@ export function NotesDroppableContainer({
         searchableText.includes(q)
       );
     });
-  }, [results, searchQuery, deletedNoteIds]);
+  }, [stableResults, searchQuery, deletedNoteIds]);
 
   const handleNoteDelete = useCallback((noteId: Id<"notes">) => {
     setDeletedNoteIds((prev) => {
@@ -785,7 +821,7 @@ export function NotesDroppableContainer({
       </div>
 
       {/* Notes */}
-      {status === "LoadingFirstPage" ? (
+      {status === "LoadingFirstPage" && !cachedNotes ? (
         <NotesSkeleton viewMode={viewMode} />
       ) : searchQuery && filteredNotes.length === 0 ? (
         <EmptySearchResults

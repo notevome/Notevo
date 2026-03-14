@@ -1,32 +1,20 @@
-import { api } from "@/convex/_generated/api";
+"use client";
+
 import HomePageClient from "./HomePageClient";
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
-import { fetchQuery } from "convex/nextjs";
-import { redirect } from "next/navigation";
+import { useConvexAuth } from "convex/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default async function HomePage() {
-  const token = await convexAuthNextjsToken();
-  if (!token) {
-    redirect("/signup");
-  }
+export default function HomePage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useConvexAuth();
 
-  // Fetch (not subscribe) to keep bandwidth low and eliminate client-side loading
-  // skeletons for the home page lists.
-  const recentNotesPage = await fetchQuery(
-    api.notes.getNoteByUserId,
-    { paginationOpts: { numItems: 5, cursor: null } },
-    { token },
-  );
-  const pinnedNotesPage = await fetchQuery(
-    api.notes.getFavNotes,
-    { paginationOpts: { numItems: 5, cursor: null } },
-    { token },
-  );
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) router.replace("/signup");
+  }, [isAuthenticated, isLoading, router]);
 
-  return (
-    <HomePageClient
-      initialRecentNotes={(recentNotesPage as any)?.page ?? []}
-      initialPinnedNotes={(pinnedNotesPage as any)?.page ?? []}
-    />
-  );
+  if (isLoading || !isAuthenticated) return null;
+
+  return <HomePageClient />;
 }

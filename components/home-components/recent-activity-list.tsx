@@ -1,5 +1,7 @@
+"use client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useQuery } from "convex/react";
+import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import { Clock, FileText, FolderPlus, Star } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";

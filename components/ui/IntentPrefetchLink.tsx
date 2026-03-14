@@ -36,7 +36,7 @@ const IntentPrefetchLink = forwardRef<HTMLAnchorElement, Props>(
       <Link
         {...props}
         href={href}
-        prefetch={false}
+        prefetch={true}
         ref={ref}
         onPointerDown={(e) => {
           prefetchOnce();

@@ -1,3 +1,5 @@
+"use client";
+
 import type { Id } from "@/convex/_generated/dataModel";
 import {
   AlertDialog,

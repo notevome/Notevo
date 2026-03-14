@@ -4,23 +4,41 @@ import TailwindAdvancedEditor from "@/components/advanced-editor";
 import NoteLoadingSkeletonUI from "@/components/ui/NoteLoadingSkeletonUI";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { useQuery } from "@/cache/useQuery";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { cn } from "@/lib/utils";
 import type { JSONContent } from "@tiptap/react";
-import type { Preloaded } from "convex/react";
-import { useMutation, usePreloadedQuery } from "convex/react";
-import { useEffect, useState } from "react";
+import { useMutation } from "convex/react";
+import { useEffect, useMemo, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+
+const noteMemoryCache = new Map<string, unknown>();
 
 export default function NotePageClient({
   noteId,
-  preloadedNote,
 }: {
   noteId: Id<"notes">;
-  preloadedNote: Preloaded<typeof api.notes.getNoteById>;
 }) {
   const { noteWidth } = useNoteWidth();
-  const getNote = usePreloadedQuery(preloadedNote) as any;
+  const note = useQuery(api.notes.getNoteById, { _id: noteId });
+  const [lastNote, setLastNote] = useState<typeof note>(() => {
+    return noteMemoryCache.get(noteId as unknown as string) as typeof note;
+  });
+
+  useEffect(() => {
+    setLastNote(
+      noteMemoryCache.get(noteId as unknown as string) as typeof note,
+    );
+    setContent(undefined);
+  }, [noteId]);
+
+  useEffect(() => {
+    if (note === undefined) return;
+    noteMemoryCache.set(noteId as unknown as string, note);
+    setLastNote(note);
+  }, [note, noteId]);
+
+  const stableNote = note ?? lastNote;
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -54,29 +72,37 @@ export default function NotePageClient({
     500,
   );
 
-  useEffect(() => {
-    if (getNote?.body) {
-      setContent(JSON.parse(getNote.body));
+  const serverContent = useMemo(() => {
+    if (!stableNote?.body) return undefined;
+    try {
+      return JSON.parse(stableNote.body) as JSONContent;
+    } catch {
+      return undefined;
     }
-  }, [getNote]);
+  }, [stableNote?.body]);
 
   useEffect(() => {
-    if (!getNote?.title) return;
+    if (content !== undefined) return;
+    if (serverContent !== undefined) setContent(serverContent);
+  }, [content, serverContent]);
+
+  useEffect(() => {
+    if (!stableNote?.title) return;
 
     // Store original values
     const originalTitle = document.title;
 
     // Update document title
-    document.title = `${getNote.title} - Notevo`;
+    document.title = `${stableNote.title} - Notevo`;
 
     // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
     const originalContent = metaDescription?.getAttribute("content");
 
     // Create better description from note content or title
-    const descriptionText = getNote.body
-      ? `${getNote.title}: ${getNote.body.substring(0, 150)}...`
-      : `View and edit "${getNote.title}" on Notevo`;
+    const descriptionText = stableNote.body
+      ? `${stableNote.title}: ${stableNote.body.substring(0, 150)}...`
+      : `View and edit "${stableNote.title}" on Notevo`;
 
     let createdMeta = false;
 
@@ -100,20 +126,18 @@ export default function NotePageClient({
         metaDescription.setAttribute("content", originalContent);
       }
     };
-  }, [getNote?.title, getNote?.body]);
+  }, [stableNote?.title, stableNote?.body]);
 
-  // `usePreloadedQuery` should make this uncommon, but keep a fallback.
-  if (getNote === undefined) {
+  // Show loading only when we have no cached value to show.
+  if (stableNote === undefined) {
     return <NoteLoadingSkeletonUI />;
   }
-
-  const parsedContent = getNote?.body ? JSON.parse(getNote.body) : content;
 
   return (
     <div className={cn(noteWidth === "false" ? "container " : "px-4", "pb-28")}>
       <TailwindAdvancedEditor
         editorBubblePlacement={false}
-        initialContent={parsedContent}
+        initialContent={content ?? serverContent}
         onUpdate={(editor) => {
           const updatedContent = editor.getJSON();
           setContent(updatedContent);
@@ -123,4 +147,3 @@ export default function NotePageClient({
     </div>
   );
 }
-

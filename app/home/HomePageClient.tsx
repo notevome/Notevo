@@ -9,7 +9,8 @@ import {
   Star,
 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useMutation, usePreloadedQuery } from "convex/react";
+import { useMutation } from "convex/react";
+import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import MaxWContainer from "@/components/ui/MaxWContainer";
@@ -18,7 +19,7 @@ import WorkingSpaceNotFound from "@/components/home-components/WorkingSpaceNotFo
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import IntentPrefetchLink from "@/components/ui/IntentPrefetchLink";
-import { useHomeData } from "@/components/home-components/HomeDataContext";
+import { useQuery } from "@/cache/useQuery";
 import {
   Card,
   CardContent,
@@ -36,6 +37,13 @@ import {
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 
+const homeMemoryCache: {
+  viewer?: any;
+  recentWorkspaces?: any;
+  recentNotes?: any[];
+  pinnedNotes?: any[];
+} = {};
+
 // ─── Zod Schemas ───────────────────────────────────────────────────────────────
 
 const workspaceNameSchema = z
@@ -45,20 +53,44 @@ const workspaceNameSchema = z
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function HomePageClient({
-  initialRecentNotes,
-  initialPinnedNotes,
-}: {
-  initialRecentNotes: any[];
-  initialPinnedNotes: any[];
-}) {
-  const { preloadedViewer, preloadedRecentWorkspaces } = useHomeData();
-  const viewer = usePreloadedQuery(preloadedViewer) as any;
-  const recentWorkspaces = usePreloadedQuery(preloadedRecentWorkspaces) as any;
-  // Use server-fetched lists to avoid client subscriptions (bandwidth) and
-  // eliminate "LoadingFirstPage" skeletons.
-  const recentNotes = initialRecentNotes;
-  const pinnedNotes = initialPinnedNotes;
+export default function HomePageClient() {
+  const viewerQuery = useQuery(api.users.viewer, {});
+  const recentWorkspacesQuery = useQuery(
+    api.workingSpaces.getRecentWorkingSpaces,
+    {},
+  );
+  const { results: recentNotesResults, status: recentNotesStatus } =
+    usePaginatedQuery(api.notes.getNoteByUserId, {}, { initialNumItems: 5 });
+  const { results: pinnedNotesResults, status: pinnedNotesStatus } =
+    usePaginatedQuery(api.notes.getFavNotes, {}, { initialNumItems: 5 });
+
+  useEffect(() => {
+    if (viewerQuery !== undefined) homeMemoryCache.viewer = viewerQuery;
+  }, [viewerQuery]);
+  useEffect(() => {
+    if (recentWorkspacesQuery !== undefined)
+      homeMemoryCache.recentWorkspaces = recentWorkspacesQuery;
+  }, [recentWorkspacesQuery]);
+  useEffect(() => {
+    if (recentNotesStatus !== "LoadingFirstPage")
+      homeMemoryCache.recentNotes = recentNotesResults;
+  }, [recentNotesResults, recentNotesStatus]);
+  useEffect(() => {
+    if (pinnedNotesStatus !== "LoadingFirstPage")
+      homeMemoryCache.pinnedNotes = pinnedNotesResults;
+  }, [pinnedNotesResults, pinnedNotesStatus]);
+
+  const viewer = viewerQuery ?? homeMemoryCache.viewer;
+  const recentWorkspaces =
+    recentWorkspacesQuery ?? homeMemoryCache.recentWorkspaces;
+  const recentNotes =
+    recentNotesStatus === "LoadingFirstPage" && homeMemoryCache.recentNotes
+      ? homeMemoryCache.recentNotes
+      : recentNotesResults;
+  const pinnedNotes =
+    pinnedNotesStatus === "LoadingFirstPage" && homeMemoryCache.pinnedNotes
+      ? homeMemoryCache.pinnedNotes
+      : pinnedNotesResults;
 
   const createWorkingSpace = useMutation(
     api.workingSpaces.createWorkingSpace,
