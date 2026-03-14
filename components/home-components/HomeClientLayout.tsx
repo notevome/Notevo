@@ -64,9 +64,9 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     <div className="flex h-screen w-full bg-muted overflow-hidden">
       <AppSidebar />
       <main
-        className={`relative flex flex-col flex-1 h-auto border-primary/20 ${
+        className={`relative flex flex-col flex-1 h-auto border-primary/20 bg-background transition-[margin,border-radius] duration-300 ease-linear motion-reduce:transition-none ${
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
-        } rounded-none bg-background `}
+        } rounded-none`}
       >
         <div className="z-[10] relative w-full flex items-center justify-start px-5 gap-3 mx-auto rounded-tl-lg border-none py-2.5 ">
           <div className="flex justify-between items-center w-full">
@@ -120,13 +120,13 @@ const HomeClientLayout = memo(
     children: ReactNode;
     homeData: HomeDataContextValue;
   }) => {
-  return (
-    <SidebarProvider>
-      <HomeDataProvider value={homeData}>
-        <HomeContent>{children}</HomeContent>
-      </HomeDataProvider>
-    </SidebarProvider>
-  );
+    return (
+      <SidebarProvider>
+        <HomeDataProvider value={homeData}>
+          <HomeContent>{children}</HomeContent>
+        </HomeDataProvider>
+      </SidebarProvider>
+    );
   },
 );
 

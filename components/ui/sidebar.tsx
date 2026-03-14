@@ -351,10 +351,11 @@ const Sidebar = React.memo(
       const sidebarClasses = React.useMemo(
         () =>
           cn(
-            "duration-200 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right] ease-linear md:flex",
+            "duration-300 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width,opacity] ease-linear md:flex motion-reduce:transition-none",
             side === "left"
               ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
               : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            "group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:pointer-events-none",
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] ",
@@ -418,7 +419,7 @@ const Sidebar = React.memo(
           <div
             ref={spacerRef}
             className={cn(
-              "duration-200 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
+              "duration-300 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear motion-reduce:transition-none",
               "group-data-[collapsible=offcanvas]:w-0",
               "group-data-[side=right]:rotate-180",
               variant === "floating" || variant === "inset"
@@ -618,17 +619,17 @@ const SidebarGroupLabel = React.forwardRef<
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "div";
 
-  return (
-    <Comp
-      ref={ref}
-      data-sidebar="group-label"
-      className={cn(
-        "duration-200 flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-        className,
-      )}
-      {...props}
-    />
+      return (
+        <Comp
+          ref={ref}
+          data-sidebar="group-label"
+          className={cn(
+            "duration-200 flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 motion-reduce:transition-none",
+            "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+            className,
+          )}
+          {...props}
+        />
   );
 });
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
