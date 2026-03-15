@@ -81,10 +81,19 @@ SITE_URL="https://notevo.me/"
 
  ```
  
- ### Running Locally
- ```bash
- pnpm dev  # or npm run dev
- ```
- Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+### Running Locally
+```bash
+pnpm dev  # or npm run dev
+```
+Then, open [http://localhost:3000](http://localhost:3000) in your browser.
+
+## Testing
+Unit tests use Vitest:
+
+```bash
+npm run test:run        # run once (CI-friendly)
+npm run test            # watch mode
+npm run test:coverage   # coverage report
+```
  
  
