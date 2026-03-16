@@ -437,7 +437,7 @@ export default function HowToStartSection() {
       className={cn(
         "px-4 sm:px-6 md:px-8",
         "py-12 sm:py-16 md:py-20 Desktop:py-24",
-        "relative Desktop:pt-0",
+        "relative",
       )}
     >
       <div className="container relative z-10 mx-auto px-4">

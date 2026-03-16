@@ -312,14 +312,37 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.55, delay: 0.38 }}
-          className=" relative w-full p-1 Desktop:p-2 rounded-lg bg-gradient-to-t from-transparent from-10% to-primary/50 backdrop-blur-lg"
+          className=" relative w-full p-1 Desktop:p-2 rounded-lg bg-primary/50 backdrop-blur-lg"
         >
-          <Image
-            src="/NotevoLightHomePagePic.svg"
-            alt="Notevo home page"
-            className=" mask-image-gradient p-full w-full rounded-lg"
-            width={300}
-            height={300}
+          <p className="absolute -top-9 right-12 font-extrabold text-primary/80 leading-relaxed">
+            yep its that fast
+          </p>
+          <svg
+            width="128"
+            height="90"
+            viewBox="0 0 228 90"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="absolute -top-8 right-12 f"
+          >
+            <path
+              d="M222.722 8.85C222.722 8.01455 217.71 6.74873 179.621 5.48291C146.561 4.38419 85.5579 5.05253 54.3491 8.60316C23.1402 12.1538 23.5579 19.2551 24.3997 28.3437C26.2496 48.3172 27.7858 62.8247 28.2035 67.2614C28.9055 74.7172 37.4693 46.8627 40.425 44.2994C46.0726 39.4016 37.52 64.4829 31.001 76.0652C27.8531 81.658 23.2288 85.5589 19.6149 84.1601C13.0769 75.6601 9.64655 64.5842 8.38705 59.3057C7.54528 57.7867 6.29212 58.6221 5.00098 59.4829"
+              stroke="#644A40"
+              stroke-opacity="0.7"
+              stroke-width="10"
+              stroke-linecap="round"
+            />
+          </svg>
+          <video
+            src="https://ik.imagekit.io/bxpyeqctr/notevo/notevo-homepage.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            disablePictureInPicture
+            disableRemotePlayback
+            className="w-full h-full object-cover rounded-lg"
+            style={{ pointerEvents: "none" }}
           />
         </motion.div>
       </MaxWContainer>
