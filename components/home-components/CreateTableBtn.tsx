@@ -1,21 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "@/lib/utils";
-import { useMutation, insertAtTop } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import LoadingAnimation from "../ui/LoadingAnimation";
 
 interface CreateTableBtnProps {
   workingSpaceId: Id<"workingSpaces">;
   className?: string;
+  label?: string;
+  onCreated?: (tableId: Id<"notesTables">) => void | Promise<void>;
+  variant?: ComponentProps<typeof Button>["variant"];
+  size?: ComponentProps<typeof Button>["size"];
 }
 
 export default function CreateTableBtn({
   workingSpaceId,
   className,
+  label = "Create Table",
+  onCreated,
+  variant = "default",
+  size = "default",
 }: CreateTableBtnProps) {
+  const [isCreating, setIsCreating] = useState(false);
   const createTable = useMutation(
     api.notesTables.createTable,
   ).withOptimisticUpdate((local, args) => {
@@ -47,17 +57,32 @@ export default function CreateTableBtn({
   });
 
   const handleCreateTable = async () => {
-    await createTable({ workingSpaceId: workingSpaceId, name: "Untitled" });
+    try {
+      setIsCreating(true);
+      const tableId = await createTable({
+        workingSpaceId: workingSpaceId,
+        name: "Untitled",
+      });
+      await onCreated?.(tableId);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
     <Button
       className={cn("flex items-center justify-between gap-2 ", className)}
-      variant="default"
+      variant={variant}
+      size={size}
       onClick={handleCreateTable}
+      disabled={isCreating}
     >
-      <Plus size={20} />
-      <p className="hidden sm:block ">Create Table</p>
+      {isCreating ? (
+        <LoadingAnimation className="h-4 w-4 text-primary" />
+      ) : (
+        <Plus size={20} />
+      )}
+      <p className="hidden sm:block ">{label}</p>
     </Button>
   );
 }
