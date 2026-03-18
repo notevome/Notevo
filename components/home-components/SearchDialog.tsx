@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 
 interface SearchDialogProps {

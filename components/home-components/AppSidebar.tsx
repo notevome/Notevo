@@ -39,7 +39,6 @@ import {
 import {
   useMutation,
   insertAtBottomIfLoaded,
-  usePreloadedQuery,
 } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -75,10 +74,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { date } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
-import { useHomeData } from "@/components/home-components/HomeDataContext";
+import { useQuery } from "@/cache/useQuery";
 // --- Skeleton Sidebar Component ---
 const SkeletonSidebar = ({
   sidebarWidth,
@@ -325,10 +324,10 @@ const SidebarNavigation = memo(function SidebarNavigation({
                 pathname === "/home" ? "bg-primary/10" : ""
               }`}
             >
-              <Link href="/home">
+              <IntentPrefetchLink href="/home">
                 <HomeIcon className=" text-primary" size="16" />
                 <span>Home</span>
-              </Link>
+              </IntentPrefetchLink>
             </Button>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -789,7 +788,7 @@ const WorkspaceItem = memo(
                   >
                     {workingSpace.name || "Untitled"}
                   </TooltipContent>
-                </Tooltip>
+                </Tooltip>{" "}
               </TooltipProvider>
             )}
           </SidebarMenuItem>
@@ -1052,9 +1051,8 @@ const AppSidebar = React.memo(function AppSidebar() {
     },
   );
 
-  const { preloadedRecentWorkspaces, preloadedViewer } = useHomeData();
-  const getWorkingSpaces = usePreloadedQuery(preloadedRecentWorkspaces) as any;
-  const User = usePreloadedQuery(preloadedViewer) as any;
+  const getWorkingSpaces = useQuery(api.workingSpaces.getRecentWorkingSpaces, {});
+  const User = useQuery(api.users.viewer, {});
   const { results, status, loadMore } = usePaginatedQuery(
     api.notes.getFavNotes,
     {},

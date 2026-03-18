@@ -1,47 +1,35 @@
-import { api } from "@/convex/_generated/api";
+"use client";
+
 import type { Id } from "@/convex/_generated/dataModel";
 import NotePageClient from "./NotePageClient";
-import { convexAuthNextjsToken } from "@convex-dev/auth/nextjs/server";
-import { preloadQuery } from "convex/nextjs";
-import { notFound, redirect } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useMemo } from "react";
+import { useConvexAuth } from "convex/react";
 
-function getSearchParam(
-  searchParams: unknown,
-  key: string,
-): string | undefined {
-  const sp: any = searchParams as any;
-  if (sp && typeof sp.get === "function") {
-    const v = sp.get(key);
-    return typeof v === "string" ? v : undefined;
-  }
-  const v = sp?.[key];
-  if (typeof v === "string") return v;
-  if (Array.isArray(v) && typeof v[0] === "string") return v[0];
-  return undefined;
-}
+export default function NotePage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { isAuthenticated, isLoading } = useConvexAuth();
 
-export default async function NotePage({
-  searchParams,
-}: {
-  searchParams: any;
-}) {
-  const token = await convexAuthNextjsToken();
-  if (!token) {
-    redirect("/signup");
-  }
+  const noteId = useMemo(() => {
+    const id = searchParams.get("id");
+    return (id ?? null) as Id<"notes"> | null;
+  }, [searchParams]);
 
-  const resolvedSearchParams = await Promise.resolve(searchParams);
-  const noteIdParam = getSearchParam(resolvedSearchParams, "id");
-  if (!noteIdParam) {
-    notFound();
-  }
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) {
+      router.replace("/signup");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
-  const noteId = noteIdParam as Id<"notes">;
-  const preloadedNote = await preloadQuery(
-    api.notes.getNoteById,
-    { _id: noteId },
-    { token },
-  );
+  useEffect(() => {
+    if (noteId === null) {
+      router.replace("/home");
+    }
+  }, [noteId, router]);
 
-  return <NotePageClient noteId={noteId} preloadedNote={preloadedNote} />;
+  if (noteId === null || isLoading || !isAuthenticated) return null;
+
+  return <NotePageClient noteId={noteId} />;
 }

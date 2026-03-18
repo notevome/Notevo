@@ -430,6 +430,11 @@ const stepPreviews = [SignUpPreview, WorkspacePreview, WritingPreview];
 export default function HowToStartSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   return (
     <section
@@ -506,27 +511,28 @@ export default function HowToStartSection() {
             })}
           </div>
 
-          {/* Animated beams */}
-          {HowToStartSteps.map((_: Step, index: number) => {
-            if (index < HowToStartSteps.length - 1) {
-              return (
-                <AnimatedBeam
-                  key={`beam-${index}`}
-                  containerRef={containerRef}
-                  fromRef={{ current: nodeRefs.current[index] }}
-                  toRef={{ current: nodeRefs.current[index + 1] }}
-                  curvature={0}
-                  duration={0}
-                  gradientStartColor="hsl(var(--primary))"
-                  gradientStopColor="hsl(var(--primary))"
-                  pathColor="hsl(var(--primary)/0.5)"
-                  pathWidth={10}
-                  pathOpacity={0.5}
-                />
-              );
-            }
-            return null;
-          })}
+          {/* Animated beams — rendered after mount so refs are populated */}
+          {isMounted &&
+            HowToStartSteps.map((_: Step, index: number) => {
+              if (index < HowToStartSteps.length - 1) {
+                return (
+                  <AnimatedBeam
+                    key={`beam-${index}`}
+                    containerRef={containerRef}
+                    fromRef={{ current: nodeRefs.current[index] }}
+                    toRef={{ current: nodeRefs.current[index + 1] }}
+                    curvature={0}
+                    duration={0}
+                    gradientStartColor="hsl(var(--primary))"
+                    gradientStopColor="hsl(var(--primary))"
+                    pathColor="hsl(var(--primary)/0.5)"
+                    pathWidth={10}
+                    pathOpacity={0.5}
+                  />
+                );
+              }
+              return null;
+            })}
         </div>
 
         {/* CTA */}

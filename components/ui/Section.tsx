@@ -33,7 +33,7 @@ export default function Section({
 
   const { ref, inView } = useInView({
     triggerOnce: false,
-    threshold: 0.4,
+    threshold: 0.2,
     rootMargin: `${preloadOffset}px 0px ${preloadOffset}px 0px`,
   });
 

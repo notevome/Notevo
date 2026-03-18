@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useState, useEffect } from "react";
 import MaxWContainer from "../ui/MaxWContainer";
 import { useMediaQuery } from "react-responsive";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { NOISE_PNG } from "@/lib/data";
