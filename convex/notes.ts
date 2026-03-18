@@ -18,7 +18,6 @@ function toNoteListItem(note: any) {
   // Strip the heavy `body` field from list payloads to reduce bandwidth.
   // Pages that need the full content should call `getNoteById`.
   const preview = note.preview ?? computeNotePreview(note.body);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { body, ...rest } = note;
   return { ...rest, preview };
 }
@@ -257,6 +256,63 @@ export const getNotesByTableId = query({
   },
 });
 
+export const moveNote = mutation({
+  args: {
+    _id: v.id("notes"),
+    targetWorkingSpaceId: v.id("workingSpaces"),
+    targetNotesTableId: v.id("notesTables"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const { _id, targetWorkingSpaceId, targetNotesTableId } = args;
+    const note = await ctx.db.get(_id);
+    if (!note) {
+      throw new ConvexError("Note not found");
+    }
+
+    if (note.userId !== userId) {
+      throw new ConvexError("Not authorized to move this note");
+    }
+
+    const targetWorkspace = await ctx.db.get(targetWorkingSpaceId);
+    if (!targetWorkspace) {
+      throw new ConvexError("Target workspace not found");
+    }
+
+    if (targetWorkspace.userId !== userId) {
+      throw new ConvexError("Not authorized to use this workspace");
+    }
+
+    const targetTable = await ctx.db.get(targetNotesTableId);
+    if (!targetTable) {
+      throw new ConvexError("Target table not found");
+    }
+
+    if (targetTable.workingSpaceId !== targetWorkingSpaceId) {
+      throw new ConvexError("Target table does not belong to this workspace");
+    }
+
+    await ctx.db.patch(_id, {
+      workingSpaceId: targetWorkingSpaceId,
+      workingSpacesSlug: targetWorkspace.slug ?? note.workingSpacesSlug,
+      notesTableId: targetNotesTableId,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      noteId: _id,
+      workingSpaceId: targetWorkingSpaceId,
+      workingSpacesSlug: targetWorkspace.slug,
+      notesTableId: targetNotesTableId,
+      slug: note.slug,
+    };
+  },
+});
+
 export const getNoteByUserId = query({
   args: {
     paginationOpts: paginationOptsValidator,
@@ -343,5 +399,65 @@ export const getFavNotes = query({
       ...result,
       page: result.page.map(toNoteListItem),
     };
+  },
+});
+
+export const getMoveTargets = query({
+  args: {
+    searchQuery: v.optional(v.string()),
+  },
+  handler: async (ctx, { searchQuery }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const normalizedQuery = searchQuery?.trim().toLowerCase() ?? "";
+    const workspaces = await ctx.db
+      .query("workingSpaces")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    const targets = await Promise.all(
+      workspaces.map(async (workspace) => {
+        const tables = await ctx.db
+          .query("notesTables")
+          .withIndex("by_workingSpaceId", (q) =>
+            q.eq("workingSpaceId", workspace._id),
+          )
+          .collect();
+
+        const sortedTables = tables.sort((a, b) => b.updatedAt - a.updatedAt);
+        if (!normalizedQuery) {
+          return {
+            ...workspace,
+            tables: sortedTables,
+          };
+        }
+
+        const workspaceMatches =
+          workspace.name.toLowerCase().includes(normalizedQuery) ||
+          workspace.slug?.toLowerCase().includes(normalizedQuery);
+        const matchingTables = sortedTables.filter(
+          (table) =>
+            table.name?.toLowerCase().includes(normalizedQuery) ||
+            table.slug?.toLowerCase().includes(normalizedQuery),
+        );
+
+        if (!workspaceMatches && matchingTables.length === 0) {
+          return null;
+        }
+
+        return {
+          ...workspace,
+          tables: workspaceMatches ? sortedTables : matchingTables,
+        };
+      }),
+    );
+
+    return targets.filter((target): target is NonNullable<typeof target> =>
+      Boolean(target),
+    );
   },
 });

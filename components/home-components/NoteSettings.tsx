@@ -24,6 +24,7 @@ import {
   FileJson,
   FileType,
   FileDown,
+  FileOutput,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "convex/react";
@@ -51,13 +52,14 @@ import {
 import { Label } from "../ui/label";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
+import MoveNoteDialog from "./MoveNoteDialog";
 
 interface NoteSettingsProps {
   noteId: Id<"notes">;
   noteTitle: string | any;
   IconVariant: "vertical_icon" | "horizontal_icon";
   BtnClassName?: string;
-  ShowWidthOp: Boolean;
+  ShowWidthOp: boolean;
   DropdownMenuContentAlign: "end" | "start";
   TooltipContentAlign: "end" | "start";
   onDelete?: (noteId: Id<"notes">) => void;
@@ -81,6 +83,7 @@ export default function NoteSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
 
   const { noteWidth, toggleWidth } = useNoteWidth();
 
@@ -190,6 +193,11 @@ export default function NoteSettings({
     });
   };
 
+  const handleMoveDialogOpen = () => {
+    setOpen(false);
+    setIsMoveDialogOpen(true);
+  };
+
   const handleTooltipMouseEnter = () => setIsTooltipOpen(true);
   const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
 
@@ -222,7 +230,7 @@ export default function NoteSettings({
               alignOffset={1}
               align={TooltipContentAlign}
             >
-              Rename, Pin, Download, Delete{ShowWidthOp && "..."}
+              Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -255,6 +263,15 @@ export default function NoteSettings({
             >
               <Pin size={14} className="text-primary" />
               {getNote?.favorite ? "Unpin Note" : "Pin Note"}
+            </Button>
+
+            <Button
+              variant="SidebarMenuButton"
+              className="w-full h-8 px-2 text-sm"
+              onClick={handleMoveDialogOpen}
+            >
+              <FileOutput size={14} className="text-primary" />
+              Move Note
             </Button>
 
             <DropdownMenuSub>
@@ -354,6 +371,18 @@ export default function NoteSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveNoteDialog
+        open={isMoveDialogOpen}
+        onOpenChange={setIsMoveDialogOpen}
+        note={{
+          _id: noteId,
+          title: getNote?.title,
+          slug: getNote?.slug,
+          workingSpaceId: getNote?.workingSpaceId,
+          notesTableId: getNote?.notesTableId,
+        }}
+      />
     </>
   );
 }
