@@ -80,7 +80,7 @@ export default function CreateTableBtn({
       {isCreating ? (
         <LoadingAnimation className="h-4 w-4 text-primary" />
       ) : (
-        <Plus size={20} />
+        <Plus size={16} />
       )}
       <p className="hidden sm:block ">{label}</p>
     </Button>

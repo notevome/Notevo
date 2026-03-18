@@ -188,23 +188,27 @@ export default function MoveNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 overflow-hidden bg-background md:min-w-[600px] gap-0">
-        <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
-          <DialogTitle>Move Note</DialogTitle>
-          <DialogDescription>
-            Move "{note.title || "Untitled"}" to another table in this workspace
-            or any other workspace.
+      <DialogContent className="p-0 overflow-hidden bg-card border-border md:min-w-[500px] gap-0 shadow-2xl">
+        <DialogHeader className="px-5 pt-4 pb-3 border-b border-border">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/70 mb-1">
+            Move note
+          </p>
+          <DialogTitle className="text-[15px] font-medium text-foreground leading-snug">
+            {note.title || "Untitled"}
+          </DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+            Select a destination table in this workspace or any other workspace.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-card">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Search className="h-4 w-4 shrink-0 text-primary" />
+            <Search className="h-4 w-4 shrink-0 text-primary/70" />
             <Input
               ref={searchInputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search workspaces and tables..."
-              className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
           </div>
 
@@ -213,7 +217,7 @@ export default function MoveNoteDialog({
             size="sm"
             onClick={handleCreateWorkspace}
             disabled={isCreatingWorkspace}
-            className="gap-2"
+            className="gap-1 text-xs px-2 h-8"
           >
             {isCreatingWorkspace ? (
               <LoadingAnimation className="h-4 w-4 text-primary" />
@@ -224,19 +228,19 @@ export default function MoveNoteDialog({
           </Button>
         </div>
 
-        <div className="min-h-[420px] max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent p-3">
+        <div className="min-h-[320px] max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent p-3 bg-background/50">
           {moveTargets === undefined ? (
             <div className="space-y-2 p-2">
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-11 rounded-lg bg-primary/10 animate-pulse"
+                  className="h-10 rounded-lg bg-primary/8 animate-pulse"
                 />
               ))}
             </div>
           ) : !hasResults ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center text-center text-sm text-muted-foreground">
-              <Folder className="mb-3 h-12 w-12 text-primary/60" />
+              <Folder className="mb-4 h-10 w-10 text-primary/50" />
               <p className="font-medium text-foreground">
                 {debouncedQuery
                   ? `No targets found for "${debouncedQuery}"`
@@ -247,64 +251,60 @@ export default function MoveNoteDialog({
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {moveTargets.map((workspace) => {
                 const workspaceId = String(workspace._id);
                 const isExpanded = expandedWorkspaceIds.includes(workspaceId);
                 const tables = workspace.tables ?? [];
-
                 return (
                   <div
                     key={workspace._id}
-                    className="overflow-hidden rounded-lg border border-border/80 bg-card"
+                    className="overflow-hidden rounded-lg transition-colors"
                   >
-                    <div className="flex items-center gap-2 px-2 py-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 flex-1 justify-start gap-2 px-2"
-                        onClick={() => toggleWorkspace(workspaceId)}
-                      >
-                        <ChevronRight
-                          className={cn(
-                            "h-4 w-4 shrink-0 transition-transform",
-                            isExpanded && "rotate-90",
-                          )}
-                        />
-                        {isExpanded ? (
-                          <FolderOpen className="h-4 w-4 shrink-0 text-primary" />
-                        ) : (
-                          <Folder className="h-4 w-4 shrink-0 text-primary" />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium hover:bg-primary/10 hover:text-primary"
+                      onClick={() => toggleWorkspace(workspaceId)}
+                    >
+                      <ChevronRight
+                        className={cn(
+                          "h-3.5 w-3.5 shrink-0 transition-transform text-primary/60",
+                          isExpanded && "rotate-90",
                         )}
-                        <span className="truncate font-medium text-foreground">
-                          <HighlightedText
-                            text={workspace.name || "Untitled"}
-                            query={debouncedQuery}
-                          />
-                        </span>
-                      </Button>
-
-                      <CreateTableBtn
-                        workingSpaceId={workspace._id}
-                        variant="ghost"
-                        size="sm"
-                        label="Table"
-                        className="h-9 shrink-0 gap-2 px-2 text-muted-foreground"
-                        onCreated={() => {
-                          setExpandedWorkspaceIds((prev) =>
-                            prev.includes(workspaceId)
-                              ? prev
-                              : [...prev, workspaceId],
-                          );
-                        }}
                       />
-                    </div>
+                      {isExpanded ? (
+                        <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                      ) : (
+                        <Folder className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                      )}
+                      <span className="truncate text-sm font-medium text-foreground">
+                        <HighlightedText
+                          text={workspace.name || "Untitled"}
+                          query={debouncedQuery}
+                        />
+                      </span>
+                    </Button>
 
                     {isExpanded && (
-                      <div className="space-y-1 border-t border-border/70 px-2 py-2">
+                      <div className="space-y-0.5 px-1 py-1 bg-background/30">
                         {tables.length === 0 ? (
-                          <div className="rounded-lg px-3 py-4 text-sm text-muted-foreground">
+                          <div className=" flex flex-col justify-center items-center gap-2 rounded-lg mx-2 py-3 bg-card text-xs text-muted-foreground/60 text-center">
                             No tables in this workspace yet.
+                            <CreateTableBtn
+                              workingSpaceId={workspace._id}
+                              variant="secondary"
+                              size="sm"
+                              label="Table"
+                              className="h-8 shrink-0 gap-1 px-2 text-muted-foreground"
+                              onCreated={() => {
+                                setExpandedWorkspaceIds((prev) =>
+                                  prev.includes(workspaceId)
+                                    ? prev
+                                    : [...prev, workspaceId],
+                                );
+                              }}
+                            />
                           </div>
                         ) : (
                           tables.map((table: any) => {
@@ -325,14 +325,14 @@ export default function MoveNoteDialog({
                                 className={cn(
                                   "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left transition-colors",
                                   isCurrentTarget
-                                    ? "cursor-not-allowed bg-primary/10 text-primary"
-                                    : "hover:bg-primary/10",
+                                    ? "cursor-not-allowed bg-secondary/50 text-primary"
+                                    : " hover:bg-primary/10",
                                 )}
                               >
                                 <div className="flex min-w-0 items-center gap-2">
-                                  <span className="ml-6 h-px w-4 bg-muted-foreground" />
-                                  <Folder className="h-4 w-4 shrink-0 text-muted-foreground" />
-                                  <span className="truncate text-sm font-medium">
+                                  <span className="ml-4 h-px w-3 bg-muted-foreground/60" />
+                                  <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                  <span className="truncate text-[13px] font-medium">
                                     <HighlightedText
                                       text={table.name || "Untitled"}
                                       query={debouncedQuery}
@@ -340,13 +340,17 @@ export default function MoveNoteDialog({
                                   </span>
                                 </div>
 
-                                <span className="shrink-0 text-xs text-muted-foreground">
+                                <span className="shrink-0 text-[11px] text-muted-foreground/60">
                                   {isMoving ? (
                                     <LoadingAnimation className="h-4 w-4 text-primary" />
                                   ) : isCurrentTarget ? (
-                                    "Current"
+                                    <span className="text-[10px] font-medium border border-primary/20 bg-primary/5 text-primary/60 px-2 py-0.5 rounded-md">
+                                      current
+                                    </span>
                                   ) : (
-                                    "Move"
+                                    <span className="text-[11px] text-muted-foreground/50 group-hover:text-primary/60">
+                                      move
+                                    </span>
                                   )}
                                 </span>
                               </button>

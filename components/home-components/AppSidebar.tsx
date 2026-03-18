@@ -36,10 +36,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  useMutation,
-  insertAtBottomIfLoaded,
-} from "convex/react";
+import { useMutation, insertAtBottomIfLoaded } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -1051,7 +1048,10 @@ const AppSidebar = React.memo(function AppSidebar() {
     },
   );
 
-  const getWorkingSpaces = useQuery(api.workingSpaces.getRecentWorkingSpaces, {});
+  const getWorkingSpaces = useQuery(
+    api.workingSpaces.getRecentWorkingSpaces,
+    {},
+  );
   const User = useQuery(api.users.viewer, {});
   const { results, status, loadMore } = usePaginatedQuery(
     api.notes.getFavNotes,

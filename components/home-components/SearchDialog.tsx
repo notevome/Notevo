@@ -71,15 +71,15 @@ const groupNotesByTime = (notes: any[]) => {
 
 function SearchLoadingSkeleton() {
   return (
-    <div className="space-y-2 p-2">
+    <div className="space-y-1 p-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center py-2 px-2">
-          <div className="h-8 w-8 bg-primary/20 rounded-lg mr-2 animate-pulse" />
+        <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg">
+          <div className="h-8 w-8 bg-primary/10 rounded-lg shrink-0 animate-pulse" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-primary/20 rounded-lg w-3/4 animate-pulse" />
-            <div className="h-3 bg-primary/20 rounded-lg w-1/2 animate-pulse" />
+            <div className="h-3.5 bg-primary/10 rounded-md w-2/3 animate-pulse" />
+            <div className="h-2.5 bg-primary/10 rounded-md w-1/3 animate-pulse" />
           </div>
-          <div className="h-3 bg-primary/20 rounded-lg w-20 animate-pulse" />
+          <div className="h-2.5 bg-primary/10 rounded-md w-16 animate-pulse" />
         </div>
       ))}
     </div>
@@ -110,26 +110,34 @@ function NoteItem({ note, onClick, isSelected, query, onIntentPrefetch }: any) {
       onMouseEnter={() => onIntentPrefetch?.(href)}
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
-      className={`flex items-center py-2 px-3 cursor-pointer rounded-lg transition-colors ${
-        isSelected ? "bg-primary/20" : "hover:bg-primary/10"
+      className={`flex items-center gap-3 py-2.5 px-3 cursor-pointer rounded-lg transition-all ${
+        isSelected ? "bg-secondary/50 " : " hover:bg-accent"
       }`}
     >
-      <div className="flex w-full items-center">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg mr-3 border border-primary/20">
-          <FileText className="text-primary" size={16} />
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <p className="font-medium truncate text-foreground">
-            <HighlightedText text={note.title || "Untitled"} query={query} />
-          </p>
-          <p className="text-xs text-muted-foreground truncate">
-            {note.workingSpacesSlug || "Personal"}
-          </p>
-        </div>
-        <div className="flex items-center text-xs text-primary">
-          <Clock className="mr-1 h-3 w-3 text-primary" />
-          <span>{getRelativeTime(new Date(note.createdAt))}</span>
-        </div>
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+          isSelected
+            ? "border-primary/30 bg-primary/10 text-primary"
+            : "border-border bg-muted text-muted-foreground"
+        }`}
+      >
+        <FileText size={14} />
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <p
+          className={`text-sm font-medium truncate transition-colors ${isSelected ? "text-primary" : "text-foreground"}`}
+        >
+          <HighlightedText text={note.title || "Untitled"} query={query} />
+        </p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {note.workingSpacesSlug || "Personal"}
+        </p>
+      </div>
+      <div
+        className={`flex items-center gap-1 text-xs shrink-0 transition-colors ${isSelected ? "text-primary/70" : "text-muted-foreground/60"}`}
+      >
+        <Clock className="h-3 w-3" />
+        <span>{getRelativeTime(new Date(note.createdAt))}</span>
       </div>
     </div>
   );
@@ -295,21 +303,20 @@ export default function SearchDialog({
       </DialogTrigger>
       <DialogContent
         aria-describedby={undefined}
-        className="p-0 overflow-hidden bg-background md:min-w-[800px] gap-0"
+        className="p-0 overflow-hidden bg-card border-border md:min-w-[900px] gap-0 shadow-2xl"
       >
         <DialogTitle className="sr-only">Search Notes</DialogTitle>
-
         {/* Search Input */}
-        <div className="flex items-center border-b border-border px-4 py-1.5">
+        <div className="flex items-center border-b border-border px-4 py-2">
           {isDebouncing ? (
-            <LoadingAnimation className="h-4 w-4 mr-2 text-primary" />
+            <LoadingAnimation className="h-4 w-4 mr-3 text-primary/70 shrink-0" />
           ) : (
-            <Search className="h-4 w-4 mr-2 text-primary" />
+            <Search className="h-5 w-5 mr-3 text-primary/70 shrink-0" />
           )}
           <Input
             ref={inputRef}
             placeholder="Search for notes by title..."
-            className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0"
+            className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0 text-sm bg-transparent"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -320,24 +327,24 @@ export default function SearchDialog({
         <div
           ref={resultsScrollRef}
           onScroll={handleResultsScroll}
-          className="min-h-[60vh] max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent p-2"
+          className="min-h-[40vh] max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent p-3"
         >
           {canScroll && scrollTop > 8 && (
             <div
-              className="pointer-events-none absolute top-[53px] left-0 right-0 z-10 h-20 bg-gradient-to-b from-background/90 from-20% to-transparent"
+              className="pointer-events-none absolute top-[49px] left-0 right-0 z-10 h-20 bg-gradient-to-b from-card/90 from-20% to-transparent"
               aria-hidden
             />
           )}
           {hasMoreBelow && (
             <div
-              className="pointer-events-none absolute bottom-[53px] left-0 right-0 z-10 h-20 bg-gradient-to-t from-background/90 from-20% to-transparent"
+              className="pointer-events-none absolute bottom-[44px] left-0 right-0 z-10 h-20 bg-gradient-to-t from-card/90 from-20% to-transparent"
               aria-hidden
             />
           )}
           {isLoading ? (
             <SearchLoadingSkeleton />
           ) : !hasResults ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">
+            <div className="py-16 text-center text-sm text-muted-foreground">
               {!query ? (
                 <>
                   <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
@@ -360,7 +367,7 @@ export default function SearchDialog({
             <div className="space-y-2">
               {groupedNotes.today.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/60">
                     Today
                   </div>
                   {groupedNotes.today.map((note) => (
@@ -378,7 +385,7 @@ export default function SearchDialog({
 
               {groupedNotes.yesterday.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/60">
                     Yesterday
                   </div>
                   {groupedNotes.yesterday.map((note) => (
@@ -396,7 +403,7 @@ export default function SearchDialog({
 
               {groupedNotes.pastWeek.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/60">
                     Past Week
                   </div>
                   {groupedNotes.pastWeek.map((note) => (
@@ -414,7 +421,7 @@ export default function SearchDialog({
 
               {groupedNotes.pastMonth.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/60">
                     Past 30 Days
                   </div>
                   {groupedNotes.pastMonth.map((note) => (
@@ -432,7 +439,7 @@ export default function SearchDialog({
 
               {groupedNotes.older.length > 0 && (
                 <div className="mb-4">
-                  <div className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                  <div className="px-3 pt-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary/60">
                     Older
                   </div>
                   {groupedNotes.older.map((note) => (
@@ -452,20 +459,29 @@ export default function SearchDialog({
         </div>
 
         {/* Footer */}
-        <DialogFooter className="border-t border-border px-4 py-3">
+        <DialogFooter className="border-t border-border px-4 py-2.5 bg-secondary/20">
           <div className=" w-full flex justify-between items-center">
-            <span className=" space-x-2">
-              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
-                <ArrowDownUp size={16} /> Navigate
-              </kbd>
-              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
-                <Undo2 size={16} /> Open
-              </kbd>
+            <span className=" flex justify-center items-center gap-2 space-x-2">
+              <span className=" flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+                  <ArrowDownUp size={14} />
+                </kbd>
+                <p className=" text-foreground font-mono text-xs">Navigate</p>
+              </span>
+              <span className=" flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+                  <Undo2 size={14} />
+                </kbd>
+                <p className=" text-foreground font-mono text-xs">Open</p>
+              </span>
             </span>
             <span>
-              <kbd className="pointer-events-none border border-primary/10 ml-auto inline-flex h-7 select-none items-center gap-1 rounded-lg bg-mute px-1.5 font-mono text-xs font-medium text-primary">
-                <p className=" font-extrabold">ESC</p> Close
-              </kbd>
+              <span className=" flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+                  ESC
+                </kbd>
+                <p className=" text-foreground font-mono text-xs">Close</p>
+              </span>
             </span>
           </div>
         </DialogFooter>
