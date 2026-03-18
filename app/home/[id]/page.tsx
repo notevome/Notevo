@@ -21,11 +21,17 @@ export default function WorkingSpacePage() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated) router.replace("/signup");
+    if (!isAuthenticated) {
+      router.replace("/signup");
+      router.refresh();
+    }
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
-    if (workingSpaceId === null) router.replace("/home");
+    if (workingSpaceId === null) {
+      router.replace("/home");
+      router.refresh();
+    }
   }, [router, workingSpaceId]);
 
   if (isLoading || !isAuthenticated || workingSpaceId === null) return null;

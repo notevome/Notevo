@@ -11,7 +11,10 @@ export default function HomePage() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (!isAuthenticated) router.replace("/signup");
+    if (!isAuthenticated) {
+      router.replace("/signup");
+      router.refresh();
+    }
   }, [isAuthenticated, isLoading, router]);
 
   if (isLoading || !isAuthenticated) return null;

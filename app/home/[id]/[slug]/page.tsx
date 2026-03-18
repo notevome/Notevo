@@ -20,12 +20,14 @@ export default function NotePage() {
     if (isLoading) return;
     if (!isAuthenticated) {
       router.replace("/signup");
+      router.refresh();
     }
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
     if (noteId === null) {
       router.replace("/home");
+      router.refresh();
     }
   }, [noteId, router]);
 
