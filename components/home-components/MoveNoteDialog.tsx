@@ -3,8 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
-import { ChevronRight, Folder, FolderOpen, Plus, Search } from "lucide-react";
-
+import {
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  Plus,
+  Search,
+  FileSymlink,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
@@ -64,6 +72,7 @@ export default function MoveNoteDialog({
   );
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const moveTargets = useQuery(api.notes.getMoveTargets, {
     searchQuery: debouncedQuery || undefined,
@@ -174,13 +183,34 @@ export default function MoveNoteDialog({
         targetWorkingSpaceId,
         targetNotesTableId,
       });
-
       onOpenChange(false);
-      router.push(
-        `/home/${result.workingSpaceId}/${result.slug}?id=${note._id}`,
-      );
+      toast({
+        variant: "default",
+        title: "Note moved successfully ",
+        description: "hey go and take a look at your stuff !!",
+        action: (
+          <Button
+            variant="secondary"
+            className="px-4 flex justify-center items-center gap-2"
+            size="sm"
+            onClick={() =>
+              router.push(
+                `/home/${result.workingSpaceId}/${result.slug}?id=${note._id}`,
+              )
+            }
+          >
+            <FileSymlink size={16} />
+            Checkout
+          </Button>
+        ),
+      });
     } catch (error) {
-      console.error("Failed to move note:", error);
+      console.error(" Failed to move note:", error);
+      toast({
+        variant: "destructive",
+        title: "Failed to move note",
+        description: "Try again later",
+      });
     } finally {
       setMovingTableId(null);
     }
