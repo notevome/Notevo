@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import MaxWContainer from "../ui/MaxWContainer";
 import { useMediaQuery } from "react-responsive";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -13,6 +13,50 @@ import { useTheme } from "next-themes";
 import { NOISE_PNG } from "@/lib/data";
 import { PaperPieceIcon } from "../ui/paper-pice";
 import { Badge } from "../ui/badge";
+
+// ─── Hero Video Component ─────────────────────────────────────────────────────
+// The hero video is above the fold so we don't lazy-load it like the feature
+// videos. Instead we use preload="metadata" (loads only the first frame / size
+// info, NOT the full file) and let the browser start fetching it as soon as the
+// component mounts — giving us a fast first-frame without pulling the whole
+// video on page load.
+function HeroVideo({
+  src,
+  className,
+  style,
+}: {
+  src: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+    // Attempt autoplay as soon as the component is mounted.
+    // preload="metadata" means the browser already knows the dimensions and
+    // has buffered the very first frame, so playback starts visually instant.
+    el.play().catch(() => {});
+  }, []);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      loop
+      muted
+      playsInline
+      disablePictureInPicture
+      disableRemotePlayback
+      // "metadata" — fetches only headers + first frame, not the whole file
+      preload="metadata"
+      className={className}
+      style={style}
+    />
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function HeroSection() {
   const { results, status } = usePaginatedQuery(
@@ -26,12 +70,14 @@ export default function HeroSection() {
   const isMobile = useMediaQuery({ maxWidth: 640 });
   const isTabletAir_horizontal = useMediaQuery({ maxWidth: 1180 });
   const isTabletPro_horizontal = useMediaQuery({ maxWidth: 1366 });
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowBackground(true);
     }, 650);
     return () => clearTimeout(timer);
   }, []);
+
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (latest > 90) {
       setInView(true);
@@ -60,7 +106,7 @@ export default function HeroSection() {
       />
 
       {/* PaperPiece decorative element – top-left corner */}
-      <div className="absolute -top-3 -left-14 z-[2]  pointer-events-none select-none">
+      <div className="absolute -top-3 -left-14 z-[2] pointer-events-none select-none">
         <PaperPieceIcon className="w-40 h-36 md:w-56 md:h-48 lg:w-72 lg:h-64" />
       </div>
 
@@ -139,14 +185,14 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.45 }}
-          className=" relative space-y-3 text-center "
+          className="relative space-y-3 text-center"
         >
-          <Badge className=" absolute -top-7 w-fit text-nowrap text-sm left-1/2 -translate-x-1/2 z-50 bg-secondary text-secondary-foreground shadow-xl shadow-black/30">
+          <Badge className="absolute -top-7 w-fit text-nowrap text-sm left-1/2 -translate-x-1/2 z-50 bg-secondary text-secondary-foreground shadow-xl shadow-black/30">
             {" "}
             we're working on adding AI coming soon 🤞🏽
           </Badge>
           <motion.h1
-            className="bg-gradient-to-r from-primary/80 via-primary to-primary/80  bg-clip-text text-transparent leading-[50px] text-[46px] md:text-8xl Desktop:text-[100px] font-bold tracking-tight"
+            className="bg-gradient-to-r from-primary/80 via-primary to-primary/80 bg-clip-text text-transparent leading-[50px] text-[46px] md:text-8xl Desktop:text-[100px] font-bold tracking-tight"
             initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.1 }}
@@ -193,7 +239,7 @@ export default function HeroSection() {
             transition={{ duration: 0.45, delay: 0.2 }}
           >
             Notevo helps you capture your thoughts{" "}
-            <br className=" hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
+            <br className="hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
             and organize them in one clean, modern interface.
           </motion.p>
           <motion.div
@@ -312,7 +358,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.55, delay: 0.38 }}
-          className=" relative w-full p-1 Desktop:p-2 rounded-lg bg-primary/50 backdrop-blur-lg"
+          className="relative w-full p-1 Desktop:p-2 rounded-lg bg-primary/50 backdrop-blur-lg"
         >
           <p className="absolute -top-9 right-12 font-extrabold text-primary/80 leading-relaxed">
             yep its that fast
@@ -328,19 +374,16 @@ export default function HeroSection() {
             <path
               d="M222.722 8.85C222.722 8.01455 217.71 6.74873 179.621 5.48291C146.561 4.38419 85.5579 5.05253 54.3491 8.60316C23.1402 12.1538 23.5579 19.2551 24.3997 28.3437C26.2496 48.3172 27.7858 62.8247 28.2035 67.2614C28.9055 74.7172 37.4693 46.8627 40.425 44.2994C46.0726 39.4016 37.52 64.4829 31.001 76.0652C27.8531 81.658 23.2288 85.5589 19.6149 84.1601C13.0769 75.6601 9.64655 64.5842 8.38705 59.3057C7.54528 57.7867 6.29212 58.6221 5.00098 59.4829"
               stroke="#644A40"
-              stroke-opacity="0.7"
-              stroke-width="10"
-              stroke-linecap="round"
+              strokeOpacity="0.7"
+              strokeWidth="10"
+              strokeLinecap="round"
             />
           </svg>
-          <video
+
+          {/* Hero video — preload="metadata" so only headers + first frame are
+              fetched on load, not the full file. Full download starts on play. */}
+          <HeroVideo
             src="https://ik.imagekit.io/bxpyeqctr/notevo/notevo-homepage.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            disablePictureInPicture
-            disableRemotePlayback
             className="w-full h-full object-cover rounded-lg"
             style={{ pointerEvents: "none" }}
           />

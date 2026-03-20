@@ -5,6 +5,7 @@ import MaxWContainer from "@/components/ui/MaxWContainer";
 import SectionHeading from "./SectionHeading";
 import Section from "../ui/Section";
 import { NOISE_PNG } from "@/lib/data";
+import { useEffect, useRef, useState } from "react";
 
 const featureVideos: Record<string, string> = {
   "Rich Text Editor":
@@ -38,13 +39,77 @@ const itemVariants = (x: number) => ({
   },
 });
 
+// ─── Lazy Video Component ────────────────────────────────────────────────────
+// Only sets the src and plays the video when it enters the viewport.
+// Until then it costs 0 bytes of network.
+function LazyVideo({
+  src,
+  className,
+  style,
+}: {
+  src: string;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isInView, setIsInView] = useState(false);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect(); // only trigger once
+        }
+      },
+      {
+        // Start loading a little before the video scrolls into view
+        rootMargin: "200px",
+      },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // Once in view, set src and play
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !isInView) return;
+    el.src = src;
+    el.play().catch(() => {
+      // Autoplay was blocked — silently ignore, video will play on interaction
+    });
+  }, [isInView, src]);
+
+  return (
+    <video
+      ref={videoRef}
+      // No src here — added dynamically only when in view
+      loop
+      muted
+      playsInline
+      disablePictureInPicture
+      disableRemotePlayback
+      preload="none"
+      className={className}
+      style={style}
+    />
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+
 export default function FeaturesSection() {
   return (
     <Section sectionId="features" className="relative overflow-hidden bg-muted">
       {/* Real PNG grain noise overlay — always light mode, fixed values */}
       <div
         aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 "
+        className="pointer-events-none select-none absolute inset-0"
         style={{
           backgroundImage: `url(${NOISE_PNG})`,
           backgroundRepeat: "repeat",
@@ -83,14 +148,8 @@ export default function FeaturesSection() {
                   <div className="relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/30 from-50% to-transparent border-border rounded-lg" />
                     <div className="relative bg-gradient-to-br from-primary/10 from-50% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden">
-                      <video
+                      <LazyVideo
                         src={videoSrc}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        disablePictureInPicture
-                        disableRemotePlayback
                         className="w-full h-full object-cover rounded-lg"
                         style={{ pointerEvents: "none" }}
                       />
@@ -101,9 +160,9 @@ export default function FeaturesSection() {
                 {/* Text Side */}
                 <motion.div
                   variants={itemVariants(isEven ? 40 : -40)}
-                  className="w-full md:w-1/2 "
+                  className="w-full md:w-1/2"
                 >
-                  <div className=" Desktop:h-80 flex flex-col justify-end items-start">
+                  <div className="Desktop:h-80 flex flex-col justify-end items-start">
                     <div className="flex items-start gap-4 mb-4">
                       <div className="relative bg-primary/10 rounded-lg p-3">
                         <feature.icon className="w-8 h-8 text-primary" />
