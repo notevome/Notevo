@@ -9,15 +9,15 @@ import { useEffect, useRef, useState, useCallback } from "react";
 
 const featureVideos: Record<string, string> = {
   "Rich Text Editor":
-    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
   "Simple Organization":
-    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
   "Publish Your Notes":
-    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
   "Download Your Stuff":
-    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
+    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
   "Move Your Stuff":
-    "https://ik.imagekit.io/bxpyeqctr/tr:q-40,w-900/notevo/notevo-movenotevid.mp4?updatedAt=1773971594885",
+    "https://ik.imagekit.io/bxpyeqctr/notevo/notevo-movenotevid.mp4?updatedAt=1773971594885",
 };
 
 const containerVariants = {
