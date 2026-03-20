@@ -5,19 +5,39 @@ import MaxWContainer from "@/components/ui/MaxWContainer";
 import SectionHeading from "./SectionHeading";
 import Section from "../ui/Section";
 import { NOISE_PNG } from "@/lib/data";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef } from "react";
 
-const featureVideos: Record<string, string> = {
-  "Rich Text Editor":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
-  "Simple Organization":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
-  "Publish Your Notes":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
-  "Download Your Stuff":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
-  "Move Your Stuff":
-    "https://ik.imagekit.io/bxpyeqctr/notevo/notevo-movenotevid.mp4?updatedAt=1773971594885",
+const featureVideos: Record<string, { video: string; poster: string }> = {
+  "Rich Text Editor": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/notevo-texteditor_wcwq0c.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/notevo-texteditor_wcwq0c.jpg",
+  },
+  "Simple Organization": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/notevo-workingspace_vq80uc.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/notevo-workingspace_vq80uc.jpg",
+  },
+  "Publish Your Notes": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.jpg",
+  },
+  "Download Your Stuff": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/notevo-Downloadyoursfuff_zhgjsp.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/notevo-Downloadyoursfuff_zhgjsp.jpg",
+  },
+  "Move Your Stuff": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/notevo-moveyourstuff_xyxnhr.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/notevo-moveyourstuff_xyxnhr.jpg",
+  },
 };
 
 const containerVariants = {
@@ -37,51 +57,49 @@ const itemVariants = (x: number) => ({
   },
 });
 
-// ─── Lazy Video ───────────────────────────────────────────────────────────────
 function LazyVideo({
-  src,
+  video,
+  poster,
   className,
   style,
 }: {
-  src: string;
+  video: string;
+  poster: string;
   className?: string;
   style?: React.CSSProperties;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // Track whether we've already loaded — survives re-renders
   const loadedRef = useRef(false);
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
-    const video = videoRef.current;
-    if (!wrapper || !video) return;
+    const el = videoRef.current;
+    if (!wrapper || !el) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !loadedRef.current) {
-          loadedRef.current = true; // prevent any future triggers
-          video.src = src;
-          video.load();
-          video.play().catch(() => {});
+          loadedRef.current = true;
+          el.src = video;
+          el.load();
+          el.play().catch(() => {});
           observer.disconnect();
         }
       },
-      {
-        rootMargin: "0px",
-        threshold: 0.1, // at least 10% visible before loading
-      },
+      { rootMargin: "0px", threshold: 0.1 },
     );
 
     observer.observe(wrapper);
     return () => observer.disconnect();
-  }, []); // empty deps — we never want this to re-run
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div ref={wrapperRef}>
       <video
         ref={videoRef}
-        // NO src prop — set imperatively only when in view
+        poster={poster}
         loop
         muted
         playsInline
@@ -115,11 +133,10 @@ export default function FeaturesSection() {
           SectionTitle="Features you'll love"
           SectionSubTitle="Everything you need to take your notes without the hassle."
         />
-
         <div className="space-y-24">
           {Features.map((feature, index) => {
             const isEven = index % 2 === 0;
-            const videoSrc = featureVideos[feature.title];
+            const { video, poster } = featureVideos[feature.title];
             return (
               <motion.div
                 key={index}
@@ -131,7 +148,6 @@ export default function FeaturesSection() {
                   isEven ? "md:flex-row" : "md:flex-row-reverse"
                 } gap-8 md:gap-12 items-center`}
               >
-                {/* Video Side */}
                 <motion.div
                   variants={itemVariants(isEven ? -40 : 40)}
                   className="w-full md:w-2/3"
@@ -140,15 +156,14 @@ export default function FeaturesSection() {
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/30 from-50% to-transparent border-border rounded-lg" />
                     <div className="relative bg-gradient-to-br from-primary/10 from-50% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden">
                       <LazyVideo
-                        src={videoSrc}
+                        video={video}
+                        poster={poster}
                         className="w-full h-full object-cover rounded-lg"
                         style={{ pointerEvents: "none" }}
                       />
                     </div>
                   </div>
                 </motion.div>
-
-                {/* Text Side */}
                 <motion.div
                   variants={itemVariants(isEven ? 40 : -40)}
                   className="w-full md:w-1/2"

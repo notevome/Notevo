@@ -4,28 +4,23 @@ import Link from "next/link";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import MaxWContainer from "../ui/MaxWContainer";
 import { useMediaQuery } from "react-responsive";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
-import Image from "next/image";
 import { useTheme } from "next-themes";
 import { NOISE_PNG } from "@/lib/data";
 import { PaperPieceIcon } from "../ui/paper-pice";
 import { Badge } from "../ui/badge";
 
-// ─── Hero Video Component ─────────────────────────────────────────────────────
-// The hero video is above the fold so we don't lazy-load it like the feature
-// videos. Instead we use preload="metadata" (loads only the first frame / size
-// info, NOT the full file) and let the browser start fetching it as soon as the
-// component mounts — giving us a fast first-frame without pulling the whole
-// video on page load.
 function HeroVideo({
   src,
+  poster,
   className,
   style,
 }: {
   src: string;
+  poster: string;
   className?: string;
   style?: React.CSSProperties;
 }) {
@@ -34,9 +29,6 @@ function HeroVideo({
   useEffect(() => {
     const el = videoRef.current;
     if (!el) return;
-    // Attempt autoplay as soon as the component is mounted.
-    // preload="metadata" means the browser already knows the dimensions and
-    // has buffered the very first frame, so playback starts visually instant.
     el.play().catch(() => {});
   }, []);
 
@@ -44,19 +36,18 @@ function HeroVideo({
     <video
       ref={videoRef}
       src={src}
+      poster={poster}
       loop
       muted
       playsInline
       disablePictureInPicture
       disableRemotePlayback
-      // "metadata" — fetches only headers + first frame, not the whole file
       preload="metadata"
       className={className}
       style={style}
     />
   );
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 export default function HeroSection() {
   const { results, status } = usePaginatedQuery(
@@ -72,18 +63,12 @@ export default function HeroSection() {
   const isTabletPro_horizontal = useMediaQuery({ maxWidth: 1366 });
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowBackground(true);
-    }, 650);
+    const timer = setTimeout(() => setShowBackground(true), 650);
     return () => clearTimeout(timer);
   }, []);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 90) {
-      setInView(true);
-    } else {
-      setInView(false);
-    }
+    setInView(latest > 90);
   });
 
   return (
@@ -91,7 +76,6 @@ export default function HeroSection() {
       id="home"
       className="relative pb-12 pt-28 Desktop:pt-32 flex items-center justify-center overflow-hidden"
     >
-      {/* Real PNG grain noise overlay – always light mode, fixed values */}
       <div
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0 mask-image-gradient"
@@ -104,12 +88,9 @@ export default function HeroSection() {
           zIndex: 5,
         }}
       />
-
-      {/* PaperPiece decorative element – top-left corner */}
       <div className="absolute -top-3 -left-14 z-[2] pointer-events-none select-none">
         <PaperPieceIcon className="w-40 h-36 md:w-56 md:h-48 lg:w-72 lg:h-64" />
       </div>
-
       <div className="absolute inset-0 z-[1] h-full w-full bg-transparent mask-image-gradient">
         <div
           className="absolute inset-0 pointer-events-none"
@@ -121,8 +102,6 @@ export default function HeroSection() {
           }}
         />
       </div>
-
-      {/* Hand-drawn doodles with real drawing animation */}
       <div className="absolute inset-0 pointer-events-none select-none z-[1]">
         <motion.svg
           className="absolute rotate-90 -top-16 -right-20 w-40 h-40 md:w-48 md:h-48 text-primary/80"
@@ -150,7 +129,6 @@ export default function HeroSection() {
             }}
           />
         </motion.svg>
-
         <motion.svg
           className="absolute -left-8 top-[30%] w-32 h-24 text-primary/50 rotate-[8deg]"
           viewBox="0 0 140 100"
@@ -180,7 +158,6 @@ export default function HeroSection() {
       </div>
 
       <MaxWContainer className="z-[6] relative flex flex-col items-center justify-center space-y-5">
-        {/* Centered Text Content */}
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
@@ -188,7 +165,6 @@ export default function HeroSection() {
           className="relative space-y-3 text-center"
         >
           <Badge className="absolute -top-7 w-fit text-nowrap text-sm left-1/2 -translate-x-1/2 z-50 bg-secondary text-secondary-foreground shadow-xl shadow-black/30">
-            {" "}
             we're working on adding AI coming soon 🤞🏽
           </Badge>
           <motion.h1
@@ -369,7 +345,7 @@ export default function HeroSection() {
             viewBox="0 0 228 90"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="absolute -top-8 right-12 f"
+            className="absolute -top-8 right-12"
           >
             <path
               d="M222.722 8.85C222.722 8.01455 217.71 6.74873 179.621 5.48291C146.561 4.38419 85.5579 5.05253 54.3491 8.60316C23.1402 12.1538 23.5579 19.2551 24.3997 28.3437C26.2496 48.3172 27.7858 62.8247 28.2035 67.2614C28.9055 74.7172 37.4693 46.8627 40.425 44.2994C46.0726 39.4016 37.52 64.4829 31.001 76.0652C27.8531 81.658 23.2288 85.5589 19.6149 84.1601C13.0769 75.6601 9.64655 64.5842 8.38705 59.3057C7.54528 57.7867 6.29212 58.6221 5.00098 59.4829"
@@ -379,11 +355,9 @@ export default function HeroSection() {
               strokeLinecap="round"
             />
           </svg>
-
-          {/* Hero video — preload="metadata" so only headers + first frame are
-              fetched on load, not the full file. Full download starts on play. */}
           <HeroVideo
-            src="https://ik.imagekit.io/bxpyeqctr/notevo/notevo-homepage.mp4"
+            src="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.mp4"
+            poster="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.jpg"
             className="w-full h-full object-cover rounded-lg"
             style={{ pointerEvents: "none" }}
           />
