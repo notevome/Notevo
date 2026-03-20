@@ -5,27 +5,25 @@ import MaxWContainer from "@/components/ui/MaxWContainer";
 import SectionHeading from "./SectionHeading";
 import Section from "../ui/Section";
 import { NOISE_PNG } from "@/lib/data";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 const featureVideos: Record<string, string> = {
   "Rich Text Editor":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
+    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-texteditor.mp4?updatedAt=1773361580638",
   "Simple Organization":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
+    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-workingspace2.mp4?updatedAt=1773361566067",
   "Publish Your Notes":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
+    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-Publish.mp4?updatedAt=1773361648321",
   "Download Your Stuff":
-    "https://ik.imagekit.io/1u6qts3nc/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
+    "https://ik.imagekit.io/1u6qts3nc/tr:q-40,w-900/notevo/notevo-Downloadyourstufff.mp4?updatedAt=1773361630479",
   "Move Your Stuff":
-    "https://ik.imagekit.io/bxpyeqctr/notevo/notevo-movenotevid.mp4?updatedAt=1773971594885",
+    "https://ik.imagekit.io/bxpyeqctr/tr:q-40,w-900/notevo/notevo-movenotevid.mp4?updatedAt=1773971594885",
 };
 
 const containerVariants = {
   hidden: {},
   visible: {
-    transition: {
-      staggerChildren: 0.15,
-    },
+    transition: { staggerChildren: 0.15 },
   },
 };
 
@@ -39,9 +37,7 @@ const itemVariants = (x: number) => ({
   },
 });
 
-// ─── Lazy Video Component ────────────────────────────────────────────────────
-// Only sets the src and plays the video when it enters the viewport.
-// Until then it costs 0 bytes of network.
+// ─── Lazy Video ───────────────────────────────────────────────────────────────
 function LazyVideo({
   src,
   className,
@@ -51,62 +47,57 @@ function LazyVideo({
   className?: string;
   style?: React.CSSProperties;
 }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isInView, setIsInView] = useState(false);
+  // Track whether we've already loaded — survives re-renders
+  const loadedRef = useRef(false);
 
   useEffect(() => {
-    const el = videoRef.current;
-    if (!el) return;
+    const wrapper = wrapperRef.current;
+    const video = videoRef.current;
+    if (!wrapper || !video) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true);
-          observer.disconnect(); // only trigger once
+        if (entry.isIntersecting && !loadedRef.current) {
+          loadedRef.current = true; // prevent any future triggers
+          video.src = src;
+          video.load();
+          video.play().catch(() => {});
+          observer.disconnect();
         }
       },
       {
-        // Start loading a little before the video scrolls into view
-        rootMargin: "200px",
+        rootMargin: "0px",
+        threshold: 0.1, // at least 10% visible before loading
       },
     );
 
-    observer.observe(el);
+    observer.observe(wrapper);
     return () => observer.disconnect();
-  }, []);
-
-  // Once in view, set src and play
-  useEffect(() => {
-    const el = videoRef.current;
-    if (!el || !isInView) return;
-    el.src = src;
-    el.play().catch(() => {
-      // Autoplay was blocked — silently ignore, video will play on interaction
-    });
-  }, [isInView, src]);
+  }, []); // empty deps — we never want this to re-run
 
   return (
-    <video
-      ref={videoRef}
-      // No src here — added dynamically only when in view
-      loop
-      muted
-      playsInline
-      disablePictureInPicture
-      disableRemotePlayback
-      preload="none"
-      className={className}
-      style={style}
-    />
+    <div ref={wrapperRef}>
+      <video
+        ref={videoRef}
+        // NO src prop — set imperatively only when in view
+        loop
+        muted
+        playsInline
+        disablePictureInPicture
+        disableRemotePlayback
+        preload="none"
+        className={className}
+        style={style}
+      />
+    </div>
   );
 }
-
-// ────────────────────────────────────────────────────────────────────────────
 
 export default function FeaturesSection() {
   return (
     <Section sectionId="features" className="relative overflow-hidden bg-muted">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
       <div
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0"
@@ -168,11 +159,9 @@ export default function FeaturesSection() {
                         <feature.icon className="w-8 h-8 text-primary" />
                       </div>
                     </div>
-
                     <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
                       {feature.title}
                     </h3>
-
                     <p className="text-lg text-muted-foreground leading-relaxed">
                       {feature.description}
                     </p>
