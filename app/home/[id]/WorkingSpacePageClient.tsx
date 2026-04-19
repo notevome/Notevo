@@ -669,7 +669,7 @@ export default function WorkingSpacePageClient({
                   ) : isEditingName ? (
                     <div
                       ref={nameContainerRef}
-                      className="flex flex-col gap-1 overflow-hidden"
+                      className="flex flex-col gap-1 overflow-hidden max-w-lg"
                     >
                       <Input
                         ref={nameInputRef as any}
