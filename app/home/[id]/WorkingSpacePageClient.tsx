@@ -9,7 +9,14 @@ import {
   ChevronRight,
   Pencil,
 } from "lucide-react";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { useQuery } from "@/cache/useQuery";
@@ -40,8 +47,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getContentPreview } from "@/lib/getContentPreview";
 import { cn } from "@/lib/utils";
 
-// ─── Zod Schemas
-
 const workspaceNameSchema = z
   .string()
   .min(1, "Name cannot be empty")
@@ -63,8 +68,6 @@ const workspacePageMemoryCache = new Map<
 >();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
-
-// ─── Types
 
 type ViewMode = "grid" | "list";
 
@@ -119,13 +122,69 @@ const STORAGE_KEYS = {
   ACTIVE_TABLE: "notevo_active_table",
 };
 
-// ─── Table Tab
+function useAutoSize(
+  value: string,
+  options?: {
+    isTextarea?: boolean;
+    containerRef?: any;
+  },
+) {
+  const elRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
+  const mirrorRef = useRef<HTMLSpanElement | null>(null);
+
+  useLayoutEffect(() => {
+    const mirror = document.createElement("span");
+    mirror.style.position = "absolute";
+    mirror.style.top = "-9999px";
+    mirror.style.left = "-9999px";
+    mirror.style.visibility = "hidden";
+    mirror.style.pointerEvents = "none";
+    mirror.style.whiteSpace = "pre";
+    document.body.appendChild(mirror);
+    mirrorRef.current = mirror;
+    return () => {
+      document.body.removeChild(mirror);
+      mirrorRef.current = null;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = elRef.current;
+    const mirror = mirrorRef.current;
+    if (!el || !mirror) return;
+    const style = window.getComputedStyle(el);
+    mirror.style.font = style.font;
+    mirror.style.fontSize = style.fontSize;
+    mirror.style.fontWeight = style.fontWeight;
+    mirror.style.fontFamily = style.fontFamily;
+    mirror.style.letterSpacing = style.letterSpacing;
+    mirror.style.paddingLeft = style.paddingLeft;
+    mirror.style.paddingRight = style.paddingRight;
+    mirror.style.borderLeft = style.borderLeft;
+    mirror.style.borderRight = style.borderRight;
+    mirror.textContent = value || " ";
+    const maxWidth = options?.containerRef?.current
+      ? options.containerRef.current.clientWidth
+      : Infinity;
+    const desiredWidth = mirror.offsetWidth + 4;
+    el.style.width = `${Math.min(desiredWidth, maxWidth)}px`;
+    if (options?.isTextarea) {
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [value, options?.isTextarea, options?.containerRef]);
+
+  return { elRef };
+}
 
 function TableTab({ table }: { table: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [nameError, setNameError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const tabContainerRef = useRef<HTMLDivElement>(null);
+  const { elRef: inputRef } = useAutoSize(editedName, {
+    containerRef: tabContainerRef,
+  });
 
   const updateTable = useMutation(
     api.notesTables.updateTable,
@@ -207,9 +266,12 @@ function TableTab({ table }: { table: any }) {
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-1 px-1 flex-shrink-0">
+      <div
+        ref={tabContainerRef}
+        className="flex flex-col gap-1 px-1 flex-shrink-0"
+      >
         <Input
-          ref={inputRef}
+          ref={inputRef as any}
           value={editedName}
           onChange={(e) => {
             const val = e.target.value;
@@ -222,7 +284,7 @@ function TableTab({ table }: { table: any }) {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           className={cn(
-            "h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[80px] max-w-[160px]",
+            "h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[80px]",
             nameError
               ? "border border-destructive"
               : "border border-primary/20",
@@ -260,8 +322,6 @@ function TableTab({ table }: { table: any }) {
     </TabsTrigger>
   );
 }
-
-// ─── Slider Tab List
 
 interface SliderTabsListProps {
   tables: any[];
@@ -406,8 +466,6 @@ function SliderTabsList({
   );
 }
 
-// ─── Main Page
-
 export default function WorkingSpacePageClient({
   workingSpaceId,
 }: {
@@ -441,11 +499,13 @@ export default function WorkingSpacePageClient({
     }
   }, [workingSpaceId, workspaceQuery, tablesQuery]);
 
-  // --- Workspace inline rename ---
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const nameContainerRef = useRef<HTMLDivElement>(null);
+  const { elRef: nameInputRef } = useAutoSize(editedName, {
+    containerRef: nameContainerRef,
+  });
 
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
@@ -553,16 +613,13 @@ export default function WorkingSpacePageClient({
     }
   };
 
-  // Auto-navigate to newly created table
   const prevTableIdsRef = useRef<Set<string> | null>(null);
   useEffect(() => {
     if (!tables) return;
     const currentIds = new Set<string>(tables.map((t: any) => String(t._id)));
     const prevIds = prevTableIdsRef.current;
     prevTableIdsRef.current = currentIds;
-    // Skip on initial load
     if (prevIds === null) return;
-    // Find the table that wasn't there before
     const newTable = tables.find((t: any) => !prevIds.has(String(t._id)));
     if (newTable) {
       handleTabChange(String(newTable._id));
@@ -601,7 +658,6 @@ export default function WorkingSpacePageClient({
 
   return (
     <MaxWContainer className="my-5">
-      {/* Header */}
       <header className="pb-5">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8">
           <div className="relative flex flex-col gap-4">
@@ -611,9 +667,12 @@ export default function WorkingSpacePageClient({
                   {!workspace ? (
                     <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
                   ) : isEditingName ? (
-                    <div className="flex flex-col gap-1">
+                    <div
+                      ref={nameContainerRef}
+                      className="flex flex-col gap-1 overflow-hidden"
+                    >
                       <Input
-                        ref={nameInputRef}
+                        ref={nameInputRef as any}
                         value={editedName}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -630,7 +689,7 @@ export default function WorkingSpacePageClient({
                         onBlur={handleNameBlur}
                         onKeyDown={handleNameKeyDown}
                         className={cn(
-                          "text-3xl md:text-4xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full max-w-md",
+                          "text-3xl md:text-4xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                           nameError
                             ? "border border-destructive"
                             : "border border-primary/20",
@@ -663,7 +722,6 @@ export default function WorkingSpacePageClient({
         </div>
       </header>
 
-      {/* Tables and Notes Content */}
       <div>
         {tables?.length ? (
           <Tabs
@@ -703,8 +761,6 @@ export default function WorkingSpacePageClient({
     </MaxWContainer>
   );
 }
-
-// ─── Notes Container
 
 export function NotesDroppableContainer({
   tableId,
@@ -763,7 +819,6 @@ export function NotesDroppableContainer({
 
   return (
     <div className="space-y-6">
-      {/* Control Bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
           <div className="relative flex-1 max-w-md">
@@ -819,7 +874,6 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {/* Notes */}
       {status === "LoadingFirstPage" && !cachedNotes ? (
         <NotesSkeleton viewMode={viewMode} />
       ) : searchQuery && filteredNotes.length === 0 ? (
@@ -887,15 +941,17 @@ export function NotesDroppableContainer({
   );
 }
 
-// ─── Note Cards ────────────────────────────────────────────────────────────────
-
 function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const isEmpty = (note.preview ?? note.body ?? "").trim() === "";
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
   const [titleError, setTitleError] = useState<string | null>(null);
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const { elRef: titleInputRef } = useAutoSize(editedTitle, {
+    isTextarea: true,
+    containerRef: gridContainerRef,
+  });
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -947,9 +1003,8 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   }, [editedTitle, note.title, note._id, updateNote]);
 
   const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    (e: any) => {
       if (e.key === "Enter") {
-        e.preventDefault();
         titleInputRef.current?.blur();
       } else if (e.key === "Escape") {
         setIsEditingTitle(false);
@@ -972,9 +1027,12 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1">
+            <div
+              ref={gridContainerRef}
+              className="flex-1 flex flex-col gap-1 overflow-hidden"
+            >
               <Textarea
-                ref={titleInputRef as React.RefObject<HTMLTextAreaElement>}
+                ref={titleInputRef as any}
                 value={editedTitle}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -988,13 +1046,8 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 onKeyDown={handleTitleKeyDown}
                 rows={1}
                 style={{ resize: "none", overflow: "hidden" }}
-                onInput={(e) => {
-                  const el = e.currentTarget;
-                  el.style.height = "auto";
-                  el.style.height = `${el.scrollHeight}px`;
-                }}
                 className={cn(
-                  "text-base font-semibold min-h-[50px] py-1 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                  "text-base font-semibold min-h-0 py-1 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
                     : "border border-primary/20",
@@ -1070,7 +1123,10 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
   const [titleError, setTitleError] = useState<string | null>(null);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const listContainerRef = useRef<HTMLDivElement>(null);
+  const { elRef: titleInputRef } = useAutoSize(editedTitle, {
+    containerRef: listContainerRef,
+  });
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -1148,11 +1204,14 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             <FileText className="h-5 w-5 text-primary" />
           </div>
 
-          <div className="flex-1 min-w-0">
+          <div
+            ref={listContainerRef}
+            className="flex-1 min-w-0 overflow-hidden"
+          >
             {isEditingTitle ? (
               <>
                 <Input
-                  ref={titleInputRef}
+                  ref={titleInputRef as any}
                   value={editedTitle}
                   onChange={(e) => {
                     const val = e.target.value;
@@ -1165,7 +1224,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
                   className={cn(
-                    "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 max-w-[20rem] mb-1",
+                    "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
                       : "border border-primary/20",
@@ -1233,8 +1292,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   );
 }
 
-// ─── Empty States ──────────────────────────────────────────────────────────────
-
 function EmptySearchResults({
   searchQuery,
   onClearSearch,
@@ -1293,8 +1350,6 @@ function EmptyTableState({
     </Card>
   );
 }
-
-// ─── Skeletons ─────────────────────────────────────────────────────────────────
 
 function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
   if (viewMode === "grid") {
