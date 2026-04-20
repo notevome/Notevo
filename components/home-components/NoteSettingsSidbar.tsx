@@ -22,10 +22,9 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
 import { Button } from "@/components/ui/button";
-
 import { SquarePen, X, Pin, PinOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { redirect, usePathname, useSearchParams } from "next/navigation";
 interface NoteSettingsSidbarProps {
   noteId: Id<"notes"> | any;
   noteTitle: string | any;
@@ -37,12 +36,15 @@ export default function NoteSettingsSidbar({
   noteTitle,
   ContainerClassName,
 }: NoteSettingsSidbarProps) {
+  const pathname = usePathname();
+  const pathSegments = pathname.split("/").filter((segment) => segment);
+  const searchParams = useSearchParams();
+  const realPathName = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${searchParams.get("id")}`;
+  const noteHref = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${noteId}`;
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, favorite } = args;
-
       // Update single note query
       const note = local.getQuery(api.notes.getNoteById, { _id });
       if (note && favorite !== undefined) {
@@ -79,9 +81,15 @@ export default function NoteSettingsSidbar({
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-
     try {
-      await deleteNote({ _id: noteId });
+      if (realPathName === noteHref) {
+        await deleteNote({ _id: noteId });
+        redirect(`/home`);
+      } else {
+        await deleteNote({ _id: noteId });
+      }
+    } catch (error) {
+      console.error("Failed to delete note:", error);
     } finally {
       setIsAlertOpen(false);
     }

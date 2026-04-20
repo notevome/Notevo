@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { Settings, Users, Trash2 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, redirect } from "next/navigation";
 
 interface WorkingSpaceSettingsSidbarProps {
   workingSpaceId: Id<"workingSpaces">;
@@ -68,10 +68,7 @@ export default function WorkingSpaceSettingsSidbar({
     const workspace = local.getQuery(api.workingSpaces.getWorkingSpaceById, {
       _id,
     });
-    if (workspace) {
-      // Can't set to null, but server will handle the deletion
-      // The query will update when server confirms deletion
-    }
+    if (workspace) return;
   });
 
   const initiateDelete = () => {
@@ -85,10 +82,9 @@ export default function WorkingSpaceSettingsSidbar({
       if (PathName === workspaceHref) {
         await new Promise((resolve) => setTimeout(resolve, 400));
         await DeleteWorkingSpace({ _id: workingSpaceId });
-        router.push(`/home`);
+        redirect(`/home`);
       } else {
         await DeleteWorkingSpace({ _id: workingSpaceId });
-        router.push(`/home`);
       }
     } catch (error) {
       console.error("Failed to delete workspace:", error);
