@@ -167,9 +167,6 @@ function TableSection({
         <span className="truncate text-[12px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           <HighlightedText text={table.name || "Untitled"} query={query} />
         </span>
-        <span className="ml-auto text-[10px] text-muted-foreground/40 pr-1">
-          {notes.length}
-        </span>
       </Button>
 
       {isExpanded && (
@@ -254,9 +251,6 @@ function WorkspaceTree({
                   text={workspace.name || "Untitled"}
                   query={query}
                 />
-              </span>
-              <span className="ml-auto text-[10px] text-muted-foreground/50 font-normal pr-1">
-                {totalNotes} {totalNotes === 1 ? "note" : "notes"}
               </span>
             </Button>
 

@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
-import { redirect } from "next/navigation";
 import { api } from "@/convex/_generated/api";
 import { FaEllipsis, FaRegTrashCan } from "react-icons/fa6";
 import { cn } from "@/lib/utils";
