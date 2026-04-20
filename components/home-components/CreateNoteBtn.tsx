@@ -59,10 +59,6 @@ export default function CreateNoteBtn({
         workingSpacesSlug,
         workingSpaceId,
       });
-      // Navigate to the new note using its real slug-based URL
-      router.push(
-        `/home/${workingSpaceId}/new-quick-access-notes?id=${newNoteId}`,
-      );
     } catch (error) {
       console.error("Failed to create note:", error);
       // Optional: show toast/error if creation fails
