@@ -24,7 +24,12 @@ import { useQuery } from "@/cache/useQuery";
 import { Button } from "@/components/ui/button";
 import { SquarePen, X, Pin, PinOff } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { redirect, usePathname, useSearchParams } from "next/navigation";
+import {
+  redirect,
+  useRouter,
+  usePathname,
+  useSearchParams,
+} from "next/navigation";
 interface NoteSettingsSidbarProps {
   noteId: Id<"notes"> | any;
   noteTitle: string | any;
@@ -41,6 +46,7 @@ export default function NoteSettingsSidbar({
   const searchParams = useSearchParams();
   const realPathName = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${searchParams.get("id")}`;
   const noteHref = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${noteId}`;
+  const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -84,7 +90,7 @@ export default function NoteSettingsSidbar({
     try {
       if (realPathName === noteHref) {
         await deleteNote({ _id: noteId });
-        redirect(`/home`);
+        router.replace(`/home`);
       } else {
         await deleteNote({ _id: noteId });
       }
