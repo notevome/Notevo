@@ -30,7 +30,6 @@ import {
   usePathname,
   useSearchParams,
 } from "next/navigation";
-import { promise } from "zod";
 interface NoteSettingsSidbarProps {
   noteId: Id<"notes"> | any;
   noteTitle: string | any;
