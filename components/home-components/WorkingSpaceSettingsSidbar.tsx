@@ -80,8 +80,9 @@ export default function WorkingSpaceSettingsSidbar({
     setIsDeleting(true);
     try {
       if (PathName === workspaceHref) {
+        router.push(`/home`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
         await DeleteWorkingSpace({ _id: workingSpaceId });
-        router.replace(`/home`);
       } else {
         await DeleteWorkingSpace({ _id: workingSpaceId });
       }

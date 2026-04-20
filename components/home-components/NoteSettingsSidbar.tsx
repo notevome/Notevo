@@ -30,6 +30,7 @@ import {
   usePathname,
   useSearchParams,
 } from "next/navigation";
+import { promise } from "zod";
 interface NoteSettingsSidbarProps {
   noteId: Id<"notes"> | any;
   noteTitle: string | any;
@@ -89,8 +90,9 @@ export default function NoteSettingsSidbar({
     event.preventDefault();
     try {
       if (realPathName === noteHref) {
+        router.push(`/home/${pathSegments[1]}`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
         await deleteNote({ _id: noteId });
-        router.replace(`/home`);
       } else {
         await deleteNote({ _id: noteId });
       }

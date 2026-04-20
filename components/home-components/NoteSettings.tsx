@@ -114,7 +114,7 @@ export default function NoteSettings({
   const currentNoteId = searchParams.get("id");
   const isViewingThisNote = currentNoteId === noteId;
 
-  // ── Download hook ────────────────────────────────────────────────
+  // Download hook
   const { handleDownload } = useNoteDownload({
     noteBody: getNote?.body,
     noteTitle,
@@ -170,16 +170,16 @@ export default function NoteSettings({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     if (!getNote) return;
-
     if (onDelete) onDelete(noteId);
     setIsAlertOpen(false);
-
-    if (isViewingThisNote) {
-      router.push(`/home/${getNote.workingSpaceId}`);
-    }
-
     try {
-      await deleteNote({ _id: noteId });
+      if (isViewingThisNote) {
+        router.push(`/home/${getNote.workingSpaceId}`);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        await deleteNote({ _id: noteId });
+      } else {
+        await deleteNote({ _id: noteId });
+      }
     } catch (error) {
       console.error("Failed to delete note:", error);
     }
