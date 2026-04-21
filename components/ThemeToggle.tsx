@@ -25,7 +25,7 @@ export function ThemeToggle() {
         }
       }}
       value={theme}
-      className="w-full border border-primary/20 bg-primary/10 rounded-md px-[3px] h-[31px] justify-center items-center flex-1 gap-1"
+      className="w-full border border-border bg-muted rounded-md px-[3px] h-[31px] justify-center items-center flex-1 gap-1"
       variant="SidebarMenuButton"
     >
       <ToggleGroupItem

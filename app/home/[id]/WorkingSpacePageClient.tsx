@@ -442,7 +442,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 py-6 bg-card/90 backdrop-blur-sm rounded-lg border border-border w-full"
+          className="flex justify-start items-center px-1 py-6 bg-muted rounded-lg border border-border w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div
@@ -838,10 +838,7 @@ export function NotesDroppableContainer({
             <Button
               variant="SidebarMenuButton"
               size="sm"
-              className={cn(
-                "rounded-none",
-                viewMode === "grid" && "bg-foreground/10",
-              )}
+              className={cn("rounded-none", viewMode === "grid" && "bg-muted")}
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid
@@ -851,10 +848,7 @@ export function NotesDroppableContainer({
             <Button
               variant="SidebarMenuButton"
               size="sm"
-              className={cn(
-                "rounded-none",
-                viewMode === "list" && "bg-foreground/10",
-              )}
+              className={cn("rounded-none", viewMode === "list" && "bg-muted")}
               onClick={() => setViewMode("list")}
             >
               <List
@@ -1328,8 +1322,8 @@ function EmptyTableState({
   workspaceId,
 }: EmptyTableStateProps) {
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-border">
-      <CardContent className="pt-12 pb-12 text-center">
+    <Card className=" bg-transparent border-none shadow-none">
+      <CardContent className="py-10 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="h-10 w-10 flex items-center justify-center mb-4">
             <FileText className="h-8 w-8 text-primary" />

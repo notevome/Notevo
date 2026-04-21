@@ -1,5 +1,4 @@
 "use client";
-
 import {
   type ReactNode,
   memo,
@@ -22,7 +21,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
 import PublicNote from "../PublicNote";
 import { motion } from "framer-motion";
-
+import { NOISE_PNG } from "@/lib/data";
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
   hide: { ease: "easeInOut" as const, duration: 0 },
@@ -59,6 +58,18 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
       <AppSidebar />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none select-none absolute inset-0"
+        style={{
+          backgroundImage: `url(${NOISE_PNG})`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "128px 128px",
+          opacity: 0.04,
+          mixBlendMode: "multiply",
+          zIndex: 90000,
+        }}
+      />
       <main
         className={`relative flex flex-col flex-1 h-auto border-primary/20 bg-background transition-[margin,border-radius] duration-300 ease-linear motion-reduce:transition-none ${
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
