@@ -601,9 +601,6 @@ function NoteCard({ note }: { note: Note }) {
             <CardTitle className="text-base font-semibold text-foreground truncate">
               {note.title || "Untitled"}
             </CardTitle>
-            <CardDescription className="text-xs text-muted-foreground mt-1">
-              {note.workingSpacesSlug || "Personal Workspace"}
-            </CardDescription>
           </div>
           {note.favorite && (
             <Star className="h-4 w-4 text-primary fill-primary flex-shrink-0" />
