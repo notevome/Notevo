@@ -374,6 +374,7 @@ const PinnedNoteItem = memo(
         // Direct updates to paginated query results are complex and handled server-side
       },
     );
+    const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const notePath = `/home/${note.workingSpaceId}/${note.slug}`;
@@ -401,7 +402,7 @@ const PinnedNoteItem = memo(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         setEditedTitle(e.target.value);
       },
-      [],
+      [note.title],
     );
 
     const handleInputBlur = useCallback(async () => {
@@ -411,6 +412,7 @@ const PinnedNoteItem = memo(
             _id: note._id,
             title: editedTitle.trim(),
           });
+          router.refresh();
         } catch (error) {
           console.error("Error updating note title:", error);
           setEditedTitle(note.title || "Untitled");
