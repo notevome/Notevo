@@ -22,6 +22,7 @@ import { parseSlug } from "@/lib/parseSlug";
 import PublicNote from "../PublicNote";
 import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
+import { useTheme } from "next-themes";
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
   hide: { ease: "easeInOut" as const, duration: 0 },
@@ -31,7 +32,12 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const { open, isMobile } = useSidebar();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
-
+  const [isDark, setIsDark] = useState(false);
+  const { resolvedTheme } = useTheme();
+  useEffect(() => {
+    if (resolvedTheme === "dark") setIsDark(true);
+    else setIsDark(false);
+  }, [resolvedTheme]);
   const handleScroll = useCallback(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -65,7 +71,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           backgroundImage: `url(${NOISE_PNG})`,
           backgroundRepeat: "repeat",
           backgroundSize: "128px 128px",
-          opacity: 0.04,
+          opacity: isDark ? 0.14 : 0.04,
           mixBlendMode: "multiply",
           zIndex: 90000,
         }}
