@@ -71,7 +71,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           backgroundImage: `url(${NOISE_PNG})`,
           backgroundRepeat: "repeat",
           backgroundSize: "128px 128px",
-          opacity: isDark ? 0.1 : 0.04,
+          opacity: isDark ? 0.05 : 0.02,
           mixBlendMode: "multiply",
           zIndex: 90000,
         }}
