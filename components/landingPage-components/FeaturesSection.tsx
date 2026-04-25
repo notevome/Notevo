@@ -161,8 +161,12 @@ export default function FeaturesSection() {
                   className="w-full md:w-2/3"
                 >
                   <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-primary/30 from-50% to-transparent border-border rounded-lg" />
-                    <div className="relative bg-gradient-to-br from-primary/10 from-50% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden">
+                    <div
+                      className={`absolute inset-0 ${isEven ? "bg-gradient-to-br" : "bg-gradient-to-bl"} bg-gradient-to-br from-primary/30 from-30% to-transparent border-border rounded-lg`}
+                    />
+                    <div
+                      className={`relative ${isEven ? "bg-gradient-to-br" : "bg-gradient-to-bl"} from-primary/30 from-30% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden`}
+                    >
                       <LazyVideo
                         video={video}
                         poster={poster}
