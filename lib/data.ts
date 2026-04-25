@@ -8,6 +8,7 @@ import {
   Activity,
   FileDown,
   FileSymlink,
+  FolderSearch,
 } from "lucide-react";
 
 export const NavLinks = [
@@ -97,6 +98,12 @@ export const Features = [
     description:
       "Organize your thoughts, manage your workspaces, and boost your productivity with Notevo's intuitive organization system.",
     icon: LayoutGrid,
+  },
+  {
+    title: "Don't Loss Ur Stuff",
+    description:
+      "Sometimes you forget the name of your note but still remember the name of the folder or table. With Notevo, you can search the full hierarchy.",
+    icon: FolderSearch,
   },
   {
     title: "Publish Your Notes",

@@ -20,6 +20,12 @@ const featureVideos: Record<string, { video: string; poster: string }> = {
     poster:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/notevo-workingspace_vq80uc.jpg",
   },
+  "Don't Loss Ur Stuff": {
+    video:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/notevo-search_dd7jou.mp4",
+    poster:
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/notevo-search_dd7jou.jpg",
+  },
   "Publish Your Notes": {
     video:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.mp4",
