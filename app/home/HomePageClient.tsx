@@ -36,7 +36,7 @@ import {
 } from "@/lib/parse-tiptap-content";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
-
+import { Skeleton } from "@/components/ui/skeleton";
 const homeMemoryCache: {
   viewer?: any;
   recentWorkspaces?: any;
@@ -246,16 +246,16 @@ function WorkspaceCardSkeleton() {
   return (
     <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit">
       <CardHeader className="pb-3 relative">
-        <div className="h-5 bg-primary/20 rounded-lg w-3/4 animate-pulse"></div>
+        <Skeleton className="h-5 w-3/4" />
       </CardHeader>
       <CardContent className="pb-3">
         <div className="h-20 flex items-center justify-center">
-          <div className="h-14 w-14 bg-primary/20 rounded-full animate-pulse"></div>
+          <Skeleton className="h-8 w-8 rounded-md" />
         </div>
       </CardContent>
-      <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
-        <div className="h-4 bg-primary/20 rounded-lg w-24 animate-pulse"></div>
-        <div className="h-7 bg-primary/20 rounded-lg w-16 animate-pulse"></div>
+      <CardFooter className="pt-3 flex justify-between items-center border-t border-border">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-16" />
       </CardFooter>
     </Card>
   );
@@ -263,23 +263,23 @@ function WorkspaceCardSkeleton() {
 
 function NoteCardSkeleton() {
   return (
-    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-[225px]">
+    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-[225px] flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
-            <div className="h-5 bg-primary/20 rounded-lg w-3/4 animate-pulse"></div>
-            <div className="h-3 bg-primary/20 rounded-lg w-1/2 animate-pulse"></div>
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
           </div>
         </div>
       </CardHeader>
       <CardContent className="pb-3 space-y-2">
-        <div className="h-3 bg-primary/20 rounded-lg w-full animate-pulse"></div>
-        <div className="h-3 bg-primary/20 rounded-lg w-5/6 animate-pulse"></div>
-        <div className="h-3 bg-primary/20 rounded-lg w-4/6 animate-pulse"></div>
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-5/6" />
+        <Skeleton className="h-3 w-4/6" />
       </CardContent>
-      <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
-        <div className="h-4 bg-primary/20 rounded-lg w-24 animate-pulse"></div>
-        <div className="h-7 bg-primary/20 rounded-lg w-16 animate-pulse"></div>
+      <CardFooter className="pt-3 flex justify-between items-center border-t border-border mt-auto">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-7 w-16" />
       </CardFooter>
     </Card>
   );
@@ -342,16 +342,6 @@ function Slider({ children }: { children: React.ReactNode }) {
       {canScrollLeft && (
         <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-      {canScrollLeft && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute left-0 top-[40%] -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => scroll("left")}
-        >
-          <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
-      )}
 
       <div
         ref={scrollContainerRef}
@@ -364,20 +354,30 @@ function Slider({ children }: { children: React.ReactNode }) {
       {canScrollRight && (
         <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-      {canScrollRight && (
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute right-0 top-[40%] -translate-y-1/2 z-10 h-8 w-8 sm:h-10 sm:w-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={() => scroll("right")}
-        >
-          <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
+
+      {(canScrollRight || canScrollLeft) && (
+        <div className="z-10 absolute -bottom-10 right-0 flex justify-center items-center gap-2">
+          <Button
+            size="icon"
+            variant={canScrollLeft ? "default" : "outline"}
+            className=" h-8 w-8 sm:h-10 sm:w-10 "
+            onClick={() => scroll("left")}
+          >
+            <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          <Button
+            size="icon"
+            variant={canScrollRight ? "default" : "outline"}
+            className="h-8 w-8 sm:h-10 sm:w-10 "
+            onClick={() => scroll("right")}
+          >
+            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+        </div>
       )}
     </div>
   );
 }
-
 interface Workspace {
   _id: Id<"workingSpaces">;
   name: string;
