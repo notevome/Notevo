@@ -71,18 +71,18 @@ export default function CreateTableBtn({
 
   return (
     <Button
-      className={cn("flex items-center justify-between gap-2 ", className)}
+      className={cn("flex items-center justify-between gap-1 ", className)}
       variant={variant}
       size={size}
       onClick={handleCreateTable}
       disabled={isCreating}
     >
       {isCreating ? (
-        <LoadingAnimation className="h-4 w-4 text-primary" />
+        <LoadingAnimation className="mb-[0.065rem] h-2.5 w-2.5 text-muted" />
       ) : (
-        <Plus size={16} />
+        <Plus className=" mb-[0.065rem] text-mutede" size={14} />
       )}
-      <p className="hidden sm:block ">{label}</p>
+      <p className=" mb-0.5 text-base sm:text-sm">{label}</p>
     </Button>
   );
 }
