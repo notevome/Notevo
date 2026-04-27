@@ -393,14 +393,14 @@ function SliderTabsList({
 
   return (
     <div className=" relative py-5">
-      <div className=" absolute -top-3 left-0 w-full Desktop:max-w-[900px] Desktop:w-fit">
+      <div className="absolute -top-6 left-0 w-full Desktop:w-[80rem] Desktop:max-w-full">
         <Button
           variant="ghost"
           size="icon"
           onClick={() => scroll("left")}
           aria-label="Scroll tabs left"
           className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
+            "absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -415,7 +415,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="Scroll tabs right"
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
+            "absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -425,24 +425,24 @@ function SliderTabsList({
         </Button>
 
         <div
-          className="absolute left-0 top-0 bottom-0 w-40 z-10 pointer-events-none rounded-l-lg transition-opacity duration-200"
+          className="absolute left-1 top-0 bottom-0 w-52 my-1 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollLeft ? 1 : 0,
             background:
-              "linear-gradient(to right, hsl(var(--card)) 30%, transparent)",
+              "linear-gradient(to right, hsl(var(--muted)) 30%, transparent)",
           }}
         />
         <div
-          className="absolute right-0 top-0 bottom-0 w-40 z-10 pointer-events-none rounded-r-lg transition-opacity duration-200"
+          className="absolute right-1 top-0 bottom-0 w-52 my-1 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollRight ? 1 : 0,
             background:
-              "linear-gradient(to left, hsl(var(--card)) 30%, transparent)",
+              "linear-gradient(to left, hsl(var(--muted)) 30%, transparent)",
           }}
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 py-6 bg-muted rounded-lg border border-border w-full"
+          className="flex justify-start items-center px-1 py-6 bg-muted rounded-lg rounded-t-none border border-border w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div
@@ -658,67 +658,59 @@ export default function WorkingSpacePageClient({
 
   return (
     <MaxWContainer className="my-5">
-      <header className="pb-5">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8">
-          <div className="relative flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                  {!workspace ? (
-                    <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
-                  ) : isEditingName ? (
-                    <div
-                      ref={nameContainerRef}
-                      className="flex flex-col gap-1 overflow-hidden max-w-lg"
-                    >
-                      <Input
-                        ref={nameInputRef as any}
-                        value={editedName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setEditedName(val);
-                          const result = workspaceNameSchema.safeParse(
-                            val.trim(),
-                          );
-                          setNameError(
-                            result.success
-                              ? null
-                              : result.error.errors[0].message,
-                          );
-                        }}
-                        onBlur={handleNameBlur}
-                        onKeyDown={handleNameKeyDown}
-                        className={cn(
-                          "text-3xl md:text-4xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
-                          nameError
-                            ? "border border-destructive"
-                            : "border border-primary/20",
-                        )}
-                      />
-                      {nameError && (
-                        <p className="text-xs text-destructive">{nameError}</p>
-                      )}
-                    </div>
-                  ) : (
-                    <span
-                      onDoubleClick={handleNameDoubleClick}
-                      title="Double-click to rename"
-                      className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/20 transition-colors duration-150"
-                    >
-                      {workspace.name}
-                    </span>
+      <header className="pt-6">
+        <div className=" relative flex justify-between items-end w-full Desktop:w-[80rem] Desktop:max-w-full">
+          <div className="flex-1  p-0.5 max-w-xl border border-border bg-muted rounded-lg rounded-b-none ">
+            <h1 className="text-3xl md:text-5xl font-bold my-2">
+              {!workspace ? (
+                <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
+              ) : isEditingName ? (
+                <div
+                  ref={nameContainerRef}
+                  className="flex flex-col gap-1 overflow-hidden max-w-xl"
+                >
+                  <Input
+                    ref={nameInputRef as any}
+                    value={editedName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEditedName(val);
+                      const result = workspaceNameSchema.safeParse(val.trim());
+                      setNameError(
+                        result.success ? null : result.error.errors[0].message,
+                      );
+                    }}
+                    onBlur={handleNameBlur}
+                    onKeyDown={handleNameKeyDown}
+                    className={cn(
+                      "text-3xl md:text-5xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                      nameError
+                        ? "border border-destructive"
+                        : "border border-primary/20",
+                    )}
+                  />
+                  {nameError && (
+                    <p className="text-xs text-destructive">{nameError}</p>
                   )}
-                </h1>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="flex items-center gap-2 px-3 py-1 rounded-full backdrop-blur-sm">
-                    <LayoutGrid className="h-4 w-4" />
-                    {tables?.length || 0} tables
-                  </span>
                 </div>
-              </div>
-              <CreateTableBtn workingSpaceId={workingSpaceId} />
-            </div>
+              ) : (
+                <span
+                  onDoubleClick={handleNameDoubleClick}
+                  title="Double-click to rename"
+                  className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/20 transition-colors duration-150"
+                >
+                  {workspace.name}
+                </span>
+              )}
+            </h1>
           </div>
+          {workspace && tables?.length !== 0 && (
+            <CreateTableBtn
+              label="New Table"
+              workingSpaceId={workingSpaceId}
+              className=" absolute bottom-0 right-0 h-9 bg-gradient-to-b from-primary from-90% to-100% to-border border-b-0 border-r-0 rounded-b-none hover:translate-x-[0px] hover:translate-y-[-3px] hover:rounded-b-none hover:shadow-[0px_3px_0px] hover:shadow-border"
+            />
+          )}
         </div>
       </header>
 
