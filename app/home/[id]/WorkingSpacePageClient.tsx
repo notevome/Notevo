@@ -392,8 +392,8 @@ function SliderTabsList({
   };
 
   return (
-    <div className=" relative py-5">
-      <div className="absolute -top-6 left-0 w-full Desktop:w-[80rem] Desktop:max-w-full">
+    <div className=" relative py-4">
+      <div className="absolute -top-6 left-0 w-full">
         <Button
           variant="ghost"
           size="icon"
@@ -660,7 +660,7 @@ export default function WorkingSpacePageClient({
     <MaxWContainer className="my-5">
       <header className="pt-6">
         <div className=" relative flex justify-between items-end w-full Desktop:w-[80rem] Desktop:max-w-full">
-          <div className="flex-1  p-0.5 max-w-xl border border-border bg-muted rounded-lg rounded-b-none ">
+          <div className="flex-1  py-1 px-1.5 border border-border bg-muted rounded-lg rounded-b-none ">
             <h1 className="text-3xl md:text-5xl font-bold my-2">
               {!workspace ? (
                 <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
@@ -708,7 +708,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" absolute bottom-0 right-0 h-9 bg-gradient-to-b from-primary from-90% to-100% to-border border-b-0 border-r-0 rounded-b-none hover:translate-x-[0px] hover:translate-y-[-3px] hover:rounded-b-none hover:shadow-[0px_3px_0px] hover:shadow-border"
+              className=" absolute bottom-0 right-0 h-9 bg-gradient-to-b from-primary from-90% to-100% rounded-tr-none to-border border-b-0 border-r-0 rounded-b-none hover:translate-x-[0px] hover:translate-y-[-3px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[0px_3px_0px] hover:shadow-border"
             />
           )}
         </div>
@@ -820,13 +820,13 @@ export function NotesDroppableContainer({
               placeholder="Search Notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-border"
+              className="pl-10 border-border h-9"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <div className="hidden sm:flex items-center border border-border rounded-lg overflow-hidden">
+          <div className="hidden sm:flex h-9 items-center border border-border rounded-lg overflow-hidden">
             <Button
               variant="SidebarMenuButton"
               size="sm"
@@ -834,7 +834,7 @@ export function NotesDroppableContainer({
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid
-                className={`h-4 w-4 ${viewMode === "grid" && "text-primary"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-primary"}`}
               />
             </Button>
             <Button
@@ -844,7 +844,7 @@ export function NotesDroppableContainer({
               onClick={() => setViewMode("list")}
             >
               <List
-                className={`h-4 w-4 ${viewMode === "list" && "text-primary"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-primary"}`}
               />
             </Button>
           </div>
