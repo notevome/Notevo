@@ -68,13 +68,13 @@ export default function CreateNoteBtn({
   return (
     <Button
       className={cn(
-        "flex items-center justify-between gap-2 h-9 px-2",
+        "flex items-center justify-between gap-1 h-9 px-2",
         className,
       )}
       variant="outline"
       onClick={handleCreateNote}
     >
-      <Plus size="20" />
+      <Plus className="mt-[0.06rem]" size={14} />
       <p>New Note</p>
     </Button>
   );

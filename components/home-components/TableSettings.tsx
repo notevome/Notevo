@@ -171,7 +171,7 @@ export default function TableSettings({
               <TooltipTrigger asChild>
                 <Button
                   variant="Trigger"
-                  className="px-0.5 h-10 opacity-80"
+                  className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
                   onMouseEnter={handleTooltipMouseEnter}
                   onMouseLeave={handleTooltipMouseLeave}
                 >
