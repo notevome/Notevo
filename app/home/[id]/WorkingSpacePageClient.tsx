@@ -314,7 +314,7 @@ function TableTab({ table }: { table: any }) {
           e.stopPropagation();
           handleDoubleClick(e as any);
         }}
-        className=" absolute top-0.5 right-0.5 opacity-0 group-hover/tab:opacity-100 hover:!opacity-100 transition-opacity duration-150 p-0.5 rounded-full text-secondary-foreground hover:text-foreground"
+        className=" absolute top-0.5 right-0.5 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-150 p-0.5 rounded-full text-secondary-foreground hover:text-foreground"
         title="Rename"
       >
         <Pencil className="h-3 w-3" />
