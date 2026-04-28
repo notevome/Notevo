@@ -82,7 +82,7 @@ export default function CreateTableBtn({
       ) : (
         <Plus className=" mb-[0.065rem] text-mutede" size={14} />
       )}
-      <p className=" mb-0.5 text-base sm:text-sm">{label}</p>
+      <p className=" hidden sm:block mb-0.5 text-base sm:text-sm">{label}</p>
     </Button>
   );
 }
