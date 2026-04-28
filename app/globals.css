@@ -7,7 +7,7 @@
 @layer base {
   :root {
     --placeholder: #644a40;
-    --selection-background: #644a403c;
+    --selection-background: #94c4e270;
     --selection-color: #000000;
     --background: 0 0% 97.6471%;
     --foreground: 0 0% 12.5490%;
@@ -95,7 +95,7 @@
 
   .dark {
     --placeholder: #ffe0c2;
-    --selection-background: #ffe1c257;
+    --selection-background: #3b7ba370;
     --selection-color: #ffffff;
     --background: 0 0% 6.6667%;
     --foreground: 0 0% 93.3333%;
@@ -229,17 +229,14 @@ html {
 
 ::selection {
   background: var(--selection-background);
-  color: var(--selection-color);
 }
 
 *::-moz-selection {
   background: var(--selection-background);
-  color: var(--selection-color);
 }
 
 *::-webkit-selection {
   background: var(--selection-background);
-  color: var(--selection-color);
 }
 
 .no-visible-scrollbar {
