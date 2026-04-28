@@ -192,7 +192,7 @@ export default function TableSettings({
                   onChange={handleInputChange}
                   onBlur={handleBlur}
                   onKeyDown={handleKeyDown}
-                  className="text-foreground h-9"
+                  className="text-foreground h-8/80"
                   ref={inputRef}
                 />
               </DropdownMenuGroup>

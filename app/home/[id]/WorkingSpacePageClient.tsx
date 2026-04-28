@@ -814,7 +814,7 @@ export function NotesDroppableContainer({
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
             <Input
               type="text"
               placeholder="Search Notes..."
