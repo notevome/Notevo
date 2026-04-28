@@ -250,7 +250,7 @@ export default function NoteSettings({
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
               placeholder="Rename your note"
-              className="text-foreground h-9"
+              className="text-foreground h-8"
               ref={inputRef}
             />
           </DropdownMenuGroup>
