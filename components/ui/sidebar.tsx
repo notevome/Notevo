@@ -367,9 +367,11 @@ const Sidebar = React.memo(
       const resizeHandle =
         state === "expanded" && !isMobile ? (
           <div
-            className="absolute right-0 top-0 h-full w-1 cursor-col-resize transition-colors"
+            className="group/resize absolute -right-px top-0 h-full w-2.5 cursor-col-resize "
             onMouseDown={handleMouseDown}
-          />
+          >
+            <div className="absolute -right-px top-0 h-full w-px cursor-col-resize bg-gradient-to-t from-transparent from-5% to-95% to-transparent via-50% group-hover/resize:via-primary" />
+          </div>
         ) : null;
 
       if (collapsible === "none") {
@@ -619,17 +621,17 @@ const SidebarGroupLabel = React.forwardRef<
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "div";
 
-      return (
-        <Comp
-          ref={ref}
-          data-sidebar="group-label"
-          className={cn(
-            "duration-200 flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 motion-reduce:transition-none",
-            "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-            className,
-          )}
-          {...props}
-        />
+  return (
+    <Comp
+      ref={ref}
+      data-sidebar="group-label"
+      className={cn(
+        "duration-200 flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opacity] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0 motion-reduce:transition-none",
+        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
+        className,
+      )}
+      {...props}
+    />
   );
 });
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
