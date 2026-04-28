@@ -303,7 +303,7 @@ function TableTab({ table }: { table: any }) {
     <TabsTrigger
       value={table._id}
       data-tab-id={table._id}
-      className=" relative group/tab px-6 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5"
+      className=" relative group/tab px-5 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 rounded-b-none border border-transparent data-[state=active]:border-border"
       onDoubleClick={handleDoubleClick}
       title="Double-click to rename"
     >
@@ -392,7 +392,7 @@ function SliderTabsList({
   };
 
   return (
-    <div className=" relative py-4">
+    <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
         <Button
           variant="ghost"
@@ -425,24 +425,24 @@ function SliderTabsList({
         </Button>
 
         <div
-          className="absolute left-1 top-0 bottom-0 w-52 my-1 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute left-1 top-0 bottom-0 w-52 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollLeft ? 1 : 0,
             background:
-              "linear-gradient(to right, hsl(var(--muted)) 30%, transparent)",
+              "linear-gradient(to right, hsl(var(--muted)) 20%, transparent)",
           }}
         />
         <div
-          className="absolute right-1 top-0 bottom-0 w-52 my-1 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute right-1 top-0 bottom-0 w-52 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollRight ? 1 : 0,
             background:
-              "linear-gradient(to left, hsl(var(--muted)) 30%, transparent)",
+              "linear-gradient(to left, hsl(var(--muted)) 20%, transparent)",
           }}
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 py-6 bg-muted rounded-lg rounded-t-none border border-border w-full"
+          className="flex justify-start items-center px-1 pt-6 pb-5 bg-muted rounded-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div
@@ -658,8 +658,8 @@ export default function WorkingSpacePageClient({
 
   return (
     <MaxWContainer className="my-5">
-      <header className="pt-6">
-        <div className=" relative flex justify-between items-end w-full Desktop:w-[80rem] Desktop:max-w-full">
+      <header>
+        <div className=" relative flex justify-between items-end w-full">
           <div className="flex-1  py-1 px-1.5 border border-border bg-muted rounded-lg rounded-b-none ">
             <h1 className="text-3xl md:text-5xl font-bold my-2">
               {!workspace ? (
@@ -708,7 +708,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" absolute bottom-0 right-0 h-9 bg-gradient-to-b from-primary from-90% to-100% rounded-tr-none to-border border-b-0 border-r-0 rounded-b-none hover:translate-x-[0px] hover:translate-y-[-3px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[0px_3px_0px] hover:shadow-border"
+              className=" z-50 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
             />
           )}
         </div>
