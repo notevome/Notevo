@@ -830,7 +830,10 @@ export function NotesDroppableContainer({
             <Button
               variant="SidebarMenuButton"
               size="sm"
-              className={cn("rounded-none", viewMode === "grid" && "bg-muted")}
+              className={cn(
+                "rounded-none hover:bg-muted",
+                viewMode === "grid" && "bg-muted",
+              )}
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid
@@ -840,7 +843,10 @@ export function NotesDroppableContainer({
             <Button
               variant="SidebarMenuButton"
               size="sm"
-              className={cn("rounded-none", viewMode === "list" && "bg-muted")}
+              className={cn(
+                "rounded-none hover:bg-muted",
+                viewMode === "list" && "bg-muted",
+              )}
               onClick={() => setViewMode("list")}
             >
               <List
