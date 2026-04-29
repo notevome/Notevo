@@ -1,14 +1,12 @@
 import MaxWContainer from "@/components/ui/MaxWContainer";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`bg-primary/20 rounded-md animate-pulse ${className}`} />
-  );
+  return <div className={`bg-border app-radius-md animate-pulse ${className}`} />;
 }
 
 function WorkspaceCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[300px] h-fit rounded-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden">
+    <div className="flex-shrink-0 w-[300px] h-fit app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden">
       {/* CardHeader */}
       <div className="p-6 pb-3">
         <Skeleton className="h-5 w-3/4" />
@@ -16,7 +14,7 @@ function WorkspaceCardSkeleton() {
       {/* CardContent — folder icon area */}
       <div className="px-6 pb-3">
         <div className="h-20 flex items-center justify-center">
-          <Skeleton className="h-8 w-8 rounded-md" />
+          <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </div>
       {/* CardFooter */}
@@ -30,7 +28,7 @@ function WorkspaceCardSkeleton() {
 
 function NoteCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[300px] h-[225px] rounded-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden flex flex-col">
+    <div className="flex-shrink-0 w-[300px] h-[225px] app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden flex flex-col">
       {/* CardHeader */}
       <div className="p-6 pb-2">
         <div className="flex items-start justify-between gap-2">
@@ -63,7 +61,7 @@ export default function Loading() {
   return (
     <MaxWContainer className="relative my-5">
       {/* Hero Section */}
-      <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
+      <div className="overflow-hidden app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
         <div className="max-w-3xl mx-auto text-center">
           <Skeleton className="h-10 w-56 mx-auto mb-4" />
           <Skeleton className="h-4 w-full max-w-xl mx-auto mb-2" />

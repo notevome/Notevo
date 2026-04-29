@@ -303,7 +303,7 @@ function TableTab({ table }: { table: any }) {
     <TabsTrigger
       value={table._id}
       data-tab-id={table._id}
-      className=" relative group/tab px-5 py-2.5 rounded-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 rounded-b-none border border-transparent data-[state=active]:border-border"
+      className="relative group/tab px-5 py-2.5 rounded-none rounded-tl-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
       onDoubleClick={handleDoubleClick}
       title="Double-click to rename"
     >
@@ -400,7 +400,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="Scroll tabs left"
           className={cn(
-            "absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
+            "absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -415,7 +415,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="Scroll tabs right"
           className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 rounded-md w-7 shadow-sm transition-all duration-200",
+            "absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -442,7 +442,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 pt-6 pb-5 bg-muted rounded-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-6 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div
@@ -660,10 +660,10 @@ export default function WorkingSpacePageClient({
     <MaxWContainer className="my-5">
       <header>
         <div className=" relative flex justify-between items-end w-full">
-          <div className="flex-1  py-1 px-1.5 border border-border bg-muted rounded-lg rounded-b-none ">
+          <div className="flex-1 py-1 px-1.5 border border-border bg-muted rounded-none rounded-tl-lg rounded-br-lg">
             <h1 className="text-3xl md:text-5xl font-bold my-2">
               {!workspace ? (
-                <div className="text-primary/20 rounded-md animate-pulse h-10 w-64 inline-block" />
+                <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
                 <div
                   ref={nameContainerRef}
@@ -683,7 +683,7 @@ export default function WorkingSpacePageClient({
                     onBlur={handleNameBlur}
                     onKeyDown={handleNameKeyDown}
                     className={cn(
-                      "text-3xl md:text-5xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                      "text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                       nameError
                         ? "border border-destructive"
                         : "border border-primary/50",
@@ -697,7 +697,7 @@ export default function WorkingSpacePageClient({
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/50 transition-colors duration-150"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-primary/50 transition-colors duration-150"
                 >
                   {workspace.name}
                 </span>
@@ -826,7 +826,7 @@ export function NotesDroppableContainer({
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <div className="hidden sm:flex h-9 items-center border border-border rounded-lg overflow-hidden">
+          <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
             <Button
               variant="SidebarMenuButton"
               size="sm"
@@ -1039,7 +1039,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 rows={1}
                 style={{ resize: "none", overflow: "hidden" }}
                 className={cn(
-                  "text-base font-semibold min-h-0 py-1 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                  "text-base font-semibold min-h-0 py-1 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
                     : "border border-primary/50",
@@ -1051,7 +1051,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/50 transition-all duration-300 pr-2 "
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-primary/50 transition-all duration-300 pr-2 "
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1083,7 +1083,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
         )}
       </CardContent>
 
-      <CardFooter className="pt-3 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-3 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -1216,7 +1216,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
                   className={cn(
-                    "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
+                    "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
                       : "border border-primary/50",
@@ -1228,7 +1228,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text rounded-md border border-transparent hover:border-primary/50 transition-all duration-300 hover:px-2 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-primary/50 transition-all duration-300 hover:px-2 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
@@ -1354,20 +1354,20 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="h-5 w-3/4 bg-primary/20 rounded animate-pulse" />
-                <div className="h-5 w-5 bg-primary/20 rounded animate-pulse" />
+                <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
+                <div className="h-5 w-5 bg-border rounded animate-pulse" />
               </div>
             </CardHeader>
             <CardContent className="pb-3">
               <div className="space-y-2">
-                <div className="h-4 w-full bg-primary/20 rounded animate-pulse" />
-                <div className="h-4 w-5/6 bg-primary/20 rounded animate-pulse" />
-                <div className="h-4 w-4/6 bg-primary/20 rounded animate-pulse" />
+                <div className="h-4 w-full bg-border rounded animate-pulse" />
+                <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
+                <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
               </div>
             </CardContent>
             <CardFooter className="pt-3 flex items-center justify-between border-t border-border">
-              <div className="h-4 w-24 bg-primary/20 rounded animate-pulse" />
-              <div className="h-7 w-16 bg-primary/20 rounded animate-pulse" />
+              <div className="h-4 w-24 bg-border rounded animate-pulse" />
+              <div className="h-7 w-16 bg-border rounded animate-pulse" />
             </CardFooter>
           </Card>
         ))}
@@ -1381,15 +1381,15 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
         <Card key={index} className="bg-card/90 backdrop-blur-sm border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-primary/20 animate-pulse flex-shrink-0" />
+              <div className="h-10 w-10 rounded-full bg-border animate-pulse flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="h-5 w-2/3 bg-primary/20 rounded animate-pulse" />
-                <div className="h-4 w-full bg-primary/20 rounded animate-pulse" />
+                <div className="h-5 w-2/3 bg-border rounded animate-pulse" />
+                <div className="h-4 w-full bg-border rounded animate-pulse" />
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-4 w-24 bg-primary/20 rounded animate-pulse" />
-                <div className="h-5 w-5 bg-primary/20 rounded animate-pulse" />
-                <div className="h-7 w-16 bg-primary/20 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border rounded animate-pulse" />
+                <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                <div className="h-7 w-16 bg-border rounded animate-pulse" />
               </div>
             </div>
           </CardContent>
@@ -1405,16 +1405,16 @@ function TablesSkeleton() {
       {Array.from({ length: 8 }).map((_, index) => (
         <Card key={index} className="bg-card/50 backdrop-blur-sm border-border">
           <CardHeader className="pb-3">
-            <div className="h-5 w-3/4 bg-primary/20 rounded animate-pulse" />
+            <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
           </CardHeader>
           <CardContent className="pb-3">
             <div className="space-y-2">
-              <div className="h-4 w-full bg-primary/20 rounded animate-pulse" />
-              <div className="h-4 w-5/6 bg-primary/20 rounded animate-pulse" />
+              <div className="h-4 w-full bg-border rounded animate-pulse" />
+              <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
             </div>
           </CardContent>
           <CardFooter className="pt-3 border-t border-border">
-            <div className="h-4 w-24 bg-primary/20 rounded animate-pulse" />
+            <div className="h-4 w-24 bg-border rounded animate-pulse" />
           </CardFooter>
         </Card>
       ))}

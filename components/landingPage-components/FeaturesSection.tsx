@@ -162,12 +162,12 @@ export default function FeaturesSection() {
                 >
                   <div className="relative">
                     <div
-                      className={`relative ${isEven ? "bg-gradient-to-br" : "bg-gradient-to-bl"} from-primary/50 from-20% to-transparent border-border rounded-lg p-1 Desktop:p-2 overflow-hidden`}
+                      className={`relative ${isEven ? "bg-gradient-to-br" : "bg-gradient-to-bl"} from-primary/50 from-20% to-transparent border-border rounded-tl-lg p-1 Desktop:p-2 overflow-hidden`}
                     >
                       <LazyVideo
                         video={video}
                         poster={poster}
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover rounded-tl-lg"
                         style={{ pointerEvents: "none" }}
                       />
                     </div>
@@ -179,7 +179,7 @@ export default function FeaturesSection() {
                 >
                   <div className="Desktop:h-80 flex flex-col justify-end items-start">
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="relative bg-primary/10 rounded-lg p-3">
+                      <div className="relative bg-primary/10 rounded-tl-lg p-3">
                         <feature.icon className="w-8 h-8 text-primary" />
                       </div>
                     </div>

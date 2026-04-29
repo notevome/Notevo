@@ -299,6 +299,28 @@ html {
   }
 }
 
+@layer utilities {
+  .app-radius-sm {
+    @apply rounded-none rounded-tl-sm;
+  }
+
+  .app-radius-md {
+    @apply rounded-none rounded-tl-md;
+  }
+
+  .app-radius-lg {
+    @apply rounded-none rounded-tl-lg;
+  }
+
+  .app-radius-xl {
+    @apply rounded-none rounded-tl-xl;
+  }
+
+  .app-radius-2xl {
+    @apply rounded-none rounded-tl-2xl;
+  }
+}
+
 /* Add this to your CSS file */
 .hljs-comment,
 .hljs-quote {

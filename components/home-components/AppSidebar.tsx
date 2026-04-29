@@ -76,105 +76,7 @@ import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { date } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { useQuery } from "@/cache/useQuery";
-// --- Skeleton Sidebar Component ---
-const SkeletonSidebar = ({
-  sidebarWidth,
-  open,
-}: {
-  sidebarWidth: number;
-  open: boolean;
-}) => {
-  return (
-    <Sidebar
-      variant="inset"
-      className="group bg-muted"
-      style={{
-        width: `${sidebarWidth}px`,
-      }}
-    >
-      <SidebarHeader className=" text-foreground border-b border-border">
-        <div className=" w-full flex items-center justify-between p-1.5">
-          <div className="flex items-center justify-start gap-2">
-            {open ? (
-              <>
-                <SkeletonTextAnimation className="w-20 h-4 mx-0" />
-                <SkeletonTextAnimation className="w-8 h-3 mx-0" />
-              </>
-            ) : (
-              <SkeletonSmImgAnimation className="h-6 w-6" />
-            )}
-          </div>
-          <SkeletonTextAnimation className="w-full mx-0 h-6" />
-        </div>
-        <div className="my-1">
-          {open ? (
-            <SkeletonTextAnimation className="w-full mx-0 h-8" />
-          ) : (
-            <SkeletonTextAnimation className="w-8 mx-0 h-8" />
-          )}
-        </div>
-      </SidebarHeader>
-      <SidebarContent className="text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent group-hover:scrollbar-thumb-primary/20">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-primary/20">
-            <SkeletonTextAnimation className="w-24 h-3" />
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation
-                  text_className={open ? "w-full h-5" : "hidden"}
-                />
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation
-                  text_className={open ? "w-full h-5" : "hidden"}
-                />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-primary/20">
-            <SkeletonTextAnimation className="w-24 h-3" />
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation
-                  text_className={open ? "w-full h-5" : "hidden"}
-                />
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SkeletonTextAndIconAnimation
-                  text_className={open ? "w-full h-5" : "hidden"}
-                />
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-      <SidebarFooter className="text-foreground">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="my-2">
-              <div className="border-none w-full h-15 flex items-center justify-between">
-                <SkeletonSmImgAnimation className="h-8 w-8" />
-                {open ? (
-                  <div className="flex flex-col items-start justify-center">
-                    <SkeletonTextAnimation className="w-28 h-4 mx-0" />
-                    <SkeletonTextAnimation className="w-20 h-3 mt-1 mx-0" />
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
-    </Sidebar>
-  );
-};
-
+import SkeletonSidebar from "../ui/skeleton-sidebar";
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
   handleCreateNote: (
@@ -252,7 +154,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             side="bottom"
-            className="rounded-lg m-2 p-1.5 bg-background/90 backdrop-blur border border-solid border-border w-[--radix-popper-anchor-width]"
+            className="app-radius-lg m-2 p-1.5 bg-background/90 backdrop-blur border border-solid border-border w-[--radix-popper-anchor-width]"
           >
             <DropdownMenuLabel className="px-2 py-1 text-sm font-medium opacity-50">
               {getWorkingSpaces?.length
@@ -264,7 +166,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 getWorkingSpaces.map((workingSpace) => (
                   <DropdownMenuItem
                     key={workingSpace._id}
-                    className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground rounded-lg"
+                    className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
                     onSelect={() =>
                       handleCreateNote(
                         workingSpace._id as any,
@@ -319,11 +221,11 @@ const SidebarNavigation = memo(function SidebarNavigation({
               asChild
               variant="SidebarMenuButton"
               className={`px-2 h-8 group ${
-                pathname === "/home" ? "bg-primary/10" : ""
+                pathname === "/home" ? "bg-border" : ""
               }`}
             >
               <IntentPrefetchLink href="/home">
-                <HomeIcon className=" text-primary" size="16" />
+                <HomeIcon className=" text-muted-foreground" size="16" />
                 <span>Home</span>
               </IntentPrefetchLink>
             </Button>
@@ -452,7 +354,7 @@ const PinnedNoteItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground rounded-lg"
+                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
@@ -461,7 +363,7 @@ const PinnedNoteItem = memo(
                     <Button
                       variant="SidebarMenuButton"
                       className={`px-2 my-0.5 h-8 group flex-1 ${
-                        isActive ? "bg-primary/10" : ""
+                        isActive ? "bg-border" : ""
                       }`}
                       asChild
                       onDoubleClick={handleDoubleClick}
@@ -473,12 +375,12 @@ const PinnedNoteItem = memo(
                         {isHovered || isActive ? (
                           <ChevronRight
                             size="16"
-                            className="text-primary flex-shrink-0"
+                            className="text-muted-foreground flex-shrink-0"
                           />
                         ) : (
                           <Pin
                             size="16"
-                            className="text-primary flex-shrink-0"
+                            className="text-muted-foreground flex-shrink-0"
                           />
                         )}
                         <span className={textClassName}>
@@ -739,7 +641,7 @@ const WorkspaceItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground  rounded-lg"
+                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
@@ -748,7 +650,7 @@ const WorkspaceItem = memo(
                     <Button
                       variant="SidebarMenuButton"
                       className={`px-2 my-0.5 h-8 group flex-1 justify-start ${
-                        isActive ? "bg-primary/10" : ""
+                        isActive ? "bg-border" : ""
                       }`}
                       asChild
                       onDoubleClick={handleDoubleClick}
@@ -760,12 +662,12 @@ const WorkspaceItem = memo(
                         {isHovered || isActive ? (
                           <FolderOpen
                             size="16"
-                            className="flex-shrink-0 text-primary"
+                            className="flex-shrink-0 text-muted-foreground"
                           />
                         ) : (
                           <FolderClosed
                             size="16"
-                            className="flex-shrink-0 text-primary"
+                            className="flex-shrink-0 text-muted-foreground"
                           />
                         )}
                         <span className={textClassName}>
@@ -826,7 +728,7 @@ const WorkspacesList = memo(function WorkspacesList({
         <Tooltip>
           <TooltipTrigger asChild>
             <SidebarGroupAction onClick={handleCreateWorkingSpace}>
-              <Plus size={16} className=" text-primary" />{" "}
+              <Plus size={16} className=" text-muted-foreground" />{" "}
               <span className="sr-only">Add Workspace</span>
             </SidebarGroupAction>
           </TooltipTrigger>
@@ -900,7 +802,7 @@ const UserAccountSection = memo(function UserAccountSection({
                   <Avatar className="h-8 w-8">
                     <AvatarImage
                       src={User?.image || "/placeholder.svg"}
-                      className=" rounded-lg"
+                      className=" app-radius-lg"
                       alt={User ? User.name?.charAt(0) : "..."}
                     />
                     <AvatarFallback className="bg-foreground text-foreground">
@@ -929,7 +831,7 @@ const UserAccountSection = memo(function UserAccountSection({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               side="top"
-              className="rounded-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width]"
+              className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width]"
             >
               <DropdownMenuItem
                 className=" cursor-default hover:bg-transparent"

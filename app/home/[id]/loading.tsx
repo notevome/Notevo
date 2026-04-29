@@ -1,19 +1,17 @@
 import MaxWContainer from "@/components/ui/MaxWContainer";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`bg-primary/20 rounded-md animate-pulse ${className}`} />
-  );
+  return <div className={`bg-border app-radius-md animate-pulse ${className}`} />;
 }
 
 function TabsSkeleton({ count }: { count: number }) {
   return (
     <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-      <div className="inline-flex items-center gap-3 p-1 bg-card/90 backdrop-blur-sm rounded-lg border border-border">
+      <div className="inline-flex items-center gap-3 p-1 bg-card/90 backdrop-blur-sm app-radius-lg border border-border">
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
-            className="px-6 py-2.5 rounded-lg bg-muted/30"
+            className="px-6 py-2.5 app-radius-lg bg-muted/30"
           >
             <Skeleton className="h-5 w-24" />
           </div>
@@ -29,7 +27,7 @@ function NotesGridSkeleton({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden"
+          className="app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden"
         >
           <div className="p-4 pb-2">
             <div className="flex items-start justify-between gap-3">
@@ -60,7 +58,7 @@ export default function Loading() {
     <MaxWContainer className="my-5">
       {/* Header (match WorkingSpacePageClient layout) */}
       <header className="pb-5">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8">
+        <div className="relative overflow-hidden app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8">
           <div className="relative flex flex-col gap-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
@@ -71,7 +69,7 @@ export default function Loading() {
                   </span>
                 </div>
               </div>
-              <Skeleton className="h-10 w-36 rounded-lg" />
+              <Skeleton className="h-10 w-36 app-radius-lg" />
             </div>
           </div>
         </div>
@@ -92,12 +90,12 @@ export default function Loading() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <div className="hidden sm:flex items-center border border-border rounded-lg overflow-hidden">
+            <div className="hidden sm:flex items-center border border-border app-radius-lg overflow-hidden">
               <Skeleton className="h-9 w-10 rounded-none" />
               <Skeleton className="h-9 w-10 rounded-none" />
             </div>
-            <Skeleton className="h-9 w-28 rounded-lg" />
-            <Skeleton className="h-9 w-10 rounded-lg" />
+            <Skeleton className="h-9 w-28 app-radius-lg" />
+            <Skeleton className="h-9 w-10 app-radius-lg" />
           </div>
         </div>
 
@@ -106,7 +104,7 @@ export default function Loading() {
 
         {/* Show more */}
         <div className="flex justify-center pt-2">
-          <Skeleton className="h-10 w-28 rounded-lg" />
+          <Skeleton className="h-10 w-28 app-radius-lg" />
         </div>
       </div>
     </MaxWContainer>

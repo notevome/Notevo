@@ -116,7 +116,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
           variant="SidebarMenuButton"
         >
           <span
-            className="rounded-lg px-1"
+            className="rounded-tl-lg px-1"
             style={{
               color: activeColorItem?.color,
               backgroundColor: activeHighlightItem?.color,
@@ -129,7 +129,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
       </PopoverTrigger>
       <PopoverContent
         sideOffset={5}
-        className="my-1 rounded-lg border border-border bg-muted px-1 py-2 transition-all scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent flex max-h-80 w-48 flex-col overflow-hidden overflow-y-auto p-1 shadow-xl"
+        className="my-1 rounded-tl-lg border border-border bg-muted px-1 py-2 transition-all scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent flex max-h-80 w-48 flex-col overflow-hidden overflow-y-auto p-1 shadow-xl"
         align="start"
       >
         <div className="flex flex-col">
@@ -144,10 +144,10 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                   editor.commands.setColor(color);
                   onOpenChange(false);
                 }}
-                className="cursor-pointer flex items-center justify-center px-2 py-1 text-md rounded-lg text-foreground group "
+                className="cursor-pointer flex items-center justify-center px-2 py-1 text-md rounded-tl-lg text-foreground group "
               >
                 <div
-                  className="rounded-lg border text-base border-primary/20 px-2 py-px font-medium group-hover:border-primary/50"
+                  className="rounded-tl-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
                   style={{ color }}
                 >
                   A
@@ -170,7 +170,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 className="flex cursor-pointer items-center justify-between px-2 py-1 text-md rounded-lg text-foreground group"
               >
                 <div
-                  className="rounded-lg border text-secondary-foreground border-primary/20 px-2 py-px font-medium group-hover:border-primary/50"
+                  className="rounded-tl-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
                   style={{ backgroundColor: color }}
                 >
                   A

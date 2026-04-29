@@ -140,7 +140,7 @@ export default function HomePageClient() {
   return (
     <MaxWContainer className="relative my-5">
       {/* Hero Section */}
-      <div className="overflow-hidden border border-border rounded-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
+      <div className="overflow-hidden border border-border app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
         <header className="relative max-w-3xl mx-auto text-center">
           <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
             {viewer?.name ? (
@@ -250,7 +250,7 @@ function WorkspaceCardSkeleton() {
       </CardHeader>
       <CardContent className="pb-3">
         <div className="h-20 flex items-center justify-center">
-          <Skeleton className="h-8 w-8 rounded-md" />
+          <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </CardContent>
       <CardFooter className="pt-3 flex justify-between items-center border-t border-border">
@@ -475,7 +475,7 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className="group relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit hover:shadow-lg transition-shadow">
+    <Card className="group relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit transition-shadow">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
           <div className="flex flex-col gap-1 pr-8">
@@ -493,7 +493,7 @@ function WorkspaceCard({
               onBlur={handleNameBlur}
               onKeyDown={handleNameKeyDown}
               className={cn(
-                "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full",
+                "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full",
                 nameError
                   ? "border border-destructive"
                   : "border border-primary/20",
@@ -505,7 +505,7 @@ function WorkspaceCard({
           </div>
         ) : (
           <CardTitle
-            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-8"
+            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-8"
             onDoubleClick={handleNameDoubleClick}
             title="Double-click to rename"
           >
@@ -526,7 +526,7 @@ function WorkspaceCard({
         </div>
       </CardContent>
 
-      <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
+      <CardFooter className="py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -535,12 +535,7 @@ function WorkspaceCard({
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          asChild
-          className="h-7 px-2 text-xs hover:bg-primary/10"
-        >
+        <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
           </IntentPrefetchLink>
@@ -619,7 +614,7 @@ function NoteCard({ note }: { note: Note }) {
         </p>
       </CardContent>
 
-      <CardFooter className="pt-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
+      <CardFooter className="py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (

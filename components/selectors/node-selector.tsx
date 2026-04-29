@@ -128,14 +128,14 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
               item.command(editor);
               onOpenChange(false);
             }}
-            className="flex cursor-pointer items-center justify-between rounded-lg px-2 py-1 text-sm text-primary hover:bg-primary/10"
+            className="flex cursor-pointer items-center justify-between rounded-tl-lg px-2 py-1 text-sm text-foreground hover:bg-border"
           >
             <div className="flex items-center text-foreground space-x-2">
-              <item.icon className="h-4 w-4 text-primary" />
+              <item.icon className="h-4 w-4 text-muted-foreground" />
               <span>{item.name}</span>
             </div>
             {activeItem.name === item.name && (
-              <Check className="h-4 w-4 text-primary" />
+              <Check className="h-4 w-4 text-muted-foreground" />
             )}
           </EditorBubbleItem>
         ))}
