@@ -74,7 +74,10 @@ export default function Section({
         opacity: 1,
         marginLeft: 0,
         marginRight: 0,
-        borderRadius: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 0,
       });
       return;
     }
@@ -88,7 +91,10 @@ export default function Section({
           opacity: 1,
           marginLeft: 0,
           marginRight: 0,
-          borderRadius: 0,
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          borderBottomRightRadius: 0,
+          borderBottomLeftRadius: 0,
         });
         return;
       }
@@ -99,14 +105,20 @@ export default function Section({
         opacity: 1,
         marginLeft: activeMargin,
         marginRight: activeMargin,
-        borderRadius: activeRadius,
+        borderTopLeftRadius: activeRadius,
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 0,
       });
       controls.start({
         y: 0,
         opacity: 1,
         marginLeft: 0,
         marginRight: 0,
-        borderRadius: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 0,
         transition: { ease: "easeOut", duration: resolvedDuration },
       });
     } else {
@@ -118,7 +130,10 @@ export default function Section({
           opacity: 1,
           marginLeft: activeMargin,
           marginRight: activeMargin,
-          borderRadius: activeRadius,
+          borderTopLeftRadius: activeRadius,
+          borderTopRightRadius: 0,
+          borderBottomRightRadius: 0,
+          borderBottomLeftRadius: 0,
         });
         return;
       }
@@ -129,7 +144,10 @@ export default function Section({
         opacity: 1,
         marginLeft: activeMargin,
         marginRight: activeMargin,
-        borderRadius: activeRadius,
+        borderTopLeftRadius: activeRadius,
+        borderTopRightRadius: 0,
+        borderBottomRightRadius: 0,
+        borderBottomLeftRadius: 0,
         transition: { ease: "easeIn", duration: resolvedDuration },
       });
     }

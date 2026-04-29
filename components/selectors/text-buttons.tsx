@@ -128,7 +128,7 @@ export const TextButtons = () => {
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className=" flex justify-center items-center px-1"
+                className=" flex justify-center items-center px-1.5"
                 sideOffset={6}
               >
                 <span>{item.label}</span>
@@ -161,7 +161,7 @@ export const TextButtons = () => {
             </TooltipTrigger>
             <TooltipContent
               side="top"
-              className=" flex justify-center items-center px-1"
+              className=" flex justify-center items-center px-1.5"
               sideOffset={6}
             >
               <span>{item.label}</span>

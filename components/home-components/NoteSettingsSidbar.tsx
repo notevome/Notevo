@@ -126,9 +126,9 @@ export default function NoteSettingsSidbar({
                 className="px-2 h-7"
               >
                 {getNote?.favorite ? (
-                  <PinOff size={16} className="text-primary" />
+                  <PinOff size={16} className="text-muted-foreground" />
                 ) : (
-                  <Pin size={16} className="text-primary" />
+                  <Pin size={16} className="text-muted-foreground" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -144,7 +144,7 @@ export default function NoteSettingsSidbar({
                 variant="SidebarMenuButton_destructive"
                 className="px-2 h-7"
               >
-                <X size={16} className=" text-primary" />
+                <X size={16} className=" text-muted-foreground" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>

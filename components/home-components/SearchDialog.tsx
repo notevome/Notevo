@@ -51,13 +51,13 @@ function SearchLoadingSkeleton() {
   return (
     <div className="space-y-1 p-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 py-2.5 px-3 rounded-lg">
-          <div className="h-8 w-8 bg-primary/10 rounded-lg shrink-0 animate-pulse" />
+        <div key={i} className="flex items-center gap-3 py-2.5 px-3 app-radius-lg">
+          <div className="h-8 w-8 bg-border app-radius-lg shrink-0 animate-pulse" />
           <div className="flex-1 space-y-2">
-            <div className="h-3.5 bg-primary/10 rounded-md w-2/3 animate-pulse" />
-            <div className="h-2.5 bg-primary/10 rounded-md w-1/3 animate-pulse" />
+            <div className="h-3.5 bg-border app-radius-md w-2/3 animate-pulse" />
+            <div className="h-2.5 bg-border app-radius-md w-1/3 animate-pulse" />
           </div>
-          <div className="h-2.5 bg-primary/10 rounded-md w-16 animate-pulse" />
+          <div className="h-2.5 bg-border app-radius-md w-16 animate-pulse" />
         </div>
       ))}
     </div>
@@ -96,37 +96,20 @@ function NoteItem({
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
-        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer rounded-lg transition-all",
+        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
-        isSelected ? "bg-primary/10" : "hover:bg-primary/10",
+        isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <div
-        className={cn(
-          "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors",
-          isSelected
-            ? "border-primary/30 bg-primary/10 text-primary"
-            : "border-muted-foreground/30 bg-muted text-muted-foreground",
-        )}
-      >
+      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
         <FileText size={14} />
       </div>
       <div className="flex-1 overflow-hidden">
-        <p
-          className={cn(
-            "text-sm font-medium truncate transition-colors",
-            isSelected ? "text-primary" : "text-foreground",
-          )}
-        >
+        <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={note.title || "Untitled"} query={query} />
         </p>
       </div>
-      <div
-        className={cn(
-          "flex items-center gap-1 text-xs shrink-0",
-          isSelected ? "text-primary/70" : "text-muted-foreground/60",
-        )}
-      >
+      <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
         <span>{getRelativeTime(new Date(note.createdAt))}</span>
       </div>
@@ -228,23 +211,23 @@ function WorkspaceTree({
         );
 
         return (
-          <div key={workspace._id} className="overflow-hidden rounded-lg">
+          <div key={workspace._id} className="overflow-hidden app-radius-lg">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-primary/10 hover:border-2 hover:bg-transparent"
+              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-border/50 hover:border-2 hover:bg-transparent"
               onClick={() => toggleWorkspace(workspaceId)}
             >
               <ChevronRight
                 className={cn(
-                  "h-3.5 w-3.5 shrink-0 transition-transform text-primary/60",
+                  "h-3.5 w-3.5 shrink-0 transition-transform text-muted-foreground",
                   isExpanded && "rotate-90",
                 )}
               />
               {isExpanded ? (
-                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               ) : (
-                <Folder className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
               )}
               <span className="truncate text-sm font-medium text-foreground">
                 <HighlightedText
@@ -432,7 +415,7 @@ export default function SearchDialog({
           size="sm"
           className="px-2 h-8 group outline-none border-none"
         >
-          <Search className="text-primary" size={iconSize} />
+          <Search className="text-muted-foreground" size={iconSize} />
           {showTitle && (
             <div className="w-full flex items-center justify-between gap-1">
               Search
@@ -457,9 +440,9 @@ export default function SearchDialog({
 
         <div className="flex items-center border-b border-border px-4 py-2">
           {isDebouncing ? (
-            <LoadingAnimation className="h-4 w-4 mr-3 text-primary/70 shrink-0" />
+            <LoadingAnimation className="h-4 w-4 mr-3 text-muted-foreground shrink-0" />
           ) : (
-            <Search className="h-5 w-5 mr-3 text-primary/70 shrink-0" />
+            <Search className="h-5 w-5 mr-3 text-muted-foreground shrink-0" />
           )}
           <Input
             ref={inputRef}
@@ -534,20 +517,20 @@ export default function SearchDialog({
           <div className="w-full flex justify-between items-center">
             <span className="flex justify-center items-center gap-2 space-x-2">
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <ArrowDownUp size={14} />
                 </kbd>
                 <p className="text-foreground font-mono text-xs">Navigate</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <Undo2 size={14} />
                 </kbd>
                 <p className="text-foreground font-mono text-xs">Open</p>
               </span>
             </span>
             <span className="flex justify-center items-center gap-2">
-              <kbd className="pointer-events-none border border-primary/20 inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-muted px-2 font-mono text-[11px] font-medium text-primary/80">
+              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                 ESC
               </kbd>
               <p className="text-foreground font-mono text-xs">Close</p>

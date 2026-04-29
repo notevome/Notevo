@@ -13,13 +13,13 @@ export default function SkeletonTextAndIconAnimation({
       <div className=" w-full flex justify-start items-center pb-3">
         <div
           className={cn(
-            "h-5 w-5 bg-primary/20 rounded-lg mx-3",
+            "h-5 w-5 bg-border app-radius-lg mx-3",
             Icon_className,
           )}
         ></div>
         <div
           className={cn(
-            "h-4 bg-primary/20 rounded-lg mx-2 w-full",
+            "h-4 bg-border app-radius-lg mx-2 w-full",
             text_className,
           )}
         ></div>

@@ -9,7 +9,6 @@ import SectionHeading from "./SectionHeading";
 import Section from "@/components/ui/Section";
 import Link from "next/link";
 import { FolderClosed, FolderX, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
 interface Step {
   id: string;
   StepNum: string;
@@ -149,7 +148,7 @@ function SignUpPreview() {
 
   return (
     <div className="flex flex-col gap-2.5 p-5 w-full">
-      <div className="bg-background rounded-lg px-3.5 py-2.5 border border-border">
+      <div className="bg-background app-radius-lg px-3.5 py-2.5 border border-border">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
           Email
         </p>
@@ -160,12 +159,12 @@ function SignUpPreview() {
             <span className="text-muted-foreground">name@email.com</span>
           )}
           {!done && (
-            <span className="inline-block w-0.5 h-3 bg-primary rounded-sm cursor-blink" />
+            <span className="inline-block w-0.5 h-3 bg-primary app-radius-sm cursor-blink" />
           )}
         </p>
       </div>
       <motion.div
-        className={`bg-primary text-primary-foreground text-center text-sm rounded-lg px-4 py-2 text-[11px] mt-1 transition-all duration-300 border-r border-b border-muted/50 translate-x-[0px] translate-y-[0px]${done ? " border-muted/50 translate-x-[-3px] translate-y-[-3px] rounded-lg shadow-[3px_3px_0px] shadow-primary " : ""}`}
+        className={`bg-primary text-primary-foreground text-center text-sm app-radius-lg px-4 py-2 text-[11px] mt-1 transition-all duration-300 border-r border-b border-muted/50 translate-x-[0px] translate-y-[0px]${done ? " border-muted/50 translate-x-[-3px] translate-y-[-3px] app-radius-lg shadow-[3px_3px_0px] shadow-primary " : ""}`}
         transition={{ delay: 0.3, duration: 0.12 }}
       >
         Send sign-in link
@@ -181,7 +180,7 @@ function SignUpPreview() {
         {["GitHub", "Google"].map((label) => (
           <div
             key={label}
-            className="flex-1 bg-background border border-border rounded-lg py-2 text-center text-[11px] text-foreground font-medium"
+            className="flex-1 bg-background border border-border app-radius-lg py-2 text-center text-[11px] text-foreground font-medium"
           >
             {label}
           </div>
@@ -228,10 +227,10 @@ function WorkspacePreview() {
 
   return (
     <div className="p-5 w-full">
-      <div className="bg-background rounded-lg border border-border p-4 flex flex-col items-center gap-2.5 relative overflow-hidden">
+      <div className="bg-background app-radius-lg border border-border p-4 flex flex-col items-center gap-2.5 relative overflow-hidden">
         {phase !== "created" ? (
           <>
-            <div className="w-11 h-11 rounded-lg bg-muted border border-border flex items-center justify-center text-xl">
+            <div className="w-11 h-11 app-radius-lg bg-muted border border-border flex items-center justify-center text-xl">
               <FolderX size={24} className=" text-primary" />
             </div>
             <p className="text-sm font-bold text-foreground">
@@ -241,7 +240,7 @@ function WorkspacePreview() {
               You don't have any workspaces yet.
             </p>
             <motion.div
-              className={`bg-primary text-primary-foreground rounded-lg px-4 py-2 text-[11px] mt-1 transition-all duration-300 border-r border-b border-muted/50 translate-x-[0px] translate-y-[0px]${phase === "clicked" ? " border-muted/50 translate-x-[-3px] translate-y-[-3px] rounded-lg shadow-[3px_3px_0px] shadow-primary " : ""}`}
+              className={`bg-primary text-primary-foreground app-radius-lg px-4 py-2 text-[11px] mt-1 transition-all duration-300 border-r border-b border-muted/50 translate-x-[0px] translate-y-[0px]${phase === "clicked" ? " border-muted/50 translate-x-[-3px] translate-y-[-3px] app-radius-lg shadow-[3px_3px_0px] shadow-primary " : ""}`}
               transition={{ duration: 0.12 }}
             >
               Create a new workspace
@@ -254,7 +253,7 @@ function WorkspacePreview() {
             className="w-full"
           >
             {/* Notebook card */}
-            <div className="bg-background rounded-lg border border-border overflow-hidden">
+            <div className="bg-background app-radius-lg border border-border overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2.5">
                 <span className="text-sm font-bold text-foreground">
                   Untitled
@@ -357,7 +356,7 @@ function WritingPreview() {
 
   return (
     <div className="p-5 w-full">
-      <div className="bg-background rounded-lg border border-border overflow-hidden">
+      <div className="bg-background app-radius-lg border border-border overflow-hidden">
         {/* Editor line */}
         <div className="px-4 py-3 border-b border-muted flex items-center gap-2 min-h-[48px]">
           {showPlaceholder ? (
@@ -370,7 +369,7 @@ function WritingPreview() {
               <span className="text-base font-bold text-foreground">
                 {displayed}
               </span>
-              <span className="inline-block w-0.5 h-4 bg-foreground/50 rounded-sm cursor-blink align-middle" />
+              <span className="inline-block w-0.5 h-4 bg-foreground/50 app-radius-sm cursor-blink align-middle" />
             </>
           )}
         </div>
@@ -405,7 +404,7 @@ function WritingPreview() {
               className={`flex items-center gap-2.5 px-3.5 py-1.5 ${item.active ? "bg-accent" : ""} ${i < 4 ? "border-b border-muted" : ""}`}
             >
               <span
-                className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 border ${item.active ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"}`}
+                className={`w-6 h-6 app-radius-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 border ${item.active ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"}`}
               >
                 {item.icon}
               </span>
@@ -437,14 +436,7 @@ export default function HowToStartSection() {
   }, []);
 
   return (
-    <section
-      id="how-to-start"
-      className={cn(
-        "px-4 sm:px-6 md:px-8",
-        "py-12 sm:py-16 md:py-20 Desktop:py-24",
-        "relative",
-      )}
-    >
+    <Section sectionId="how-to-start" className="relative">
       <div className="container relative z-10 mx-auto px-4">
         <SectionHeading
           SectionTitle="How To Start"
@@ -460,7 +452,7 @@ export default function HowToStartSection() {
                   ref={(el) => {
                     nodeRefs.current[i] = el;
                   }}
-                  className="z-10 w-8 h-8 rounded-full border-2 border-primary/30 bg-background flex items-center justify-center text-xs font-bold text-primary flex-shrink-0"
+                  className="z-10 w-8 h-8 rounded-tl-md border-2 border-primary/30 bg-background flex items-center justify-center text-xs font-bold text-primary flex-shrink-0"
                 >
                   {i + 1}
                 </div>
@@ -480,7 +472,7 @@ export default function HowToStartSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="group relative bg-card rounded-lg border border-border overflow-hidden hover:border-primary/50 flex flex-col"
+                  className="group relative bg-card app-radius-lg border border-border overflow-hidden hover:border-primary/50 flex flex-col"
                 >
                   {/* Preview area */}
                   <div className="bg-muted border-b border-border h-72 overflow-hidden flex items-center justify-center">
@@ -489,12 +481,12 @@ export default function HowToStartSection() {
 
                   {/* Card content */}
                   <div className="p-5 flex flex-col flex-1">
-                    <span className="absolute top-2 left-2 inline-flex items-center bg-secondary text-secondary-foreground rounded-md px-2.5 py-0.5 text-[11px] font-bold mb-3">
+                    <span className="absolute top-2 left-2 inline-flex items-center bg-secondary text-secondary-foreground app-radius-md px-2.5 py-0.5 text-[11px] font-bold mb-3">
                       {step.StepNum}
                     </span>
 
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <div className="w-7 h-7 app-radius-sm bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                         <Icon className="w-4 h-4 text-primary" />
                       </div>
                       <h3 className="text-base font-bold text-foreground">
@@ -547,6 +539,6 @@ export default function HowToStartSection() {
           </p>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }

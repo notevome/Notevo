@@ -334,7 +334,7 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.55, delay: 0.38 }}
-          className="relative w-full p-1 Desktop:p-2 rounded-lg bg-primary/50 backdrop-blur-lg"
+          className="relative w-full p-1 Desktop:p-2 rounded-tl-lg bg-primary/50 backdrop-blur-lg"
         >
           <p className="absolute -top-9 right-12 font-extrabold text-primary/80 leading-relaxed">
             yep its that fast
@@ -358,7 +358,7 @@ export default function HeroSection() {
           <HeroVideo
             src="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.mp4"
             poster="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.jpg"
-            className="w-full h-full object-cover rounded-lg"
+            className="w-full h-full object-cover rounded-tl-lg"
             style={{ pointerEvents: "none" }}
           />
         </motion.div>

@@ -32,7 +32,7 @@ export default function Navbar() {
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center border-solid border p-4 my-2 rounded-2xl transition-all duration-300",
+          "container mx-auto flex justify-between items-center border-solid border p-4 my-2 rounded-tl-2xl transition-all duration-300",
           inView
             ? "border-border bg-background/50 backdrop-blur-xl"
             : "border-transparent bg-transparent",

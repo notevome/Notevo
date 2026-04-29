@@ -9,7 +9,7 @@ export default function SkeletonSmImgAnimation({
   return (
     <div className="animate-pulse">
       <div
-        className={cn("h-10 w-10 bg-primary/20 rounded-lg mx-3", className)}
+        className={cn("h-10 w-10 bg-border app-radius-lg mx-3", className)}
       ></div>
     </div>
   );
