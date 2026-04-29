@@ -385,7 +385,7 @@ hr {
 .ProseMirror p.is-empty:not(.is-editor-empty)::before {
   content: attr(data-placeholder);
   float: left;
-  color: hsl(var(--placeholder)) !important;
+  color: hsl(var(--muted-foreground)) !important;
   opacity: 0.6;
   pointer-events: none;
   height: 0;

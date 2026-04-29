@@ -108,7 +108,7 @@ const TailwindAdvancedEditor = ({
     Placeholder.configure({
       placeholder: "Press '/' for commands, or start writing...",
       emptyEditorClass:
-        "is-editor-empty before:content-[attr(data-placeholder)] before:float-left before:text-muted-foreground/80 before:pointer-events-none before:cursor-text before:h-0",
+        "is-editor-empty before:content-[attr(data-placeholder)] before:float-left !before:text-primary before:pointer-events-none before:cursor-text before:h-0",
       showOnlyWhenEditable: true,
       includeChildren: true,
     }),
@@ -177,7 +177,7 @@ const TailwindAdvancedEditor = ({
             }}
             slotAfter={<ImageResizer />}
           >
-            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
+            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
               <EditorCommandEmpty className="px-2 text-muted-foreground">
                 No results
               </EditorCommandEmpty>
@@ -186,10 +186,10 @@ const TailwindAdvancedEditor = ({
                   <EditorCommandItem
                     value={item.title}
                     onCommand={(val) => item.command(val)}
-                    className="flex w-full items-center space-x-2.5 rounded-lg my-1.5 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-primary/10"
+                    className="flex w-full items-center space-x-2.5 rounded-tl-lg my-1.5 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-primary/10"
                     key={item.title}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center border border-border rounded-lg text-muted-foreground">
+                    <div className="flex h-8 w-8 items-center justify-center border border-border rounded-tl-lg text-muted-foreground">
                       {item.icon}
                     </div>
                     <div>
