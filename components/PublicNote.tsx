@@ -187,7 +187,7 @@ export default function PublicNote({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent
-                      className=" rounded-sm px-1.5"
+                      className=" rounded-tl-sm px-1.5"
                       side="bottom"
                     >
                       Copy link
