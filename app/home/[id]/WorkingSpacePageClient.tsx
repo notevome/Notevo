@@ -287,7 +287,7 @@ function TableTab({ table }: { table: any }) {
             "h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[80px]",
             nameError
               ? "border border-destructive"
-              : "border border-primary/20",
+              : "border border-primary/50",
           )}
         />
         {nameError && (
@@ -686,7 +686,7 @@ export default function WorkingSpacePageClient({
                       "text-3xl md:text-5xl font-bold h-auto py-0 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                       nameError
                         ? "border border-destructive"
-                        : "border border-primary/20",
+                        : "border border-primary/50",
                     )}
                   />
                   {nameError && (
@@ -697,7 +697,7 @@ export default function WorkingSpacePageClient({
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/20 transition-colors duration-150"
+                  className="cursor-text rounded-md border border-transparent px-2 hover:border-primary/50 transition-colors duration-150"
                 >
                   {workspace.name}
                 </span>
@@ -837,7 +837,7 @@ export function NotesDroppableContainer({
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid
-                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-primary"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
               />
             </Button>
             <Button
@@ -850,7 +850,7 @@ export function NotesDroppableContainer({
               onClick={() => setViewMode("list")}
             >
               <List
-                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-primary"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-foreground"}`}
               />
             </Button>
           </div>
@@ -1042,7 +1042,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   "text-base font-semibold min-h-0 py-1 px-2 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
-                    : "border border-primary/20",
+                    : "border border-primary/50",
                 )}
               />
               {titleError && (
@@ -1051,7 +1051,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-2 "
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text rounded-md border border-transparent hover:border-primary/50 transition-all duration-300 pr-2 "
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1219,7 +1219,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                     "text-base font-semibold h-auto py-1 px-1 rounded-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
-                      : "border border-primary/20",
+                      : "border border-primary/50",
                   )}
                 />
                 {titleError && (
@@ -1228,7 +1228,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text rounded-md border border-transparent hover:border-primary/20 transition-all duration-300 hover:px-2 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text rounded-md border border-transparent hover:border-primary/50 transition-all duration-300 hover:px-2 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >

@@ -59,9 +59,9 @@ const TailwindAdvancedEditor = ({
 
   useEffect(() => {
     if (resolvedTheme !== "dark") {
-      setDragHandleColor("#644a40");
+      setDragHandleColor("#B4B4B4");
     } else {
-      setDragHandleColor("#ffe0c2");
+      setDragHandleColor("#646464");
     }
   }, [resolvedTheme]);
 
@@ -108,7 +108,7 @@ const TailwindAdvancedEditor = ({
     Placeholder.configure({
       placeholder: "Press '/' for commands, or start writing...",
       emptyEditorClass:
-        "is-editor-empty before:content-[attr(data-placeholder)] before:float-left before:text-primary/60 before:pointer-events-none before:cursor-text before:h-0",
+        "is-editor-empty before:content-[attr(data-placeholder)] before:float-left before:text-muted-foreground/80 before:pointer-events-none before:cursor-text before:h-0",
       showOnlyWhenEditable: true,
       includeChildren: true,
     }),
@@ -128,7 +128,7 @@ const TailwindAdvancedEditor = ({
                   fill="none"
                   viewBox="0 0 24 24"
                   strokeWidth="3"
-                  className=" w-4 h-4 opacity-50"
+                  className=" w-4 h-4 opacity-80"
                   stroke={dragHandleColor}
                 >
                   <path
@@ -186,7 +186,7 @@ const TailwindAdvancedEditor = ({
                   <EditorCommandItem
                     value={item.title}
                     onCommand={(val) => item.command(val)}
-                    className="flex w-full items-center space-x-2.5 rounded-lg mb-1.5 px-1 py-1 text-left text-sm text-foreground hover:bg-primary/10 aria-selected:bg-primary/10"
+                    className="flex w-full items-center space-x-2.5 rounded-lg my-1.5 px-1 py-1 text-left text-sm text-foreground hover:bg-primary/10 aria-selected:bg-primary/10"
                     key={item.title}
                   >
                     <div className="flex h-8 w-8 items-center justify-center border border-primary/10 rounded-lg text-primary">

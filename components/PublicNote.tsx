@@ -140,56 +140,59 @@ export default function PublicNote({
           side="bottom"
           alignOffset={1}
           align="end"
-          className="min-w-[20rem] pb-1.5 px-1.5 pt-2 space-y-4 text-muted-foreground z-[10000]"
+          className=" min-w-[18.5rem] px-3 pb-3 pt-2 space-y-4 text-muted-foreground z-[10000]"
         >
           <DropdownMenuGroup className="relative">
             {getNote?.published ? (
-              <header className="w-full text-start px-5 pb-2 pt-2 flex flex-col justify-center items-start gap-3">
-                <span className="space-y-2">
-                  <h1 className="flex justify-start items-center gap-2 text-base text-primary font-bold">
-                    <CheckSquare size={14} className="text-primary" />
+              <header className="w-full text-start flex flex-col justify-center items-start gap-3">
+                <span className="px-1 space-y-2">
+                  <h1 className="flex justify-start items-center gap-2 text-base text-foreground font-bold">
+                    <CheckSquare
+                      size={16}
+                      className="text-muted-foreground mt-px"
+                    />
                     Published to the web
                   </h1>
-                  <p className="text-xs text-muted-foreground">
-                    Copy the link and share your notes with the world
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Copy the link, share notes with the world
                   </p>
                 </span>
-                <span className="w-full">
-                  <p className="text-xs text-green-600 p-0.5">
-                    <span className="text-base animate-pulse">•</span> This page
-                    is live check the link below
-                  </p>
-                  <span className="relative">
-                    <Input
-                      type="text"
-                      value={`https://notevo.me/public/document/${noteId}`}
-                      className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-85% to-transparent to-80% text-transparent bg-clip-text"
-                      disabled
-                    />
-                    <Tooltip
-                      open={isCopyTooltipOpen}
-                      onOpenChange={setIsCopyTooltipOpen}
-                      delayDuration={200}
+                <span className="w-full relative">
+                  <Input
+                    type="text"
+                    value={`https://notevo.me/public/document/${noteId}`}
+                    className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-85% to-transparent to-80% text-transparent bg-clip-text"
+                    disabled
+                  />
+                  <Tooltip
+                    open={isCopyTooltipOpen}
+                    onOpenChange={setIsCopyTooltipOpen}
+                    delayDuration={200}
+                  >
+                    <TooltipTrigger asChild>
+                      <Button
+                        onMouseDown={handleCopy}
+                        onPointerMove={(e) => e.stopPropagation()}
+                        onMouseEnter={() => setIsCopyTooltipOpen(true)}
+                        onMouseLeave={() => setIsCopyTooltipOpen(false)}
+                        className={`w-fit h-8 absolute top-1/2 -translate-y-1/2 right-0  text-primary hover:text-primary`}
+                        disabled={isCopied && true}
+                        variant="Trigger"
+                      >
+                        {isCopied ? (
+                          "Copied!"
+                        ) : (
+                          <Copy size={14} className="text-primary" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      className=" rounded-sm px-1.5"
+                      side="bottom"
                     >
-                      <TooltipTrigger asChild>
-                        <Button
-                          onMouseDown={handleCopy}
-                          onPointerMove={(e) => e.stopPropagation()}
-                          onMouseEnter={() => setIsCopyTooltipOpen(true)}
-                          onMouseLeave={() => setIsCopyTooltipOpen(false)}
-                          className={`w-fit h-8 absolute top-1/2 -translate-y-1/2 right-0 ${isCopied && "text-primary hover:text-primary"}`}
-                          variant="Trigger"
-                        >
-                          {isCopied ? (
-                            "Copied!"
-                          ) : (
-                            <Copy size={14} className="text-primary" />
-                          )}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">Copy link</TooltipContent>
-                    </Tooltip>
-                  </span>
+                      Copy link
+                    </TooltipContent>
+                  </Tooltip>
                 </span>
                 <span className="w-full flex justify-between items-center gap-2">
                   <Button
@@ -197,7 +200,7 @@ export default function PublicNote({
                     className="w-full h-8 gap-2 bg-transparent"
                     variant="outline"
                   >
-                    <EyeClosed size={14} className="text-primary" />
+                    <EyeClosed size={14} />
                     Unpublish
                   </Button>
                   <Button className="w-full h-8" variant="secondary">
@@ -213,13 +216,16 @@ export default function PublicNote({
                 </span>
               </header>
             ) : (
-              <header className="w-full text-start px-5 pb-2 pt-2 flex flex-col justify-center items-center gap-6">
-                <span className="space-y-2">
-                  <h1 className="flex justify-start items-center gap-2 text-base text-primary font-bold">
-                    <Globe2Icon size={14} className="text-primary" />
+              <header className="w-full text-start flex flex-col justify-center items-center gap-6">
+                <span className="px-1 space-y-2">
+                  <h1 className="flex justify-start items-center gap-2 text-base text-foreground font-bold">
+                    <Globe2Icon
+                      size={16}
+                      className="text-muted-foreground mt-px"
+                    />
                     Publish to the web
                   </h1>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs font-medium text-muted-foreground">
                     Publish a static webpage of this document, read only
                     <br />
                     and anyone with the link can view or duplicate it.
