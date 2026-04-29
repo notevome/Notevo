@@ -261,7 +261,7 @@ export default function NoteSettings({
               className="w-full h-8 px-2 text-sm"
               onClick={handleFavoritePin}
             >
-              <Pin size={14} className="text-primary" />
+              <Pin size={14} className="text-muted-foreground" />
               {getNote?.favorite ? "Unpin Note" : "Pin Note"}
             </Button>
 
@@ -270,13 +270,13 @@ export default function NoteSettings({
               className="w-full h-8 px-2 text-sm"
               onClick={handleMoveDialogOpen}
             >
-              <FileOutput size={14} className="text-primary" />
+              <FileOutput size={14} className="text-muted-foreground" />
               Move Note
             </Button>
 
             <DropdownMenuSub>
               <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground hover:bg-primary/10">
-                <Download size={14} className="text-primary" />
+                <Download size={14} className="text-muted-foreground" />
                 Download
               </DropdownMenuSubTrigger>
               <DropdownMenuSubContent className="w-48">
@@ -322,13 +322,16 @@ export default function NoteSettings({
                     <>
                       <ChevronsLeftRightEllipsis
                         size={14}
-                        className="text-primary"
+                        className="text-muted-foreground"
                       />
                       Full width
                     </>
                   ) : (
                     <>
-                      <ChevronsRightLeft size={14} className="text-primary" />
+                      <ChevronsRightLeft
+                        size={14}
+                        className="text-muted-foreground"
+                      />
                       Max width
                     </>
                   )}
@@ -342,7 +345,7 @@ export default function NoteSettings({
               className="w-full h-8 px-2 text-sm"
               onClick={initiateDelete}
             >
-              <FaRegTrashCan size={14} className="text-primary" />
+              <FaRegTrashCan size={14} className="text-muted-foreground" />
               Delete
             </Button>
           </DropdownMenuGroup>

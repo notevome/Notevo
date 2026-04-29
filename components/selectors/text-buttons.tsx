@@ -126,7 +126,11 @@ export const TextButtons = () => {
                   />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top" sideOffset={6}>
+              <TooltipContent
+                side="top"
+                className=" flex justify-center items-center px-1"
+                sideOffset={6}
+              >
                 <span>{item.label}</span>
                 <ShortcutBadge keys={item.shortcut} />
               </TooltipContent>
@@ -155,7 +159,11 @@ export const TextButtons = () => {
                 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" sideOffset={6}>
+            <TooltipContent
+              side="top"
+              className=" flex justify-center items-center px-1"
+              sideOffset={6}
+            >
               <span>{item.label}</span>
               <ShortcutBadge keys={item.shortcut} />
             </TooltipContent>

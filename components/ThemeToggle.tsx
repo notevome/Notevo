@@ -33,21 +33,21 @@ export function ThemeToggle() {
         aria-label="Light"
         className="flex-1 px-1 h-6 rounded-md"
       >
-        <SunIcon className="h-3 w-3 text-primary" />
+        <SunIcon className="h-3 w-3 text-muted-foreground" />
       </ToggleGroupItem>
       <ToggleGroupItem
         value="dark"
         aria-label="Dark"
         className="flex-1 px-1 h-6 rounded-md"
       >
-        <MoonIcon className="h-3 w-3 text-primary " />
+        <MoonIcon className="h-3 w-3 text-muted-foreground " />
       </ToggleGroupItem>
       <ToggleGroupItem
         value="system"
         aria-label="System"
         className="flex-1 px-1 h-6 rounded-md"
       >
-        <DesktopIcon className="h-3 w-3 text-primary " />
+        <DesktopIcon className="h-3 w-3 text-muted-foreground " />
       </ToggleGroupItem>
     </ToggleGroup>
   );

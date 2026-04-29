@@ -77,7 +77,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         }}
       />
       <main
-        className={`relative flex flex-col flex-1 h-auto border-primary/20 bg-background transition-[margin,border-radius] duration-300 ease-linear motion-reduce:transition-none ${
+        className={`relative flex flex-col flex-1 h-auto border-border bg-background transition-[margin,border-radius] duration-300 ease-linear motion-reduce:transition-none ${
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
         } rounded-none`}
       >

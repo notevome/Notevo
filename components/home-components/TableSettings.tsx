@@ -201,7 +201,7 @@ export default function TableSettings({
                 className="w-full h-8 px-2 text-sm"
                 onClick={initiateDelete}
               >
-                <FaRegTrashCan size="14" />
+                <FaRegTrashCan size={14} className="text-primary" />
                 Delete
               </Button>
             </DropdownMenuContent>

@@ -487,11 +487,7 @@ const PinnedNoteItem = memo(
                       </IntentPrefetchLink>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="font-medium"
-                    sideOffset={5}
-                  >
+                  <TooltipContent side="right" sideOffset={5}>
                     {note.title || "Untitled"}
                   </TooltipContent>
                 </Tooltip>
@@ -500,7 +496,7 @@ const PinnedNoteItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 transition-all duration-200 ease-in-out ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
         >
           <NoteSettingsSidbar
             noteId={note._id}
@@ -778,11 +774,7 @@ const WorkspaceItem = memo(
                       </IntentPrefetchLink>
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="font-medium"
-                    sideOffset={5}
-                  >
+                  <TooltipContent side="right" sideOffset={5}>
                     {workingSpace.name || "Untitled"}
                   </TooltipContent>
                 </Tooltip>{" "}
@@ -791,7 +783,7 @@ const WorkspaceItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 transition-opacity duration-150 ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
         >
           <WorkingSpaceSettingsSidbar
             workingSpaceId={workingSpace._id}
@@ -971,14 +963,19 @@ const UserAccountSection = memo(function UserAccountSection({
               <DropdownMenuSeparator />
               <div className="w-full p-1">
                 <div className=" flex items-center justify-between">
-                  <p className=" text-sm flex items-center flex-1">Theme :</p>
+                  <p className=" text-sm flex items-center flex-1 text-nowrap truncate">
+                    Theme :
+                  </p>
                   <ThemeToggle />
                 </div>
               </div>
               <DropdownMenuSeparator />
               <Feedback />
               <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut size="16" className="mr-2 h-4 w-4 text-primary" />
+                <LogOut
+                  size="16"
+                  className="mr-2 h-4 w-4 text-muted-foreground"
+                />
                 Sign out
               </DropdownMenuItem>
             </DropdownMenuContent>

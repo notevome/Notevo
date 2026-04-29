@@ -6,7 +6,7 @@
   or use the "Copy code" button at https://ui.shadcn.com/themes */
 @layer base {
   :root {
-    --placeholder: #644a40;
+    --placeholder: 0 0% 93.7255%;
     --selection-background: #94c4e270;
     --selection-color: #000000;
     --background: 0 0% 97.6471%;
@@ -94,7 +94,7 @@
   }
 
   .dark {
-    --placeholder: #ffe0c2;
+    --placeholder: 0 0% 93.7255%;
     --selection-background: #3b7ba370;
     --selection-color: #ffffff;
     --background: 0 0% 6.6667%;
@@ -183,7 +183,7 @@
 
 /* Force light mode on any element regardless of .dark on <html> */
 .force-light {
-  --placeholder: #644a40;
+  --placeholder: 0 0% 93.7255%;
   --selection-background: #644a403c;
   --selection-color: #000000;
   --background: 0 0% 97.6471%;
@@ -363,7 +363,7 @@ hr {
 .ProseMirror p.is-empty:not(.is-editor-empty)::before {
   content: attr(data-placeholder);
   float: left;
-  color: var(--placeholder) !important;
+  color: hsl(var(--placeholder)) !important;
   opacity: 0.6;
   pointer-events: none;
   height: 0;
