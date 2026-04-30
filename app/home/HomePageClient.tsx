@@ -493,7 +493,7 @@ function WorkspaceCard({
               onBlur={handleNameBlur}
               onKeyDown={handleNameKeyDown}
               className={cn(
-                "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full",
+                "field-sizing-content width-fit-content min-w-fit max-w-full text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                 nameError
                   ? "border border-destructive"
                   : "border border-muted-foreground/50",
@@ -505,7 +505,7 @@ function WorkspaceCard({
           </div>
         ) : (
           <CardTitle
-            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 pr-8"
+            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 "
             onDoubleClick={handleNameDoubleClick}
             title="Double-click to rename"
           >

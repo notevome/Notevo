@@ -10,14 +10,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
-import {
-  useState,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { useQuery } from "@/cache/useQuery";
@@ -123,69 +116,11 @@ const STORAGE_KEYS = {
   ACTIVE_TABLE: "notevo_active_table",
 };
 
-function useAutoSize(
-  value: string,
-  options?: {
-    isTextarea?: boolean;
-    containerRef?: any;
-  },
-) {
-  const elRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null);
-  const mirrorRef = useRef<HTMLSpanElement | null>(null);
-
-  useLayoutEffect(() => {
-    const mirror = document.createElement("span");
-    mirror.style.position = "absolute";
-    mirror.style.top = "-9999px";
-    mirror.style.left = "-9999px";
-    mirror.style.visibility = "hidden";
-    mirror.style.pointerEvents = "none";
-    mirror.style.whiteSpace = "pre";
-    document.body.appendChild(mirror);
-    mirrorRef.current = mirror;
-    return () => {
-      document.body.removeChild(mirror);
-      mirrorRef.current = null;
-    };
-  }, []);
-
-  useLayoutEffect(() => {
-    const el = elRef.current;
-    const mirror = mirrorRef.current;
-    if (!el || !mirror) return;
-    const style = window.getComputedStyle(el);
-    mirror.style.font = style.font;
-    mirror.style.fontSize = style.fontSize;
-    mirror.style.fontWeight = style.fontWeight;
-    mirror.style.fontFamily = style.fontFamily;
-    mirror.style.letterSpacing = style.letterSpacing;
-    mirror.style.paddingLeft = style.paddingLeft;
-    mirror.style.paddingRight = style.paddingRight;
-    mirror.style.borderLeft = style.borderLeft;
-    mirror.style.borderRight = style.borderRight;
-    mirror.textContent = value || " ";
-    const maxWidth = options?.containerRef?.current
-      ? options.containerRef.current.clientWidth
-      : Infinity;
-    const desiredWidth = mirror.offsetWidth + 4;
-    el.style.width = `${Math.min(desiredWidth, maxWidth)}px`;
-    if (options?.isTextarea) {
-      el.style.height = "auto";
-      el.style.height = `${el.scrollHeight}px`;
-    }
-  }, [value, options?.isTextarea, options?.containerRef]);
-
-  return { elRef };
-}
-
 function TableTab({ table }: { table: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [nameError, setNameError] = useState<string | null>(null);
-  const tabContainerRef = useRef<HTMLDivElement>(null);
-  const { elRef: inputRef } = useAutoSize(editedName, {
-    containerRef: tabContainerRef,
-  });
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const updateTable = useMutation(
     api.notesTables.updateTable,
@@ -267,10 +202,7 @@ function TableTab({ table }: { table: any }) {
 
   if (isEditing) {
     return (
-      <div
-        ref={tabContainerRef}
-        className="flex flex-col gap-1 px-1 flex-shrink-0"
-      >
+      <div className="flex flex-col gap-1 px-1 flex-shrink-0">
         <Input
           ref={inputRef as any}
           value={editedName}
@@ -285,10 +217,10 @@ function TableTab({ table }: { table: any }) {
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           className={cn(
-            "h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 min-w-[80px]",
+            "field-sizing-content width-fit-content min-w-fit max-w-[220px] h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
             nameError
               ? "border border-destructive"
-              : "border border-primary/50",
+              : "border border-muted-foreground/50",
           )}
         />
         {nameError && (
@@ -503,10 +435,7 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
-  const nameContainerRef = useRef<HTMLDivElement>(null);
-  const { elRef: nameInputRef } = useAutoSize(editedName, {
-    containerRef: nameContainerRef,
-  });
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
@@ -666,10 +595,7 @@ export default function WorkingSpacePageClient({
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
-                <div
-                  ref={nameContainerRef}
-                  className="flex flex-col gap-1 overflow-hidden max-w-xl"
-                >
+                <div className="flex flex-col gap-1 overflow-hidden max-w-xl">
                   <Input
                     ref={nameInputRef as any}
                     value={editedName}
@@ -684,7 +610,7 @@ export default function WorkingSpacePageClient({
                     onBlur={handleNameBlur}
                     onKeyDown={handleNameKeyDown}
                     className={cn(
-                      "text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                      "field-sizing-content width-fit-content min-w-fit max-w-full text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                       nameError
                         ? "border border-destructive"
                         : "border border-muted-foreground/50",
@@ -822,12 +748,12 @@ export function NotesDroppableContainer({
               placeholder="Search Notes..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-border h-9"
+              className="pl-10 border-border h-9 mt-0.5"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <div className="flex items-center gap-2 w-auto justify-end">
           <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
             <Button
               variant="SidebarMenuButton"
@@ -947,11 +873,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
   const [titleError, setTitleError] = useState<string | null>(null);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
-  const { elRef: titleInputRef } = useAutoSize(editedTitle, {
-    isTextarea: true,
-    containerRef: gridContainerRef,
-  });
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -1027,10 +949,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           {isEditingTitle ? (
-            <div
-              ref={gridContainerRef}
-              className="flex-1 flex flex-col gap-1 overflow-hidden"
-            >
+            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
               <Textarea
                 ref={titleInputRef as any}
                 value={editedTitle}
@@ -1047,7 +966,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 rows={1}
                 style={{ resize: "none", overflow: "hidden" }}
                 className={cn(
-                  "text-base font-semibold min-h-0 py-1 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
+                  "field-sizing-content min-h-fit min-w-fit max-w-full max-h-full py-1 px-2 text-base font-semibold app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
                     : "border border-muted-foreground/50",
@@ -1059,7 +978,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 pr-2 "
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300"
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1122,10 +1041,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
   const [titleError, setTitleError] = useState<string | null>(null);
-  const listContainerRef = useRef<HTMLDivElement>(null);
-  const { elRef: titleInputRef } = useAutoSize(editedTitle, {
-    containerRef: listContainerRef,
-  });
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -1202,10 +1118,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <div
-            ref={listContainerRef}
-            className="flex-1 min-w-0 overflow-hidden"
-          >
+          <div className="flex-1 min-w-0 overflow-hidden">
             {isEditingTitle ? (
               <>
                 <Input
@@ -1222,7 +1135,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
                   className={cn(
-                    "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
+                    "field-sizing-content width-fit-content min-w-fit max-w-full text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
                       : "border border-muted-foreground/50",
@@ -1234,7 +1147,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 hover:px-2 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
