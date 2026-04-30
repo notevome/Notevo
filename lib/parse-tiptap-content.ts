@@ -1,94 +1,138 @@
+import type { JSONContent } from "@tiptap/react";
+
+const EMPTY_TIPTAP_DOC: JSONContent = {
+  type: "doc",
+  content: [],
+};
+
+export function getEmptyTiptapDoc(): JSONContent {
+  return {
+    type: "doc",
+    content: [],
+  };
+}
+
+export function parseTiptapContent(
+  rawContent: unknown,
+  fallback: JSONContent = EMPTY_TIPTAP_DOC,
+): JSONContent {
+  if (rawContent == null || rawContent === "") return getEmptyTiptapDoc();
+
+  let parsedContent = rawContent;
+
+  if (typeof parsedContent === "string") {
+    try {
+      parsedContent = JSON.parse(parsedContent);
+    } catch (error) {
+      console.error("Error parsing TipTap JSON string:", error);
+      return fallback;
+    }
+  }
+
+  if (Array.isArray(parsedContent)) {
+    return {
+      type: "doc",
+      content: parsedContent,
+    };
+  }
+
+  if (
+    parsedContent &&
+    typeof parsedContent === "object" &&
+    "type" in parsedContent &&
+    (parsedContent as JSONContent).type === "doc"
+  ) {
+    return {
+      ...(parsedContent as JSONContent),
+      type: "doc",
+      content: Array.isArray((parsedContent as JSONContent).content)
+        ? (parsedContent as JSONContent).content
+        : [],
+    };
+  }
+
+  return fallback;
+}
+
 /**
  * Utility function to extract plain text from TipTap/Novel JSON content
  * This is a simplified version that handles basic text extraction
  */
 export function extractTextFromTiptap(jsonContent: any): string {
-  if (!jsonContent) return ""
+  if (!jsonContent) return "";
 
   try {
-    // If it's a string that looks like JSON, parse it
     if (typeof jsonContent === "string") {
       try {
-        jsonContent = JSON.parse(jsonContent)
-      } catch (e) {
-        // If it's not valid JSON, return it as is
-        return jsonContent
+        jsonContent = JSON.parse(jsonContent);
+      } catch {
+        return jsonContent;
       }
     }
 
-    // Handle different content structures
     if (jsonContent.content) {
-      return extractFromNodes(jsonContent.content)
-    } else if (Array.isArray(jsonContent)) {
-      return extractFromNodes(jsonContent)
+      return extractFromNodes(jsonContent.content);
     }
 
-    return String(jsonContent)
+    if (Array.isArray(jsonContent)) {
+      return extractFromNodes(jsonContent);
+    }
+
+    return String(jsonContent);
   } catch (error) {
-    console.error("Error parsing TipTap content:", error)
-    return "Unable to display content preview"
+    console.error("Error parsing TipTap content:", error);
+    return "Unable to display content preview";
   }
 }
 
 function extractFromNodes(nodes: any[]): string {
-  if (!Array.isArray(nodes)) return ""
+  if (!Array.isArray(nodes)) return "";
 
   return nodes
     .map((node) => {
-      // Text node
+      if (!node || typeof node !== "object") return "";
+
       if (node.text) {
-        return node.text
+        return node.text;
       }
 
-      // Paragraph, heading, or other container node
       if (node.content && Array.isArray(node.content)) {
-        return extractFromNodes(node.content)
+        return extractFromNodes(node.content);
       }
 
-      // Handle specific node types
       if (node.type === "paragraph" || node.type === "heading") {
         if (node.content) {
-          return extractFromNodes(node.content) + "\n"
+          return `${extractFromNodes(node.content)}\n`;
         }
       }
 
-      // For other node types like images, code blocks, etc.
       if (node.type) {
         switch (node.type) {
           case "image":
-            return "[Image]"
+            return "[Image]";
           case "codeBlock":
-            return "[Code Block]"
+            return "[Code Block]";
           case "bulletList":
           case "orderedList":
-            if (node.content) {
-              return extractFromNodes(node.content)
-            }
-            return ""
+            return node.content ? extractFromNodes(node.content) : "";
           case "listItem":
-            if (node.content) {
-              return "• " + extractFromNodes(node.content)
-            }
-            return ""
+            return node.content ? `- ${extractFromNodes(node.content)}` : "";
           default:
-            if (node.content) {
-              return extractFromNodes(node.content)
-            }
-            return ""
+            return node.content ? extractFromNodes(node.content) : "";
         }
       }
 
-      return ""
+      return "";
     })
-    .join("")
+    .join("");
 }
 
 /**
  * Truncates text to a specified length and adds ellipsis if needed
  */
 export function truncateText(text: string, maxLength = 100): string {
-  if (!text) return ""
-  if (text.length <= maxLength) return text
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
 
-  return text.substring(0, maxLength).trim() + "..."
+  return text.substring(0, maxLength).trim() + "...";
 }

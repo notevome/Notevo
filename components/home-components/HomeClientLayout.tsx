@@ -16,6 +16,7 @@ import AppSidebar from "@/components/home-components/AppSidebar";
 import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
 import { MobileWarning } from "@/components/ui/mobile-warning";
 import NoteSettings from "@/components/home-components/NoteSettings";
+import SearchDialog from "@/components/home-components/SearchDialog";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
@@ -64,6 +65,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
       <AppSidebar />
+      <SearchDialog showTrigger={false} enableShortcut={true} />
       <div
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0"

@@ -12,7 +12,6 @@ import {
   TaskItem,
   TaskList,
   TextStyle,
-  TiptapImage,
   TiptapLink,
   TiptapUnderline,
   Twitter,
@@ -45,7 +44,7 @@ const tiptapLink = TiptapLink.configure({
   },
 });
 
-const tiptapImage = TiptapImage.extend({
+const image = UpdatedImage.extend({
   addProseMirrorPlugins() {
     return [
       UploadImagesPlugin({
@@ -57,12 +56,6 @@ const tiptapImage = TiptapImage.extend({
   allowBase64: true,
   HTMLAttributes: {
     class: cx("rounded-lg border border-muted"),
-  },
-});
-
-const updatedImage = UpdatedImage.configure({
-  HTMLAttributes: {
-    class: cx("rounded-lg"),
   },
 });
 
@@ -232,8 +225,7 @@ export const defaultExtensions = [
   TiptapUnderline,
   GlobalDragHandle,
   tiptapLink,
-  tiptapImage,
-  updatedImage,
+  image,
   taskList,
   taskItem,
   horizontalRule,

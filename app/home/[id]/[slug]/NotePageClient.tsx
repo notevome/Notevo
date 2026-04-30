@@ -6,6 +6,10 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
+import {
+  getEmptyTiptapDoc,
+  parseTiptapContent,
+} from "@/lib/parse-tiptap-content";
 import { cn } from "@/lib/utils";
 import type { JSONContent } from "@tiptap/react";
 import { useMutation } from "convex/react";
@@ -69,17 +73,13 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   );
 
   const serverContent = useMemo(() => {
-    if (!stableNote?.body) return undefined;
-    try {
-      return JSON.parse(stableNote.body) as JSONContent;
-    } catch {
-      return undefined;
-    }
+    if (!stableNote?.body) return getEmptyTiptapDoc();
+    return parseTiptapContent(stableNote.body);
   }, [stableNote?.body]);
 
   useEffect(() => {
     if (content !== undefined) return;
-    if (serverContent !== undefined) setContent(serverContent);
+    setContent(serverContent);
   }, [content, serverContent]);
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
     >
       <TailwindAdvancedEditor
         editorBubblePlacement={false}
-        initialContent={content ?? serverContent}
+        initialContent={content ?? serverContent ?? getEmptyTiptapDoc()}
         onUpdate={(editor) => {
           const updatedContent = editor.getJSON();
           setContent(updatedContent);
