@@ -489,7 +489,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
             onClick={() => loadMore(5)}
             className="px-2 my-0.5 h-8 group flex-1"
           >
-            <ChevronDown size="16" className=" text-primary" />
+            <ChevronDown size="16" className=" text-muted-foreground" />
             Show More
           </Button>
         </SidebarGroupContent>
