@@ -686,7 +686,7 @@ export default function WorkingSpacePageClient({
                       "text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                       nameError
                         ? "border border-destructive"
-                        : "border border-primary/50",
+                        : "border border-muted-foreground",
                     )}
                   />
                   {nameError && (
@@ -697,7 +697,7 @@ export default function WorkingSpacePageClient({
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-primary/50 transition-colors duration-150"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground transition-colors duration-150"
                 >
                   {workspace.name}
                 </span>
@@ -831,7 +831,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "rounded-none hover:bg-muted",
+                "!rounded-none hover:bg-muted",
                 viewMode === "grid" && "bg-muted",
               )}
               onClick={() => setViewMode("grid")}
@@ -844,7 +844,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "rounded-none hover:bg-muted",
+                "!rounded-none hover:bg-muted",
                 viewMode === "list" && "bg-muted",
               )}
               onClick={() => setViewMode("list")}
@@ -1010,7 +1010,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card/90 backdrop-blur-sm border transition-all duration-300 flex flex-col h-full",
+        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 flex flex-col h-full",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -1042,7 +1042,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   "text-base font-semibold min-h-0 py-1 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
-                    : "border border-primary/50",
+                    : "border border-muted-foreground",
                 )}
               />
               {titleError && (
@@ -1051,7 +1051,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-primary/50 transition-all duration-300 pr-2 "
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground transition-all duration-300 pr-2 "
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1093,10 +1093,9 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           )}
         </div>
         <Button
-          variant="ghost"
           size="sm"
           asChild
-          className="h-7 text-xs hover:bg-primary/10"
+          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
         >
           <IntentPrefetchLink
             href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
@@ -1219,7 +1218,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                     "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
-                      : "border border-primary/50",
+                      : "border border-muted-foreground",
                   )}
                 />
                 {titleError && (
@@ -1228,7 +1227,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-primary/50 transition-all duration-300 hover:px-2 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground transition-all duration-300 hover:px-2 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
@@ -1263,13 +1262,12 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               DropdownMenuContentAlign="start"
               TooltipContentAlign="start"
               onDelete={onDelete}
-              BtnClassName="pt-0"
+              BtnClassName="pt-0 "
             />
             <Button
-              variant="ghost"
               size="sm"
               asChild
-              className="h-7 text-xs hover:bg-primary/10"
+              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] h-9 px-2 text-xs"
             >
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}

@@ -496,7 +496,7 @@ function WorkspaceCard({
                 "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 w-full",
                 nameError
                   ? "border border-destructive"
-                  : "border border-primary/20",
+                  : "border border-muted-foreground",
               )}
             />
             {nameError && (
@@ -505,7 +505,7 @@ function WorkspaceCard({
           </div>
         ) : (
           <CardTitle
-            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-primary/20 transition-all duration-300 pr-8"
+            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground transition-all duration-300 pr-8"
             onDoubleClick={handleNameDoubleClick}
             title="Double-click to rename"
           >
@@ -526,7 +526,7 @@ function WorkspaceCard({
         </div>
       </CardContent>
 
-      <CardFooter className="py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
+      <CardFooter className=" relative py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -535,7 +535,11 @@ function WorkspaceCard({
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button variant="ghost" size="sm" asChild className="h-7 px-2 text-xs">
+        <Button
+          size="sm"
+          asChild
+          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
+        >
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
           </IntentPrefetchLink>
@@ -614,7 +618,7 @@ function NoteCard({ note }: { note: Note }) {
         </p>
       </CardContent>
 
-      <CardFooter className="py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
+      <CardFooter className=" relative py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -624,10 +628,9 @@ function NoteCard({ note }: { note: Note }) {
           )}
         </div>
         <Button
-          variant="ghost"
           size="sm"
           asChild
-          className="h-7 px-2 text-xs hover:bg-primary/10"
+          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
         >
           <IntentPrefetchLink
             href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}

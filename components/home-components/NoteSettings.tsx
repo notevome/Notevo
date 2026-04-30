@@ -275,7 +275,7 @@ export default function NoteSettings({
             </Button>
 
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground hover:bg-primary/10">
+              <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground">
                 <Download size={14} className="text-muted-foreground" />
                 Download
               </DropdownMenuSubTrigger>
