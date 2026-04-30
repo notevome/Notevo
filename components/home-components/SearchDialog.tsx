@@ -51,7 +51,10 @@ function SearchLoadingSkeleton() {
   return (
     <div className="space-y-1 p-2">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 py-2.5 px-3 app-radius-lg">
+        <div
+          key={i}
+          className="flex items-center gap-3 py-2.5 px-3 app-radius-lg"
+        >
           <div className="h-8 w-8 bg-border app-radius-lg shrink-0 animate-pulse" />
           <div className="flex-1 space-y-2">
             <div className="h-3.5 bg-border app-radius-md w-2/3 animate-pulse" />
