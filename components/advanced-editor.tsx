@@ -180,7 +180,7 @@ const TailwindAdvancedEditor = ({
                   <EditorCommandItem
                     value={item.title}
                     onCommand={(val) => item.command(val)}
-                    className="flex w-full items-center space-x-2.5 rounded-tl-lg my-1.5 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-primary/10"
+                    className="flex w-full items-center space-x-2.5 rounded-tl-lg my-1 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-border"
                     key={item.title}
                   >
                     <div className="flex h-8 w-8 items-center justify-center border border-border rounded-tl-lg text-muted-foreground">
