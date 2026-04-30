@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Pencil,
 } from "lucide-react";
+import { useMediaQuery } from "react-responsive";
 import {
   useState,
   useEffect,
@@ -686,7 +687,7 @@ export default function WorkingSpacePageClient({
                       "text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                       nameError
                         ? "border border-destructive"
-                        : "border border-muted-foreground",
+                        : "border border-muted-foreground/50",
                     )}
                   />
                   {nameError && (
@@ -697,7 +698,7 @@ export default function WorkingSpacePageClient({
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground transition-colors duration-150"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 transition-colors duration-150"
                 >
                   {workspace.name}
                 </span>
@@ -808,12 +809,13 @@ export function NotesDroppableContainer({
       return newSet;
     });
   }, []);
+  const isMobile = useMediaQuery({ maxWidth: 640 });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
-          <div className="relative flex-1 max-w-md">
+      <div className="flex gap-4 items-start sm:items-center justify-between">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="relative flex-1 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
             <Input
               type="text"
@@ -850,7 +852,7 @@ export function NotesDroppableContainer({
               onClick={() => setViewMode("list")}
             >
               <List
-                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-foreground"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "list" && !isMobile && "text-foreground"}`}
               />
             </Button>
           </div>
@@ -896,8 +898,14 @@ export function NotesDroppableContainer({
                     workspaceId={workspaceId}
                     onDelete={handleNoteDelete}
                   />
-                ) : (
+                ) : !isMobile ? (
                   <ListNoteCard
+                    note={note}
+                    workspaceId={workspaceId}
+                    onDelete={handleNoteDelete}
+                  />
+                ) : (
+                  <GridNoteCard
                     note={note}
                     workspaceId={workspaceId}
                     onDelete={handleNoteDelete}
@@ -1042,7 +1050,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   "text-base font-semibold min-h-0 py-1 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
                   titleError
                     ? "border border-destructive"
-                    : "border border-muted-foreground",
+                    : "border border-muted-foreground/50",
                 )}
               />
               {titleError && (
@@ -1051,7 +1059,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground transition-all duration-300 pr-2 "
+              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 pr-2 "
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1183,7 +1191,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card/90 backdrop-blur-sm border transition-all duration-300",
+        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 w-full",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -1191,10 +1199,9 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-
           <div
             ref={listContainerRef}
             className="flex-1 min-w-0 overflow-hidden"
@@ -1218,7 +1225,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                     "text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
                     titleError
                       ? "border border-destructive"
-                      : "border border-muted-foreground",
+                      : "border border-muted-foreground/50",
                   )}
                 />
                 {titleError && (
@@ -1227,7 +1234,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground transition-all duration-300 hover:px-2 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300 hover:px-2 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
@@ -1246,7 +1253,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className=" relative flex items-center gap-2 text-xs text-muted-foreground">
               <Calendar className="h-3.5 w-3.5" />
               {typeof window !== "undefined" ? (
                 <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
@@ -1262,12 +1269,12 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               DropdownMenuContentAlign="start"
               TooltipContentAlign="start"
               onDelete={onDelete}
-              BtnClassName="pt-0 "
+              BtnClassName="pt-0 mr-10 mt-1.5"
             />
             <Button
               size="sm"
               asChild
-              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] h-9 px-2 text-xs"
+              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
             >
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
