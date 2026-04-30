@@ -300,6 +300,14 @@ html {
 }
 
 @layer utilities {
+  .field-sizing-content {
+    field-sizing: content;
+  }
+
+  .width-fit-content {
+    width: fit-content;
+  }
+
   .app-radius-sm {
     @apply rounded-none rounded-tl-sm;
   }
