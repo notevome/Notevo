@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogTitle,
   DialogTrigger,
@@ -33,6 +34,8 @@ interface SearchDialogProps {
   iconSize?: number;
   sidebaraOpen?: boolean;
   sidbarMobile?: boolean;
+  showTrigger?: boolean;
+  enableShortcut?: boolean;
 }
 
 const getRelativeTime = (date: Date) => {
@@ -274,6 +277,8 @@ export default function SearchDialog({
   iconSize = 16,
   sidebaraOpen,
   sidbarMobile,
+  showTrigger = true,
+  enableShortcut = true,
 }: SearchDialogProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -352,6 +357,8 @@ export default function SearchDialog({
   }, [searchTargets]);
 
   useEffect(() => {
+    if (!enableShortcut) return;
+
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -361,7 +368,7 @@ export default function SearchDialog({
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [enableShortcut]);
 
   useEffect(() => {
     if (!open) return;
@@ -412,34 +419,36 @@ export default function SearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="SidebarMenuButton"
-          size="sm"
-          className="px-2 h-8 group outline-none border-none"
-        >
-          <Search className="text-muted-foreground" size={iconSize} />
-          {showTitle && (
-            <div className="w-full flex items-center justify-between gap-1">
-              Search
-              <span className="inline-flex gap-1">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">Ctrl</span>
-                </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">K</span>
-                </kbd>
-              </span>
-            </div>
-          )}
-        </Button>
-      </DialogTrigger>
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            className="px-2 h-8 group outline-none border-none"
+          >
+            <Search className="text-muted-foreground" size={iconSize} />
+            {showTitle && (
+              <div className="w-full flex items-center justify-between gap-1">
+                Search
+                <span className="inline-flex gap-1">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                    <span className="text-xs">Ctrl</span>
+                  </kbd>
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                    <span className="text-xs">K</span>
+                  </kbd>
+                </span>
+              </div>
+            )}
+          </Button>
+        </DialogTrigger>
+      )}
 
-      <DialogContent
-        aria-describedby={undefined}
-        className="p-0 overflow-hidden bg-card border-border md:min-w-[850px] gap-0 shadow-2xl"
-      >
+      <DialogContent className="p-0 overflow-hidden bg-card border-border md:min-w-[850px] gap-0 shadow-2xl">
         <DialogTitle className="sr-only">Search Notes</DialogTitle>
+        <DialogDescription className="sr-only">
+          Search across workspaces, tables, and notes, then open the selected result.
+        </DialogDescription>
 
         <div className="flex items-center border-b border-border px-4 py-2">
           {isDebouncing ? (

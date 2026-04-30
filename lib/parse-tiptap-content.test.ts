@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { extractTextFromTiptap, truncateText } from "./parse-tiptap-content";
+import {
+  extractTextFromTiptap,
+  getEmptyTiptapDoc,
+  parseTiptapContent,
+  truncateText,
+} from "./parse-tiptap-content";
 
 describe("truncateText", () => {
   it("returns empty string for empty input", () => {
@@ -62,3 +67,27 @@ describe("extractTextFromTiptap", () => {
   });
 });
 
+describe("parseTiptapContent", () => {
+  it("returns an empty doc for empty input", () => {
+    expect(parseTiptapContent(undefined)).toEqual(getEmptyTiptapDoc());
+    expect(parseTiptapContent("")).toEqual(getEmptyTiptapDoc());
+  });
+
+  it("normalizes array content into a TipTap doc", () => {
+    expect(parseTiptapContent([{ type: "paragraph", content: [] }])).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph", content: [] }],
+    });
+  });
+
+  it("falls back when the parsed value is not a TipTap doc", () => {
+    expect(parseTiptapContent('{"foo":"bar"}')).toEqual(getEmptyTiptapDoc());
+  });
+
+  it("fills in a missing content array on doc nodes", () => {
+    expect(parseTiptapContent({ type: "doc" })).toEqual({
+      type: "doc",
+      content: [],
+    });
+  });
+});

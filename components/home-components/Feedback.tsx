@@ -16,6 +16,7 @@ import { Input } from "../ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogTitle,
   DialogTrigger,
@@ -86,6 +87,9 @@ export default function Feedback() {
       </DialogTrigger>
       <DialogContent>
         <DialogTitle>Send Feedback</DialogTitle>
+        <DialogDescription className="sr-only">
+          Share feedback, feature requests, or suggestions about Notevo.
+        </DialogDescription>
         {submitted ? (
           <div className="py-6 text-center text-green-600 font-medium">
             Thank you for your feedback!

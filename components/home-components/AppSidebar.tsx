@@ -236,6 +236,7 @@ const SidebarNavigation = memo(function SidebarNavigation({
               iconSize={16}
               sidbarMobile={isMobile}
               sidebaraOpen={open}
+              enableShortcut={false}
             />
           </SidebarMenuItem>
         </SidebarMenu>
