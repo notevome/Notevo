@@ -214,7 +214,7 @@ const SidebarNavigation = memo(function SidebarNavigation({
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-      <SidebarGroupContent>
+      <SidebarGroupContent className=" hover:bg-transparent">
         <SidebarMenu>
           <SidebarMenuItem>
             <Button
@@ -336,7 +336,7 @@ const PinnedNoteItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-65% to-transparent to-90% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     return (
@@ -623,7 +623,7 @@ const WorkspaceItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-65% to-transparent to-90% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     return (
