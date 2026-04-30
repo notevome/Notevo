@@ -231,7 +231,8 @@ export default function WorkingSpaceSettings({
               </>
             ) : (
               <>
-                <FaRegTrashCan size="14" className=" text-primary" /> Delete
+                <FaRegTrashCan size="14" className=" text-muted-foreground" />{" "}
+                Delete
               </>
             )}
           </Button>
