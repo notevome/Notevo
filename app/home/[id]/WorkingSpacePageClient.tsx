@@ -770,7 +770,7 @@ export function NotesDroppableContainer({
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
+                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
                 : "flex flex-col gap-3"
             }
           >
@@ -893,7 +893,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 flex flex-col h-[179px]",
+        "group relative overflow-hidden bg-card border  flex flex-col min-h-[230px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -936,7 +936,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="h-full">
+      <CardContent className=" flex-grow flex-1">
         {isEmpty ? (
           <p className="text-sm text-muted-foreground italic">
             No content yet. Click to start writing...
@@ -948,8 +948,8 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
         )}
       </CardContent>
 
-      <CardFooter className="py-3 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground ">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
             <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
