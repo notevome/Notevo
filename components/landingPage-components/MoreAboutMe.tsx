@@ -1,7 +1,4 @@
 import MaxWContainer from "../ui/MaxWContainer";
-import Section from "../ui/Section";
-import { LiaQuoteLeftSolid } from "react-icons/lia";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { NOISE_PNG } from "@/lib/data";
 import { cn } from "@/lib/utils";
 export default function MoreAboutMe() {
@@ -15,7 +12,6 @@ export default function MoreAboutMe() {
     >
       <MaxWContainer>
         <div className="relative pt-10">
-          {/* Stacked paper layers behind */}
           <div className="absolute inset-x-0 bottom-0 top-4 rounded-sm bg-primary" />
           <div className="absolute inset-x-0 bottom-0 top-2 rounded-sm bg-primary/90" />
 
@@ -32,7 +28,6 @@ export default function MoreAboutMe() {
               )`,
             }}
           >
-            {/* Real PNG grain noise overlay — always light mode, fixed values */}
             <div
               aria-hidden="true"
               className="pointer-events-none select-none absolute  inset-0 "
@@ -45,14 +40,12 @@ export default function MoreAboutMe() {
                 zIndex: 5,
               }}
             />
-            {/* Left margin line */}
             <div className="absolute top-0 bottom-0 left-16 w-px bg-[#f5a0a07d]" />
 
             <div
               className="w-full border border-border flex flex-col sm:flex-row items-center gap-6 sm:gap-10 px-6 sm:px-10"
               style={{ paddingTop: "9px", paddingBottom: "9px" }}
             >
-              {/* Quote + author */}
               <div className="flex flex-col justify-between py-6 pl-12 gap-3 w-full sm:w-2/3">
                 <div className="space-y-0">
                   <p
@@ -79,7 +72,6 @@ export default function MoreAboutMe() {
                   </p>
                 </div>
 
-                {/* Author row with shadcn Avatar */}
                 <div className="flex items-center gap-3 bg-muted w-fit">
                   <div>
                     <p className="text-sm font-semibold text-foreground">
