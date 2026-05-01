@@ -470,7 +470,7 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className="group relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit transition-shadow">
+    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border w-[330px] min-h-[230px] ">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
           <div className="flex flex-col gap-1 pr-8 max-w-sm">
@@ -499,15 +499,11 @@ function WorkspaceCard({
           />
         </div>
       </CardHeader>
-
-      <CardContent className="pb-3">
-        <div className="h-20 flex items-center justify-center">
-          <FolderClosed className="h-8 w-8 text-primary" />
-        </div>
+      <CardContent className="flex-grow flex-1">
+        <FolderClosed className="h-8 text-primary text-center w-full" />
       </CardContent>
-
-      <CardFooter className=" relative py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
-        <div className="flex items-center gap-1.5">
+      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
             <span>{new Date(workspace.updatedAt).toLocaleDateString()}</span>
@@ -570,7 +566,7 @@ function NoteCard({ note }: { note: Note }) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card/90 backdrop-blur-sm border transition-all duration-300 flex-shrink-0 w-[300px] h-[225px] flex flex-col",
+        "group relative overflow-hidden bg-card border transition-all duration-300 flex-shrink-0 w-[330px] h-[230px] flex flex-col",
         isEmpty ? "border-dashed border-border" : "border-border",
       )}
     >
@@ -587,7 +583,7 @@ function NoteCard({ note }: { note: Note }) {
         </div>
       </CardHeader>
 
-      <CardContent className="h-full">
+      <CardContent className="flex-grow flex-1">
         <p
           className={cn(
             "text-sm line-clamp-3",
@@ -598,7 +594,7 @@ function NoteCard({ note }: { note: Note }) {
         </p>
       </CardContent>
 
-      <CardFooter className=" relative py-3 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
+      <CardFooter className=" relative py-4 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
