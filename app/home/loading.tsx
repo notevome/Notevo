@@ -1,26 +1,28 @@
 import MaxWContainer from "@/components/ui/MaxWContainer";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`bg-border app-radius-md animate-pulse ${className}`} />;
+  return (
+    <div className={`bg-border app-radius-md animate-pulse ${className}`} />
+  );
 }
 
 function WorkspaceCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[300px] h-fit app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden">
+    <div className="flex-shrink-0 w-[330px] min-h-[230px] app-radius-xl border border-border bg-card overflow-hidden flex flex-col">
       {/* CardHeader */}
       <div className="p-6 pb-3">
         <Skeleton className="h-5 w-3/4" />
       </div>
       {/* CardContent — folder icon area */}
-      <div className="px-6 pb-3">
-        <div className="h-20 flex items-center justify-center">
+      <div className="px-6 flex-1">
+        <div className="h-full flex items-center justify-center">
           <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </div>
       {/* CardFooter */}
-      <div className="px-6 pt-3 pb-6 flex justify-between items-center border-t border-border">
+      <div className="px-6 py-4 flex justify-between items-center border-t border-border">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-9 w-12" />
       </div>
     </div>
   );
@@ -28,9 +30,9 @@ function WorkspaceCardSkeleton() {
 
 function NoteCardSkeleton() {
   return (
-    <div className="flex-shrink-0 w-[300px] h-[225px] app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden flex flex-col">
+    <div className="flex-shrink-0 w-[330px] h-[230px] app-radius-xl border border-border bg-card overflow-hidden flex flex-col">
       {/* CardHeader */}
-      <div className="p-6 pb-2">
+      <div className="p-6 pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
             <Skeleton className="h-5 w-3/4" />
@@ -45,9 +47,9 @@ function NoteCardSkeleton() {
         <Skeleton className="h-3 w-4/6" />
       </div>
       {/* CardFooter */}
-      <div className="px-6 pt-3 pb-6 flex justify-between items-center border-t border-border mt-auto">
+      <div className="px-6 py-4 flex justify-between items-center border-t border-border mt-auto">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-9 w-12" />
       </div>
     </div>
   );

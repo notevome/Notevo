@@ -244,18 +244,18 @@ export default function HomePageClient() {
 
 function WorkspaceCardSkeleton() {
   return (
-    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit">
+    <Card className="relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[230px] flex flex-col">
       <CardHeader className="pb-3 relative">
         <Skeleton className="h-5 w-3/4" />
       </CardHeader>
-      <CardContent className="pb-3">
-        <div className="h-20 flex items-center justify-center">
+      <CardContent className="flex-grow flex-1">
+        <div className="h-full flex items-center justify-center">
           <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </CardContent>
-      <CardFooter className="pt-3 flex justify-between items-center border-t border-border">
+      <CardFooter className="py-4 flex justify-between items-center border-t border-border">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-9 w-12" />
       </CardFooter>
     </Card>
   );
@@ -263,8 +263,8 @@ function WorkspaceCardSkeleton() {
 
 function NoteCardSkeleton() {
   return (
-    <Card className="relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-[225px] flex flex-col">
-      <CardHeader className="pb-2">
+    <Card className="relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] h-[230px] flex flex-col">
+      <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 space-y-2">
             <Skeleton className="h-5 w-3/4" />
@@ -272,14 +272,14 @@ function NoteCardSkeleton() {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pb-3 space-y-2">
+      <CardContent className="flex-grow flex-1 space-y-2">
         <Skeleton className="h-3 w-full" />
         <Skeleton className="h-3 w-5/6" />
         <Skeleton className="h-3 w-4/6" />
       </CardContent>
-      <CardFooter className="pt-3 flex justify-between items-center border-t border-border mt-auto">
+      <CardFooter className="py-4 flex justify-between items-center border-t border-border mt-auto">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-7 w-16" />
+        <Skeleton className="h-9 w-12" />
       </CardFooter>
     </Card>
   );
