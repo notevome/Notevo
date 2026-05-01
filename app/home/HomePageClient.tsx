@@ -499,8 +499,10 @@ function WorkspaceCard({
           />
         </div>
       </CardHeader>
-      <CardContent className="flex-grow flex-1">
-        <FolderClosed className="h-8 text-primary text-center w-full" />
+      <CardContent className="flex-grow flex-1 ">
+        <span className=" w-full flex justify-center items-center h-full">
+          <FolderClosed className=" h-10 w-full text-primary text-center" />
+        </span>
       </CardContent>
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
