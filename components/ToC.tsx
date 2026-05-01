@@ -35,7 +35,7 @@ export const ToCItem = ({ item, onItemClick, isExpanded }: ToCItemProps) => {
   return (
     <div
       className={`
-        transition-all duration-200 cursor-pointer group
+         cursor-pointer group
         ${item.isActive && !item.isScrolledOver ? "is-active" : ""}
         ${item.isScrolledOver ? "is-scrolled" : ""}
       `}
@@ -50,7 +50,7 @@ export const ToCItem = ({ item, onItemClick, isExpanded }: ToCItemProps) => {
         onClick={(e) => onItemClick(e, item)}
         className={`
         flex items-center justify-end gap-2 py-1.5 px-2 rounded-tl-lg no-underline
-          transition-all duration-200
+        
           ${
             item.isActive && !item.isScrolledOver
               ? "text-foreground "
@@ -62,11 +62,11 @@ export const ToCItem = ({ item, onItemClick, isExpanded }: ToCItemProps) => {
         {/* Horizontal line indicator */}
         <div
           className={`
-            h-0.5 flex-shrink-0 transition-all duration-200
+            h-0.5 flex-shrink-0
             ${
               item.isActive && !item.isScrolledOver
-                ? "bg-primary h-[3px] w-6"
-                : "bg-primary/60 w-4 group-hover:w-6"
+                ? "bg-muted-foreground h-[3px] w-6"
+                : "bg-muted-foreground/60 w-4 group-hover:w-6"
             }
           `}
           style={{
@@ -397,7 +397,7 @@ export const ToC = ({ items = [], editor, onActiveIdChange }: ToCProps) => {
 
   return (
     <div
-      className={`max-h-[40rem] transition-all duration-200 ${
+      className={`max-h-[40rem] ${
         isExpanded
           ? "overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
           : "overflow-hidden"
@@ -441,8 +441,8 @@ export const CompactFloatingToC = ({
     <div className="fixed right-3 top-32 z-50">
       <div
         className={`
-          transition-all duration-300 ease-out px-0.5 border border-solid rounded-tl-lg bg-background/60 backdrop-blur-xl
-          ${isExpanded ? "w-48 border-primary/10 " : "w-10 border-transparent"}
+          transition-all duration-300 ease-in-out px-0.5 border border-solid rounded-tl-lg bg-background/60 backdrop-blur-xl
+          ${isExpanded ? "w-52 border-primary/10 " : "w-10 border-transparent"}
         `}
       >
         <div
