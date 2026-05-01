@@ -85,22 +85,34 @@ export default function Section({
     [0.82, 1, 1, 0.82],
   );
 
+  if (isMobile) {
+    return (
+      <div
+        ref={sectionRef}
+        id={sectionId}
+        className={cn(
+          "px-4 sm:px-6 md:px-8",
+          "py-12 sm:py-16 md:py-20 Desktop:py-24",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       ref={sectionRef}
       id={sectionId}
-      style={
-        isMobile
-          ? undefined
-          : {
-              y,
-              marginLeft: marginX,
-              marginRight: marginX,
-              borderRadius: radius,
-              scale,
-              opacity,
-            }
-      }
+      style={{
+        y,
+        marginLeft: marginX,
+        marginRight: marginX,
+        borderRadius: radius,
+        scale,
+        opacity,
+      }}
       className={cn(
         "px-4 sm:px-6 md:px-8",
         "py-12 sm:py-16 md:py-20 Desktop:py-24",
