@@ -2,7 +2,7 @@
 import { cn } from "../../lib/utils";
 import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-
+import { useMediaQuery } from "react-responsive";
 interface SectionProps {
   sectionId?: string;
   className?: string;
@@ -25,20 +25,16 @@ export default function Section({
   initialRadius = 30,
   initialMarginMobile = 0,
   initialRadiusMobile = 0,
-  duration = 0.3,
-  preloadOffset = 150,
 }: SectionProps) {
   const sectionRef = useRef<HTMLDivElement | null>(null);
-
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth < 640 : false,
-  );
+  const [mounted, setMounted] = useState(false);
+  const isMobile = useMediaQuery({ maxWidth: 639 });
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 640);
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    setMounted(true);
   }, []);
+
+  const shouldAnimate = mounted && !isMobile;
 
   const activeMargin = isMobile ? initialMarginMobile : initialMargin;
   const activeRadius = isMobile ? initialRadiusMobile : initialRadius;
@@ -85,34 +81,22 @@ export default function Section({
     [0.82, 1, 1, 0.82],
   );
 
-  if (isMobile) {
-    return (
-      <section
-        ref={sectionRef}
-        id={sectionId}
-        className={cn(
-          "px-4 sm:px-6 md:px-8",
-          "py-12 sm:py-16 md:py-20 Desktop:py-24",
-          className,
-        )}
-      >
-        {children}
-      </section>
-    );
-  }
-
   return (
     <motion.section
       ref={sectionRef}
       id={sectionId}
-      style={{
-        y,
-        marginLeft: marginX,
-        marginRight: marginX,
-        borderRadius: radius,
-        scale,
-        opacity,
-      }}
+      style={
+        shouldAnimate
+          ? {
+              y,
+              marginLeft: marginX,
+              marginRight: marginX,
+              borderRadius: radius,
+              scale,
+              opacity,
+            }
+          : undefined
+      }
       className={cn(
         "px-4 sm:px-6 md:px-8",
         "py-12 sm:py-16 md:py-20 Desktop:py-24",
