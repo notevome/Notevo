@@ -542,9 +542,7 @@ hr {
   position: fixed;
   right: 0;
   top: 50%;
-  transform: translateY(-50%);
   z-index: 40;
-  transition: all 0.3s ease-out;
 }
 
 /* Collapsed state - just lines visible */
@@ -558,15 +556,12 @@ hr {
 }
 
 /* Individual ToC items */
-.toc-item {
-  transition: all 0.2s ease-out;
-}
+.toc-item {}
 
 /* The horizontal line indicator */
 .toc-line {
   height: 50px;
   background-color: hsl(var(--primary));
-  transition: all 0.2s ease-out;
   flex-shrink: 0;
 }
 
