@@ -1,7 +1,6 @@
 "use client";
 import { cn } from "../../lib/utils";
-import { motion, useAnimation } from "framer-motion";
-import { useInView } from "react-intersection-observer";
+import { motion, useScroll, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 interface SectionProps {
@@ -22,35 +21,14 @@ export default function Section({
   children,
   className,
   initialY = 90,
-  initialMargin = 90,
+  initialMargin = 30,
   initialRadius = 30,
   initialMarginMobile = 0,
   initialRadiusMobile = 0,
   duration = 0.3,
   preloadOffset = 150,
 }: SectionProps) {
-  const controls = useAnimation();
-
-  const { ref, inView } = useInView({
-    triggerOnce: false,
-    threshold: 0.2,
-    rootMargin: `${preloadOffset}px 0px ${preloadOffset}px 0px`,
-  });
-
-  const lastScrollY = useRef(0);
-  const scrollingDown = useRef(true);
-  const isFirstLoad = useRef(true);
-
-  useEffect(() => {
-    lastScrollY.current = window.scrollY;
-    const handleScroll = () => {
-      const current = window.scrollY;
-      scrollingDown.current = current > lastScrollY.current;
-      lastScrollY.current = current;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const sectionRef = useRef<HTMLDivElement | null>(null);
 
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 640 : false,
@@ -64,102 +42,65 @@ export default function Section({
 
   const activeMargin = isMobile ? initialMarginMobile : initialMargin;
   const activeRadius = isMobile ? initialRadiusMobile : initialRadius;
-  const resolvedDuration = duration ?? (isMobile ? 0.3 : 0.5);
+  const springConfig = {
+    stiffness: 300,
+    damping: 30,
+  };
 
-  useEffect(() => {
-    // On mobile, skip all animations — just show content instantly
-    if (isMobile) {
-      controls.set({
-        y: 0,
-        opacity: 1,
-        marginLeft: 0,
-        marginRight: 0,
-        borderTopLeftRadius: 0,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-        borderBottomLeftRadius: 0,
-      });
-      return;
-    }
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
 
-    if (inView) {
-      if (isFirstLoad.current) {
-        // On first load, if already in view — just show instantly, no animation
-        isFirstLoad.current = false;
-        controls.set({
-          y: 0,
-          opacity: 1,
-          marginLeft: 0,
-          marginRight: 0,
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          borderBottomRightRadius: 0,
-          borderBottomLeftRadius: 0,
-        });
-        return;
-      }
+  const y = useSpring(
+    useTransform(scrollYProgress, [0.2, 0.5, 0.8], [initialY, 0, -initialY]),
+    springConfig,
+  );
+  const marginX = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0, 0.3, 0.7, 1],
+      [activeMargin, 0, 0, activeMargin],
+    ),
+    springConfig,
+  );
 
-      const fromY = scrollingDown.current ? initialY : -initialY;
-      controls.set({
-        y: fromY,
-        opacity: 1,
-        marginLeft: activeMargin,
-        marginRight: activeMargin,
-        borderTopLeftRadius: activeRadius,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-        borderBottomLeftRadius: 0,
-      });
-      controls.start({
-        y: 0,
-        opacity: 1,
-        marginLeft: 0,
-        marginRight: 0,
-        borderTopLeftRadius: 0,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-        borderBottomLeftRadius: 0,
-        transition: { ease: "easeOut", duration: resolvedDuration },
-      });
-    } else {
-      if (isFirstLoad.current) {
-        // On first load, if out of view — set to hidden instantly, no animation
-        isFirstLoad.current = false;
-        controls.set({
-          y: initialY,
-          opacity: 1,
-          marginLeft: activeMargin,
-          marginRight: activeMargin,
-          borderTopLeftRadius: activeRadius,
-          borderTopRightRadius: 0,
-          borderBottomRightRadius: 0,
-          borderBottomLeftRadius: 0,
-        });
-        return;
-      }
+  const radius = useSpring(
+    useTransform(
+      scrollYProgress,
+      [0, 0.3, 0.7, 1],
+      [activeRadius, 0, 0, activeRadius],
+    ),
+    springConfig,
+  );
 
-      const toY = scrollingDown.current ? -initialY : initialY;
-      controls.start({
-        y: toY,
-        opacity: 1,
-        marginLeft: activeMargin,
-        marginRight: activeMargin,
-        borderTopLeftRadius: activeRadius,
-        borderTopRightRadius: 0,
-        borderBottomRightRadius: 0,
-        borderBottomLeftRadius: 0,
-        transition: { ease: "easeIn", duration: resolvedDuration },
-      });
-    }
-  }, [inView, isMobile]);
+  const scale = useSpring(
+    useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.9, 1, 1, 0.9]),
+    springConfig,
+  );
+
+  const opacity = useTransform(
+    scrollYProgress,
+    [0, 0.3, 0.7, 1],
+    [0.82, 1, 1, 0.82],
+  );
 
   return (
     <motion.div
-      ref={ref}
+      ref={sectionRef}
       id={sectionId}
-      // No `initial` prop — controls.set handles the starting state
-      // This prevents the jump on first load
-      animate={controls}
+      style={
+        isMobile
+          ? undefined
+          : {
+              y,
+              marginLeft: marginX,
+              marginRight: marginX,
+              borderRadius: radius,
+              scale,
+              opacity,
+            }
+      }
       className={cn(
         "px-4 sm:px-6 md:px-8",
         "py-12 sm:py-16 md:py-20 Desktop:py-24",
