@@ -87,7 +87,7 @@ export default function Section({
 
   if (isMobile) {
     return (
-      <div
+      <section
         ref={sectionRef}
         id={sectionId}
         className={cn(
@@ -97,12 +97,12 @@ export default function Section({
         )}
       >
         {children}
-      </div>
+      </section>
     );
   }
 
   return (
-    <motion.div
+    <motion.section
       ref={sectionRef}
       id={sectionId}
       style={{
@@ -120,6 +120,6 @@ export default function Section({
       )}
     >
       {children}
-    </motion.div>
+    </motion.section>
   );
 }
