@@ -119,7 +119,6 @@ const STORAGE_KEYS = {
 function TableTab({ table }: { table: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
-  const [nameError, setNameError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const updateTable = useMutation(
@@ -156,7 +155,6 @@ function TableTab({ table }: { table: any }) {
       e.preventDefault();
       e.stopPropagation();
       setEditedName(table.name || "Untitled");
-      setNameError(null);
       setIsEditing(true);
       requestAnimationFrame(() => {
         inputRef.current?.focus();
@@ -171,7 +169,6 @@ function TableTab({ table }: { table: any }) {
     if (!result.success) {
       setIsEditing(false);
       setEditedName(table.name || "Untitled");
-      setNameError(null);
       return;
     }
     const trimmed = result.data;
@@ -184,7 +181,6 @@ function TableTab({ table }: { table: any }) {
       }
     }
     setIsEditing(false);
-    setNameError(null);
   }, [editedName, table.name, table._id, updateTable]);
 
   const handleKeyDown = useCallback(
@@ -194,7 +190,6 @@ function TableTab({ table }: { table: any }) {
       } else if (e.key === "Escape") {
         setIsEditing(false);
         setEditedName(table.name || "Untitled");
-        setNameError(null);
       }
     },
     [table.name],
@@ -206,28 +201,11 @@ function TableTab({ table }: { table: any }) {
         <Input
           ref={inputRef as any}
           value={editedName}
-          onChange={(e) => {
-            const val = e.target.value;
-            setEditedName(val);
-            const result = tableNameSchema.safeParse(val.trim());
-            setNameError(
-              result.success ? null : result.error.errors[0].message,
-            );
-          }}
+          onChange={(e) => setEditedName(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className={cn(
-            "field-sizing-content width-fit-content min-w-fit max-w-[220px] h-7 px-2 py-0 text-sm font-medium bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
-            nameError
-              ? "border border-destructive"
-              : "border border-muted-foreground/50",
-          )}
+          className="field-sizing-content width-fit-content min-w-fit max-w-[220px] h-7 border border-muted-foreground/50 bg-transparent px-2 py-0 text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0"
         />
-        {nameError && (
-          <p className="text-xs text-destructive whitespace-nowrap">
-            {nameError}
-          </p>
-        )}
       </div>
     );
   }
@@ -434,7 +412,6 @@ export default function WorkingSpacePageClient({
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
@@ -466,7 +443,6 @@ export default function WorkingSpacePageClient({
   const handleNameDoubleClick = useCallback(() => {
     if (!workspace) return;
     setEditedName(workspace.name || "Untitled");
-    setNameError(null);
     setIsEditingName(true);
     requestAnimationFrame(() => {
       nameInputRef.current?.focus();
@@ -479,7 +455,6 @@ export default function WorkingSpacePageClient({
     if (!result.success) {
       setIsEditingName(false);
       setEditedName(workspace?.name || "Untitled");
-      setNameError(null);
       return;
     }
     const trimmed = result.data;
@@ -491,7 +466,6 @@ export default function WorkingSpacePageClient({
       }
     }
     setIsEditingName(false);
-    setNameError(null);
   }, [editedName, workspace?.name, workingSpaceId, updateWorkingSpace]);
 
   const handleNameKeyDown = useCallback(
@@ -501,7 +475,6 @@ export default function WorkingSpacePageClient({
       } else if (e.key === "Escape") {
         setIsEditingName(false);
         setEditedName(workspace?.name || "Untitled");
-        setNameError(null);
       }
     },
     [workspace?.name],
@@ -591,7 +564,7 @@ export default function WorkingSpacePageClient({
       <header>
         <div className=" relative flex justify-between items-end w-full">
           <div className="flex-1 py-1 px-1.5 border border-border bg-muted rounded-none rounded-tl-lg rounded-br-lg">
-            <h1 className="text-3xl md:text-5xl font-bold my-2">
+            <h1 className="text-3xl md:text-5xl font-bol my-2">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -599,26 +572,11 @@ export default function WorkingSpacePageClient({
                   <Input
                     ref={nameInputRef as any}
                     value={editedName}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setEditedName(val);
-                      const result = workspaceNameSchema.safeParse(val.trim());
-                      setNameError(
-                        result.success ? null : result.error.errors[0].message,
-                      );
-                    }}
+                    onChange={(e) => setEditedName(e.target.value)}
                     onBlur={handleNameBlur}
                     onKeyDown={handleNameKeyDown}
-                    className={cn(
-                      "field-sizing-content width-fit-content min-w-fit max-w-full text-3xl md:text-5xl font-bold h-auto py-0 px-2 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
-                      nameError
-                        ? "border border-destructive"
-                        : "border border-muted-foreground/50",
-                    )}
+                    className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-2 py-7 text-3xl font-bold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0 md:text-5xl"
                   />
-                  {nameError && (
-                    <p className="text-xs text-destructive">{nameError}</p>
-                  )}
                 </div>
               ) : (
                 <span
@@ -812,7 +770,7 @@ export function NotesDroppableContainer({
           <div
             className={
               viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"
                 : "flex flex-col gap-3"
             }
           >
@@ -872,7 +830,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const [titleError, setTitleError] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
@@ -895,7 +852,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 
   const handleDoubleClick = useCallback(() => {
     setEditedTitle(note.title || "Untitled");
-    setTitleError(null);
     setIsEditingTitle(true);
     requestAnimationFrame(() => {
       titleInputRef.current?.focus();
@@ -908,7 +864,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
     if (!result.success) {
       setIsEditingTitle(false);
       setEditedTitle(note.title || "Untitled");
-      setTitleError(null);
       return;
     }
     const trimmed = result.data;
@@ -921,7 +876,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       }
     }
     setIsEditingTitle(false);
-    setTitleError(null);
   }, [editedTitle, note.title, note._id, updateNote]);
 
   const handleTitleKeyDown = useCallback(
@@ -931,7 +885,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       } else if (e.key === "Escape") {
         setIsEditingTitle(false);
         setEditedTitle(note.title || "Untitled");
-        setTitleError(null);
       }
     },
     [note.title],
@@ -940,7 +893,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 flex flex-col h-full",
+        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 flex flex-col h-[179px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -953,32 +906,17 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               <Textarea
                 ref={titleInputRef as any}
                 value={editedTitle}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setEditedTitle(val);
-                  const result = noteTitleSchema.safeParse(val.trim());
-                  setTitleError(
-                    result.success ? null : result.error.errors[0].message,
-                  );
-                }}
+                onChange={(e) => setEditedTitle(e.target.value)}
                 onBlur={handleTitleBlur}
                 onKeyDown={handleTitleKeyDown}
                 rows={1}
                 style={{ resize: "none", overflow: "hidden" }}
-                className={cn(
-                  "field-sizing-content min-h-fit min-w-fit max-w-full max-h-full py-1 px-2 text-base font-semibold app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
-                  titleError
-                    ? "border border-destructive"
-                    : "border border-muted-foreground/50",
-                )}
+                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap  [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
               />
-              {titleError && (
-                <p className="text-xs text-destructive">{titleError}</p>
-              )}
             </div>
           ) : (
             <CardTitle
-              className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300"
+              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300"
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1040,7 +978,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const [titleError, setTitleError] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
@@ -1063,7 +1000,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 
   const handleDoubleClick = useCallback(() => {
     setEditedTitle(note.title || "Untitled");
-    setTitleError(null);
     setIsEditingTitle(true);
     requestAnimationFrame(() => {
       titleInputRef.current?.focus();
@@ -1076,7 +1012,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
     if (!result.success) {
       setIsEditingTitle(false);
       setEditedTitle(note.title || "Untitled");
-      setTitleError(null);
       return;
     }
     const trimmed = result.data;
@@ -1089,7 +1024,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       }
     }
     setIsEditingTitle(false);
-    setTitleError(null);
   }, [editedTitle, note.title, note._id, updateNote]);
 
   const handleTitleKeyDown = useCallback(
@@ -1098,7 +1032,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       else if (e.key === "Escape") {
         setIsEditingTitle(false);
         setEditedTitle(note.title || "Untitled");
-        setTitleError(null);
       }
     },
     [note.title],
@@ -1118,32 +1051,17 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className=" relative flex-1 min-w-0 overflow-hidden">
             {isEditingTitle ? (
               <>
                 <Input
                   ref={titleInputRef as any}
                   value={editedTitle}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setEditedTitle(val);
-                    const result = noteTitleSchema.safeParse(val.trim());
-                    setTitleError(
-                      result.success ? null : result.error.errors[0].message,
-                    );
-                  }}
+                  onChange={(e) => setEditedTitle(e.target.value)}
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
-                  className={cn(
-                    "field-sizing-content width-fit-content min-w-fit max-w-full text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 mb-1",
-                    titleError
-                      ? "border border-destructive"
-                      : "border border-muted-foreground/50",
-                  )}
+                  className="min-w-fit max-w-sm border border-transparent bg-transparent px-1 py-1 text-base font-semibold app-radius-md mb-1 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
-                {titleError && (
-                  <p className="text-xs text-destructive mb-1">{titleError}</p>
-                )}
               </>
             ) : (
               <h3

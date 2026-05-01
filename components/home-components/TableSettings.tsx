@@ -43,6 +43,8 @@ interface TableSettingsProps {
   tableName: string | any;
 }
 
+const TABLE_NAME_MAX_LENGTH = 30;
+
 export default function TableSettings({
   notesTableId,
   tableName,
@@ -116,6 +118,10 @@ export default function TableSettings({
   });
 
   useEffect(() => {
+    setInputValue(tableName);
+  }, [tableName]);
+
+  useEffect(() => {
     if (open) {
       setTimeout(() => {
         inputRef.current?.focus();
@@ -136,7 +142,21 @@ export default function TableSettings({
   };
 
   const handleBlur = () => {
-    updateTable({ _id: notesTableId, name: inputValue });
+    const trimmedValue = inputValue.trim();
+    const isValid =
+      trimmedValue.length > 0 && trimmedValue.length <= TABLE_NAME_MAX_LENGTH;
+
+    if (!isValid) {
+      setInputValue(tableName);
+      setOpen(false);
+      return;
+    }
+
+    if (trimmedValue !== tableName) {
+      updateTable({ _id: notesTableId, name: trimmedValue });
+    }
+
+    setInputValue(trimmedValue);
     setOpen(false);
   };
 
