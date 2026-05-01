@@ -376,7 +376,7 @@ const PinnedNoteItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground app-radius-lg"
+                className="flex-1 h-8 px-6 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
@@ -674,7 +674,7 @@ const WorkspaceItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-2 py-1.5 text-sm focus:outline-none focus:ring-0 focus:border-foreground app-radius-lg"
+                className="flex-1 h-8 px-7 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
@@ -1143,7 +1143,7 @@ const AppSidebar = React.memo(function AppSidebar() {
         <SidebarContent
           ref={sidebarContentRef}
           onScroll={handleSidebarScroll}
-          className="relative text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent group-hover:scrollbar-thumb-primary/20"
+          className="relative text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent group-hover:scrollbar-thumb-border"
         >
           <SidebarNavigation
             pathname={pathname}

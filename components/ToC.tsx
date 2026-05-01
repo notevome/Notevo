@@ -399,7 +399,7 @@ export const ToC = ({ items = [], editor, onActiveIdChange }: ToCProps) => {
     <div
       className={`max-h-[40rem] ${
         isExpanded
-          ? "overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+          ? "overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
           : "overflow-hidden"
       }`}
       onMouseEnter={() => setIsExpanded(true)}
@@ -442,7 +442,7 @@ export const CompactFloatingToC = ({
       <div
         className={`
           transition-all duration-300 ease-in-out px-0.5 border border-solid rounded-tl-lg bg-background/60 backdrop-blur-xl
-          ${isExpanded ? "w-52 border-primary/10 " : "w-10 border-transparent"}
+          ${isExpanded ? "w-52 border-border " : "w-10 border-transparent"}
         `}
       >
         <div

@@ -563,26 +563,24 @@ export default function WorkingSpacePageClient({
     <MaxWContainer className="my-5">
       <header>
         <div className=" relative flex justify-between items-end w-full">
-          <div className="flex-1 py-1 px-1.5 border border-border bg-muted rounded-none rounded-tl-lg rounded-br-lg">
-            <h1 className="text-3xl md:text-5xl font-bol my-2">
+          <div className="flex-1 px-1.5 border border-border bg-muted rounded-none rounded-tl-lg rounded-br-lg">
+            <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
-                <div className="flex flex-col gap-1 overflow-hidden max-w-xl">
-                  <Input
-                    ref={nameInputRef as any}
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    onBlur={handleNameBlur}
-                    onKeyDown={handleNameKeyDown}
-                    className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-2 py-7 text-3xl font-bold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0 md:text-5xl"
-                  />
-                </div>
+                <Input
+                  ref={nameInputRef as any}
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  onBlur={handleNameBlur}
+                  onKeyDown={handleNameKeyDown}
+                  className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                />
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 transition-colors duration-150"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50"
                 >
                   {workspace.name}
                 </span>

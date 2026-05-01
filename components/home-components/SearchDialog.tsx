@@ -447,7 +447,8 @@ export default function SearchDialog({
       <DialogContent className="p-0 overflow-hidden bg-card border-border md:min-w-[850px] gap-0 shadow-2xl">
         <DialogTitle className="sr-only">Search Notes</DialogTitle>
         <DialogDescription className="sr-only">
-          Search across workspaces, tables, and notes, then open the selected result.
+          Search across workspaces, tables, and notes, then open the selected
+          result.
         </DialogDescription>
 
         <div className="flex items-center border-b border-border px-4 py-2">
@@ -469,7 +470,7 @@ export default function SearchDialog({
         <div
           ref={resultsScrollRef}
           onScroll={handleResultsScroll}
-          className="min-h-[40vh] max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent p-3"
+          className="min-h-[40vh] max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-3"
         >
           {canScroll && scrollTop > 8 && (
             <div

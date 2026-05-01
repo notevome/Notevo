@@ -102,7 +102,7 @@ export default function PublicNotePage() {
 
   return (
     <div
-      className="relative w-full flex flex-col h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent"
+      className="relative w-full flex flex-col h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
       onScroll={(e) => {
         setIsScrolled(e.currentTarget.scrollTop > 0);
       }}
