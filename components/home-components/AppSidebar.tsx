@@ -73,7 +73,7 @@ import {
   TooltipTrigger,
 } from "../ui/tooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
-import { date } from "zod";
+import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
@@ -86,6 +86,16 @@ interface SidebarHeaderSectionProps {
   handleCreateWorkingSpace: () => Promise<void>;
   loading: boolean;
 }
+
+const workspaceNameSchema = z
+  .string()
+  .min(1, "Name cannot be empty")
+  .max(30, "Name must be 30 characters or less");
+
+const noteTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(55, "Title must be 55 characters or less");
 
 const SidebarHeaderSection = memo(function SidebarHeaderSection({
   getWorkingSpaces,
@@ -309,16 +319,27 @@ const PinnedNoteItem = memo(
     );
 
     const handleInputBlur = useCallback(async () => {
-      if (editedTitle.trim() !== (note.title || "Untitled")) {
+      const currentTitle = note.title || "Untitled";
+      const result = noteTitleSchema.safeParse(editedTitle.trim());
+
+      if (!result.success) {
+        setEditedTitle(currentTitle);
+        setIsEditing(false);
+        return;
+      }
+
+      const trimmedTitle = result.data;
+
+      if (trimmedTitle !== currentTitle) {
         try {
           await updateNote({
             _id: note._id,
-            title: editedTitle.trim(),
+            title: trimmedTitle,
           });
           router.refresh();
         } catch (error) {
           console.error("Error updating note title:", error);
-          setEditedTitle(note.title || "Untitled");
+          setEditedTitle(currentTitle);
         }
       }
       setIsEditing(false);
@@ -597,15 +618,26 @@ const WorkspaceItem = memo(
     );
 
     const handleInputBlur = useCallback(async () => {
-      if (editedName.trim() !== (workingSpace.name || "Untitled")) {
+      const currentName = workingSpace.name || "Untitled";
+      const result = workspaceNameSchema.safeParse(editedName.trim());
+
+      if (!result.success) {
+        setEditedName(currentName);
+        setIsEditing(false);
+        return;
+      }
+
+      const trimmedName = result.data;
+
+      if (trimmedName !== currentName) {
         try {
           await updateWorkingSpace({
             _id: workingSpace._id,
-            name: editedName.trim(),
+            name: trimmedName,
           });
         } catch (error) {
           console.error("Error updating workspace name:", error);
-          setEditedName(workingSpace.name || "Untitled");
+          setEditedName(currentName);
         }
       }
       setIsEditing(false);
