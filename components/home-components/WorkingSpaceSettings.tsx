@@ -38,6 +38,8 @@ interface WorkingSpaceSettings {
   workingspaceName: string | any;
 }
 
+const WORKSPACE_NAME_MAX_LENGTH = 30;
+
 export default function WorkingSpaceSettings({
   className,
   workingSpaceId,
@@ -145,14 +147,26 @@ export default function WorkingSpaceSettings({
   };
 
   const handleBlur = async () => {
-    if (inputValue !== workingspaceName) {
+    const trimmedValue = inputValue.trim();
+    const isValid =
+      trimmedValue.length > 0 &&
+      trimmedValue.length <= WORKSPACE_NAME_MAX_LENGTH;
+
+    if (!isValid) {
+      setInputValue(workingspaceName);
+      setOpen(false);
+      return;
+    }
+
+    if (trimmedValue !== workingspaceName) {
       try {
-        updateWorkingSpace({ _id: workingSpaceId, name: inputValue });
+        updateWorkingSpace({ _id: workingSpaceId, name: trimmedValue });
       } catch (error) {
         console.error("Failed to update workspace name:", error);
         setInputValue(workingspaceName);
       }
     }
+    setInputValue(trimmedValue);
     setOpen(false);
   };
 

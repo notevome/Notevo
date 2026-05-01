@@ -401,7 +401,6 @@ function WorkspaceCard({
 }: WorkspaceCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
-  const [nameError, setNameError] = useState<string | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
@@ -432,7 +431,6 @@ function WorkspaceCard({
 
   const handleNameDoubleClick = useCallback(() => {
     setEditedName(workspace.name || "Untitled");
-    setNameError(null);
     setIsEditingName(true);
     requestAnimationFrame(() => {
       nameInputRef.current?.focus();
@@ -445,7 +443,6 @@ function WorkspaceCard({
     if (!result.success) {
       setIsEditingName(false);
       setEditedName(workspace.name || "Untitled");
-      setNameError(null);
       return;
     }
     const trimmed = result.data;
@@ -458,7 +455,6 @@ function WorkspaceCard({
       }
     }
     setIsEditingName(false);
-    setNameError(null);
   }, [editedName, workspace.name, workspace._id, updateWorkingSpace]);
 
   const handleNameKeyDown = useCallback(
@@ -468,7 +464,6 @@ function WorkspaceCard({
       } else if (e.key === "Escape") {
         setIsEditingName(false);
         setEditedName(workspace.name || "Untitled");
-        setNameError(null);
       }
     },
     [workspace.name],
@@ -478,30 +473,15 @@ function WorkspaceCard({
     <Card className="group relative overflow-hidden bg-card/90 backdrop-blur-sm border-border flex-shrink-0 w-[300px] h-fit transition-shadow">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
-          <div className="flex flex-col gap-1 pr-8">
+          <div className="flex flex-col gap-1 pr-8 max-w-sm">
             <Input
               ref={nameInputRef}
               value={editedName}
-              onChange={(e) => {
-                const val = e.target.value;
-                setEditedName(val);
-                const result = workspaceNameSchema.safeParse(val.trim());
-                setNameError(
-                  result.success ? null : result.error.errors[0].message,
-                );
-              }}
+              onChange={(e) => setEditedName(e.target.value)}
               onBlur={handleNameBlur}
               onKeyDown={handleNameKeyDown}
-              className={cn(
-                "field-sizing-content width-fit-content min-w-fit max-w-full text-base font-semibold h-auto py-1 px-1 app-radius-md bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
-                nameError
-                  ? "border border-destructive"
-                  : "border border-muted-foreground/50",
-              )}
+              className="min-w-fit max-w-md text-base font-semibold h-7 py-1 px-1 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
-            {nameError && (
-              <p className="text-xs text-destructive">{nameError}</p>
-            )}
           </div>
         ) : (
           <CardTitle

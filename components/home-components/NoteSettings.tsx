@@ -65,6 +65,8 @@ interface NoteSettingsProps {
   onDelete?: (noteId: Id<"notes">) => void;
 }
 
+const NOTE_TITLE_MAX_LENGTH = 55;
+
 export default function NoteSettings({
   noteId,
   noteTitle,
@@ -149,7 +151,15 @@ export default function NoteSettings({
 
   const handleBlur = async () => {
     const trimmedValue = inputValue.trim();
-    if (trimmedValue && trimmedValue !== noteTitle && getNote) {
+    const isValid =
+      trimmedValue.length > 0 && trimmedValue.length <= NOTE_TITLE_MAX_LENGTH;
+
+    if (!isValid) {
+      setInputValue(noteTitle);
+      return;
+    }
+
+    if (trimmedValue !== noteTitle && getNote) {
       await updateNote({ _id: noteId, title: trimmedValue });
 
       if (isViewingThisNote) {
@@ -160,6 +170,8 @@ export default function NoteSettings({
         router.replace(`${newPath}?id=${noteId}`);
       }
     }
+
+    setInputValue(trimmedValue);
   };
 
   const initiateDelete = () => {
