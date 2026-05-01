@@ -100,7 +100,7 @@ const MacHandPointer = () => {
 };
 const stepIcons = [UserPlus, PlusIcon, PenBoxIcon];
 
-/* ─── Mini UI Previews ─────────────────────────────────────── */
+/*  Mini UI Previews */
 
 function SignUpPreview() {
   const EMAIL = "mohammed@notevo.me";
@@ -424,7 +424,7 @@ function WritingPreview() {
 
 const stepPreviews = [SignUpPreview, WorkspacePreview, WritingPreview];
 
-/* ─── Main Section ─────────────────────────────────────────── */
+/*  Main Section  */
 
 export default function HowToStartSection() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -436,7 +436,10 @@ export default function HowToStartSection() {
   }, []);
 
   return (
-    <Section sectionId="how-to-start" className="relative">
+    <section
+      id="how-to-start"
+      className="relative px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 Desktop:py-24 "
+    >
       <div className="container relative z-10 mx-auto px-4">
         <SectionHeading
           SectionTitle="How To Start"
@@ -539,6 +542,6 @@ export default function HowToStartSection() {
           </p>
         </div>
       </div>
-    </Section>
+    </section>
   );
 }
