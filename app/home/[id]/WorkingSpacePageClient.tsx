@@ -1186,7 +1186,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
         {Array.from({ length: 5 }).map((_, index) => (
           <Card
             key={index}
-            className="bg-card/90 backdrop-blur-sm border-border"
+            className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px]"
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
@@ -1194,16 +1194,16 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                 <div className="h-5 w-5 bg-border rounded animate-pulse" />
               </div>
             </CardHeader>
-            <CardContent className="pb-3">
+            <CardContent className="flex-grow flex-1">
               <div className="space-y-2">
                 <div className="h-4 w-full bg-border rounded animate-pulse" />
                 <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
                 <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
               </div>
             </CardContent>
-            <CardFooter className="pt-3 flex items-center justify-between border-t border-border">
+            <CardFooter className="py-4 flex items-center justify-between border-t border-border">
               <div className="h-4 w-24 bg-border rounded animate-pulse" />
-              <div className="h-7 w-16 bg-border rounded animate-pulse" />
+              <div className="h-9 w-12 bg-border rounded animate-pulse" />
             </CardFooter>
           </Card>
         ))}
@@ -1217,7 +1217,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
         <Card key={index} className="bg-card/90 backdrop-blur-sm border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-border animate-pulse flex-shrink-0" />
+              <div className="h-10 w-10 app-radius-md bg-border animate-pulse flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
                 <div className="h-5 w-2/3 bg-border rounded animate-pulse" />
                 <div className="h-4 w-full bg-border rounded animate-pulse" />
@@ -1225,7 +1225,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
               <div className="flex items-center gap-3">
                 <div className="h-4 w-24 bg-border rounded animate-pulse" />
                 <div className="h-5 w-5 bg-border rounded animate-pulse" />
-                <div className="h-7 w-16 bg-border rounded animate-pulse" />
+                <div className="h-9 w-12 bg-border rounded animate-pulse" />
               </div>
             </div>
           </CardContent>

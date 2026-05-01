@@ -27,9 +27,9 @@ function NotesGridSkeleton({ count }: { count: number }) {
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
-          className="app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden"
+          className="app-radius-xl border border-border bg-card/90 backdrop-blur-sm overflow-hidden min-h-[230px] flex flex-col"
         >
-          <div className="p-4 pb-2">
+          <div className="p-4 pb-3">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0 space-y-2">
                 <Skeleton className="h-5 w-2/3" />
@@ -38,14 +38,14 @@ function NotesGridSkeleton({ count }: { count: number }) {
               <Skeleton className="h-6 w-6" />
             </div>
           </div>
-          <div className="px-4 pb-4 space-y-2">
+          <div className="px-4 flex-grow flex-1 space-y-2">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-5/6" />
             <Skeleton className="h-4 w-4/6" />
           </div>
-          <div className="px-4 py-3 border-t border-border flex items-center justify-between">
+          <div className="px-4 py-4 border-t border-border flex items-center justify-between">
             <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-7 w-16" />
+            <Skeleton className="h-9 w-12" />
           </div>
         </div>
       ))}
