@@ -204,7 +204,7 @@ function TableTab({ table }: { table: any }) {
           onChange={(e) => setEditedName(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="field-sizing-content width-fit-content min-w-fit max-w-[220px] h-7 border border-muted-foreground/50 bg-transparent px-2 py-0 text-sm font-medium focus-visible:ring-0 focus-visible:ring-offset-0"
+          className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-4 h-[3.3rem] text-sm focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
         />
       </div>
     );
@@ -580,7 +580,7 @@ export default function WorkingSpacePageClient({
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
                 >
                   {workspace.name}
                 </span>
@@ -914,7 +914,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             </div>
           ) : (
             <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 transition-all duration-300"
+              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
@@ -1063,7 +1063,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50 w-fit mb-1"
+                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit mb-1"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
