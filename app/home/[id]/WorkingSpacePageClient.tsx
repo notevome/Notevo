@@ -197,7 +197,7 @@ function TableTab({ table }: { table: any }) {
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-1 px-1 flex-shrink-0">
+      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-[13rem] overflow-hidden">
         <Input
           ref={inputRef as any}
           value={editedName}
