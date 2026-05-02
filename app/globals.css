@@ -390,6 +390,7 @@ hr {
   margin: 2rem 0 !important;
 }
 
+.ProseMirror p.is-editor-empty:first-child::before,
 .ProseMirror p.is-empty:not(.is-editor-empty)::before {
   content: attr(data-placeholder);
   float: left;
