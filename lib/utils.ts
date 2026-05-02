@@ -12,6 +12,15 @@ const getMaxTitleLength = () => {
   if (width < 1024) return 35; // tablet
   return 60; // desktop
 };
+const getMaxTableNameLength = () => {
+  if (typeof window === "undefined") return 12; // SSR safety
+
+  const width = window.innerWidth;
+
+  if (width < 640) return 10; // mobile
+  if (width < 1024) return 13; // tablet
+  return 15; // desktop
+};
 const MAX_NAME_LENGTH = 50;
 const EMAIL_DISPLAY_REGEX = /(.{3}).*?(@.{3}).*/;
 export const formatWorkspaceName = (name: string) =>
@@ -37,4 +46,10 @@ export const formatUserNoteTitle = (title: string) => {
 
   const max = getMaxTitleLength();
   return title.length > max ? `${title.slice(0, max)}…` : title;
+};
+
+export const formatTableName = (TableName: string) => {
+  if (!TableName) return;
+  const max = getMaxTableNameLength();
+  return TableName.length > max ? `${TableName.slice(0, max)}...` : TableName;
 };
