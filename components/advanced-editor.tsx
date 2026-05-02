@@ -101,8 +101,6 @@ const TailwindAdvancedEditor = ({
     }),
     Placeholder.configure({
       placeholder: "Press '/' for commands, or start writing...",
-      emptyEditorClass:
-        "is-editor-empty before:content-[attr(data-placeholder)] before:float-left !before:text-primary before:pointer-events-none before:cursor-text before:h-0",
       showOnlyWhenEditable: true,
       includeChildren: true,
     }),

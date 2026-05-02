@@ -2,14 +2,11 @@ import type { JSONContent } from "@tiptap/react";
 
 const EMPTY_TIPTAP_DOC: JSONContent = {
   type: "doc",
-  content: [],
+  content: [{ type: "paragraph" }],
 };
 
 export function getEmptyTiptapDoc(): JSONContent {
-  return {
-    type: "doc",
-    content: [],
-  };
+  return structuredClone(EMPTY_TIPTAP_DOC);
 }
 
 export function parseTiptapContent(
@@ -42,12 +39,17 @@ export function parseTiptapContent(
     "type" in parsedContent &&
     (parsedContent as JSONContent).type === "doc"
   ) {
+    const normalizedContent = Array.isArray((parsedContent as JSONContent).content)
+      ? (parsedContent as JSONContent).content
+      : [];
+
     return {
       ...(parsedContent as JSONContent),
       type: "doc",
-      content: Array.isArray((parsedContent as JSONContent).content)
-        ? (parsedContent as JSONContent).content
-        : [],
+      content:
+        normalizedContent.length > 0
+          ? normalizedContent
+          : [{ type: "paragraph" }],
     };
   }
 
