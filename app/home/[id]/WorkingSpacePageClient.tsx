@@ -574,7 +574,7 @@ export default function WorkingSpacePageClient({
                   onChange={(e) => setEditedName(e.target.value)}
                   onBlur={handleNameBlur}
                   onKeyDown={handleNameKeyDown}
-                  className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  className="min-w-fit max-w-2xl border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
