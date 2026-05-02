@@ -51,7 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { getContentPreview } from "@/lib/getContentPreview";
-import { cn } from "@/lib/utils";
+import { cn, formatTableName } from "@/lib/utils";
 
 const workspaceNameSchema = z
   .string()
@@ -232,7 +232,7 @@ function TableTab({ table }: { table: any }) {
     [table.name],
   );
   const textClassName = isHovered
-    ? "truncate flex-grow bg-gradient-to-r from-foreground from-65% via-transparent via-85% to-transparent to-90% text-transparent bg-clip-text"
+    ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-95% text-transparent bg-clip-text"
     : "truncate flex-grow";
 
   const handleDelete = useCallback(async () => {
@@ -247,14 +247,14 @@ function TableTab({ table }: { table: any }) {
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-[13rem] overflow-hidden">
+      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-28 overflow-hidden">
         <Input
           ref={inputRef as any}
           value={editedName}
           onChange={(e) => setEditedName(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className=" field-sizing-content width-fit-content min-w-fit max-w-full border-transparent bg-transparent px-4 h-[3.3rem] text-sm focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+          className=" w-full border-transparent bg-transparent px-3 h-[3.3rem] text-sm focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
         />
       </div>
     );
@@ -263,26 +263,25 @@ function TableTab({ table }: { table: any }) {
   return (
     <>
       <div
-        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg"
+        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-28"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <TabsTrigger
           value={table._id}
           data-tab-id={table._id}
-          className="px-5 py-2.5 rounded-none rounded-tl-lg whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+          className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
           onDoubleClick={handleDoubleClick}
           title="Double-click to rename"
         >
-          <p className={textClassName}>{table.name}</p>
+          <p className={cn(textClassName, "w-full")}>
+            {formatTableName(table.name)}
+          </p>
         </TabsTrigger>
-
         <div
           className={cn(
-            "absolute inset-y-0 right-1 flex items-center transition-all",
-            isHovered
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 translate-x-2 pointer-events-none",
+            "absolute inset-y-0 right-2 flex items-center",
+            isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
           )}
         >
           <Button
@@ -291,23 +290,9 @@ function TableTab({ table }: { table: any }) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              handleDoubleClick(e as any);
-            }}
-            className="px-1.5 h-7 text-foreground"
-            title="Rename table"
-            aria-label="Rename table"
-          >
-            <Pencil size={14} />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
               setIsDeleteAlertOpen(true);
             }}
-            className=" px-1.5 h-7 text-foreground"
+            className=" px-1 h-6 text-foreground hover:text-destructive"
             title="Delete table"
             aria-label="Delete table"
           >
@@ -1146,18 +1131,18 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card backdrop-blur-sm border transition-all duration-300 w-full",
+        "group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border transition-all duration-300 w-full min-h-[100px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
       )}
     >
-      <CardContent className="p-4">
-        <div className="flex items-center gap-4">
+      <CardContent className="p-3 flex-1">
+        <div className="flex items-center justify-center gap-4">
           <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
             <FileText className="h-5 w-5 text-primary" />
           </div>
-          <div className=" relative flex-1 min-w-0 overflow-hidden">
+          <div className=" relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
             {isEditingTitle ? (
               <>
                 <Input
@@ -1166,12 +1151,12 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   onChange={(e) => setEditedTitle(e.target.value)}
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
-                  className="min-w-fit max-w-sm border border-transparent bg-transparent px-1 py-1 text-base font-semibold app-radius-md mb-1 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="min-w-fit max-w-sm border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </>
             ) : (
               <h3
-                className="text-base font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit mb-1"
+                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >

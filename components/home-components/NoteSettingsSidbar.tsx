@@ -123,7 +123,7 @@ export default function NoteSettingsSidbar({
               <Button
                 onClick={handleFavoritePin}
                 variant="SidebarMenuButton"
-                className="px-2 h-7"
+                className="px-2 h-7 hover:bg-card"
               >
                 {getNote?.favorite ? (
                   <PinOff size={16} className="text-muted-foreground" />
@@ -142,9 +142,9 @@ export default function NoteSettingsSidbar({
               <Button
                 onMouseDown={initiateDelete}
                 variant="SidebarMenuButton_destructive"
-                className="px-2 h-7"
+                className="px-2 h-7 hover:bg-card"
               >
-                <X size={16} className=" text-muted-foreground" />
+                <X size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>

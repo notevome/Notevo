@@ -111,9 +111,9 @@ export default function WorkingSpaceSettingsSidbar({
               <Button
                 onMouseDown={initiateDelete}
                 variant="SidebarMenuButton_destructive"
-                className="px-2 h-7"
+                className="px-2 h-7 hover:bg-card"
               >
-                <X size={16} className=" text-muted-foreground" />
+                <X size={16} />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" sideOffset={5}>
