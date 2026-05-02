@@ -8,6 +8,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Pencil,
+  Trash2,
+  X,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -38,6 +40,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getContentPreview } from "@/lib/getContentPreview";
 import { cn } from "@/lib/utils";
 
@@ -119,6 +131,8 @@ const STORAGE_KEYS = {
 function TableTab({ table }: { table: any }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
+  const [isHovered, setIsHovered] = useState(false);
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const updateTable = useMutation(
@@ -142,6 +156,29 @@ function TableTab({ table }: { table: any }) {
                   ? { ...t, name: name ?? t.name, updatedAt: Date.now() }
                   : t,
               ),
+            );
+            break;
+          }
+        }
+      }
+    }
+  });
+  const deleteTable = useMutation(
+    api.notesTables.deleteTable,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id } = args;
+    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    if (workspaces && Array.isArray(workspaces)) {
+      for (const ws of workspaces) {
+        const tables = local.getQuery(api.notesTables.getTables, {
+          workingSpaceId: ws._id,
+        });
+        if (tables && Array.isArray(tables)) {
+          if (tables.some((t: any) => t._id === _id)) {
+            local.setQuery(
+              api.notesTables.getTables,
+              { workingSpaceId: ws._id },
+              tables.filter((t: any) => t._id !== _id),
             );
             break;
           }
@@ -194,6 +231,19 @@ function TableTab({ table }: { table: any }) {
     },
     [table.name],
   );
+  const textClassName = isHovered
+    ? "truncate flex-grow bg-gradient-to-r from-foreground from-65% via-transparent via-85% to-transparent to-90% text-transparent bg-clip-text"
+    : "truncate flex-grow";
+
+  const handleDelete = useCallback(async () => {
+    try {
+      await deleteTable({ _id: table._id });
+    } catch (error) {
+      console.error("Error deleting table:", error);
+    } finally {
+      setIsDeleteAlertOpen(false);
+    }
+  }, [deleteTable, table._id]);
 
   if (isEditing) {
     return (
@@ -211,26 +261,84 @@ function TableTab({ table }: { table: any }) {
   }
 
   return (
-    <TabsTrigger
-      value={table._id}
-      data-tab-id={table._id}
-      className="relative group/tab px-5 py-2.5 rounded-none rounded-tl-lg whitespace-nowrap flex-shrink-0 flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
-      onDoubleClick={handleDoubleClick}
-      title="Double-click to rename"
-    >
-      {table.name}
-      <span
-        role="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDoubleClick(e as any);
-        }}
-        className=" absolute top-0.5 right-0.5 opacity-0 group-hover/tab:opacity-100 transition-opacity duration-150 p-0.5 rounded-full text-secondary-foreground hover:text-foreground"
-        title="Rename"
+    <>
+      <div
+        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <Pencil className="h-3 w-3" />
-      </span>
-    </TabsTrigger>
+        <TabsTrigger
+          value={table._id}
+          data-tab-id={table._id}
+          className="px-5 py-2.5 rounded-none rounded-tl-lg whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+          onDoubleClick={handleDoubleClick}
+          title="Double-click to rename"
+        >
+          <p className={textClassName}>{table.name}</p>
+        </TabsTrigger>
+
+        <div
+          className={cn(
+            "absolute inset-y-0 right-1 flex items-center transition-all",
+            isHovered
+              ? "opacity-100 translate-x-0"
+              : "opacity-0 translate-x-2 pointer-events-none",
+          )}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleDoubleClick(e as any);
+            }}
+            className="px-1.5 h-7 text-foreground"
+            title="Rename table"
+            aria-label="Rename table"
+          >
+            <Pencil size={14} />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsDeleteAlertOpen(true);
+            }}
+            className=" px-1.5 h-7 text-foreground"
+            title="Delete table"
+            aria-label="Delete table"
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      </div>
+
+      <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+        <AlertDialogContent className="bg-card border border-border text-card-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Table Deletion</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this table? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground border-none"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

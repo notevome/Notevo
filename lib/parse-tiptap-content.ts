@@ -39,8 +39,9 @@ export function parseTiptapContent(
     "type" in parsedContent &&
     (parsedContent as JSONContent).type === "doc"
   ) {
-    const normalizedContent = Array.isArray((parsedContent as JSONContent).content)
-      ? (parsedContent as JSONContent).content
+    const rawDocContent = (parsedContent as JSONContent).content;
+    const normalizedContent: JSONContent[] = Array.isArray(rawDocContent)
+      ? rawDocContent
       : [];
 
     return {
