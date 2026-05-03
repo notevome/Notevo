@@ -306,8 +306,11 @@ const PinnedNoteItem = memo(
       setIsEditing(true);
       setEditedTitle(note.title || "Untitled");
       requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const input = inputRef.current;
+        if (!input) return;
+        input.focus();
+        input.select();
+        input.scrollLeft = 0;
       });
     }, [note.title]);
 
@@ -376,7 +379,8 @@ const PinnedNoteItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-6 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                aria-label="pinned note title"
+                className="flex-1 h-8 pl-6 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
@@ -605,8 +609,11 @@ const WorkspaceItem = memo(
       setIsEditing(true);
       setEditedName(workingSpace.name || "Untitled");
       requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
+        const input = inputRef.current;
+        if (!input) return;
+        input.focus();
+        input.select();
+        input.scrollLeft = 0;
       });
     }, [workingSpace.name]);
 
@@ -674,7 +681,8 @@ const WorkspaceItem = memo(
                 onChange={handleInputChange}
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
-                className="flex-1 h-8 px-7 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                aria-label="work space name"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
