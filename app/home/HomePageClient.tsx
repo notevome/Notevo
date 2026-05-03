@@ -480,12 +480,12 @@ function WorkspaceCard({
               onChange={(e) => setEditedName(e.target.value)}
               onBlur={handleNameBlur}
               onKeyDown={handleNameKeyDown}
-              className="min-w-fit max-w-md text-base font-semibold h-7 py-1 px-1 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         ) : (
           <CardTitle
-            className="text-base font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 transition-all duration-300 "
+            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
             onDoubleClick={handleNameDoubleClick}
             title="Double-click to rename"
           >

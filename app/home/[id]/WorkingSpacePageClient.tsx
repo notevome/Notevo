@@ -218,6 +218,7 @@ function TableTab({ table }: { table: any }) {
       }
     }
     setIsEditing(false);
+    setIsHovered(false);
   }, [editedName, table.name, table._id, updateTable]);
 
   const handleKeyDown = useCallback(
@@ -227,10 +228,19 @@ function TableTab({ table }: { table: any }) {
       } else if (e.key === "Escape") {
         setIsEditing(false);
         setEditedName(table.name || "Untitled");
+        setIsHovered(false);
       }
     },
     [table.name],
   );
+  const handleContentMouseEnter = useCallback(() => {
+    setIsHovered(true);
+  }, []);
+
+  const handleContentMouseLeave = useCallback(() => {
+    setIsHovered(false);
+  }, []);
+
   const textClassName = isHovered
     ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-95% text-transparent bg-clip-text"
     : "truncate flex-grow";
@@ -247,7 +257,7 @@ function TableTab({ table }: { table: any }) {
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-28 overflow-hidden">
+      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-[8.1rem] overflow-hidden">
         <Input
           ref={inputRef as any}
           value={editedName}
@@ -263,9 +273,9 @@ function TableTab({ table }: { table: any }) {
   return (
     <>
       <div
-        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-28"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
       >
         <TabsTrigger
           value={table._id}
@@ -1151,7 +1161,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                   onChange={(e) => setEditedTitle(e.target.value)}
                   onBlur={handleTitleBlur}
                   onKeyDown={handleTitleKeyDown}
-                  className="min-w-fit max-w-sm border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
+                  className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
               </>
             ) : (
