@@ -470,7 +470,7 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border w-[330px] min-h-[230px] ">
+    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[230px] ">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
           <div className="flex flex-col gap-1 pr-8 max-w-sm">
