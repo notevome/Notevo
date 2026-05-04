@@ -380,7 +380,7 @@ const PinnedNoteItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned note title"
-                className="flex-1 h-8 pl-6 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <TooltipProvider delayDuration={200} skipDelayDuration={0}>
