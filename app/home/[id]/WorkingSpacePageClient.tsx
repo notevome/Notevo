@@ -19,7 +19,6 @@ import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { z } from "zod";
-
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
@@ -50,9 +49,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getContentPreview } from "@/lib/getContentPreview";
 import { cn, formatTableName } from "@/lib/utils";
-
+import {
+  extractTextFromTiptap as parseTiptapContentExtractText,
+  truncateText as parseTiptapContentTruncateText,
+} from "@/lib/parse-tiptap-content";
+const getContentPreviewFromBody = (body: any) => {
+  if (!body) return "No content yet. Click to start writing...";
+  try {
+    const plainText = parseTiptapContentExtractText(body);
+    return plainText
+      ? parseTiptapContentTruncateText(plainText, 80)
+      : "No content yet. Click to start writing...";
+  } catch (error) {
+    return "Unable to display content preview";
+  }
+};
 const workspaceNameSchema = z
   .string()
   .min(1, "Name cannot be empty")
@@ -927,7 +939,11 @@ export function NotesDroppableContainer({
 }
 
 function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
-  const isEmpty = (note.preview ?? note.body ?? "").trim() === "";
+  const previewText = note.preview
+    ? parseTiptapContentTruncateText(note.preview, 80)
+    : getContentPreviewFromBody(note.body);
+
+  const isEmpty = !(note.preview || note.body);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
@@ -972,7 +988,6 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       try {
         await updateNote({ _id: note._id, title: trimmed });
       } catch (error) {
-        console.error("Error updating note title:", error);
         setEditedTitle(note.title || "Untitled");
       }
     }
@@ -1038,15 +1053,9 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       </CardHeader>
 
       <CardContent className=" flex-grow flex-1">
-        {isEmpty ? (
-          <p className="text-sm text-muted-foreground italic">
-            No content yet. Click to start writing...
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground line-clamp-3">
-            {getContentPreview(note.preview ?? note.body)}
-          </p>
-        )}
+        <p className="text-sm text-muted-foreground line-clamp-3">
+          {previewText}
+        </p>
       </CardContent>
 
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
@@ -1075,7 +1084,11 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
 }
 
 function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
-  const isEmpty = (note.preview ?? note.body ?? "").trim() === "";
+  const previewText = note.preview
+    ? parseTiptapContentTruncateText(note.preview, 80)
+    : getContentPreviewFromBody(note.body);
+
+  const isEmpty = !(note.preview || note.body);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
@@ -1173,15 +1186,11 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 {note.title || "Untitled"}
               </h3>
             )}
-            {isEmpty ? (
-              <p className="text-sm text-muted-foreground italic">
-                No content yet. Click to start writing...
-              </p>
-            ) : (
+            {
               <p className="text-sm text-muted-foreground line-clamp-2">
-                {getContentPreview(note.preview ?? note.body)}
+                {previewText}
               </p>
-            )}
+            }
           </div>
 
           <div className="flex items-center gap-3">
