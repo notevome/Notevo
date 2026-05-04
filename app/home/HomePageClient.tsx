@@ -552,7 +552,6 @@ function NoteCard({ note }: { note: Note }) {
         ? parseTiptapContentTruncateText(plainText, 80)
         : "No content yet. Click to start writing...";
     } catch (error) {
-      console.error("Error parsing content:", error);
       return "Unable to display content preview";
     }
   };
