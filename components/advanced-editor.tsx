@@ -35,6 +35,8 @@ import {
 } from "@tiptap/extension-table-of-contents";
 import { CompactFloatingToC } from "./ToC";
 import { useMediaQuery } from "react-responsive";
+import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
+import { Maximize2, Plus } from "lucide-react";
 const TailwindAdvancedEditor = ({
   initialContent,
   onUpdate,
@@ -53,6 +55,7 @@ const TailwindAdvancedEditor = ({
   );
   const [items, setItems] = useState<any[]>([]);
   const [dragHandleColor, setDragHandleColor] = useState<string>();
+  const [imagePreviewSrc, setImagePreviewSrc] = useState<string | null>(null);
   const { resolvedTheme } = useTheme();
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
@@ -88,6 +91,25 @@ const TailwindAdvancedEditor = ({
     setOpenLink(open);
   };
 
+  const insertBlockBelowWithSlashMenu = (editor: EditorInstance) => {
+    const { $from } = editor.state.selection;
+
+    if ($from.depth < 1) {
+      return;
+    }
+    const insertAt = $from.after(1);
+
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(insertAt, {
+        type: "paragraph",
+        content: [{ type: "text", text: "/" }],
+      })
+      .setTextSelection(insertAt + 2)
+      .run();
+  };
+
   // Create extensions array with ToC configuration
   const extensions = [
     TextStyle,
@@ -115,31 +137,47 @@ const TailwindAdvancedEditor = ({
             <>
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="3"
-                  className=" w-4 h-4 opacity-80"
-                  stroke={dragHandleColor}
-                >
-                  <path
-                    d="
-                      M9 6
-                      a1.25 1.25 0 1 0 0.01 0
-                      M15 6
-                      a1.25 1.25 0 1 0 0.01 0
-                      M9 12
-                      a1.25 1.25 0 1 0 0.01 0
-                      M15 12
-                      a1.25 1.25 0 1 0 0.01 0
-                      M9 18
-                      a1.25 1.25 0 1 0 0.01 0
-                      M15 18
-                      a1.25 1.25 0 1 0 0.01 0
-                    "
-                  />
-                </svg>
+                <div className="flex items-center justify-center ">
+                  <button
+                    type="button"
+                    aria-label="Insert block below"
+                    className="flex h-5 w-5 items-center justify-center text-muted-foreground rounded-tl-lg opacity-50 transition-colors hover:bg-border"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      insertBlockBelowWithSlashMenu(editorInstance);
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mt-0.5" />
+                  </button>
+                  <div className="flex h-5 w-5 items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="3"
+                      className="h-4 w-4 opacity-90"
+                      stroke={dragHandleColor}
+                    >
+                      <path
+                        d="
+                          M9 6
+                          a1.25 1.25 0 1 0 0.01 0
+                          M15 6
+                          a1.25 1.25 0 1 0 0.01 0
+                          M9 12
+                          a1.25 1.25 0 1 0 0.01 0
+                          M15 12
+                          a1.25 1.25 0 1 0 0.01 0
+                          M9 18
+                          a1.25 1.25 0 1 0 0.01 0
+                          M15 18
+                          a1.25 1.25 0 1 0 0.01 0
+                        "
+                      />
+                    </svg>
+                  </div>
+                </div>
               </DragHandle>
             </>
           )}
@@ -147,10 +185,24 @@ const TailwindAdvancedEditor = ({
             initialContent={initialContent}
             autofocus={true}
             extensions={extensions}
-            className="relative w-full bg-transparent text-foreground placeholder"
+            className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder"
             editorProps={{
               handleDOMEvents: {
                 keydown: (_view, event) => handleCommandNavigation(event),
+              },
+              handleClickOn: (view, _pos, node, nodePos, _event, direct) => {
+                if (!direct || node.type.name !== "image") {
+                  return false;
+                }
+                const isImageSelected =
+                  view.state.selection.from === nodePos &&
+                  view.state.selection.to === nodePos + node.nodeSize;
+
+                if (!isImageSelected || !node.attrs.src) {
+                  return false;
+                }
+                setImagePreviewSrc(node.attrs.src);
+                return true;
               },
               handlePaste: (view, event) =>
                 handleImagePaste(view, event, uploadFn),
@@ -212,11 +264,28 @@ const TailwindAdvancedEditor = ({
           </EditorContent>
         </div>
       </EditorRoot>
-
       {/* Compact Floating ToC */}
       {!isMobile && (
         <CompactFloatingToC items={items} editor={editorInstance} />
       )}
+      <Dialog
+        open={Boolean(imagePreviewSrc)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setImagePreviewSrc(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-5xl border border-border bg-background/96 p-1 shadow-2xl backdrop-blur">
+          {imagePreviewSrc && (
+            <img
+              src={imagePreviewSrc}
+              alt="Expanded editor image"
+              className="overflow-hidden rounded-none rounded-tl-lg border border-border/70 max-h-[80vh] w-full object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

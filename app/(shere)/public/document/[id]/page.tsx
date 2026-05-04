@@ -18,10 +18,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  getEmptyTiptapDoc,
-  parseTiptapContent,
-} from "@/lib/parse-tiptap-content";
 import { parseSlug } from "@/lib/parseSlug";
 import { formatUserNoteTitle } from "@/lib/utils";
 import { ReadOnlyWarning } from "@/components/readOnly-warning";
@@ -53,7 +49,7 @@ export default function PublicNotePage() {
 
   useEffect(() => {
     if (getNote?.body) {
-      setContent(parseTiptapContent(getNote.body));
+      setContent(JSON.parse(getNote.body));
     }
   }, [getNote]);
 
@@ -96,9 +92,7 @@ export default function PublicNotePage() {
   const PublicNoteTitle = formatUserNoteTitle(
     `${parseSlug(`${getNote.title}`)}`,
   );
-  const parsedContent = getNote.body
-    ? parseTiptapContent(getNote.body)
-    : (content ?? getEmptyTiptapDoc());
+  const parsedContent = getNote.body ? JSON.parse(getNote.body) : content;
 
   return (
     <div
