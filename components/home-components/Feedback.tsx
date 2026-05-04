@@ -104,7 +104,11 @@ export default function Feedback() {
                   <FormItem>
                     <FormLabel>Feedback</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Your feedback..." {...field} />
+                      <Textarea
+                        rows={4}
+                        placeholder="Your feedback..."
+                        {...field}
+                      />
                     </FormControl>
                     <FormDescription>
                       Please let us know your thoughts or suggestions.
@@ -118,28 +122,11 @@ export default function Feedback() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Name</FormLabel>
+                    <FormLabel>Name </FormLabel>
                     <FormControl>
                       <Input
                         type="text"
-                        placeholder="Your name (optional)"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Your email (optional)"
+                        placeholder="or Github username (optional if you want a shoutout)"
                         {...field}
                       />
                     </FormControl>

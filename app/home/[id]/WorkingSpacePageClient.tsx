@@ -1,6 +1,7 @@
 "use client";
 import {
   Calendar,
+  Check,
   FileText,
   LayoutGrid,
   List,
@@ -38,6 +39,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -141,7 +147,7 @@ const STORAGE_KEYS = {
 };
 
 function TableTab({ table }: { table: any }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -204,20 +210,31 @@ function TableTab({ table }: { table: any }) {
       e.preventDefault();
       e.stopPropagation();
       setEditedName(table.name || "Untitled");
-      setIsEditing(true);
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-        inputRef.current?.select();
-      });
+      setIsRenameOpen(true);
     },
     [table.name],
   );
 
-  const handleBlur = useCallback(async () => {
+  useEffect(() => {
+    setEditedName(table.name || "Untitled");
+  }, [table.name]);
+
+  useEffect(() => {
+    if (!isRenameOpen) return;
+    requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) return;
+      input.focus();
+      input.select();
+      input.scrollLeft = 0;
+    });
+  }, [isRenameOpen]);
+
+  const handleRenameSave = useCallback(async () => {
     const result = tableNameSchema.safeParse(editedName.trim());
     if (!result.success) {
-      setIsEditing(false);
       setEditedName(table.name || "Untitled");
+      setIsRenameOpen(false);
       return;
     }
     const trimmed = result.data;
@@ -229,21 +246,27 @@ function TableTab({ table }: { table: any }) {
         setEditedName(table.name || "Untitled");
       }
     }
-    setIsEditing(false);
+    setIsRenameOpen(false);
     setIsHovered(false);
   }, [editedName, table.name, table._id, updateTable]);
+
+  const handleRenameCancel = useCallback(() => {
+    setEditedName(table.name || "Untitled");
+    setIsRenameOpen(false);
+    setIsHovered(false);
+  }, [table.name]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        inputRef.current?.blur();
+        e.preventDefault();
+        void handleRenameSave();
       } else if (e.key === "Escape") {
-        setIsEditing(false);
-        setEditedName(table.name || "Untitled");
-        setIsHovered(false);
+        e.preventDefault();
+        handleRenameCancel();
       }
     },
-    [table.name],
+    [handleRenameCancel, handleRenameSave],
   );
   const handleContentMouseEnter = useCallback(() => {
     setIsHovered(true);
@@ -267,61 +290,86 @@ function TableTab({ table }: { table: any }) {
     }
   }, [deleteTable, table._id]);
 
-  if (isEditing) {
-    return (
-      <div className="flex flex-col gap-1 px-1 flex-shrink-0 max-w-[8.1rem] overflow-hidden">
-        <Input
-          ref={inputRef as any}
-          value={editedName}
-          onChange={(e) => setEditedName(e.target.value)}
-          onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className=" w-full border-transparent bg-transparent px-3 h-[3.3rem] text-sm focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
-        />
-      </div>
-    );
-  }
-
   return (
     <>
-      <div
-        className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <Popover
+        open={isRenameOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setIsRenameOpen(true);
+            return;
+          }
+          handleRenameCancel();
+        }}
       >
-        <TabsTrigger
-          value={table._id}
-          data-tab-id={table._id}
-          className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
-          onDoubleClick={handleDoubleClick}
-          title="Double-click to rename"
-        >
-          <p className={cn(textClassName, "w-full")}>
-            {formatTableName(table.name)}
-          </p>
-        </TabsTrigger>
-        <div
-          className={cn(
-            "absolute inset-y-0 right-2 flex items-center",
-            isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
-          )}
-        >
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsDeleteAlertOpen(true);
-            }}
-            className=" px-1 h-6 text-foreground hover:text-destructive"
-            title="Delete table"
-            aria-label="Delete table"
+        <PopoverAnchor asChild>
+          <div
+            className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
+            onMouseEnter={handleContentMouseEnter}
+            onMouseLeave={handleContentMouseLeave}
           >
-            <X size={16} />
-          </Button>
-        </div>
-      </div>
+            <TabsTrigger
+              value={table._id}
+              data-tab-id={table._id}
+              className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+              onDoubleClick={handleDoubleClick}
+              title="Double-click to rename"
+            >
+              <p className={cn(textClassName, "w-full")}>
+                {formatTableName(table.name)}
+              </p>
+            </TabsTrigger>
+            <div
+              className={cn(
+                "absolute inset-y-0 right-2 flex items-center",
+                isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
+              )}
+            >
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDeleteAlertOpen(true);
+                }}
+                className=" px-1 h-6 text-foreground hover:text-destructive"
+                title="Delete table"
+                aria-label="Delete table"
+              >
+                <X size={16} />
+              </Button>
+            </div>
+          </div>
+        </PopoverAnchor>
+        <PopoverContent
+          align="start"
+          side="bottom"
+          sideOffset={3}
+          className="w-52 border-0 bg-transparent p-0"
+        >
+          <div className=" relative flex items-center gap-2">
+            <Input
+              ref={inputRef as any}
+              value={editedName}
+              onChange={(e) => setEditedName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Rename table"
+              className="h-8 border-border bg-background px-1 py-1"
+            />
+            <Button
+              variant="ghost"
+              type="button"
+              size="icon"
+              onClick={() => void handleRenameSave()}
+              className=" absolute top-1/2 -translate-y-1/2 right-1 h-6 w-6 shrink-0 bg-primary text-primary-foreground hover:text-primary-foreground hover:bg-primary/80"
+              aria-label="Save table name"
+            >
+              <Check className="h-4 w-4" />
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
