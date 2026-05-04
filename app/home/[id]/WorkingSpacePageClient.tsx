@@ -666,7 +666,7 @@ export default function WorkingSpacePageClient({
     <MaxWContainer className="my-5">
       <header>
         <div className=" relative flex justify-between items-end w-full">
-          <div className="flex-1 px-1.5 border border-border bg-muted rounded-none rounded-tl-lg rounded-br-lg">
+          <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">
             <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />

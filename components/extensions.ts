@@ -55,7 +55,9 @@ const image = UpdatedImage.extend({
 }).configure({
   allowBase64: true,
   HTMLAttributes: {
-    class: cx("rounded-lg border border-muted"),
+    class: cx(
+      "rounded-lg border border-muted cursor-zoom-in transition-shadow duration-200",
+    ),
   },
 });
 

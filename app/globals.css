@@ -983,6 +983,24 @@ hr {
   }
 }
 
+.advanced-editor-shell {
+  --editor-image-accent: hsl(var(--muted-foreground));
+}
+
+.dark .advanced-editor-shell {
+  --editor-image-accent: hsl(var(--muted-foreground));
+}
+
+.advanced-editor-shell .ProseMirror-selectednode {
+  border-color: var(--editor-image-accent) !important;
+  border-color: transparent !important;
+}
+
+.advanced-editor-shell .moveable-control-box {
+  --moveable-color: var(--editor-image-accent);
+  z-index: 40 !important;
+}
+
 @layer base {
   body {
     @apply bg-background text-foreground;
