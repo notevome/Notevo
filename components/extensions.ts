@@ -37,9 +37,10 @@ import TextAlign from "@tiptap/extension-text-align";
 const aiHighlight = AIHighlight;
 
 const tiptapLink = TiptapLink.configure({
+  openOnClick: false,
   HTMLAttributes: {
     class: cx(
-      "novel-link text-blue-800 dark:text-blue-200 underline underline-offset-[3px] hover:text-blue-500 dark:hover:text-blue-400 transition-colors cursor-pointer",
+      "novel-link underline underline-offset-[3px] transition-colors cursor-pointer",
     ),
   },
 });

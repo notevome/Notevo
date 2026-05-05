@@ -35,8 +35,9 @@ import {
 } from "@tiptap/extension-table-of-contents";
 import { CompactFloatingToC } from "./ToC";
 import { useMediaQuery } from "react-responsive";
-import { Dialog, DialogContent, DialogTitle } from "./ui/dialog";
-import { Maximize2, Plus } from "lucide-react";
+import { Dialog, DialogContent } from "./ui/dialog";
+import { Plus } from "lucide-react";
+import { LinkHoverCard } from "./link-hover-card";
 const TailwindAdvancedEditor = ({
   initialContent,
   onUpdate,
@@ -135,6 +136,10 @@ const TailwindAdvancedEditor = ({
         <div className="relative">
           {editorInstance && (
             <>
+              <LinkHoverCard
+                editor={editorInstance}
+                disabled={openLink}
+              />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
                 <div className="flex items-center justify-center ">
