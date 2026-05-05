@@ -201,7 +201,7 @@ export function LinkHoverCard({
         align="start"
         side="bottom"
         sideOffset={0}
-        className="z-[10002] flex w-[320px] items-center rounded-tl-xl border-border bg-muted p-0.5 text-popover-foreground"
+        className="z-[10002] flex w-[320px] items-center rounded-tl-xl border-border bg-muted p-0 text-popover-foreground"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onMouseEnter={clearHideTimer}

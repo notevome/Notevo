@@ -136,10 +136,7 @@ const TailwindAdvancedEditor = ({
         <div className="relative">
           {editorInstance && (
             <>
-              <LinkHoverCard
-                editor={editorInstance}
-                disabled={openLink}
-              />
+              <LinkHoverCard editor={editorInstance} disabled={openLink} />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
                 <div className="flex items-center justify-center ">

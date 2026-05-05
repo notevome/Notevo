@@ -66,7 +66,7 @@ export const ToCItem = ({ item, onItemClick, isExpanded }: ToCItemProps) => {
             ${
               item.isActive && !item.isScrolledOver
                 ? "bg-muted-foreground h-[3px] w-6"
-                : "bg-muted-foreground/60 w-4 group-hover:w-6"
+                : "bg-muted-foreground/60 w-4 "
             }
           `}
           style={{
@@ -441,7 +441,7 @@ export const CompactFloatingToC = ({
     <div className="fixed right-3 top-32 z-50">
       <div
         className={`
-          transition-all duration-300 ease-in-out px-0.5 border border-solid rounded-tl-lg bg-background/60 backdrop-blur-xl
+          transition-all duration-150 ease-linear px-0.5 border border-solid rounded-tl-lg bg-background 
           ${isExpanded ? "w-52 border-border " : "w-10 border-transparent"}
         `}
       >
