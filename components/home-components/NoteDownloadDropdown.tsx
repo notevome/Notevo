@@ -76,7 +76,9 @@ export default function NoteDownloadDropdown({
               </Button>
             </TooltipTrigger>
           </DropdownMenuTrigger>
-          <TooltipContent side="bottom">Download note</TooltipContent>
+          <TooltipContent align="end" side="bottom">
+            Download note
+          </TooltipContent>
         </Tooltip>
       </TooltipProvider>
 

@@ -16,6 +16,7 @@ import type * as notes from "../notes.js";
 import type * as notesTables from "../notesTables.js";
 import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
+import type * as pdfs from "../pdfs.js";
 import type * as users from "../users.js";
 import type * as workingSpaces from "../workingSpaces.js";
 
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   notesTables: typeof notesTables;
   "otp/ResendOTP": typeof otp_ResendOTP;
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
+  pdfs: typeof pdfs;
   users: typeof users;
   workingSpaces: typeof workingSpaces;
 }>;

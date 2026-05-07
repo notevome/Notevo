@@ -1057,7 +1057,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card border  flex flex-col min-h-[230px]",
+        "group relative overflow-hidden bg-card border flex flex-col min-h-[230px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
