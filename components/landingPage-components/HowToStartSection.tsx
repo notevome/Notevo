@@ -475,7 +475,7 @@ export default function HowToStartSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="group relative bg-card app-radius-lg border border-border overflow-hidden hover:border-primary/50 flex flex-col"
+                  className="group relative bg-card app-radius-lg border border-border overflow-hidden flex flex-col"
                 >
                   {/* Preview area */}
                   <div className="bg-muted border-b border-border h-72 overflow-hidden flex items-center justify-center">
@@ -489,7 +489,7 @@ export default function HowToStartSection() {
                     </span>
 
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 app-radius-sm bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <div className="w-7 h-7 app-radius-sm bg-primary/10 flex items-center justify-center transition-colors">
                         <Icon className="w-4 h-4 text-primary" />
                       </div>
                       <h3 className="text-base font-bold text-foreground">
