@@ -194,8 +194,9 @@ export default function TableSettings({
                   className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
                   onMouseEnter={handleTooltipMouseEnter}
                   onMouseLeave={handleTooltipMouseLeave}
+                  aria-label="table-options"
                 >
-                  <FaEllipsisVertical size="18" />
+                  <FaEllipsisVertical size={18} />
                 </Button>
               </TooltipTrigger>
             </DropdownMenuTrigger>
@@ -220,6 +221,7 @@ export default function TableSettings({
                 variant="SidebarMenuButton_destructive"
                 className="w-full h-8 px-2 text-sm"
                 onClick={initiateDelete}
+                aria-label="delete-table"
               >
                 <FaRegTrashCan size={14} className="text-muted-foreground" />
                 Delete

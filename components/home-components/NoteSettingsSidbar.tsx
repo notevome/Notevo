@@ -124,6 +124,7 @@ export default function NoteSettingsSidbar({
                 onClick={handleFavoritePin}
                 variant="SidebarMenuButton"
                 className="px-2 h-7 hover:bg-card"
+                aria-label="pin-note"
               >
                 {getNote?.favorite ? (
                   <PinOff size={16} className="text-muted-foreground" />
@@ -143,6 +144,7 @@ export default function NoteSettingsSidbar({
                 onMouseDown={initiateDelete}
                 variant="SidebarMenuButton_destructive"
                 className="px-2 h-7 hover:bg-card"
+                aria-label="delete-note"
               >
                 <X size={16} />
               </Button>

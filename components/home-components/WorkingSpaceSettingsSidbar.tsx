@@ -112,6 +112,7 @@ export default function WorkingSpaceSettingsSidbar({
                 onMouseDown={initiateDelete}
                 variant="SidebarMenuButton_destructive"
                 className="px-2 h-7 hover:bg-card"
+                aria-label="delete-workspace"
               >
                 <X size={16} />
               </Button>

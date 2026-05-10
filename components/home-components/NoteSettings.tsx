@@ -225,6 +225,7 @@ export default function NoteSettings({
                   className={cn("px-0.5 h-8 mt-0.5", BtnClassName)}
                   onMouseEnter={handleTooltipMouseEnter}
                   onMouseLeave={handleTooltipMouseLeave}
+                  aria-label="note-options"
                 >
                   {IconVariant === "vertical_icon" ? (
                     <FaEllipsisVertical
@@ -272,6 +273,7 @@ export default function NoteSettings({
               variant="SidebarMenuButton"
               className="w-full h-8 px-2 text-sm"
               onClick={handleFavoritePin}
+              aria-label="pin-note"
             >
               <Pin size={14} className="text-muted-foreground" />
               {getNote?.favorite ? "Unpin Note" : "Pin Note"}
@@ -281,6 +283,7 @@ export default function NoteSettings({
               variant="SidebarMenuButton"
               className="w-full h-8 px-2 text-sm"
               onClick={handleMoveDialogOpen}
+              aria-label="move-note"
             >
               <FileOutput size={14} className="text-muted-foreground" />
               Move Note
@@ -329,6 +332,7 @@ export default function NoteSettings({
                   variant="SidebarMenuButton"
                   className="w-full h-8 px-2 text-sm"
                   onClick={toggleWidth}
+                  aria-label="toggle-note-width"
                 >
                   {noteWidth === "false" ? (
                     <>
@@ -356,6 +360,7 @@ export default function NoteSettings({
               variant="SidebarMenuButton_destructive"
               className="w-full h-8 px-2 text-sm"
               onClick={initiateDelete}
+              aria-label="delete-note"
             >
               <FaRegTrashCan size={14} className="text-muted-foreground" />
               Delete
