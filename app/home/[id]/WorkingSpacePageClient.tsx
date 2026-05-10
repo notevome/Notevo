@@ -308,35 +308,24 @@ function TableTab({ table }: { table: any }) {
           handleRenameCancel();
         }}
       >
-        <TooltipProvider delayDuration={200} skipDelayDuration={0}>
-          <PopoverAnchor asChild>
-            <div
-              className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
-              onMouseEnter={handleContentMouseEnter}
-              onMouseLeave={handleContentMouseLeave}
-            >
-              <Tooltip disableHoverableContent>
-                <TooltipTrigger asChild>
-                  <TabsTrigger
-                    value={table._id}
-                    data-tab-id={table._id}
-                    className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
-                    onDoubleClick={handleDoubleClick}
-                    aria-label="rename-table"
-                  >
-                    <p className={cn(textClassName, "w-full")}>
-                      {formatTableName(table.name)}
-                    </p>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent
-                  className=" px-1.5"
-                  side="bottom"
-                  sideOffset={5}
-                >
-                  {table.name}
-                </TooltipContent>
-              </Tooltip>
+        <PopoverAnchor asChild>
+          <div
+            className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
+            onMouseEnter={handleContentMouseEnter}
+            onMouseLeave={handleContentMouseLeave}
+          >
+            <TooltipProvider delayDuration={200} skipDelayDuration={0}>
+              <TabsTrigger
+                value={table._id}
+                data-tab-id={table._id}
+                className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+                onDoubleClick={handleDoubleClick}
+                aria-label="rename-table"
+              >
+                <p className={cn(textClassName, "w-full")}>
+                  {formatTableName(table.name)}
+                </p>
+              </TabsTrigger>
               <div
                 className={cn(
                   "absolute inset-y-0 right-2 flex items-center",
@@ -368,9 +357,9 @@ function TableTab({ table }: { table: any }) {
                   </TooltipContent>
                 </Tooltip>
               </div>
-            </div>
-          </PopoverAnchor>
-        </TooltipProvider>
+            </TooltipProvider>
+          </div>
+        </PopoverAnchor>
         <PopoverContent
           align="start"
           side="bottom"
