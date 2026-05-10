@@ -55,6 +55,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn, formatTableName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
@@ -277,7 +283,7 @@ function TableTab({ table }: { table: any }) {
   }, []);
 
   const textClassName = isHovered
-    ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-95% text-transparent bg-clip-text"
+    ? "truncate flex-grow bg-gradient-to-r from-foreground from-80% via-transparent via-90% to-transparent to-100% text-transparent bg-clip-text"
     : "truncate flex-grow";
 
   const handleDelete = useCallback(async () => {
@@ -302,46 +308,69 @@ function TableTab({ table }: { table: any }) {
           handleRenameCancel();
         }}
       >
-        <PopoverAnchor asChild>
-          <div
-            className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
-            onMouseEnter={handleContentMouseEnter}
-            onMouseLeave={handleContentMouseLeave}
-          >
-            <TabsTrigger
-              value={table._id}
-              data-tab-id={table._id}
-              className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
-              <p className={cn(textClassName, "w-full")}>
-                {formatTableName(table.name)}
-              </p>
-            </TabsTrigger>
+        <TooltipProvider delayDuration={200} skipDelayDuration={0}>
+          <PopoverAnchor asChild>
             <div
-              className={cn(
-                "absolute inset-y-0 right-2 flex items-center",
-                isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
-              )}
+              className="relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
+              onMouseEnter={handleContentMouseEnter}
+              onMouseLeave={handleContentMouseLeave}
             >
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setIsDeleteAlertOpen(true);
-                }}
-                className=" px-1 h-6 text-foreground hover:text-destructive"
-                title="Delete table"
-                aria-label="Delete table"
+              <Tooltip disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value={table._id}
+                    data-tab-id={table._id}
+                    className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+                    onDoubleClick={handleDoubleClick}
+                    aria-label="rename-table"
+                  >
+                    <p className={cn(textClassName, "w-full")}>
+                      {formatTableName(table.name)}
+                    </p>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent
+                  className=" px-1.5"
+                  side="bottom"
+                  sideOffset={5}
+                >
+                  {table.name}
+                </TooltipContent>
+              </Tooltip>
+              <div
+                className={cn(
+                  "absolute inset-y-0 right-2 flex items-center",
+                  isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
+                )}
               >
-                <X size={16} />
-              </Button>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDeleteAlertOpen(true);
+                      }}
+                      className=" px-1 h-6 text-foreground hover:text-destructive"
+                      aria-label="delete-table"
+                    >
+                      <X size={16} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    className=" px-1.5"
+                    side="bottom"
+                    sideOffset={5}
+                  >
+                    Delete table
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
-          </div>
-        </PopoverAnchor>
+          </PopoverAnchor>
+        </TooltipProvider>
         <PopoverContent
           align="start"
           side="bottom"
@@ -363,7 +392,7 @@ function TableTab({ table }: { table: any }) {
               size="icon"
               onClick={() => void handleRenameSave()}
               className=" absolute top-1/2 -translate-y-1/2 right-1 h-6 w-6 shrink-0 bg-primary text-primary-foreground hover:text-primary-foreground hover:bg-primary/80"
-              aria-label="Save table name"
+              aria-label="save-table-name"
             >
               <Check className="h-4 w-4" />
             </Button>
@@ -472,7 +501,7 @@ function SliderTabsList({
           variant="ghost"
           size="icon"
           onClick={() => scroll("left")}
-          aria-label="Scroll tabs left"
+          aria-label="scroll-tabs-left"
           className={cn(
             "absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollLeft
@@ -487,7 +516,7 @@ function SliderTabsList({
           variant="ghost"
           size="icon"
           onClick={() => scroll("right")}
-          aria-label="Scroll tabs right"
+          aria-label="scroll-tabs-right"
           className={cn(
             "absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollRight
@@ -755,6 +784,7 @@ export default function WorkingSpacePageClient({
               label="New Table"
               workingSpaceId={workingSpaceId}
               className=" z-50 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
+              aria-label="create-table"
             />
           )}
         </div>
@@ -868,6 +898,7 @@ export function NotesDroppableContainer({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 border-border h-9 mt-0.5"
+              aria-label="search-notes"
             />
           </div>
         </div>
@@ -966,6 +997,7 @@ export function NotesDroppableContainer({
                 variant="outline"
                 onClick={() => loadMore(15)}
                 className="border-border"
+                aria-label="load-more-notes"
               >
                 Show More
               </Button>
@@ -1075,7 +1107,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 onKeyDown={handleTitleKeyDown}
                 rows={1}
                 style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap  [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
           ) : (
@@ -1119,6 +1151,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           size="sm"
           asChild
           className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
+          aria-label="open-note"
         >
           <IntentPrefetchLink
             href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
@@ -1268,7 +1301,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
               >
-                Open
+                <span aria-label="open-note">Open</span>
               </IntentPrefetchLink>
             </Button>
           </div>
@@ -1298,6 +1331,7 @@ function EmptySearchResults({
           <Button
             variant="outline"
             onClick={onClearSearch}
+            aria-label="clear-search"
             className="border-border"
           >
             Clear Search

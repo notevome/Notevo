@@ -204,6 +204,7 @@ export default function WorkingSpaceSettings({
                   className={cn("px-1.5 h-8", className)}
                   onMouseEnter={handleTooltipMouseEnter}
                   onMouseLeave={handleTooltipMouseLeave}
+                  aria-label="workspace-options"
                 >
                   <FaEllipsis size={22} />
                 </Button>
@@ -237,6 +238,7 @@ export default function WorkingSpaceSettings({
             className="w-full h-8 px-2 text-sm"
             onClick={initiateDelete}
             disabled={isDeleting}
+            aria-label="delete-workspace"
           >
             {isDeleting ? (
               <>
@@ -289,6 +291,7 @@ export default function WorkingSpaceSettings({
               onClick={handleDelete}
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground border-none"
               disabled={isDeleting}
+              aria-label="confirm-workspace-deletion"
             >
               {isDeleting ? (
                 <>
