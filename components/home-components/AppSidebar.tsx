@@ -114,7 +114,15 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
         </div>
         <SidebarTrigger />
       </div>
-      {getWorkingSpaces?.length === 1 ? (
+      {getWorkingSpaces?.length === 0 && (
+        <Button
+          className="font-medium w-full h-9 flex justify-start items-center gap-2"
+          onClick={handleCreateWorkingSpace}
+        >
+          <Plus size={16} /> Create Workspace
+        </Button>
+      )}
+      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0 ? (
         getWorkingSpaces.map((workingSpace) => (
           <Button
             key={workingSpace._id}
@@ -143,7 +151,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
         ))
       ) : (
         <DropdownMenu>
-          <DropdownMenuTrigger asChild className="my-1">
+          <DropdownMenuTrigger asChild>
             <Button
               className="font-medium w-full h-9 flex justify-between items-center gap-1"
               disabled={loading}
@@ -166,40 +174,23 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             side="bottom"
             className="app-radius-lg m-2 p-1.5 bg-background/90 backdrop-blur border border-solid border-border w-[--radix-popper-anchor-width]"
           >
-            <DropdownMenuLabel className="px-2 py-1 text-sm font-medium opacity-50">
-              {getWorkingSpaces?.length
-                ? "Select a workspace :"
-                : "Create a workspace to add notes:"}
-            </DropdownMenuLabel>
             <DropdownMenuGroup className="flex-col">
-              {getWorkingSpaces?.length ? (
-                getWorkingSpaces.map((workingSpace) => (
-                  <DropdownMenuItem
-                    key={workingSpace._id}
-                    className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
-                    onSelect={() =>
-                      handleCreateNote(
-                        workingSpace._id as any,
-                        workingSpace.slug as string,
-                      )
-                    }
-                    disabled={loading}
-                  >
-                    <FolderClosed size="16" className="mr-2" />
-                    <span>{formatWorkspaceName(workingSpace.name)}</span>
-                  </DropdownMenuItem>
-                ))
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={handleCreateWorkingSpace}
-                  className="border-dashed bg-transparent h-9 my-2 w-full"
+              {getWorkingSpaces?.map((workingSpace) => (
+                <DropdownMenuItem
+                  key={workingSpace._id}
+                  className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
+                  onSelect={() =>
+                    handleCreateNote(
+                      workingSpace._id as any,
+                      workingSpace.slug as string,
+                    )
+                  }
+                  disabled={loading}
                 >
-                  <p className="text-xs w-full flex justify-center items-center gap-2">
-                    <Plus size={16} /> Create Workspace
-                  </p>
-                </Button>
-              )}
+                  <FolderClosed size="16" className="mr-2" />
+                  <span>{formatWorkspaceName(workingSpace.name)}</span>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -778,27 +769,14 @@ const WorkspacesList = memo(function WorkspacesList({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-
-      {getWorkingSpaces?.length ? (
-        getWorkingSpaces.map((workingSpace) => (
-          <WorkspaceItem
-            key={workingSpace._id}
-            workingSpace={workingSpace}
-            pathname={pathname}
-            open={open}
-          />
-        ))
-      ) : (
-        <Button
-          variant="outline"
-          onClick={handleCreateWorkingSpace}
-          className="border-dashed bg-transparent h-9 my-2 w-full"
-        >
-          <p className="text-xs w-full flex justify-center items-center gap-2">
-            <Plus size={16} className=" text-primary" /> Create Workspace
-          </p>
-        </Button>
-      )}
+      {getWorkingSpaces?.map((workingSpace) => (
+        <WorkspaceItem
+          key={workingSpace._id}
+          workingSpace={workingSpace}
+          pathname={pathname}
+          open={open}
+        />
+      ))}
     </SidebarGroup>
   );
 });
@@ -854,17 +832,14 @@ const UserAccountSection = memo(function UserAccountSection({
                       )}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start justify-center">
-                    <div className="font-medium">
+                  <div className="flex flex-col items-start justify-start flex-1">
+                    <p className="font-medium">
                       {User?.name ? (
                         formatUserName(User.name)
                       ) : (
                         <SkeletonTextAnimation className="w-28 mx-0" />
                       )}
-                    </div>
-                    <div className="text-xs text-foreground/60">
-                      {formatUserEmail(User?.email)}
-                    </div>
+                    </p>
                   </div>
                   <TbSelector size={16} />
                 </Button>
