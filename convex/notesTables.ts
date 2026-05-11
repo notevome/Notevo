@@ -185,3 +185,31 @@ export const getTables = query({
     return tables;
   },
 });
+
+export const getTableById = query({
+  args: {
+    _id: v.id("notesTables"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const table = await ctx.db.get(args._id);
+    if (!table) {
+      throw new Error("Table not found");
+    }
+
+    const workspace = await ctx.db.get(table.workingSpaceId);
+    if (!workspace) {
+      throw new Error("Workspace not found");
+    }
+
+    if (workspace.userId !== userId) {
+      throw new Error("Not authorized to view this table");
+    }
+
+    return table;
+  },
+});

@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,18 @@ interface WorkingSpaceSettings {
 
 const WORKSPACE_NAME_MAX_LENGTH = 30;
 
+const formatTimestamp = (timestamp?: number) => {
+  if (!timestamp) return "";
+
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 export default function WorkingSpaceSettings({
   className,
   workingSpaceId,
@@ -67,6 +80,9 @@ export default function WorkingSpaceSettings({
 
   const tables = useQuery(api.notesTables.getTables, {
     workingSpaceId,
+  });
+  const workspace = useQuery(api.workingSpaces.getWorkingSpaceById, {
+    _id: workingSpaceId,
   });
 
   const updateWorkingSpace = useMutation(
@@ -190,6 +206,8 @@ export default function WorkingSpaceSettings({
 
   const tableCount = tables?.length || 0;
   const hasContent = tableCount > 0;
+  const createdAtText = formatTimestamp(workspace?.createdAt);
+  const updatedAtText = formatTimestamp(workspace?.updatedAt);
   const handleTooltipMouseEnter = () => setIsTooltipOpen(true);
   const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
   return (
@@ -247,11 +265,15 @@ export default function WorkingSpaceSettings({
               </>
             ) : (
               <>
-                <FaRegTrashCan size="14" className=" text-muted-foreground" />{" "}
-                Delete
+                <FaRegTrashCan size={14} className=" text-current" /> Delete
               </>
             )}
           </Button>
+          <DropdownMenuSeparator />
+          <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+            <p>Last updated {updatedAtText}</p>
+            <p>Created {createdAtText}</p>
+          </div>
         </DropdownMenuContent>
       </DropdownMenu>
 

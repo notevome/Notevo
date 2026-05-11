@@ -67,6 +67,18 @@ interface NoteSettingsProps {
 
 const NOTE_TITLE_MAX_LENGTH = 55;
 
+const formatNoteTimestamp = (timestamp?: number) => {
+  if (!timestamp) return "";
+
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
 export default function NoteSettings({
   noteId,
   noteTitle,
@@ -136,6 +148,9 @@ export default function NoteSettings({
   }, [open]);
 
   if (!getNote) return null;
+
+  const createdAtText = formatNoteTimestamp(getNote.createdAt);
+  const updatedAtText = formatNoteTimestamp(getNote.updatedAt);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
@@ -362,9 +377,15 @@ export default function NoteSettings({
               onClick={initiateDelete}
               aria-label="delete-note"
             >
-              <FaRegTrashCan size={14} className="text-muted-foreground" />
+              <FaRegTrashCan size={14} className="text-current" />
               Delete
             </Button>
+
+            <DropdownMenuSeparator />
+            <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+              <p>Last updated {updatedAtText}</p>
+              <p>Created {createdAtText}</p>
+            </div>
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
