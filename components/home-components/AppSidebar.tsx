@@ -77,6 +77,7 @@ import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
+import NoteContextMenu from "./NoteContextMenu";
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
   handleCreateNote: (
@@ -355,7 +356,7 @@ const PinnedNoteItem = memo(
       ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
-    return (
+    const content = (
       <SidebarGroupContent
         className="relative w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
@@ -424,6 +425,14 @@ const PinnedNoteItem = memo(
           />
         </div>
       </SidebarGroupContent>
+    );
+
+    if (isEditing) return content;
+
+    return (
+      <NoteContextMenu noteId={note._id} noteTitle={note.title}>
+        {content}
+      </NoteContextMenu>
     );
   },
   (prevProps, nextProps) => {

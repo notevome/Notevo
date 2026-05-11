@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
@@ -30,13 +31,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
 import { Label } from "../ui/label";
 interface TableSettingsProps {
   notesTableId: Id<"notesTables"> | any; // Strongly typed Id
@@ -44,6 +38,18 @@ interface TableSettingsProps {
 }
 
 const TABLE_NAME_MAX_LENGTH = 30;
+
+const formatTimestamp = (timestamp?: number) => {
+  if (!timestamp) return "";
+
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
 
 export default function TableSettings({
   notesTableId,
@@ -53,6 +59,7 @@ export default function TableSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert Dialog State
   const inputRef = useRef<HTMLInputElement>(null);
+  const table = useQuery(api.notesTables.getTableById, { _id: notesTableId });
   const updateTable = useMutation(
     api.notesTables.updateTable,
   ).withOptimisticUpdate((local, args) => {
@@ -182,6 +189,8 @@ export default function TableSettings({
   const handleTooltipMouseLeave = () => {
     setIsTooltipOpen(false);
   };
+  const createdAtText = formatTimestamp(table?.createdAt);
+  const updatedAtText = formatTimestamp(table?.updatedAt);
   return (
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -223,9 +232,14 @@ export default function TableSettings({
                 onClick={initiateDelete}
                 aria-label="delete-table"
               >
-                <FaRegTrashCan size={14} className="text-muted-foreground" />
+                <FaRegTrashCan size={14} className="text-current" />
                 Delete
               </Button>
+              <DropdownMenuSeparator />
+              <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+                <p>Last updated {updatedAtText}</p>
+                <p>Created {createdAtText}</p>
+              </div>
             </DropdownMenuContent>
             <TooltipContent side="bottom" alignOffset={1} align="end">
               Rename , Delete
