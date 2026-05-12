@@ -2,13 +2,14 @@
 import {
   Calendar,
   Check,
+  ExternalLink,
   FileText,
   LayoutGrid,
   List,
+  MoreVertical,
   Search,
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Trash2,
   X,
 } from "lucide-react";
@@ -61,11 +62,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn, formatTableName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
 } from "@/lib/parse-tiptap-content";
+import { generateSlug } from "@/lib/generateSlug";
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -118,6 +127,21 @@ interface Note {
   order?: number;
 }
 
+interface PdfItem {
+  _id: Id<"pdfs">;
+  storageId: Id<"_storage">;
+  title?: string;
+  userId?: Id<"users">;
+  workingSpaceId?: Id<"workingSpaces">;
+  notesTableId?: Id<"notesTables">;
+  fileUrl?: string | null;
+  createdAt: number;
+  updatedAt: number;
+  kind: "pdf";
+}
+
+type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem;
+
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
   viewMode: ViewMode;
@@ -134,6 +158,11 @@ interface NoteCardProps {
   note: Note;
   workspaceId?: Id<"workingSpaces">;
   onDelete?: (noteId: Id<"notes">) => void;
+}
+
+interface PdfCardProps {
+  pdf: PdfItem;
+  onDelete?: (pdfId: Id<"pdfs">) => void;
 }
 
 interface EmptySearchResultsProps {
@@ -835,6 +864,15 @@ export function NotesDroppableContainer({
     { notesTableId: tableId },
     { initialNumItems: 5 },
   );
+  const pdfs = useQuery(api.pdfs.getPdfsByTableId, {
+    notesTableId: tableId,
+  }) as
+    | Array<
+        Omit<PdfItem, "kind"> & {
+          fileUrl?: string | null;
+        }
+      >
+    | undefined;
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
@@ -846,30 +884,38 @@ export function NotesDroppableContainer({
   const stableResults =
     status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
 
-  const [deletedNoteIds, setDeletedNoteIds] = useState<Set<string>>(new Set());
+  const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    setDeletedNoteIds(new Set());
+    setDeletedItemIds(new Set());
   }, [tableId]);
 
-  const filteredNotes = useMemo(() => {
-    const notDeletedNotes = stableResults.filter(
-      (note) => note && !deletedNoteIds.has(note._id),
+  const filteredItems = useMemo(() => {
+    const noteItems = stableResults.map(
+      (note) => ({ ...note, kind: "note" }) as WorkspaceEntry,
     );
-    if (!searchQuery.trim()) return notDeletedNotes;
-    const q = searchQuery.toLowerCase();
-    return notDeletedNotes.filter((note) => {
-      const searchableText = (note.preview ?? note.body ?? "").toLowerCase();
-      return (
-        note.title?.toLowerCase().includes(q) || searchableText.includes(q)
-      );
-    });
-  }, [stableResults, searchQuery, deletedNoteIds]);
+    const pdfItems = (pdfs ?? []).map(
+      (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
+    );
+    const notDeletedItems = [...noteItems, ...pdfItems]
+      .filter((item) => item && !deletedItemIds.has(item._id))
+      .sort((a, b) => b.updatedAt - a.updatedAt);
 
-  const handleNoteDelete = useCallback((noteId: Id<"notes">) => {
-    setDeletedNoteIds((prev) => {
+    if (!searchQuery.trim()) return notDeletedItems;
+    const q = searchQuery.toLowerCase();
+    return notDeletedItems.filter((item) => {
+      const titleMatches = item.title?.toLowerCase().includes(q);
+      if (item.kind === "pdf") return titleMatches;
+
+      const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
+      return titleMatches || searchableText.includes(q);
+    });
+  }, [deletedItemIds, pdfs, searchQuery, stableResults]);
+
+  const handleItemDelete = useCallback((itemId: string) => {
+    setDeletedItemIds((prev) => {
       const newSet = new Set(prev);
-      newSet.add(noteId);
+      newSet.add(itemId);
       return newSet;
     });
   }, []);
@@ -883,7 +929,7 @@ export function NotesDroppableContainer({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
             <Input
               type="text"
-              placeholder="Search Notes..."
+              placeholder="Search notes and uploads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 border-border h-9 mt-0.5"
@@ -933,14 +979,14 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {status === "LoadingFirstPage" && !cachedNotes ? (
+      {status === "LoadingFirstPage" && !cachedNotes && pdfs === undefined ? (
         <NotesSkeleton viewMode={viewMode} />
-      ) : searchQuery && filteredNotes.length === 0 ? (
+      ) : searchQuery && filteredItems.length === 0 ? (
         <EmptySearchResults
           searchQuery={searchQuery}
           onClearSearch={() => setSearchQuery("")}
         />
-      ) : filteredNotes.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <EmptyTableState
           tableId={tableId}
           workspaceSlug={workspaceSlug}
@@ -955,25 +1001,31 @@ export function NotesDroppableContainer({
                 : "flex flex-col gap-3"
             }
           >
-            {filteredNotes.map((note) => (
-              <div key={note._id}>
-                {viewMode === "grid" ? (
+            {filteredItems.map((item) => (
+              <div key={item._id}>
+                {item.kind === "pdf" ? (
+                  viewMode === "grid" || isMobile ? (
+                    <PdfGridCard
+                      pdf={item}
+                      onDelete={(pdfId) => handleItemDelete(pdfId)}
+                    />
+                  ) : (
+                    <PdfListCard
+                      pdf={item}
+                      onDelete={(pdfId) => handleItemDelete(pdfId)}
+                    />
+                  )
+                ) : viewMode === "grid" || isMobile ? (
                   <GridNoteCard
-                    note={note}
+                    note={item}
                     workspaceId={workspaceId}
-                    onDelete={handleNoteDelete}
-                  />
-                ) : !isMobile ? (
-                  <ListNoteCard
-                    note={note}
-                    workspaceId={workspaceId}
-                    onDelete={handleNoteDelete}
+                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
                   />
                 ) : (
-                  <GridNoteCard
-                    note={note}
+                  <ListNoteCard
+                    note={item}
                     workspaceId={workspaceId}
-                    onDelete={handleNoteDelete}
+                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
                   />
                 )}
               </div>
@@ -1300,6 +1352,317 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   );
 }
 
+function PdfCardMenu({ pdf, onDelete }: PdfCardProps) {
+  const [open, setOpen] = useState(false);
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const deletePdf = useMutation(api.pdfs.deletePdf);
+  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
+  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
+
+  const handleDelete = useCallback(async () => {
+    if (onDelete) onDelete(pdf._id);
+    setIsAlertOpen(false);
+    try {
+      await deletePdf({ _id: pdf._id });
+    } catch (error) {
+      console.error("Failed to delete PDF:", error);
+    }
+  }, [deletePdf, onDelete, pdf._id]);
+
+  return (
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="Trigger"
+            className="px-0.5 h-8 mt-0.5"
+            aria-label="upload-options"
+          >
+            <MoreVertical size={18} className="text-muted-foreground" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem asChild>
+            <IntentPrefetchLink href={pdfHref}>
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+              Open upload
+            </IntentPrefetchLink>
+          </DropdownMenuItem>
+          {pdf.fileUrl ? (
+            <DropdownMenuItem asChild>
+              <a href={pdf.fileUrl} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                Original file
+              </a>
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() => {
+              setOpen(false);
+              setIsAlertOpen(true);
+            }}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete upload
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+        <AlertDialogContent className="bg-card border border-border text-card-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Upload Deletion</AlertDialogTitle>
+            <AlertDialogDescription className="text-muted-foreground">
+              Are you sure you want to delete this upload? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void handleDelete()}
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground border-none"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const updatePdf = useMutation(api.pdfs.updatePdf);
+  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
+  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
+
+  useEffect(() => {
+    setEditedTitle(pdf.title || "Untitled");
+  }, [pdf.title]);
+
+  const handleDoubleClick = useCallback(() => {
+    setEditedTitle(pdf.title || "Untitled");
+    setIsEditingTitle(true);
+    requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    });
+  }, [pdf.title]);
+
+  const handleTitleBlur = useCallback(async () => {
+    const result = noteTitleSchema.safeParse(editedTitle.trim());
+    if (!result.success) {
+      setIsEditingTitle(false);
+      setEditedTitle(pdf.title || "Untitled");
+      return;
+    }
+
+    const trimmed = result.data;
+    if (trimmed !== (pdf.title || "Untitled")) {
+      try {
+        await updatePdf({ _id: pdf._id, title: trimmed });
+      } catch (error) {
+        console.error("Error updating PDF title:", error);
+        setEditedTitle(pdf.title || "Untitled");
+      }
+    }
+    setIsEditingTitle(false);
+  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        titleInputRef.current?.blur();
+      } else if (e.key === "Escape") {
+        setIsEditingTitle(false);
+        setEditedTitle(pdf.title || "Untitled");
+      }
+    },
+    [pdf.title],
+  );
+
+  return (
+    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col min-h-[230px]">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          {isEditingTitle ? (
+            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
+              <Textarea
+                ref={titleInputRef as any}
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                rows={1}
+                style={{ resize: "none", overflow: "hidden" }}
+                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+          ) : (
+            <CardTitle
+              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
+              onDoubleClick={handleDoubleClick}
+              title="Double-click to rename"
+            >
+              {pdf.title || "Untitled"}
+            </CardTitle>
+          )}
+          <PdfCardMenu pdf={pdf} onDelete={onDelete} />
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <FileText className="h-5 w-5 text-primary" />
+          <span>PDF upload</span>
+        </div>
+        <p className="text-sm text-muted-foreground line-clamp-3 mt-4">
+          Open this file in a new tab to read or review it.
+        </p>
+      </CardContent>
+
+      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          {typeof window !== "undefined" ? (
+            <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
+          ) : (
+            <SkeletonTextAnimation className="w-20" />
+          )}
+        </div>
+        <Button
+          size="sm"
+          asChild
+          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute bottom-0 right-0 h-9 px-2 text-xs"
+          aria-label="open-upload"
+        >
+          <IntentPrefetchLink href={pdfHref}>
+            Open
+          </IntentPrefetchLink>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function PdfListCard({ pdf, onDelete }: PdfCardProps) {
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const updatePdf = useMutation(api.pdfs.updatePdf);
+  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
+  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
+
+  useEffect(() => {
+    setEditedTitle(pdf.title || "Untitled");
+  }, [pdf.title]);
+
+  const handleDoubleClick = useCallback(() => {
+    setEditedTitle(pdf.title || "Untitled");
+    setIsEditingTitle(true);
+    requestAnimationFrame(() => {
+      titleInputRef.current?.focus();
+      titleInputRef.current?.select();
+    });
+  }, [pdf.title]);
+
+  const handleTitleBlur = useCallback(async () => {
+    const result = noteTitleSchema.safeParse(editedTitle.trim());
+    if (!result.success) {
+      setIsEditingTitle(false);
+      setEditedTitle(pdf.title || "Untitled");
+      return;
+    }
+
+    const trimmed = result.data;
+    if (trimmed !== (pdf.title || "Untitled")) {
+      try {
+        await updatePdf({ _id: pdf._id, title: trimmed });
+      } catch (error) {
+        console.error("Error updating PDF title:", error);
+        setEditedTitle(pdf.title || "Untitled");
+      }
+    }
+    setIsEditingTitle(false);
+  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
+
+  const handleTitleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") titleInputRef.current?.blur();
+      else if (e.key === "Escape") {
+        setIsEditingTitle(false);
+        setEditedTitle(pdf.title || "Untitled");
+      }
+    },
+    [pdf.title],
+  );
+
+  return (
+    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-[100px]">
+      <CardContent className="p-3 flex-1">
+        <div className="flex items-center justify-center gap-4">
+          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
+            {isEditingTitle ? (
+              <Input
+                ref={titleInputRef as any}
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                onBlur={handleTitleBlur}
+                onKeyDown={handleTitleKeyDown}
+                className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            ) : (
+              <h3
+                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
+                onDoubleClick={handleDoubleClick}
+                title="Double-click to rename"
+              >
+                {pdf.title || "Untitled"}
+              </h3>
+            )}
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              PDF upload
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              {typeof window !== "undefined" ? (
+                <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
+              ) : (
+                <SkeletonTextAnimation className="w-20" />
+              )}
+            </div>
+            <PdfCardMenu pdf={pdf} onDelete={onDelete} />
+            <Button
+              size="sm"
+              asChild
+              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+            >
+              <IntentPrefetchLink href={pdfHref}>
+                <span aria-label="open-upload">Open</span>
+              </IntentPrefetchLink>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function EmptySearchResults({
   searchQuery,
   onClearSearch,
@@ -1315,7 +1678,7 @@ function EmptySearchResults({
             No results found
           </h3>
           <p className="text-muted-foreground mb-6">
-            No notes found for "{searchQuery}"
+            No notes or uploads found for "{searchQuery}"
           </p>
           <Button
             variant="outline"
@@ -1344,10 +1707,10 @@ function EmptyTableState({
             <FileText className="h-8 w-8 text-primary" />
           </div>
           <h3 className="text-lg font-semibold mb-2 text-foreground">
-            No notes yet
+            No notes or uploads yet
           </h3>
           <p className="text-muted-foreground mb-6">
-            Create your first note to get started
+            Create your first note or upload to get started
           </p>
           <CreateNoteBtn
             workingSpaceId={workspaceId}

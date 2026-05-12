@@ -73,6 +73,8 @@ export default function BreadcrumbWithCustomSeparator() {
               workspaceDatafilter.name
             ) {
               displayName = workspaceDatafilter.name;
+            } else if (segment.toLowerCase() === "pdf") {
+              displayName = "PDF";
             } else {
               // For other segments, use the parseSlug utility
               displayName = parseSlug(segment);

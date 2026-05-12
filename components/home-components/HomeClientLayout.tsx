@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import AppSidebar from "@/components/home-components/AppSidebar";
 import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
+import GlobalFolderDropUpload from "@/components/home-components/GlobalFolderDropUpload";
 import { MobileWarning } from "@/components/ui/mobile-warning";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import SearchDialog from "@/components/home-components/SearchDialog";
@@ -59,12 +60,14 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const noteid = searchParams.get("id") as Id<"notes">;
   const noteTitle = parseSlug(`${pathSegments[2]}`);
+  const isPdfRoute = pathSegments[2] === "pdf";
 
   const showTopFade = scrollTop > 0;
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
       <AppSidebar />
+      <GlobalFolderDropUpload />
       <SearchDialog showTrigger={false} enableShortcut={true} />
       <div
         aria-hidden="true"
@@ -108,15 +111,19 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         </div>
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent py-6"
+          className={`flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent ${
+            isPdfRoute ? "overflow-hidden py-0" : "overflow-y-auto py-6"
+          }`}
         >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showTopFade ? 1 : 0 }}
-            transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
-            className="sticky -top-12 left-0 w-full h-28 bg-gradient-to-b from-background from-25% to-transparent to-100% z-[5] pointer-events-none -mb-32"
-            aria-hidden
-          />
+          {!isPdfRoute ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: showTopFade ? 1 : 0 }}
+              transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
+              className="sticky -top-12 left-0 w-full h-28 bg-gradient-to-b from-background from-25% to-transparent to-100% z-[5] pointer-events-none -mb-32"
+              aria-hidden
+            />
+          ) : null}
           {children}
         </div>
         <MobileWarning />
