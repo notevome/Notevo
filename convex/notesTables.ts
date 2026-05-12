@@ -56,6 +56,73 @@ export const createTable = mutation({
   },
 });
 
+export const getOrCreateTable = mutation({
+  args: {
+    name: v.string(),
+    workingSpaceId: v.id("workingSpaces"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Not authenticated");
+    }
+
+    const { name, workingSpaceId } = args;
+    const normalizedName = name.trim().toLowerCase();
+
+    const workspace = await ctx.db.get(workingSpaceId);
+    if (!workspace) {
+      throw new Error("Workspace not found");
+    }
+
+    if (workspace.userId !== userId) {
+      throw new Error("Not authorized to create tables in this workspace");
+    }
+
+    const tables = await ctx.db
+      .query("notesTables")
+      .withIndex("by_workingSpaceId", (q) =>
+        q.eq("workingSpaceId", workingSpaceId),
+      )
+      .collect();
+
+    const existingTable = tables.find(
+      (table) => table.name?.trim().toLowerCase() === normalizedName,
+    );
+
+    if (existingTable) {
+      await ctx.db.patch(existingTable._id, {
+        updatedAt: Date.now(),
+      });
+      return existingTable._id;
+    }
+
+    const generateSlugName = generateSlug(name);
+    let slug = generateSlugName;
+    let existingTableBySlug = await ctx.db
+      .query("notesTables")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first();
+    let counter = 1;
+    while (existingTableBySlug) {
+      slug = `${generateSlugName}-${counter}`;
+      existingTableBySlug = await ctx.db
+        .query("notesTables")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .first();
+      counter++;
+    }
+
+    return ctx.db.insert("notesTables", {
+      name,
+      workingSpaceId,
+      slug,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const updateTable = mutation({
   args: {
     _id: v.id("notesTables"),
@@ -144,8 +211,18 @@ export const deleteTable = mutation({
       .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
       .collect();
 
+    const pdfsToDelete = await ctx.db
+      .query("pdfs")
+      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .collect();
+
     for (const note of notesToDelete) {
       await ctx.db.delete(note._id);
+    }
+
+    for (const pdf of pdfsToDelete) {
+      await ctx.storage.delete(pdf.storageId);
+      await ctx.db.delete(pdf._id);
     }
 
     await ctx.db.delete(_id);

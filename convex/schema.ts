@@ -61,10 +61,12 @@ export default defineSchema({
     storageId: v.id("_storage"),
     userId: v.id("users"),
     workingSpaceId: v.optional(v.id("workingSpaces")),
+    notesTableId: v.optional(v.id("notesTables")),
     title: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workingSpaceId", ["workingSpaceId"]),
+    .index("by_workingSpaceId", ["workingSpaceId"])
+    .index("by_notesTableId", ["notesTableId"]),
 });

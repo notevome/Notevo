@@ -243,6 +243,17 @@ html {
   background: var(--selection-background);
 }
 
+.pdf-viewer-shell ::selection,
+.pdf-viewer-shell .textLayer ::selection,
+.pdf-viewer-shell .textLayer span::selection {
+  background: var(--selection-background) !important;
+}
+
+.pdf-viewer-shell *::-moz-selection,
+.pdf-viewer-shell .textLayer *::-moz-selection {
+  background: var(--selection-background) !important;
+}
+
 .no-visible-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
