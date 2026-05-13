@@ -367,10 +367,10 @@ const Sidebar = React.memo(
       const resizeHandle =
         state === "expanded" && !isMobile ? (
           <div
-            className="group/resize absolute -right-px top-0 h-full w-2.5 cursor-col-resize "
+            className="group/resize absolute right-0 top-0 h-full w-2.5 cursor-col-resize "
             onMouseDown={handleMouseDown}
           >
-            <div className="absolute -right-px top-0 h-full w-px cursor-col-resize bg-gradient-to-t from-transparent from-5% to-95% to-transparent via-50% group-hover/resize:via-primary" />
+            <div className="absolute right-0 top-0 h-full w-px cursor-col-resize bg-gradient-to-t from-transparent from-5% to-95% to-transparent via-50% group-hover/resize:via-primary" />
           </div>
         ) : null;
 
@@ -906,7 +906,7 @@ const SidebarMenuSubButton = React.forwardRef<
       data-size={size}
       data-active={isActive}
       className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-lg px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+        "flex h-7 min-w-0 -translate-x-px items-center gep-2 overflow-hidden rounded-lg px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",

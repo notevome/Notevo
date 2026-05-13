@@ -1445,9 +1445,6 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
           <FileText className="h-5 w-5 text-primary" />
           <span>PDF upload</span>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-3 mt-4">
-          Open this file in a new tab to read or review it.
-        </p>
       </CardContent>
 
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
@@ -1465,9 +1462,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
           className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute bottom-0 right-0 h-9 px-2 text-xs"
           aria-label="open-upload"
         >
-          <IntentPrefetchLink href={pdfHref}>
-            Open
-          </IntentPrefetchLink>
+          <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
         </Button>
       </CardFooter>
     </Card>

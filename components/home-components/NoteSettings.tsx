@@ -377,7 +377,7 @@ export default function NoteSettings({
               onClick={initiateDelete}
               aria-label="delete-note"
             >
-              <FaRegTrashCan size={14} className="text-current" />
+              <FaRegTrashCan size={14} className="text-muted-foreground" />
               Delete
             </Button>
 

@@ -339,7 +339,7 @@ export default function NoteContextMenu({
                   }}
                   aria-label="delete-note"
                 >
-                  <FaRegTrashCan size={14} className="text-current" />
+                  <FaRegTrashCan size={14} className="text-muted-foreground" />
                   Delete
                 </Button>
 

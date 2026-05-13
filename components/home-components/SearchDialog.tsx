@@ -4,6 +4,7 @@ import {
   ArrowDownUp,
   Undo2,
   Clock,
+  File,
   FileText,
   Search,
   ChevronRight,
@@ -72,15 +73,37 @@ function SearchLoadingSkeleton() {
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>;
-  const index = text.toLowerCase().indexOf(query.toLowerCase());
-  if (index === -1) return <>{text}</>;
+
+  const normalizedQuery = query.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!normalizedQuery) return <>{text}</>;
+
+  const chars = Array.from(text);
+  const normalizedChars: string[] = [];
+  const originalIndexes: number[] = [];
+
+  chars.forEach((char, index) => {
+    const normalizedChar = char.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (!normalizedChar) return;
+    normalizedChars.push(normalizedChar);
+    originalIndexes.push(index);
+  });
+
+  const normalizedText = normalizedChars.join("");
+  const normalizedIndex = normalizedText.indexOf(normalizedQuery);
+
+  if (normalizedIndex === -1) return <>{text}</>;
+
+  const start = originalIndexes[normalizedIndex];
+  const end =
+    originalIndexes[normalizedIndex + normalizedQuery.length - 1] ?? start;
+
   return (
     <>
-      {text.slice(0, index)}
+      {text.slice(0, start)}
       <span className="text-secondary bg-secondary-foreground font-extrabold">
-        {text.slice(index, index + query.length)}
+        {text.slice(start, end + 1)}
       </span>
-      {text.slice(index + query.length)}
+      {text.slice(end + 1)}
     </>
   );
 }
@@ -123,6 +146,56 @@ function NoteItem({
   );
 }
 
+function buildPdfSlug(title?: string) {
+  if (!title) return "untitled-pdf";
+
+  return (
+    title
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "untitled-pdf"
+  );
+}
+
+function PdfItem({
+  pdf,
+  onClick,
+  isSelected,
+  query,
+  onIntentPrefetch,
+  indented = false,
+}: any) {
+  const href = `/home/${pdf.workingSpaceId}/pdf/${pdf.slug}?pdfId=${pdf._id}`;
+  return (
+    <div
+      onClick={onClick}
+      onPointerEnter={() => onIntentPrefetch?.(href)}
+      onMouseEnter={() => onIntentPrefetch?.(href)}
+      onFocus={() => onIntentPrefetch?.(href)}
+      onTouchStart={() => onIntentPrefetch?.(href)}
+      className={cn(
+        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        indented && "ml-7",
+        isSelected ? "bg-border" : "hover:bg-border",
+      )}
+    >
+      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
+        <File size={14} />
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <p className="text-sm text-foreground font-medium truncate transition-colors">
+          <HighlightedText text={pdf.title || "Untitled"} query={query} />
+        </p>
+      </div>
+      <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        <span>{getRelativeTime(new Date(pdf.createdAt))}</span>
+      </div>
+    </div>
+  );
+}
+
 // Tables are now collapsible — each manages its own open/close state
 function TableSection({
   table,
@@ -134,6 +207,15 @@ function TableSection({
 }: any) {
   const [isExpanded, setIsExpanded] = useState(true);
   const notes: any[] = table.notes ?? [];
+  const pdfs: any[] = table.pdfs ?? [];
+  const items = [
+    ...notes.map((note) => ({ ...note, kind: "note" as const })),
+    ...pdfs.map((pdf) => ({
+      ...pdf,
+      kind: "pdf" as const,
+      slug: buildPdfSlug(pdf.title),
+    })),
+  ].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
     <div>
@@ -161,26 +243,44 @@ function TableSection({
       {isExpanded && (
         <div className=" relative ">
           <div className=" ml-5 absolute top-0 left-0 h-full w-px bg-muted-foreground/30" />
-          {notes.length === 0 ? (
+          {items.length === 0 ? (
             <p className="text-[11px] text-muted-foreground/40 text-center py-2 ml-6">
-              {query ? `No notes match "${query}" here.` : "No notes here."}
+              {query
+                ? `No notes or uploads match "${query}" here.`
+                : "No notes or uploads here."}
             </p>
           ) : (
-            notes.map((note: any) => (
-              <NoteItem
-                key={note._id}
-                note={{
-                  ...note,
-                  workingSpaceName: workspace.name,
-                  tableName: table.name,
-                }}
-                onClick={() => onNoteClick(note)}
-                isSelected={selectedNoteId === String(note._id)}
-                query={query}
-                onIntentPrefetch={onIntentPrefetch}
-                indented
-              />
-            ))
+            items.map((item: any) =>
+              item.kind === "pdf" ? (
+                <PdfItem
+                  key={item._id}
+                  pdf={{
+                    ...item,
+                    workingSpaceName: workspace.name,
+                    tableName: table.name,
+                  }}
+                  onClick={() => onNoteClick(item)}
+                  isSelected={selectedNoteId === String(item._id)}
+                  query={query}
+                  onIntentPrefetch={onIntentPrefetch}
+                  indented
+                />
+              ) : (
+                <NoteItem
+                  key={item._id}
+                  note={{
+                    ...item,
+                    workingSpaceName: workspace.name,
+                    tableName: table.name,
+                  }}
+                  onClick={() => onNoteClick(item)}
+                  isSelected={selectedNoteId === String(item._id)}
+                  query={query}
+                  onIntentPrefetch={onIntentPrefetch}
+                  indented
+                />
+              ),
+            )
           )}
         </div>
       )}
@@ -316,13 +416,21 @@ export default function SearchDialog({
   const allNotes = useMemo<any[]>(() => {
     if (!searchTargets) return [];
     return searchTargets.flatMap((ws) =>
-      (ws.tables ?? []).flatMap((t: any) =>
-        (t.notes ?? []).map((n: any) => ({
+      (ws.tables ?? []).flatMap((t: any) => [
+        ...(t.notes ?? []).map((n: any) => ({
           ...n,
+          kind: "note" as const,
           workingSpaceName: ws.name,
           tableName: t.name,
         })),
-      ),
+        ...(t.pdfs ?? []).map((pdf: any) => ({
+          ...pdf,
+          kind: "pdf" as const,
+          slug: buildPdfSlug(pdf.title),
+          workingSpaceName: ws.name,
+          tableName: t.name,
+        })),
+      ]),
     );
   }, [searchTargets]);
 
@@ -385,7 +493,11 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note) return;
-    prefetchOnce(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    const href =
+      note.kind === "pdf"
+        ? `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`
+        : `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+    prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
   const toggleWorkspace = (workspaceId: string) => {
@@ -398,6 +510,10 @@ export default function SearchDialog({
 
   const handleNoteClick = (note: any) => {
     setOpen(false);
+    if (note.kind === "pdf") {
+      router.push(`/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`);
+      return;
+    }
     router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
   };
 

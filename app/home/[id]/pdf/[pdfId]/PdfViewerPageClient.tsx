@@ -211,7 +211,7 @@ function SearchPanel({
             type="button"
             variant="outline"
             size="icon"
-            className="h-8 px-0.5 shrink-0 border border-border"
+            className="h-8 px-0.5 shrink-0 !border-0  bg-transparent"
             onClick={onClose}
             aria-label="close-search-panel"
           >
@@ -286,14 +286,14 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
   }, [currentPage]);
 
   return (
-    <aside className="flex h-full w-[142px] shrink-0 flex-col border-r border-border bg-card/95 backdrop-blur-sm">
+    <aside className="flex h-full w-[142px] shrink-0 flex-col border-l-0 border-border bg-card/95 backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-border p-2">
         <p className="text-sm font-medium text-foreground">Pages</p>
         <Button
           type="button"
           variant="outline"
           size="icon"
-          className="h-8 w-8 shrink-0 border border-border"
+          className="h-8 w-8 shrink-0 !border-0 bg-transparent "
           onClick={onClose}
           aria-label="close-thumbnails-panel"
         >
@@ -303,7 +303,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
 
       <div
         ref={panelRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-1 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
       >
         <div className="flex flex-col items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => {
@@ -495,8 +495,8 @@ function PdfViewerContent({
       }
     >
       <div className="relative flex h-full min-h-0 w-full">
-        <div className="pointer-events-none fixed right-4 top-20 z-20 ">
-          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-md border border-border bg-card/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl">
+        <div className="pointer-events-none fixed right-2.5 top-[4.4rem] z-20">
+          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-md border border-border bg-card/95 px-3 py-1.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Button
                 type="button"
@@ -518,7 +518,7 @@ function PdfViewerContent({
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "h-8 w-8 border-y border-r border-border !rounded-none",
+                  "h-8 w-8 border-y !border-l-0 border-border !rounded-none",
                   panelMode === "thumbnails" && "bg-muted text-foreground",
                 )}
                 onClick={() =>
@@ -598,6 +598,17 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!pdf?.title) return;
+
+    const originalTitle = document.title;
+    document.title = `${pdf.title} - Notevo`;
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [pdf?.title]);
+
+  useEffect(() => {
     setIsViewerReady(false);
     const frame = window.requestAnimationFrame(() => {
       setIsViewerReady(true);
@@ -646,7 +657,7 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   if (pdf === undefined) {
     return (
       <div className="flex h-full max-w-full min-h-0 flex-col px-0 py-0 mx-0">
-        <div className="flex-1 rounded-2xl border border-border bg-card animate-pulse" />
+        <div className="flex-1 rounded-none border border-border bg-card animate-pulse" />
       </div>
     );
   }
