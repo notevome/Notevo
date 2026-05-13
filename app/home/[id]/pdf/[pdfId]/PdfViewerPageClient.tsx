@@ -10,6 +10,7 @@ import {
   Root,
   Search as LectorSearch,
   TextLayer,
+  Thumbnail,
   usePdf,
   usePdfJump,
   useSearch,
@@ -58,6 +59,7 @@ type LectorSearchResult = {
 
 const ZOOM_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 const PDF_PAGE_GAP = 20;
+type PanelMode = "search" | "thumbnails" | null;
 
 function isFiniteRectValue(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
@@ -194,7 +196,7 @@ function SearchPanel({
 
   return (
     <aside className="flex h-full w-[290px] shrink-0 flex-col border-r border-border bg-card/95 backdrop-blur-sm">
-      <div className="border-b border-border p-3">
+      <div className="border-b border-border p-2">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -264,6 +266,78 @@ function SearchPanel({
   );
 }
 
+function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
+  const currentPage = usePdf((state) => state.currentPage);
+  const totalPages = usePdf((state) => state.pdfDocumentProxy.numPages);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const activeThumbnail = panelRef.current?.querySelector(
+      `[data-thumbnail-page="${currentPage}"]`,
+    );
+
+    if (activeThumbnail instanceof HTMLElement) {
+      activeThumbnail.scrollIntoView({
+        block: "nearest",
+        inline: "nearest",
+        behavior: "smooth",
+      });
+    }
+  }, [currentPage]);
+
+  return (
+    <aside className="flex h-full w-[142px] shrink-0 flex-col border-r border-border bg-card/95 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-border p-2">
+        <p className="text-sm font-medium text-foreground">Pages</p>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 shrink-0 border border-border"
+          onClick={onClose}
+          aria-label="close-thumbnails-panel"
+        >
+          <X size={16} />
+        </Button>
+      </div>
+
+      <div
+        ref={panelRef}
+        className="flex-1 overflow-y-auto overflow-x-hidden px-1 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+      >
+        <div className="flex flex-col items-center gap-2">
+          {Array.from({ length: totalPages }, (_, index) => {
+            const pageNumber = index + 1;
+            const isActive = pageNumber === currentPage;
+
+            return (
+              <div
+                key={pageNumber}
+                data-thumbnail-page={pageNumber}
+                className="flex w-full items-start gap-2"
+              >
+                <span className="w-4 pt-1 text-right text-sm font-semibold text-muted-foreground">
+                  {pageNumber}
+                </span>
+                <div>
+                  <Thumbnail
+                    pageNumber={pageNumber}
+                    className={cn(
+                      "w-[88px] rounded-[14px] bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
+                      isActive &&
+                        "border-muted-foreground outline-muted-foreground",
+                    )}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 function ZoomDropdown() {
   const zoom = usePdf((state) => state.zoom);
   const updateZoom = usePdf((state) => state.updateZoom);
@@ -324,15 +398,11 @@ function ZoomDropdown() {
   );
 }
 
-function PageNavigator({
-  currentPageOverride,
-}: {
-  currentPageOverride?: number;
-}) {
+function PageNavigator() {
   const currentPageFromStore = usePdf((state) => state.currentPage);
   const totalPages = usePdf((state) => state.pdfDocumentProxy.numPages);
   const { jumpToPage } = usePdfJump();
-  const currentPage = currentPageOverride ?? currentPageFromStore;
+  const currentPage = currentPageFromStore;
   const [pageInput, setPageInput] = useState(String(currentPage));
 
   useEffect(() => {
@@ -414,58 +484,7 @@ function PdfViewerContent({
   title: string;
 }) {
   const [query, setQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(true);
-  const zoom = usePdf((state) => state.zoom);
-  const viewports = usePdf((state) => state.viewports);
-  const currentPageFromStore = usePdf((state) => state.currentPage);
-  const viewportRef = usePdf((state) => state.viewportRef);
-  const [scrollOffset, setScrollOffset] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(0);
-
-  useEffect(() => {
-    const viewport = viewportRef?.current;
-    if (!viewport) return;
-
-    const updateHeight = () => {
-      setViewportHeight(viewport.clientHeight);
-    };
-
-    updateHeight();
-
-    const observer = new ResizeObserver(() => {
-      updateHeight();
-    });
-
-    observer.observe(viewport);
-
-    return () => observer.disconnect();
-  }, [viewportRef]);
-
-  const reactiveCurrentPage = useMemo(() => {
-    if (!viewports.length || !viewportHeight || zoom <= 0) {
-      return currentPageFromStore;
-    }
-
-    const viewportCenter = scrollOffset / zoom + viewportHeight / zoom / 2;
-    let bestPage = 1;
-    let smallestDistance = Number.POSITIVE_INFINITY;
-    let pageStart = 0;
-
-    for (let index = 0; index < viewports.length; index += 1) {
-      const pageSize = viewports[index].height + PDF_PAGE_GAP;
-      const pageCenter = pageStart + pageSize / 2;
-      const distance = Math.abs(pageCenter - viewportCenter);
-
-      if (distance < smallestDistance) {
-        smallestDistance = distance;
-        bestPage = index + 1;
-      }
-
-      pageStart += pageSize;
-    }
-
-    return bestPage;
-  }, [currentPageFromStore, scrollOffset, viewportHeight, viewports, zoom]);
+  const [panelMode, setPanelMode] = useState<PanelMode>("search");
 
   return (
     <LectorSearch
@@ -475,40 +494,68 @@ function PdfViewerContent({
         </div>
       }
     >
-      <div className="relative h-full w-full">
-        <div className="pointer-events-none fixed inset-0 top-20 z-20 ">
-          <div className="pointer-events-auto mx-auto flex w-fit max-w-[calc(100%-0.5rem)] flex-wrap items-center justify-between gap-3 app-radius-md border border-border bg-card/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl">
+      <div className="relative flex h-full min-h-0 w-full">
+        <div className="pointer-events-none fixed right-4 top-20 z-20 ">
+          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-md border border-border bg-card/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 border border-border"
-                onClick={() => setIsSearchOpen((current) => !current)}
+                onClick={() =>
+                  setPanelMode((current) =>
+                    current === "search" ? null : "search",
+                  )
+                }
                 aria-label="show-search-panel"
+                aria-pressed={panelMode === "search"}
               >
                 <Search size={16} />
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "h-8 w-8 border-y border-r border-border !rounded-none",
+                  panelMode === "thumbnails" && "bg-muted text-foreground",
+                )}
+                onClick={() =>
+                  setPanelMode((current) =>
+                    current === "thumbnails" ? null : "thumbnails",
+                  )
+                }
+                aria-label="show-thumbnails-panel"
+                aria-pressed={panelMode === "thumbnails"}
+              >
+                <span className="text-[11px] font-semibold">Pg</span>
+              </Button>
               <ZoomDropdown />
             </div>
-            <PageNavigator currentPageOverride={reactiveCurrentPage} />
+            <PageNavigator />
           </div>
         </div>
 
-        {isSearchOpen ? (
+        {panelMode === "search" ? (
           <div className="absolute left-0 top-0 z-20 h-full w-[290px] max-w-[calc(100%-1.5rem)] overflow-hidden border border-border">
             <SearchPanel
               query={query}
               setQuery={setQuery}
-              onClose={() => setIsSearchOpen(false)}
+              onClose={() => setPanelMode(null)}
             />
           </div>
         ) : null}
 
+        {panelMode === "thumbnails" ? (
+          <div className="absolute left-0 top-0 z-20 h-full overflow-hidden border border-border">
+            <ThumbnailsPanel onClose={() => setPanelMode(null)} />
+          </div>
+        ) : null}
+
         <Pages
-          className="h-full w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+          className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
           gap={PDF_PAGE_GAP}
-          onOffsetChange={setScrollOffset}
         >
           <Page>
             <CanvasLayer />
@@ -532,7 +579,7 @@ function PdfViewerShell({
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className="pdf-viewer-shell flex flex-1 overflow-hidden rounded-none border-0 bg-background"
+      className="pdf-viewer-shell flex h-full min-h-0 w-full flex-1 overflow-hidden rounded-none border-0 bg-background"
       loader={
         <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...
@@ -625,7 +672,10 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   }
 
   return (
-    <div ref={viewerHostRef} className="flex min-h-0 flex-1">
+    <div
+      ref={viewerHostRef}
+      className="flex h-full min-h-0 w-full flex-1 overflow-hidden"
+    >
       {isViewerReady && hasMeasuredViewport ? (
         <PdfViewerShell
           fileUrl={pdf.fileUrl}

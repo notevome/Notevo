@@ -2,15 +2,12 @@
 import {
   Calendar,
   Check,
-  ExternalLink,
   FileText,
   LayoutGrid,
   List,
-  MoreVertical,
   Search,
   ChevronLeft,
   ChevronRight,
-  Trash2,
   X,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
@@ -24,6 +21,7 @@ import { z } from "zod";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
+import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
@@ -62,13 +60,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn, formatTableName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
@@ -131,6 +122,7 @@ interface PdfItem {
   _id: Id<"pdfs">;
   storageId: Id<"_storage">;
   title?: string;
+  favorite?: boolean;
   userId?: Id<"users">;
   workingSpaceId?: Id<"workingSpaces">;
   notesTableId?: Id<"notesTables">;
@@ -899,7 +891,12 @@ export function NotesDroppableContainer({
     );
     const notDeletedItems = [...noteItems, ...pdfItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+      .sort((a, b) => {
+        const aPinned = a.favorite ? 1 : 0;
+        const bPinned = b.favorite ? 1 : 0;
+        if (aPinned !== bPinned) return bPinned - aPinned;
+        return b.updatedAt - a.updatedAt;
+      });
 
     if (!searchQuery.trim()) return notDeletedItems;
     const q = searchQuery.toLowerCase();
@@ -1352,90 +1349,6 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   );
 }
 
-function PdfCardMenu({ pdf, onDelete }: PdfCardProps) {
-  const [open, setOpen] = useState(false);
-  const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const deletePdf = useMutation(api.pdfs.deletePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  const handleDelete = useCallback(async () => {
-    if (onDelete) onDelete(pdf._id);
-    setIsAlertOpen(false);
-    try {
-      await deletePdf({ _id: pdf._id });
-    } catch (error) {
-      console.error("Failed to delete PDF:", error);
-    }
-  }, [deletePdf, onDelete, pdf._id]);
-
-  return (
-    <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="Trigger"
-            className="px-0.5 h-8 mt-0.5"
-            aria-label="upload-options"
-          >
-            <MoreVertical size={18} className="text-muted-foreground" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-40">
-          <DropdownMenuItem asChild>
-            <IntentPrefetchLink href={pdfHref}>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-              Open upload
-            </IntentPrefetchLink>
-          </DropdownMenuItem>
-          {pdf.fileUrl ? (
-            <DropdownMenuItem asChild>
-              <a href={pdf.fileUrl} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                Original file
-              </a>
-            </DropdownMenuItem>
-          ) : null}
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setOpen(false);
-              setIsAlertOpen(true);
-            }}
-            className="text-destructive focus:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete upload
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
-        <AlertDialogContent className="bg-card border border-border text-card-foreground">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Upload Deletion</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this upload? This action cannot be
-              undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => void handleDelete()}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground border-none"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  );
-}
-
 function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
@@ -1516,7 +1429,14 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
               {pdf.title || "Untitled"}
             </CardTitle>
           )}
-          <PdfCardMenu pdf={pdf} onDelete={onDelete} />
+          <PdfSettings
+            pdfId={pdf._id}
+            pdfTitle={pdf.title}
+            iconVariant="vertical_icon"
+            dropdownMenuContentAlign="start"
+            tooltipContentAlign="start"
+            onDelete={onDelete}
+          />
         </div>
       </CardHeader>
 
@@ -1646,7 +1566,15 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
                 <SkeletonTextAnimation className="w-20" />
               )}
             </div>
-            <PdfCardMenu pdf={pdf} onDelete={onDelete} />
+            <PdfSettings
+              pdfId={pdf._id}
+              pdfTitle={pdf.title}
+              iconVariant="vertical_icon"
+              dropdownMenuContentAlign="start"
+              tooltipContentAlign="start"
+              onDelete={onDelete}
+              btnClassName="pt-0 mr-10 mt-1.5"
+            />
             <Button
               size="sm"
               asChild

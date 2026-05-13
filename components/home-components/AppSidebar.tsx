@@ -3,6 +3,7 @@ import {
   Notebook,
   Plus,
   Pin,
+  FileText,
   CircleUserRound,
   LogOut,
   HomeIcon,
@@ -61,6 +62,7 @@ import {
 import { Doc } from "@/convex/_generated/dataModel";
 import { Input } from "../ui/input";
 import NoteSettingsSidbar from "./NoteSettingsSidbar";
+import PdfSettingsSidebar from "./PdfSettingsSidebar";
 import WorkingSpaceSettingsSidbar from "./WorkingSpaceSettingsSidbar";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
@@ -538,6 +540,264 @@ const PinnedNotesList = memo(function PinnedNotesList({
   );
 });
 
+interface PinnedUploadItemProps {
+  pdf: Doc<"pdfs">;
+  pathname: string;
+  open: boolean;
+}
+
+const PinnedUploadItem = memo(
+  function PinnedUploadItem({ pdf, pathname, open }: PinnedUploadItemProps) {
+    const [isHovered, setIsHovered] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
+    const updatePdf = useMutation(api.pdfs.updatePdf);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
+    const pdfPath = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}`;
+    const pdfHref = `${pdfPath}?pdfId=${pdf._id}`;
+    const isActive = pathname === pdfPath;
+
+    const handleContentMouseEnter = useCallback(() => {
+      setIsHovered(true);
+    }, []);
+
+    const handleContentMouseLeave = useCallback(() => {
+      setIsHovered(false);
+    }, []);
+
+    const handleDoubleClick = useCallback(() => {
+      setIsEditing(true);
+      setEditedTitle(pdf.title || "Untitled");
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        input.focus();
+        input.select();
+        input.scrollLeft = 0;
+      });
+    }, [pdf.title]);
+
+    const handleInputChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEditedTitle(e.target.value);
+      },
+      [],
+    );
+
+    const handleInputBlur = useCallback(async () => {
+      const currentTitle = pdf.title || "Untitled";
+      const result = noteTitleSchema.safeParse(editedTitle.trim());
+
+      if (!result.success) {
+        setEditedTitle(currentTitle);
+        setIsEditing(false);
+        return;
+      }
+
+      const trimmedTitle = result.data;
+
+      if (trimmedTitle !== currentTitle) {
+        try {
+          await updatePdf({
+            _id: pdf._id,
+            title: trimmedTitle,
+          });
+        } catch (error) {
+          console.error("Error updating PDF title:", error);
+          setEditedTitle(currentTitle);
+        }
+      }
+      setIsEditing(false);
+    }, [editedTitle, pdf._id, pdf.title, updatePdf]);
+
+    const handleInputKeyPress = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+          inputRef.current?.blur();
+        } else if (e.key === "Escape") {
+          setIsEditing(false);
+          setEditedTitle(pdf.title || "Untitled");
+        }
+      },
+      [pdf.title],
+    );
+
+    const textClassName = isHovered
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      : "truncate flex-grow";
+
+    return (
+      <SidebarGroupContent
+        className="relative w-full flex justify-between items-center overflow-hidden group/item"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
+      >
+        <SidebarMenu className="flex-1">
+          <SidebarMenuItem>
+            {isEditing ? (
+              <Input
+                ref={inputRef}
+                value={editedTitle}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                onKeyDown={handleInputKeyPress}
+                aria-label="pinned upload title"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+              />
+            ) : (
+              <TooltipProvider delayDuration={200} skipDelayDuration={0}>
+                <Tooltip disableHoverableContent>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="SidebarMenuButton"
+                      className={`px-2 my-0.5 h-8 group flex-1 ${
+                        isActive ? "bg-border" : ""
+                      }`}
+                      asChild
+                      onDoubleClick={handleDoubleClick}
+                    >
+                      <IntentPrefetchLink
+                        href={pdfHref}
+                        className="flex items-center gap-2 flex-grow min-w-0"
+                      >
+                        {isHovered || isActive ? (
+                          <ChevronRight
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        ) : (
+                          <FileText
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        )}
+                        <span className={textClassName}>
+                          {formatWorkspaceName(pdf.title || "Untitled")}
+                        </span>
+                      </IntentPrefetchLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={5}>
+                    {pdf.title || "Untitled"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div
+          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+        >
+          <PdfSettingsSidebar pdfId={pdf._id} />
+        </div>
+      </SidebarGroupContent>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.pdf.favorite === nextProps.pdf.favorite &&
+      prevProps.pdf.title === nextProps.pdf.title &&
+      prevProps.pathname === nextProps.pathname &&
+      prevProps.open === nextProps.open
+    );
+  },
+);
+
+interface PinnedUploadsListProps {
+  favoritePdfs: Doc<"pdfs">[];
+  pathname: string;
+  open: boolean;
+  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  loadMore: (numItems: number) => void;
+}
+
+const PinnedUploadsList = memo(function PinnedUploadsList({
+  favoritePdfs,
+  pathname,
+  open,
+  status,
+  loadMore,
+}: PinnedUploadsListProps) {
+  if (status === "LoadingFirstPage") {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+          <span>Pinned Uploads</span>
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  if (favoritePdfs.length === 0) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+        <span>Pinned Uploads</span>
+      </SidebarGroupLabel>
+      {favoritePdfs.map((pdf) => (
+        <PinnedUploadItem
+          key={pdf._id}
+          pdf={pdf}
+          pathname={pathname}
+          open={open}
+        />
+      ))}
+
+      {favoritePdfs.length > 4 && status === "CanLoadMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            onClick={() => loadMore(5)}
+            className="px-2 my-0.5 h-8 group flex-1"
+          >
+            <ChevronDown size="16" className=" text-muted-foreground" />
+            Show More
+          </Button>
+        </SidebarGroupContent>
+      )}
+
+      {favoritePdfs.length > 4 && status === "LoadingMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            disabled
+            className="px-2 my-0.5 h-8 group flex-1"
+          >
+            <LoadingAnimation className="h-3 w-3" />
+            Loading...
+          </Button>
+        </SidebarGroupContent>
+      )}
+    </SidebarGroup>
+  );
+});
+
 interface WorkspaceItemProps {
   workingSpace: Doc<"workingSpaces">;
   pathname: string;
@@ -982,6 +1242,11 @@ const AppSidebar = React.memo(function AppSidebar() {
     {},
     { initialNumItems: 5 },
   );
+  const {
+    results: favoritePdfs,
+    status: favoritePdfsStatus,
+    loadMore: loadMorePdfs,
+  } = usePaginatedQuery(api.pdfs.getFavPdfs, {}, { initialNumItems: 5 });
   const createTable = useMutation(
     api.notesTables.createTable,
   ).withOptimisticUpdate((local, args) => {
@@ -1041,7 +1306,7 @@ const AppSidebar = React.memo(function AppSidebar() {
     setHasMoreBelow(
       overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
     );
-  }, [results?.length, getWorkingSpaces?.length]);
+  }, [results?.length, favoritePdfs?.length, getWorkingSpaces?.length]);
 
   const isSidebarLoading = useMemo(
     () => getWorkingSpaces === undefined || User === undefined,
@@ -1150,6 +1415,13 @@ const AppSidebar = React.memo(function AppSidebar() {
             open={open}
             status={status}
             loadMore={loadMore}
+          />
+          <PinnedUploadsList
+            favoritePdfs={favoritePdfs}
+            pathname={pathname}
+            open={open}
+            status={favoritePdfsStatus}
+            loadMore={loadMorePdfs}
           />
           <WorkspacesList
             getWorkingSpaces={getWorkingSpaces}
