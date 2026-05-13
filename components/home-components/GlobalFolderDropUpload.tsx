@@ -176,7 +176,7 @@ export default function GlobalFolderDropUpload() {
     | undefined;
 
   const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
-  const createTable = useMutation(api.notesTables.createTable);
+  const getOrCreateTable = useMutation(api.notesTables.getOrCreateTable);
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
 
@@ -191,7 +191,7 @@ export default function GlobalFolderDropUpload() {
     ) => {
       setIsUploading(true);
       try {
-        const tableId = await createTable({
+        const tableId = await getOrCreateTable({
           name: DEFAULT_TABLE_NAME,
           workingSpaceId,
         });
@@ -252,7 +252,7 @@ export default function GlobalFolderDropUpload() {
         setIsWorkspaceDialogOpen(false);
       }
     },
-    [createTable, generateUploadUrl, router, sendPdf, toast],
+    [generateUploadUrl, getOrCreateTable, router, sendPdf, toast],
   );
 
   const resolveSingleWorkspaceUpload = useCallback(
@@ -363,8 +363,8 @@ export default function GlobalFolderDropUpload() {
             </div>
 
             <p className="mt-2 max-w-sm text-sm text-start text-muted-foreground">
-              We&apos;ll create a new table named "{DEFAULT_TABLE_NAME}" <br />{" "}
-              and add the PDFs there.
+              We&apos;ll use the "{DEFAULT_TABLE_NAME}" table if it already
+              exists, or create it and add the PDFs there.
             </p>
           </div>
         </div>
@@ -402,7 +402,8 @@ export default function GlobalFolderDropUpload() {
                 {pendingUpload?.folderName ?? "this folder"}
               </span>
               <br />
-              We&apos;ll create a table named "{DEFAULT_TABLE_NAME}" there.
+              We&apos;ll use the "{DEFAULT_TABLE_NAME}" table there if it
+              already exists, or create it for these PDFs.
             </DialogDescription>
           </DialogHeader>
 

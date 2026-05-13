@@ -17,10 +17,13 @@ import BreadcrumbWithCustomSeparator from "@/components/home-components/Breadcru
 import GlobalFolderDropUpload from "@/components/home-components/GlobalFolderDropUpload";
 import { MobileWarning } from "@/components/ui/mobile-warning";
 import NoteSettings from "@/components/home-components/NoteSettings";
+import PdfSettings from "@/components/home-components/PdfSettings";
 import SearchDialog from "@/components/home-components/SearchDialog";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
+import { useQuery } from "@/cache/useQuery";
+import { api } from "@/convex/_generated/api";
 import PublicNote from "../PublicNote";
 import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
@@ -59,8 +62,13 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const noteid = searchParams.get("id") as Id<"notes">;
+  const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
   const noteTitle = parseSlug(`${pathSegments[2]}`);
   const isPdfRoute = pathSegments[2] === "pdf";
+  const currentPdf = useQuery(
+    api.pdfs.getPdfById,
+    pdfId ? { _id: pdfId } : "skip",
+  );
 
   const showTopFade = scrollTop > 0;
 
@@ -82,7 +90,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         }}
       />
       <main
-        className={`relative flex flex-col flex-1 h-auto border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${
+        className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
         } rounded-none`}
       >
@@ -93,7 +101,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
               <BreadcrumbWithCustomSeparator />
             </div>
             <div>
-              {noteid && noteTitle && (
+              {!isPdfRoute && noteid && noteTitle && (
                 <span className=" flex justify-between items-center gap-2">
                   <PublicNote noteId={noteid} noteTitle={noteTitle} />
                   <NoteSettings
@@ -106,12 +114,23 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
                   />
                 </span>
               )}
+              {isPdfRoute && currentPdf && (
+                <span className="flex justify-between items-center gap-2">
+                  <PdfSettings
+                    pdfId={currentPdf._id}
+                    pdfTitle={currentPdf.title}
+                    iconVariant="horizontal_icon"
+                    dropdownMenuContentAlign="end"
+                    tooltipContentAlign="end"
+                  />
+                </span>
+              )}
             </div>
           </div>
         </div>
         <div
           ref={scrollContainerRef}
-          className={`flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent ${
+          className={`min-h-0 flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent ${
             isPdfRoute ? "overflow-hidden py-0" : "overflow-y-auto py-6"
           }`}
         >

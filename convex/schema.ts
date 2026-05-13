@@ -63,6 +63,7 @@ export default defineSchema({
     workingSpaceId: v.optional(v.id("workingSpaces")),
     notesTableId: v.optional(v.id("notesTables")),
     title: v.optional(v.string()),
+    favorite: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
