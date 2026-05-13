@@ -232,7 +232,7 @@ export default function TableSettings({
                 onClick={initiateDelete}
                 aria-label="delete-table"
               >
-                <FaRegTrashCan size={14} className="text-current" />
+                <FaRegTrashCan size={14} className="text-muted-foreground" />
                 Delete
               </Button>
               <DropdownMenuSeparator />

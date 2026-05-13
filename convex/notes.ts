@@ -12,6 +12,10 @@ const NOTE_PREVIEW_MAX_CHARS = 200;
 const TREE_NOTES_PER_TABLE = 3;
 const TREE_TABLES_PER_WORKSPACE = 3;
 
+function normalizeSearchText(value: string | undefined) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function computeNotePreview(body: string | undefined): string | undefined {
   if (!body) return undefined;
   const text = extractTextFromTiptap(body).replace(/\s+/g, " ").trim();
@@ -338,9 +342,9 @@ export const getNoteByUserId = query({
         .order("desc")
         .collect();
 
-      const lowerQuery = searchQuery.toLowerCase();
+      const lowerQuery = normalizeSearchText(searchQuery);
       const matchedNotes = allNotes.filter((note) => {
-        return note.title?.toLowerCase().includes(lowerQuery);
+        return normalizeSearchText(note.title).includes(lowerQuery);
       });
 
       return {
@@ -417,7 +421,7 @@ export const getWorkspaceTree = query({
       throw new ConvexError("Not authenticated");
     }
 
-    const normalizedQuery = searchQuery?.trim().toLowerCase() ?? "";
+    const normalizedQuery = normalizeSearchText(searchQuery?.trim());
     const isSearching = normalizedQuery.length > 0;
 
     const workspaces = await ctx.db
@@ -454,9 +458,17 @@ export const getWorkspaceTree = query({
                 )
                 .order("desc")
                 .collect();
+              const allPdfs = await ctx.db
+                .query("pdfs")
+                .withIndex("by_notesTableId", (q) =>
+                  q.eq("notesTableId", table._id),
+                )
+                .order("desc")
+                .collect();
               return {
                 ...table,
                 notes: allNotes.map(({ body, ...rest }) => rest),
+                pdfs: allPdfs,
               };
             }
 
@@ -468,10 +480,18 @@ export const getWorkspaceTree = query({
               )
               .order("desc")
               .take(TREE_NOTES_PER_TABLE);
+            const firstPdfs = await ctx.db
+              .query("pdfs")
+              .withIndex("by_notesTableId", (q) =>
+                q.eq("notesTableId", table._id),
+              )
+              .order("desc")
+              .take(TREE_NOTES_PER_TABLE);
 
             return {
               ...table,
               notes: firstNotes.map(({ body, ...rest }) => rest),
+              pdfs: firstPdfs,
             };
           }),
         );
@@ -481,22 +501,29 @@ export const getWorkspaceTree = query({
         }
 
         // Filter by query
-        const workspaceMatches = workspace.name
-          .toLowerCase()
-          .includes(normalizedQuery);
+        const workspaceMatches = normalizeSearchText(workspace.name).includes(
+          normalizedQuery,
+        );
 
         const filteredTables = tablesWithNotes
           .map((table) => {
-            const tableMatches = table.name
-              ?.toLowerCase()
-              .includes(normalizedQuery);
+            const tableMatches = normalizeSearchText(table.name).includes(
+              normalizedQuery,
+            );
             const matchingNotes = table.notes.filter((note: any) =>
-              note.title?.toLowerCase().includes(normalizedQuery),
+              normalizeSearchText(note.title).includes(normalizedQuery),
+            );
+            const matchingPdfs = (table.pdfs ?? []).filter((pdf: any) =>
+              normalizeSearchText(pdf.title).includes(normalizedQuery),
             );
 
             if (tableMatches) return table;
-            if (matchingNotes.length > 0)
-              return { ...table, notes: matchingNotes };
+            if (matchingNotes.length > 0 || matchingPdfs.length > 0)
+              return {
+                ...table,
+                notes: matchingNotes,
+                pdfs: matchingPdfs,
+              };
             return null;
           })
           .filter(Boolean);

@@ -94,8 +94,8 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
         } rounded-none`}
       >
-        <div className="z-[10] relative w-full flex items-center justify-start px-4 gap-3 mx-auto rounded-tl-lg border-none py-2.5 ">
-          <div className="flex justify-between items-center w-full">
+        <div className="z-[10] relative w-full flex min-h-12 items-center justify-start  gap-3 mx-auto bg-background rounded-tl-lg border-none ">
+          <div className="  flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
               {(!open || isMobile) && <SidebarTrigger />}
               <BreadcrumbWithCustomSeparator />
@@ -138,7 +138,9 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: showTopFade ? 1 : 0 }}
-              transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
+              transition={
+                showTopFade ? fadeTransition.show : fadeTransition.hide
+              }
               className="sticky -top-12 left-0 w-full h-28 bg-gradient-to-b from-background from-25% to-transparent to-100% z-[5] pointer-events-none -mb-32"
               aria-hidden
             />

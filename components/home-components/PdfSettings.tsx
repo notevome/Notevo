@@ -288,7 +288,7 @@ export default function PdfSettings({
               }}
               aria-label="delete-upload"
             >
-              <FaRegTrashCan size={14} className="text-current" />
+              <FaRegTrashCan size={14} className="text-muted-foreground" />
               Delete
             </Button>
 
