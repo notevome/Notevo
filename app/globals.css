@@ -243,6 +243,19 @@ html {
   background: var(--selection-background);
 }
 
+/* For Chrome, Safari, Edge, and Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+
 .pdf-viewer-shell ::selection,
 .pdf-viewer-shell .textLayer ::selection,
 .pdf-viewer-shell .textLayer span::selection {

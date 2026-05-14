@@ -26,6 +26,8 @@ import {
   FileText,
   Search,
   X,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
@@ -286,7 +288,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
   }, [currentPage]);
 
   return (
-    <aside className="flex h-full w-[142px] shrink-0 flex-col border-l-0 border-border bg-card/95 backdrop-blur-sm">
+    <aside className="flex h-full w-[150px] shrink-0 flex-col bg-card/95 backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-border p-2">
         <p className="text-sm font-medium text-foreground">Pages</p>
         <Button
@@ -303,7 +305,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
 
       <div
         ref={panelRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
       >
         <div className="flex flex-col items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => {
@@ -399,31 +401,26 @@ function ZoomDropdown() {
 }
 
 function PageNavigator() {
-  const currentPageFromStore = usePdf((state) => state.currentPage);
-  const totalPages = usePdf((state) => state.pdfDocumentProxy.numPages);
+  const pages = usePdf((state) => state.pdfDocumentProxy?.numPages);
+  const currentPage = usePdf((state) => state.currentPage);
+  const [pageNumber, setPageNumber] = useState<string | number>(currentPage);
   const { jumpToPage } = usePdfJump();
-  const currentPage = currentPageFromStore;
-  const [pageInput, setPageInput] = useState(String(currentPage));
 
-  useEffect(() => {
-    setPageInput(String(currentPage));
-  }, [currentPage]);
-
-  const commitPageInput = () => {
-    const parsedPage = Number(pageInput.trim());
-
-    if (!Number.isFinite(parsedPage)) {
-      setPageInput(String(currentPage));
-      return;
-    }
-
-    const nextPage = Math.min(Math.max(Math.round(parsedPage), 1), totalPages);
-    setPageInput(String(nextPage));
-
-    if (nextPage !== currentPage) {
-      jumpToPage(nextPage, { behavior: "auto" });
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      jumpToPage(currentPage - 1, { behavior: "auto" });
     }
   };
+
+  const handleNextPage = () => {
+    if (currentPage < pages) {
+      jumpToPage(currentPage + 1, { behavior: "auto" });
+    }
+  };
+
+  useEffect(() => {
+    setPageNumber(currentPage);
+  }, [currentPage, pageNumber]);
 
   return (
     <div className="flex items-center gap-0 text-sm text-muted-foreground">
@@ -431,43 +428,42 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 !rounded-full"
+        className="h-8 w-8 "
+        onClick={handlePreviousPage}
         disabled={currentPage <= 1}
-        onClick={() => jumpToPage(currentPage - 1, { behavior: "auto" })}
         aria-label="previous-page"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
       <Input
-        value={pageInput}
-        onChange={(event) => {
-          const nextValue = event.target.value.replace(/[^\d]/g, "");
-          setPageInput(nextValue);
-        }}
-        onBlur={commitPageInput}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            commitPageInput();
+        type="number"
+        value={pageNumber}
+        onChange={(e) => setPageNumber(e.target.value)}
+        onBlur={(e) => {
+          const value = Number(e.target.value);
+          if (value >= 1 && value <= pages && currentPage !== value) {
+            jumpToPage(value, { behavior: "auto" });
+          } else {
+            setPageNumber(currentPage);
           }
-
-          if (event.key === "Escape") {
-            event.preventDefault();
-            setPageInput(String(currentPage));
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.currentTarget.blur();
           }
         }}
         inputMode="numeric"
         aria-label="current-page-input"
-        className="h-7 w-7 p-0 mx-1 bg-transparent border-0 text-center text-sm font-medium text-foreground"
+        className="h-7 w-7 p-0 mx-1 mb-0.5 bg-transparent border-0 text-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
-      <span className=" mr-3"> of {totalPages}</span>
+      <span className=" mr-3"> of {pages || 1}</span>
       <Button
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 !rounded-full"
-        disabled={currentPage >= totalPages}
-        onClick={() => jumpToPage(currentPage + 1, { behavior: "auto" })}
+        className="h-8 w-8"
+        onClick={handleNextPage}
+        disabled={currentPage >= pages}
         aria-label="next-page"
       >
         <ChevronRight className="h-4 w-4" />
@@ -489,14 +485,14 @@ function PdfViewerContent({
   return (
     <LectorSearch
       loading={
-        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Preparing PDF search...
         </div>
       }
     >
-      <div className="relative flex h-full min-h-0 w-full">
-        <div className="pointer-events-none fixed right-2.5 top-[4.4rem] z-20">
-          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-md border border-border bg-card/95 px-3 py-1.5 backdrop-blur-xl">
+      <div className=" relative min-w-full min-h-full bg-transparent ">
+        <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
+          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Button
                 type="button"
@@ -538,7 +534,7 @@ function PdfViewerContent({
         </div>
 
         {panelMode === "search" ? (
-          <div className="absolute left-0 top-0 z-20 h-full w-[290px] max-w-[calc(100%-1.5rem)] overflow-hidden border border-border">
+          <div className="absolute left-0 top-0 z-50 h-full w-[290px] max-w-[calc(100%-1.5rem)] overflow-hidden border border-border border-l-0">
             <SearchPanel
               query={query}
               setQuery={setQuery}
@@ -548,21 +544,19 @@ function PdfViewerContent({
         ) : null}
 
         {panelMode === "thumbnails" ? (
-          <div className="absolute left-0 top-0 z-20 h-full overflow-hidden border border-border">
+          <div className="absolute left-0 top-0 z-50 h-full overflow-hidden border border-border border-l-0">
             <ThumbnailsPanel onClose={() => setPanelMode(null)} />
           </div>
         ) : null}
-
-        <Pages
-          className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
-          gap={PDF_PAGE_GAP}
-        >
-          <Page>
-            <CanvasLayer />
-            <TextLayer />
-            <HighlightLayer />
-          </Page>
-        </Pages>
+        <div className=" absolute top-1/2 -translate-y-1/2 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-card/95 backdrop-blur-sm">
+          <Pages className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <Page>
+              <CanvasLayer />
+              <TextLayer />
+              <HighlightLayer />
+            </Page>
+          </Pages>
+        </div>
       </div>
     </LectorSearch>
   );
@@ -579,12 +573,16 @@ function PdfViewerShell({
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className="pdf-viewer-shell flex h-full min-h-0 w-full flex-1 overflow-hidden rounded-none border-0 bg-background"
+      className="pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch"
       loader={
-        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...
         </div>
       }
+      zoomOptions={{
+        minZoom: 0.5,
+        maxZoom: 10,
+      }}
     >
       <PdfViewerContent fileUrl={fileUrl} title={title} />
     </Root>
@@ -596,17 +594,6 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!pdf?.title) return;
-
-    const originalTitle = document.title;
-    document.title = `${pdf.title} - Notevo`;
-
-    return () => {
-      document.title = originalTitle;
-    };
-  }, [pdf?.title]);
 
   useEffect(() => {
     setIsViewerReady(false);
