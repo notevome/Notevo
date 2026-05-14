@@ -555,7 +555,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 pt-6 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
@@ -767,7 +767,7 @@ export default function WorkingSpacePageClient({
       <header>
         <div className=" relative flex justify-between items-end w-full">
           <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">
-            <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
+            <h1 className="text-3xl md:text-5xl font-bol my-4 h-[3rem]">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -924,7 +924,7 @@ export function NotesDroppableContainer({
       <div className="flex gap-4 items-start sm:items-center justify-between">
         <div className="flex items-center gap-3 flex-1">
           <div className="relative flex-1 md:max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
             <Input
               type="text"
               placeholder="Search notes and uploads..."
