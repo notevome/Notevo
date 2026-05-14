@@ -513,7 +513,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
+            "absolute left-0.5 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -528,7 +528,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-2 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
+            "absolute right-0.5 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -538,7 +538,7 @@ function SliderTabsList({
         </Button>
 
         <div
-          className="absolute left-1 top-0 bottom-0 w-52 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollLeft ? 1 : 0,
             background:
@@ -546,7 +546,7 @@ function SliderTabsList({
           }}
         />
         <div
-          className="absolute right-1 top-0 bottom-0 w-52 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollRight ? 1 : 0,
             background:
