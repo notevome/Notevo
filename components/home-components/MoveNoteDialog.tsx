@@ -216,7 +216,7 @@ export default function MoveNoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 overflow-hidden bg-muted border-border md:min-w-[500px] gap-0 shadow-2xl">
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-border">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/70 mb-1">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground mb-1">
             Move note
           </p>
           <DialogTitle className="text-[15px] font-medium text-foreground leading-snug">
@@ -228,7 +228,7 @@ export default function MoveNoteDialog({
         </DialogHeader>
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-muted">
           <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Search className="h-4 w-4 shrink-0 text-primary/70" />
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               ref={searchInputRef}
               value={query}
@@ -266,7 +266,7 @@ export default function MoveNoteDialog({
             </div>
           ) : !hasResults ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center text-center text-sm text-muted-foreground">
-              <Folder className="mb-4 h-10 w-10 text-primary/50" />
+              <Folder className="mb-4 h-10 w-10 text-muted-foreground" />
               <p className="font-medium text-foreground">
                 {debouncedQuery
                   ? `No targets found for "${debouncedQuery}"`
@@ -285,24 +285,25 @@ export default function MoveNoteDialog({
                 return (
                   <div
                     key={workspace._id}
-                    className="overflow-hidden app-radius-lg transition-colors"
+                    className=" relative overflow-hidden app-radius-lg transition-colors"
                   >
+                    <div className=" absolute left-3.5 top-8 h-full w-px bg-border" />
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-primary/10 hover:border-2 hover:bg-transparent"
+                      className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-transparent hover:border-2 hover:bg-transparent"
                       onClick={() => toggleWorkspace(workspaceId)}
                     >
                       <ChevronRight
                         className={cn(
-                          "h-3.5 w-3.5 shrink-0 transition-transform text-primary/60",
+                          "h-3.5 w-3.5 shrink-0 transition-transform text-muted-foreground",
                           isExpanded && "rotate-90",
                         )}
                       />
                       {isExpanded ? (
-                        <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/80" />
+                        <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       ) : (
-                        <Folder className="h-3.5 w-3.5 shrink-0 text-primary/60" />
+                        <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       )}
                       <span className="truncate text-sm font-medium text-foreground">
                         <HighlightedText
@@ -322,7 +323,7 @@ export default function MoveNoteDialog({
                               variant="secondary"
                               size="sm"
                               label="Table"
-                              className="h-8 shrink-0 gap-1 px-2 text-muted-foreground"
+                              className="h-7 shrink-0 gap-1 px-2 text-muted-foreground"
                               onCreated={() => {
                                 setExpandedWorkspaceIds((prev) =>
                                   prev.includes(workspaceId)
@@ -341,45 +342,50 @@ export default function MoveNoteDialog({
                               movingTableId === String(table._id);
 
                             return (
-                              <button
+                              <div
                                 key={table._id}
-                                type="button"
-                                onClick={() =>
-                                  handleMove(workspace._id, table._id)
-                                }
-                                disabled={isCurrentTarget || isMoving}
-                                className={cn(
-                                  "flex w-full items-center justify-between app-radius-lg px-3 py-2 text-left transition-colors",
-                                  isCurrentTarget
-                                    ? "cursor-not-allowed bg-primary/10"
-                                    : " hover:bg-primary/10",
-                                )}
+                                className="flex w-full items-center justify-between mx-auto text-left "
                               >
-                                <div className="flex min-w-0 items-center gap-2">
-                                  <span className="ml-4 h-px w-3 bg-muted-foreground/60" />
-                                  <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-                                  <span className="truncate text-[13px] font-medium">
-                                    <HighlightedText
-                                      text={table.name || "Untitled"}
-                                      query={debouncedQuery}
-                                    />
-                                  </span>
-                                </div>
-
-                                <span className="shrink-0 text-[11px] text-muted-foreground/60">
-                                  {isMoving ? (
-                                    <LoadingAnimation className="h-4 w-4 text-primary" />
-                                  ) : isCurrentTarget ? (
-                                    <span className="text-xs font-medium border border-secondary-foreground/20 bg-secondary text-secondary-foreground px-2 py-0.5 app-radius-md">
-                                      current
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] text-muted-foreground/50 group-hover:text-primary/60">
-                                      move
-                                    </span>
+                                <button
+                                  key={table._id}
+                                  type="button"
+                                  onClick={() =>
+                                    handleMove(workspace._id, table._id)
+                                  }
+                                  disabled={isCurrentTarget || isMoving}
+                                  aria-label=" handle-move-target"
+                                  className={cn(
+                                    "flex w-full items-center justify-between app-radius-lg mx-4 px-2 py-2 text-left transition-colors",
+                                    isCurrentTarget
+                                      ? "cursor-not-allowed bg-muted"
+                                      : " hover:bg-border",
                                   )}
-                                </span>
-                              </button>
+                                >
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
+                                    <span className="truncate text-[13px] font-medium">
+                                      <HighlightedText
+                                        text={table.name || "Untitled"}
+                                        query={debouncedQuery}
+                                      />
+                                    </span>
+                                  </div>
+
+                                  <span className="shrink-0 text-[11px] text-muted-foreground/60">
+                                    {isMoving ? (
+                                      <LoadingAnimation className="h-4 w-4 text-primary" />
+                                    ) : isCurrentTarget ? (
+                                      <span className="text-xs font-medium border border-secondary-foreground/20 bg-secondary text-secondary-foreground px-2 py-0.5 app-radius-md">
+                                        current
+                                      </span>
+                                    ) : (
+                                      <span className="text-[11px] text-muted-foreground/50 group-hover:text-primary/60">
+                                        move
+                                      </span>
+                                    )}
+                                  </span>
+                                </button>
+                              </div>
                             );
                           })
                         )}
