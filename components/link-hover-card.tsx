@@ -211,7 +211,7 @@ export function LinkHoverCard({
           href={hoveredLink.href}
           target="_blank"
           rel="noreferrer noopener"
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-tl-lg pl-1 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-tl-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
           onMouseDown={(event) => event.stopPropagation()}
         >
           <Globe className="h-3.5 w-3.5 shrink-0" />
