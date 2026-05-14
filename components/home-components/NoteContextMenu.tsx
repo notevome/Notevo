@@ -188,6 +188,7 @@ export default function NoteContextMenu({
     }
 
     setInputValue(trimmedValue);
+    router.refresh();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {

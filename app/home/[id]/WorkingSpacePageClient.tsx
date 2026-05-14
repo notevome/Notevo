@@ -339,7 +339,7 @@ function TableTab({ table }: { table: any }) {
               <TabsTrigger
                 value={table._id}
                 data-tab-id={table._id}
-                className="px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border border-transparent border-b-0 data-[state=active]:border-border"
+                className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
                 onDoubleClick={handleDoubleClick}
                 aria-label="rename-table"
               >
@@ -558,6 +558,7 @@ function SliderTabsList({
           className="flex justify-start items-center px-1 pt-6 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
+          <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
           <div
             ref={scrollRef}
             className="flex items-center gap-2 flex-nowrap"
