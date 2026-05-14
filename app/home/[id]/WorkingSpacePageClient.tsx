@@ -513,7 +513,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-0.5 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
+            "absolute left-1 top-1/2 -translate-y-1/2 z-20 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -528,7 +528,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-0.5 top-1/2 -translate-y-1/2 z-20 h-10 app-radius-md w-7 shadow-sm transition-all duration-200",
+            "absolute right-1 top-1/2 -translate-y-1/2 z-20 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",

@@ -480,7 +480,7 @@ function PdfViewerContent({
   title: string;
 }) {
   const [query, setQuery] = useState("");
-  const [panelMode, setPanelMode] = useState<PanelMode>("search");
+  const [panelMode, setPanelMode] = useState<PanelMode>(null);
 
   return (
     <LectorSearch
