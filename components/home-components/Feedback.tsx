@@ -134,8 +134,12 @@ export default function Feedback() {
                   </FormItem>
                 )}
               />
-              <DialogFooter>
-                <Button type="submit" disabled={loading}>
+              <DialogFooter className=" pb-6 relative">
+                <Button
+                  className=" absolute -bottom-6 -right-6"
+                  type="submit"
+                  disabled={loading}
+                >
                   {loading ? "Sending..." : "Submit"}
                 </Button>
               </DialogFooter>
