@@ -472,28 +472,6 @@ function SliderTabsList({
     };
   }, [checkScroll, tables]);
 
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const activeBtn = el.querySelector(
-      `[data-tab-id="${activeTableId}"]`,
-    ) as HTMLElement | null;
-    if (activeBtn) {
-      const btnLeft = activeBtn.offsetLeft;
-      const btnRight = btnLeft + activeBtn.offsetWidth;
-      const visLeft = el.scrollLeft;
-      const visRight = visLeft + el.clientWidth;
-      if (btnLeft < visLeft + 16) {
-        el.scrollTo({ left: btnLeft - 16, behavior: "smooth" });
-      } else if (btnRight > visRight - 16) {
-        el.scrollTo({
-          left: btnRight - el.clientWidth + 16,
-          behavior: "smooth",
-        });
-      }
-    }
-  }, [activeTableId]);
-
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
