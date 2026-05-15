@@ -484,14 +484,11 @@ export default function HowToStartSection() {
 
                   {/* Card content */}
                   <div className="p-5 flex flex-col flex-1">
-                    <span className="absolute top-2 left-2 inline-flex items-center bg-secondary text-secondary-foreground app-radius-md px-2.5 py-0.5 text-[11px] font-bold mb-3">
-                      {step.StepNum}
+                    <span className="absolute top-2 left-2 inline-flex items-center bg-secondary text-secondary-foreground app-radius-md border border-primary/20 p-1.5 text-[11px] font-bold mb-3">
+                      <Icon className="w-4 h-4 text-primary" />
                     </span>
 
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 app-radius-sm bg-primary/10 flex items-center justify-center transition-colors">
-                        <Icon className="w-4 h-4 text-primary" />
-                      </div>
                       <h3 className="text-base font-bold text-foreground">
                         {step.Title}
                       </h3>
