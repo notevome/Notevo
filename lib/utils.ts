@@ -18,8 +18,8 @@ const getMaxTableNameLength = () => {
   const width = window.innerWidth;
 
   if (width < 640) return 10; // mobile
-  if (width < 1024) return 13; // tablet
-  return 15; // desktop
+  if (width < 1024) return 15; // tablet
+  return 20; // desktop
 };
 const MAX_NAME_LENGTH = 50;
 const EMAIL_DISPLAY_REGEX = /(.{3}).*?(@.{3}).*/;

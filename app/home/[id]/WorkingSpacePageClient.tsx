@@ -331,7 +331,7 @@ function TableTab({ table }: { table: any }) {
       >
         <PopoverAnchor asChild>
           <div
-            className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-32"
+            className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
             onMouseEnter={handleContentMouseEnter}
             onMouseLeave={handleContentMouseLeave}
           >
