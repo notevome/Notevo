@@ -548,7 +548,7 @@ function PdfViewerContent({
             <ThumbnailsPanel onClose={() => setPanelMode(null)} />
           </div>
         ) : null}
-        <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-card/95 backdrop-blur-sm">
+        <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
           <Pages className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <Page>
               <CanvasLayer />
