@@ -518,7 +518,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
         ))}
 
       {/* Show More Button for Pinned Notes */}
-      {favoriteNotes.length > 4 && status === "CanLoadMore" && (
+      {isExpanded && favoriteNotes.length > 4 && status === "CanLoadMore" && (
         <SidebarGroupContent>
           <Button
             variant="SidebarMenuButton"
@@ -532,7 +532,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
         </SidebarGroupContent>
       )}
 
-      {favoriteNotes.length > 4 && status === "LoadingMore" && (
+      {isExpanded && favoriteNotes.length > 4 && status === "LoadingMore" && (
         <SidebarGroupContent>
           <Button
             variant="SidebarMenuButton"
@@ -785,7 +785,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
           />
         ))}
 
-      {favoritePdfs.length > 4 && status === "CanLoadMore" && (
+      {isExpanded && favoritePdfs.length > 4 && status === "CanLoadMore" && (
         <SidebarGroupContent>
           <Button
             variant="SidebarMenuButton"
@@ -799,7 +799,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
         </SidebarGroupContent>
       )}
 
-      {favoritePdfs.length > 4 && status === "LoadingMore" && (
+      {isExpanded && favoritePdfs.length > 4 && status === "LoadingMore" && (
         <SidebarGroupContent>
           <Button
             variant="SidebarMenuButton"
