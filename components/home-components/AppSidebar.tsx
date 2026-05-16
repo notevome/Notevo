@@ -493,7 +493,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
   if (favoriteNotes.length === 0) {
     return null;
   }
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
@@ -761,7 +761,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   if (favoritePdfs.length === 0) {
     return null;
   }
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
