@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateHighlightRects,
   CanvasLayer,
@@ -85,16 +85,19 @@ function SearchPanel({
   query,
   setQuery,
   onClose,
+  panelMode,
 }: {
   query: string;
   setQuery: (value: string) => void;
   onClose: () => void;
+  panelMode: PanelMode;
 }) {
   const { searchResults, search } = useSearch();
   const { jumpToHighlightRects } = usePdfJump();
   const getPdfPageProxy = usePdf((state) => state.getPdfPageProxy);
   const setHighlight = usePdf((state) => state.setHighlight);
   const [activeKey, setActiveKey] = useState<string | null>(null);
+  const inputref = useRef<HTMLInputElement>(null);
 
   const allResults = useMemo(
     () => [...searchResults.exactMatches, ...searchResults.fuzzyMatches],
@@ -186,6 +189,12 @@ function SearchPanel({
     search,
     setHighlight,
   ]);
+  useEffect(() => {
+    if (panelMode === "search") {
+      inputref.current?.focus();
+      inputref.current?.select();
+    }
+  }, [panelMode]);
 
   const handleResultClick = async (result: LectorSearchResult) => {
     const rects = sanitizeHighlightRects(
@@ -199,26 +208,15 @@ function SearchPanel({
   return (
     <aside className="flex h-full w-[290px] shrink-0 flex-col border-r border-border bg-card/95 backdrop-blur-sm">
       <div className="border-b border-border p-2">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search PDF..."
-              className="h-8 border-border bg-background pl-10"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-8 px-0.5 shrink-0 !border-0  bg-transparent"
-            onClick={onClose}
-            aria-label="close-search-panel"
-          >
-            <X size={16} />
-          </Button>
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            ref={inputref}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search PDF..."
+            className="h-8 border-border bg-background pl-10"
+          />
         </div>
       </div>
 
@@ -291,18 +289,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
     <aside className="flex h-full w-[150px] shrink-0 flex-col bg-card/95 backdrop-blur-sm">
       <div className="flex items-center justify-between border-b border-border p-2">
         <p className="text-sm font-medium text-foreground">Pages</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 shrink-0 !border-0 bg-transparent "
-          onClick={onClose}
-          aria-label="close-thumbnails-panel"
-        >
-          <X size={16} />
-        </Button>
       </div>
-
       <div
         ref={panelRef}
         className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
@@ -507,7 +494,11 @@ function PdfViewerContent({
                 aria-label="show-search-panel"
                 aria-pressed={panelMode === "search"}
               >
-                <Search size={16} />
+                {panelMode === "search" ? (
+                  <X size={16} />
+                ) : (
+                  <FileSearch size={16} />
+                )}
               </Button>
               <Button
                 type="button"
@@ -538,6 +529,7 @@ function PdfViewerContent({
             <SearchPanel
               query={query}
               setQuery={setQuery}
+              panelMode={panelMode}
               onClose={() => setPanelMode(null)}
             />
           </div>

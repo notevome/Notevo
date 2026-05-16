@@ -442,7 +442,7 @@ export const CompactFloatingToC = ({
       <div
         className={`
           transition-all duration-150 ease-linear px-0.5 border border-solid rounded-tl-lg bg-background 
-          ${isExpanded ? "w-52 border-border " : "w-10 border-transparent"}
+          ${isExpanded ? "w-56 border-border " : "w-10 border-transparent"}
         `}
       >
         <div
