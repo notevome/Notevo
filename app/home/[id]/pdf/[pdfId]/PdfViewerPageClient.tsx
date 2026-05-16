@@ -44,6 +44,12 @@ import {
 import { Input } from "@/components/ui/input";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
@@ -481,43 +487,68 @@ function PdfViewerContent({
         <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
           <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 border border-border"
-                onClick={() =>
-                  setPanelMode((current) =>
-                    current === "search" ? null : "search",
-                  )
-                }
-                aria-label="show-search-panel"
-                aria-pressed={panelMode === "search"}
-              >
-                {panelMode === "search" ? (
-                  <X size={16} />
-                ) : (
-                  <FileSearch size={16} />
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className={cn(
-                  "h-8 w-8 border-y !border-l-0 border-border !rounded-none",
-                  panelMode === "thumbnails" && "bg-muted text-foreground",
-                )}
-                onClick={() =>
-                  setPanelMode((current) =>
-                    current === "thumbnails" ? null : "thumbnails",
-                  )
-                }
-                aria-label="show-thumbnails-panel"
-                aria-pressed={panelMode === "thumbnails"}
-              >
-                <span className="text-[11px] font-semibold">Pg</span>
-              </Button>
+              <TooltipProvider delayDuration={100} disableHoverableContent>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 border border-border"
+                      onClick={() =>
+                        setPanelMode((current) =>
+                          current === "search" ? null : "search",
+                        )
+                      }
+                      aria-label="show-search-panel"
+                      aria-pressed={panelMode === "search"}
+                    >
+                      {panelMode === "search" ? (
+                        <X size={16} />
+                      ) : (
+                        <FileSearch size={16} />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className=" text-xs px-1.5 py-1"
+                  >
+                    {panelMode === "search" ? "Close Search" : "Open Search"}
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className={cn(
+                        "h-8 w-8 border-y !border-l-0 border-border !rounded-none",
+                        panelMode === "thumbnails" &&
+                          "bg-muted text-foreground",
+                      )}
+                      onClick={() =>
+                        setPanelMode((current) =>
+                          current === "thumbnails" ? null : "thumbnails",
+                        )
+                      }
+                      aria-label="show-thumbnails-panel"
+                      aria-pressed={panelMode === "thumbnails"}
+                    >
+                      <span className="text-[11px] font-semibold">Pg</span>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className=" text-xs px-1.5 py-1"
+                  >
+                    {panelMode === "thumbnails"
+                      ? "Close Thumbnails"
+                      : "Open Thumbnails"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <ZoomDropdown />
             </div>
             <PageNavigator />
