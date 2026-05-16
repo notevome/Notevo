@@ -7,6 +7,7 @@ import {
   ChevronRight,
   FolderClosed,
   Star,
+  Pin,
 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
@@ -579,7 +580,7 @@ function NoteCard({ note }: { note: Note }) {
             </CardTitle>
           </div>
           {note.favorite && (
-            <Star className="h-4 w-4 text-primary fill-primary flex-shrink-0" />
+            <Pin className="h-4 w-4 text-primary fill-primary flex-shrink-0" />
           )}
         </div>
       </CardHeader>
