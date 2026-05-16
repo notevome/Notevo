@@ -493,20 +493,29 @@ const PinnedNotesList = memo(function PinnedNotesList({
   if (favoriteNotes.length === 0) {
     return null;
   }
-
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
         <span>Pinned Notes</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className=" px-1 h-6"
+        >
+          {isExpanded ? <ChevronUp size="16" /> : <ChevronDown size="16" />}
+        </Button>
       </SidebarGroupLabel>
-      {favoriteNotes.map((note) => (
-        <PinnedNoteItem
-          key={note._id}
-          note={note}
-          pathname={pathname}
-          open={open}
-        />
-      ))}
+      {isExpanded &&
+        favoriteNotes.map((note) => (
+          <PinnedNoteItem
+            key={note._id}
+            note={note}
+            pathname={pathname}
+            open={open}
+          />
+        ))}
 
       {/* Show More Button for Pinned Notes */}
       {favoriteNotes.length > 4 && status === "CanLoadMore" && (
@@ -752,20 +761,29 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   if (favoritePdfs.length === 0) {
     return null;
   }
-
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
         <span>Pinned Uploads</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className=" px-1 h-6"
+        >
+          {isExpanded ? <ChevronUp size="16" /> : <ChevronDown size="16" />}
+        </Button>
       </SidebarGroupLabel>
-      {favoritePdfs.map((pdf) => (
-        <PinnedUploadItem
-          key={pdf._id}
-          pdf={pdf}
-          pathname={pathname}
-          open={open}
-        />
-      ))}
+      {isExpanded &&
+        favoritePdfs.map((pdf) => (
+          <PinnedUploadItem
+            key={pdf._id}
+            pdf={pdf}
+            pathname={pathname}
+            open={open}
+          />
+        ))}
 
       {favoritePdfs.length > 4 && status === "CanLoadMore" && (
         <SidebarGroupContent>
