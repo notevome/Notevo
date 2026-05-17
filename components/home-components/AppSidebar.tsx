@@ -68,12 +68,7 @@ import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
 import Feedback from "./Feedback";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
@@ -377,43 +372,41 @@ const PinnedNoteItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <TooltipProvider delayDuration={200} skipDelayDuration={0}>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="SidebarMenuButton"
-                      className={`px-2 my-0.5 h-8 group flex-1 ${
-                        isActive ? "bg-border" : ""
-                      }`}
-                      asChild
-                      onDoubleClick={handleDoubleClick}
+              <Tooltip delayDuration={200} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className={`px-2 my-0.5 h-8 group flex-1 ${
+                      isActive ? "bg-border" : ""
+                    }`}
+                    asChild
+                    onDoubleClick={handleDoubleClick}
+                  >
+                    <IntentPrefetchLink
+                      href={noteHref}
+                      className="flex items-center gap-2 flex-grow min-w-0"
                     >
-                      <IntentPrefetchLink
-                        href={noteHref}
-                        className="flex items-center gap-2 flex-grow min-w-0"
-                      >
-                        {isHovered || isActive ? (
-                          <ChevronRight
-                            size="16"
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        ) : (
-                          <Pin
-                            size="16"
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        )}
-                        <span className={textClassName}>
-                          {formatWorkspaceName(note.title || "Untitled")}
-                        </span>
-                      </IntentPrefetchLink>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={5}>
-                    {note.title || "Untitled"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                      {isHovered || isActive ? (
+                        <ChevronRight
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      ) : (
+                        <Pin
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      )}
+                      <span className={textClassName}>
+                        {formatWorkspaceName(note.title || "Untitled")}
+                      </span>
+                    </IntentPrefetchLink>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={5}>
+                  {note.title || "Untitled"}
+                </TooltipContent>
+              </Tooltip>
             )}
           </SidebarMenuItem>
         </SidebarMenu>
@@ -656,43 +649,41 @@ const PinnedUploadItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <TooltipProvider delayDuration={200} skipDelayDuration={0}>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="SidebarMenuButton"
-                      className={`px-2 my-0.5 h-8 group flex-1 ${
-                        isActive ? "bg-border" : ""
-                      }`}
-                      asChild
-                      onDoubleClick={handleDoubleClick}
+              <Tooltip delayDuration={200} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className={`px-2 my-0.5 h-8 group flex-1 ${
+                      isActive ? "bg-border" : ""
+                    }`}
+                    asChild
+                    onDoubleClick={handleDoubleClick}
+                  >
+                    <IntentPrefetchLink
+                      href={pdfHref}
+                      className="flex items-center gap-2 flex-grow min-w-0"
                     >
-                      <IntentPrefetchLink
-                        href={pdfHref}
-                        className="flex items-center gap-2 flex-grow min-w-0"
-                      >
-                        {isHovered || isActive ? (
-                          <ChevronRight
-                            size="16"
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        ) : (
-                          <FileText
-                            size="16"
-                            className="text-muted-foreground flex-shrink-0"
-                          />
-                        )}
-                        <span className={textClassName}>
-                          {formatWorkspaceName(pdf.title || "Untitled")}
-                        </span>
-                      </IntentPrefetchLink>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={5}>
-                    {pdf.title || "Untitled"}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                      {isHovered || isActive ? (
+                        <ChevronRight
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      ) : (
+                        <FileText
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      )}
+                      <span className={textClassName}>
+                        {formatWorkspaceName(pdf.title || "Untitled")}
+                      </span>
+                    </IntentPrefetchLink>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={5}>
+                  {pdf.title || "Untitled"}
+                </TooltipContent>
+              </Tooltip>
             )}
           </SidebarMenuItem>
         </SidebarMenu>
@@ -963,43 +954,41 @@ const WorkspaceItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <TooltipProvider delayDuration={200} skipDelayDuration={0}>
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="SidebarMenuButton"
-                      className={`px-2 my-0.5 h-8 group flex-1 justify-start ${
-                        isActive ? "bg-border" : ""
-                      }`}
-                      asChild
-                      onDoubleClick={handleDoubleClick}
+              <Tooltip delayDuration={200} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className={`px-2 my-0.5 h-8 group flex-1 justify-start ${
+                      isActive ? "bg-border" : ""
+                    }`}
+                    asChild
+                    onDoubleClick={handleDoubleClick}
+                  >
+                    <IntentPrefetchLink
+                      href={workspaceHref}
+                      className="flex items-center gap-2 flex-grow min-w-0"
                     >
-                      <IntentPrefetchLink
-                        href={workspaceHref}
-                        className="flex items-center gap-2 flex-grow min-w-0"
-                      >
-                        {isHovered || isActive ? (
-                          <FolderOpen
-                            size="16"
-                            className="flex-shrink-0 text-muted-foreground"
-                          />
-                        ) : (
-                          <FolderClosed
-                            size="16"
-                            className="flex-shrink-0 text-muted-foreground"
-                          />
-                        )}
-                        <span className={textClassName}>
-                          {formatWorkspaceName(workingSpace.name || "Untitled")}
-                        </span>
-                      </IntentPrefetchLink>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={5}>
-                    {workingSpace.name || "Untitled"}
-                  </TooltipContent>
-                </Tooltip>{" "}
-              </TooltipProvider>
+                      {isHovered || isActive ? (
+                        <FolderOpen
+                          size="16"
+                          className="flex-shrink-0 text-muted-foreground"
+                        />
+                      ) : (
+                        <FolderClosed
+                          size="16"
+                          className="flex-shrink-0 text-muted-foreground"
+                        />
+                      )}
+                      <span className={textClassName}>
+                        {formatWorkspaceName(workingSpace.name || "Untitled")}
+                      </span>
+                    </IntentPrefetchLink>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right" sideOffset={5}>
+                  {workingSpace.name || "Untitled"}
+                </TooltipContent>
+              </Tooltip>
             )}
           </SidebarMenuItem>
         </SidebarMenu>
@@ -1043,19 +1032,17 @@ const WorkspacesList = memo(function WorkspacesList({
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
         <span>Workspaces</span>
       </SidebarGroupLabel>
-      <TooltipProvider delayDuration={200} disableHoverableContent>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <SidebarGroupAction onClick={handleCreateWorkingSpace}>
-              <Plus size={16} className=" text-muted-foreground" />{" "}
-              <span className="sr-only">Add Workspace</span>
-            </SidebarGroupAction>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
-            Add Workspace
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip delayDuration={200} disableHoverableContent>
+        <TooltipTrigger asChild>
+          <SidebarGroupAction onClick={handleCreateWorkingSpace}>
+            <Plus size={16} className=" text-muted-foreground" />{" "}
+            <span className="sr-only">Add Workspace</span>
+          </SidebarGroupAction>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={5}>
+          Add Workspace
+        </TooltipContent>
+      </Tooltip>
       {getWorkingSpaces?.map((workingSpace) => (
         <WorkspaceItem
           key={workingSpace._id}
@@ -1102,7 +1089,7 @@ const UserAccountSection = memo(function UserAccountSection({
               ) : (
                 <Button
                   variant="SidebarMenuButton"
-                  className="w-full h-15 flex items-center justify-between"
+                  className="w-full h-10 px-1 flex items-center justify-between"
                   disabled={isSigningOut}
                 >
                   <Avatar className="h-8 w-8">

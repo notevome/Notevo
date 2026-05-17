@@ -14,7 +14,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useEffect, useRef, useState } from "react";
@@ -111,7 +110,6 @@ export default function NoteSettingsSidbar({
 
   return (
     <>
-      <TooltipProvider delayDuration={200} skipDelayDuration={0}>
         <div
           className={cn(
             "flex justify-end items-center px-1",
@@ -154,7 +152,6 @@ export default function NoteSettingsSidbar({
             </TooltipContent>
           </Tooltip>
         </div>
-      </TooltipProvider>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">

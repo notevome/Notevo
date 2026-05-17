@@ -41,7 +41,6 @@ import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import MovePdfDialog from "./MovePdfDialog";
@@ -164,8 +163,7 @@ export default function PdfSettings({
   return (
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
-        <TooltipProvider>
-          <Tooltip open={isTooltipOpen}>
+        <Tooltip open={isTooltipOpen}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
@@ -193,8 +191,7 @@ export default function PdfSettings({
             >
               Rename, Pin, Move, Download, Delete
             </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        </Tooltip>
 
         <DropdownMenuContent
           side="bottom"

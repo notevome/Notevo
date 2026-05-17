@@ -15,7 +15,6 @@ import { Moon, Sun, Slash } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { parseSlug } from "@/lib/parseSlug";
@@ -122,8 +121,7 @@ export default function PublicNotePage() {
               noteBody={JSON.stringify(content)}
               noteTitle={getNote.title ?? "note"}
             />
-            <TooltipProvider delayDuration={200} disableHoverableContent>
-              <Tooltip>
+            <Tooltip disableHoverableContent>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
@@ -138,8 +136,7 @@ export default function PublicNotePage() {
                 <TooltipContent align="end" side="bottom">
                   Toggle theme
                 </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            </Tooltip>
             <Button variant="secondary" className="text-sm px-1.5 py-1.5 h-8">
               <Link
                 href="https://notevo.me/"

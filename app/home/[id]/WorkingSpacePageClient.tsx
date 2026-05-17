@@ -57,7 +57,6 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn, formatTableName } from "@/lib/utils";
@@ -335,50 +334,48 @@ function TableTab({ table }: { table: any }) {
             onMouseEnter={handleContentMouseEnter}
             onMouseLeave={handleContentMouseLeave}
           >
-            <TooltipProvider delayDuration={200} skipDelayDuration={0}>
-              <TabsTrigger
-                value={table._id}
-                data-tab-id={table._id}
-                className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
-                onDoubleClick={handleDoubleClick}
-                aria-label="rename-table"
-              >
-                <p className={cn(textClassName, "w-full")}>
-                  {formatTableName(table.name)}
-                </p>
-              </TabsTrigger>
-              <div
-                className={cn(
-                  "absolute inset-y-0 right-2 flex items-center",
-                  isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
-                )}
-              >
-                <Tooltip disableHoverableContent>
-                  <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setIsDeleteAlertOpen(true);
-                      }}
-                      className=" px-1 h-6 text-foreground hover:text-destructive"
-                      aria-label="delete-table"
-                    >
-                      <X size={16} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    className=" px-1.5"
-                    side="bottom"
-                    sideOffset={5}
+            <TabsTrigger
+              value={table._id}
+              data-tab-id={table._id}
+              className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+              onDoubleClick={handleDoubleClick}
+              aria-label="rename-table"
+            >
+              <p className={cn(textClassName, "w-full")}>
+                {formatTableName(table.name)}
+              </p>
+            </TabsTrigger>
+            <div
+              className={cn(
+                "absolute inset-y-0 right-2 flex items-center",
+                isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
+              )}
+            >
+              <Tooltip delayDuration={100} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsDeleteAlertOpen(true);
+                    }}
+                    className=" px-1 h-6 text-foreground hover:text-destructive"
+                    aria-label="delete-table"
                   >
-                    Delete table
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-            </TooltipProvider>
+                    <X size={16} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  className=" px-1.5"
+                  side="bottom"
+                  sideOffset={5}
+                >
+                  Delete table
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </PopoverAnchor>
         <PopoverContent

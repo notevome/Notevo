@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ConvexAuthNextjsServerProvider } from "@convex-dev/auth/nextjs/server";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { Providers } from "./providers";
 import { ConvexQueryCacheProvider } from "@/cache/provider";
 import {
@@ -56,20 +57,22 @@ export default function RootLayout({
           }}
         />
         <Toaster />
-        <Providers>
-          <ConvexAuthNextjsServerProvider>
-            <ConvexClientProvider>
-              <ConvexQueryCacheProvider
-                // Keep a small number of recently-used query subscriptions alive briefly to reduce
-                // navigation flicker, but avoid runaway idle subscriptions (bandwidth).
-                expiration={5 * 60_000}
-                maxIdleEntries={50}
-              >
-                {children}
-              </ConvexQueryCacheProvider>
-            </ConvexClientProvider>
-          </ConvexAuthNextjsServerProvider>
-        </Providers>
+        <TooltipProvider skipDelayDuration={0}>
+          <Providers>
+            <ConvexAuthNextjsServerProvider>
+              <ConvexClientProvider>
+                <ConvexQueryCacheProvider
+                  // Keep a small number of recently-used query subscriptions alive briefly to reduce
+                  // navigation flicker, but avoid runaway idle subscriptions (bandwidth).
+                  expiration={5 * 60_000}
+                  maxIdleEntries={50}
+                >
+                  {children}
+                </ConvexQueryCacheProvider>
+              </ConvexClientProvider>
+            </ConvexAuthNextjsServerProvider>
+          </Providers>
+        </TooltipProvider>
       </body>
     </html>
   );

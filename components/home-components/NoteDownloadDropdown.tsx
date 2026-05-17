@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useNoteDownload, type DownloadFormat } from "@/hooks/useNoteDownload";
@@ -62,8 +61,7 @@ export default function NoteDownloadDropdown({
 
   return (
     <DropdownMenu>
-      <TooltipProvider delayDuration={200} disableHoverableContent>
-        <Tooltip>
+      <Tooltip disableHoverableContent>
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
@@ -79,8 +77,7 @@ export default function NoteDownloadDropdown({
           <TooltipContent align="end" side="bottom">
             Download note
           </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      </Tooltip>
 
       <DropdownMenuContent align={align} side="bottom" className="w-44">
         {formats.map(({ label, value, icon }) => (

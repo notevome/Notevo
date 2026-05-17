@@ -46,7 +46,6 @@ import { generateSlug } from "@/lib/generateSlug";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
@@ -231,8 +230,7 @@ export default function NoteSettings({
   return (
     <>
       <DropdownMenu open={open} onOpenChange={setOpen}>
-        <TooltipProvider>
-          <Tooltip open={isTooltipOpen}>
+        <Tooltip open={isTooltipOpen}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
@@ -260,8 +258,7 @@ export default function NoteSettings({
             >
               Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
             </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        </Tooltip>
 
         <DropdownMenuContent
           side="bottom"

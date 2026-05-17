@@ -25,7 +25,6 @@ import type { Id } from "@/convex/_generated/dataModel";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import Link from "next/link";
@@ -103,10 +102,8 @@ export default function PublicNote({
   const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
 
   return (
-    // Single wrapping TooltipProvider for the whole component
-    <TooltipProvider disableHoverableContent>
       <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen}>
+        <Tooltip open={isTooltipOpen} disableHoverableContent>
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
@@ -243,6 +240,5 @@ export default function PublicNote({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-    </TooltipProvider>
   );
 }

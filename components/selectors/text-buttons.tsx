@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
@@ -101,7 +100,6 @@ export const TextButtons = () => {
   ];
 
   return (
-    <TooltipProvider delayDuration={300} disableHoverableContent>
       <div className="flex">
         {items.map((item) => (
           <EditorBubbleItem
@@ -110,7 +108,7 @@ export const TextButtons = () => {
               item.command(editor);
             }}
           >
-            <Tooltip>
+            <Tooltip delayDuration={300} disableHoverableContent>
               <TooltipTrigger asChild>
                 <Button
                   size="sm"
@@ -139,7 +137,11 @@ export const TextButtons = () => {
         ))}
 
         {alignItems.map((item) => (
-          <Tooltip key={item.name}>
+          <Tooltip
+            key={item.name}
+            delayDuration={300}
+            disableHoverableContent
+          >
             <TooltipTrigger asChild>
               <Button
                 size="sm"
@@ -170,6 +172,5 @@ export const TextButtons = () => {
           </Tooltip>
         ))}
       </div>
-    </TooltipProvider>
   );
 };
