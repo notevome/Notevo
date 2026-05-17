@@ -481,7 +481,7 @@ function WorkspaceCard({
               onChange={(e) => setEditedName(e.target.value)}
               onBlur={handleNameBlur}
               onKeyDown={handleNameKeyDown}
-              className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         ) : (

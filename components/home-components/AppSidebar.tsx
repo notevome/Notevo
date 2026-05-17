@@ -96,6 +96,9 @@ const noteTitleSchema = z
   .min(1, "Title cannot be empty")
   .max(55, "Title must be 55 characters or less");
 
+type PreferredAction = "note" | "DiffNote";
+
+const STORAGE_KEY = "notevo_create_note_action";
 const SidebarHeaderSection = memo(function SidebarHeaderSection({
   getWorkingSpaces,
   handleCreateNote,
@@ -371,7 +374,7 @@ const PinnedNoteItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned note title"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -650,7 +653,7 @@ const PinnedUploadItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned upload title"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -957,7 +960,7 @@ const WorkspaceItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="work space name"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
