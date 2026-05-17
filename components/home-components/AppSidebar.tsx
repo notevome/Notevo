@@ -1084,7 +1084,7 @@ const UserAccountSection = memo(function UserAccountSection({
   const isSettingsActive = pathname === settingsHref;
 
   return (
-    <SidebarFooter className=" text-foreground">
+    <SidebarFooter className=" z-50 text-foreground">
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -1404,13 +1404,13 @@ const AppSidebar = React.memo(function AppSidebar() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         {canScroll && scrollTop > 8 && (
           <div
-            className="pointer-events-none absolute left-0 right-3 -top-1 z-10 h-20 bg-gradient-to-b from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-20 bg-gradient-to-b from-muted from-20% to-transparent"
             aria-hidden
           />
         )}
         {canScroll && hasMoreBelow && (
           <div
-            className="pointer-events-none absolute left-0 right-3 -bottom-1 z-10 h-20 bg-gradient-to-t from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-20 bg-gradient-to-t from-muted from-20% to-transparent"
             aria-hidden
           />
         )}
