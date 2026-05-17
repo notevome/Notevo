@@ -340,7 +340,8 @@ const PinnedNoteItem = memo(
         }
       }
       setIsEditing(false);
-    }, [editedTitle, note.title, note._id, updateNote]);
+      titleTooltip.hide();
+    }, [editedTitle, note.title, note._id, updateNote, titleTooltip.open]);
 
     const handleInputKeyPress = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -351,7 +352,7 @@ const PinnedNoteItem = memo(
           setEditedTitle(note.title || "Untitled");
         }
       },
-      [note.title],
+      [note.title, titleTooltip.open],
     );
 
     const textClassName = isHovered
@@ -374,7 +375,7 @@ const PinnedNoteItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned note title"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -619,7 +620,8 @@ const PinnedUploadItem = memo(
         }
       }
       setIsEditing(false);
-    }, [editedTitle, pdf._id, pdf.title, updatePdf]);
+      titleTooltip.hide();
+    }, [editedTitle, pdf._id, pdf.title, updatePdf, titleTooltip.open]);
 
     const handleInputKeyPress = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -628,9 +630,10 @@ const PinnedUploadItem = memo(
         } else if (e.key === "Escape") {
           setIsEditing(false);
           setEditedTitle(pdf.title || "Untitled");
+          titleTooltip.hide();
         }
       },
-      [pdf.title],
+      [pdf.title, titleTooltip.open],
     );
 
     const textClassName = isHovered
@@ -653,7 +656,7 @@ const PinnedUploadItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned upload title"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -926,7 +929,14 @@ const WorkspaceItem = memo(
         }
       }
       setIsEditing(false);
-    }, [editedName, workingSpace.name, workingSpace._id, updateWorkingSpace]);
+      titleTooltip.hide();
+    }, [
+      editedName,
+      workingSpace.name,
+      workingSpace._id,
+      updateWorkingSpace,
+      titleTooltip.open,
+    ]);
 
     const handleInputKeyPress = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -960,7 +970,7 @@ const WorkspaceItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="work space name"
-                className="flex-1 h-8 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
