@@ -1101,7 +1101,7 @@ const UserAccountSection = memo(function UserAccountSection({
               ) : (
                 <Button
                   variant="SidebarMenuButton"
-                  className="w-full h-10 px-1 flex items-center justify-between"
+                  className="w-full h-[2.6rem] px-1.5 flex items-center justify-between"
                   disabled={isSigningOut}
                 >
                   <Avatar className="h-8 w-8">
