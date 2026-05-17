@@ -26,6 +26,7 @@ import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { Settings, Users, Trash2 } from "lucide-react";
 import { usePathname, useRouter, redirect } from "next/navigation";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 interface WorkingSpaceSettingsSidbarProps {
   workingSpaceId: Id<"workingSpaces">;
@@ -95,19 +96,21 @@ export default function WorkingSpaceSettingsSidbar({
 
   const tableCount = tables?.length || 0;
   const hasContent = tableCount > 0;
+  const deleteTooltip = useHoverTooltip(200);
 
   return (
     <>
       <div
         className={cn("flex justify-end items-center px-1", ContainerClassName)}
       >
-        <Tooltip delayDuration={200} disableHoverableContent>
+        <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
             <Button
               onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
               className="px-2 h-7 hover:bg-card"
               aria-label="delete-workspace"
+              {...deleteTooltip.triggerProps}
             >
               <X size={16} />
             </Button>

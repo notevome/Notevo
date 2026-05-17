@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface WorkingSpaceSettings {
   workingSpaceId: Id<"workingSpaces">;
   className?: string;
@@ -61,7 +62,7 @@ export default function WorkingSpaceSettings({
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const tooltip = useHoverTooltip();
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input
 
   useEffect(() => {
@@ -207,19 +208,22 @@ export default function WorkingSpaceSettings({
   const hasContent = tableCount > 0;
   const createdAtText = formatTimestamp(workspace?.createdAt);
   const updatedAtText = formatTimestamp(workspace?.updatedAt);
-  const handleTooltipMouseEnter = () => setIsTooltipOpen(true);
-  const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) tooltip.hide();
+        }}
+      >
+        <Tooltip open={tooltip.open}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
                   variant="Trigger"
                   className={cn("px-1.5 h-8", className)}
-                  onMouseEnter={handleTooltipMouseEnter}
-                  onMouseLeave={handleTooltipMouseLeave}
+                  {...tooltip.triggerProps}
                   aria-label="workspace-options"
                 >
                   <FaEllipsis size={22} />

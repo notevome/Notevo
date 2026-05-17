@@ -23,6 +23,7 @@ import { useQuery } from "@/cache/useQuery";
 import { Button } from "@/components/ui/button";
 import { SquarePen, X, Pin, PinOff } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import {
   redirect,
   useRouter,
@@ -108,18 +109,22 @@ export default function NoteSettingsSidbar({
     });
   };
 
+  const pinTooltip = useHoverTooltip(200);
+  const deleteTooltip = useHoverTooltip(200);
+
   return (
     <>
       <div
         className={cn("flex justify-end items-center px-1", ContainerClassName)}
       >
-        <Tooltip delayDuration={200} disableHoverableContent>
+        <Tooltip open={pinTooltip.open}>
           <TooltipTrigger asChild>
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
               className="px-2 h-7 hover:bg-card"
               aria-label="pin-note"
+              {...pinTooltip.triggerProps}
             >
               {getNote?.favorite ? (
                 <PinOff size={16} className="text-muted-foreground" />
@@ -133,13 +138,14 @@ export default function NoteSettingsSidbar({
           </TooltipContent>
         </Tooltip>
 
-        <Tooltip delayDuration={200} disableHoverableContent>
+        <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
             <Button
               onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
               className="px-2 h-7 hover:bg-card"
               aria-label="delete-note"
+              {...deleteTooltip.triggerProps}
             >
               <X size={16} />
             </Button>

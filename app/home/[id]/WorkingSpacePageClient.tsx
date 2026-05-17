@@ -65,6 +65,7 @@ import {
   truncateText as parseTiptapContentTruncateText,
 } from "@/lib/parse-tiptap-content";
 import { generateSlug } from "@/lib/generateSlug";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -173,6 +174,7 @@ const STORAGE_KEYS = {
 };
 
 function TableTab({ table }: { table: any }) {
+  const deleteTooltip = useHoverTooltip(100);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
@@ -351,7 +353,7 @@ function TableTab({ table }: { table: any }) {
                 isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
               )}
             >
-              <Tooltip delayDuration={100} disableHoverableContent>
+              <Tooltip open={deleteTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
@@ -363,6 +365,7 @@ function TableTab({ table }: { table: any }) {
                     }}
                     className=" px-1 h-6 text-foreground hover:text-destructive"
                     aria-label="delete-table"
+                    {...deleteTooltip.triggerProps}
                   >
                     <X size={16} />
                   </Button>

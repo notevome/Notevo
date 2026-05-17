@@ -69,6 +69,7 @@ import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
 import Feedback from "./Feedback";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
@@ -252,6 +253,7 @@ interface PinnedNoteItemProps {
 
 const PinnedNoteItem = memo(
   function PinnedNoteItem({ note, pathname, open }: PinnedNoteItemProps) {
+    const titleTooltip = useHoverTooltip(300);
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
@@ -372,7 +374,7 @@ const PinnedNoteItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <Tooltip delayDuration={200} disableHoverableContent>
+              <Tooltip open={titleTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="SidebarMenuButton"
@@ -381,6 +383,7 @@ const PinnedNoteItem = memo(
                     }`}
                     asChild
                     onDoubleClick={handleDoubleClick}
+                    {...titleTooltip.triggerProps}
                   >
                     <IntentPrefetchLink
                       href={noteHref}
@@ -550,6 +553,7 @@ interface PinnedUploadItemProps {
 
 const PinnedUploadItem = memo(
   function PinnedUploadItem({ pdf, pathname, open }: PinnedUploadItemProps) {
+    const titleTooltip = useHoverTooltip(300);
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
@@ -649,7 +653,7 @@ const PinnedUploadItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <Tooltip delayDuration={200} disableHoverableContent>
+              <Tooltip open={titleTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="SidebarMenuButton"
@@ -658,6 +662,7 @@ const PinnedUploadItem = memo(
                     }`}
                     asChild
                     onDoubleClick={handleDoubleClick}
+                    {...titleTooltip.triggerProps}
                   >
                     <IntentPrefetchLink
                       href={pdfHref}
@@ -815,6 +820,7 @@ interface WorkspaceItemProps {
 
 const WorkspaceItem = memo(
   function WorkspaceItem({ workingSpace, pathname, open }: WorkspaceItemProps) {
+    const titleTooltip = useHoverTooltip(300);
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(
@@ -954,7 +960,7 @@ const WorkspaceItem = memo(
                 className="flex-1 h-8 pl-7 pr-2 py-0 my-0.5 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
-              <Tooltip delayDuration={200} disableHoverableContent>
+              <Tooltip open={titleTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="SidebarMenuButton"
@@ -963,6 +969,7 @@ const WorkspaceItem = memo(
                     }`}
                     asChild
                     onDoubleClick={handleDoubleClick}
+                    {...titleTooltip.triggerProps}
                   >
                     <IntentPrefetchLink
                       href={workspaceHref}
@@ -1027,14 +1034,19 @@ const WorkspacesList = memo(function WorkspacesList({
   pathname,
   open,
 }: WorkspacesListProps) {
+  const addWorkspaceTooltip = useHoverTooltip(300);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
         <span>Workspaces</span>
       </SidebarGroupLabel>
-      <Tooltip delayDuration={200} disableHoverableContent>
+      <Tooltip open={addWorkspaceTooltip.open}>
         <TooltipTrigger asChild>
-          <SidebarGroupAction onClick={handleCreateWorkingSpace}>
+          <SidebarGroupAction
+            onClick={handleCreateWorkingSpace}
+            {...addWorkspaceTooltip.triggerProps}
+          >
             <Plus size={16} className=" text-muted-foreground" />{" "}
             <span className="sr-only">Add Workspace</span>
           </SidebarGroupAction>

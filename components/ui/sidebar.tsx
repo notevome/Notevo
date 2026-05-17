@@ -17,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -738,6 +739,7 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const Comp = asChild ? Slot : "button";
     const { isMobile, state } = useSidebar();
+    const hoverTooltip = useHoverTooltip(0);
 
     const button = (
       <Comp
@@ -746,6 +748,7 @@ const SidebarMenuButton = React.forwardRef<
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        {...(tooltip ? hoverTooltip.triggerProps : {})}
         {...props}
       />
     );
@@ -761,7 +764,7 @@ const SidebarMenuButton = React.forwardRef<
     }
 
     return (
-      <Tooltip delayDuration={0}>
+      <Tooltip open={hoverTooltip.open}>
         <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"

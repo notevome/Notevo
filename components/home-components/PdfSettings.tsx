@@ -44,6 +44,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import MovePdfDialog from "./MovePdfDialog";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 interface PdfSettingsProps {
   pdfId: Id<"pdfs">;
@@ -81,8 +82,8 @@ export default function PdfSettings({
   const [inputValue, setInputValue] = useState(pdfTitle || "Untitled");
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const tooltip = useHoverTooltip();
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
@@ -162,15 +163,20 @@ export default function PdfSettings({
 
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) tooltip.hide();
+        }}
+      >
+        <Tooltip open={tooltip.open}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
                   variant="Trigger"
                   className={cn("px-0.5 h-8 mt-0.5", btnClassName)}
-                  onMouseEnter={() => setIsTooltipOpen(true)}
-                  onMouseLeave={() => setIsTooltipOpen(false)}
+                  {...tooltip.triggerProps}
                   aria-label="upload-options"
                 >
                   {iconVariant === "vertical_icon" ? (
