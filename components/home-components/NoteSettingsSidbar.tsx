@@ -110,48 +110,45 @@ export default function NoteSettingsSidbar({
 
   return (
     <>
-        <div
-          className={cn(
-            "flex justify-end items-center px-1",
-            ContainerClassName,
-          )}
-        >
-          <Tooltip disableHoverableContent>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleFavoritePin}
-                variant="SidebarMenuButton"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="pin-note"
-              >
-                {getNote?.favorite ? (
-                  <PinOff size={16} className="text-muted-foreground" />
-                ) : (
-                  <Pin size={16} className="text-muted-foreground" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              {getNote?.favorite ? "Unpin note" : "Pin note"}
-            </TooltipContent>
-          </Tooltip>
+      <div
+        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+      >
+        <Tooltip delayDuration={200} disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleFavoritePin}
+              variant="SidebarMenuButton"
+              className="px-2 h-7 hover:bg-card"
+              aria-label="pin-note"
+            >
+              {getNote?.favorite ? (
+                <PinOff size={16} className="text-muted-foreground" />
+              ) : (
+                <Pin size={16} className="text-muted-foreground" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            {getNote?.favorite ? "Unpin note" : "Pin note"}
+          </TooltipContent>
+        </Tooltip>
 
-          <Tooltip disableHoverableContent>
-            <TooltipTrigger asChild>
-              <Button
-                onMouseDown={initiateDelete}
-                variant="SidebarMenuButton_destructive"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="delete-note"
-              >
-                <X size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Delete note
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <Tooltip delayDuration={200} disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              onMouseDown={initiateDelete}
+              variant="SidebarMenuButton_destructive"
+              className="px-2 h-7 hover:bg-card"
+              aria-label="delete-note"
+            >
+              <X size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            Delete note
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">

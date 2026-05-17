@@ -98,28 +98,25 @@ export default function WorkingSpaceSettingsSidbar({
 
   return (
     <>
-        <div
-          className={cn(
-            "flex justify-end items-center px-1",
-            ContainerClassName,
-          )}
-        >
-          <Tooltip disableHoverableContent>
-            <TooltipTrigger asChild>
-              <Button
-                onMouseDown={initiateDelete}
-                variant="SidebarMenuButton_destructive"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="delete-workspace"
-              >
-                <X size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Delete workspace
-            </TooltipContent>
-          </Tooltip>
-        </div>
+      <div
+        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+      >
+        <Tooltip delayDuration={200} disableHoverableContent>
+          <TooltipTrigger asChild>
+            <Button
+              onMouseDown={initiateDelete}
+              variant="SidebarMenuButton_destructive"
+              className="px-2 h-7 hover:bg-card"
+              aria-label="delete-workspace"
+            >
+              <X size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            Delete workspace
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
