@@ -49,6 +49,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
@@ -473,6 +474,8 @@ function PdfViewerContent({
 }) {
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
+  const searchTooltip = useHoverTooltip(100);
+  const thumbnailsTooltip = useHoverTooltip(100);
 
   return (
     <LectorSearch
@@ -486,7 +489,7 @@ function PdfViewerContent({
         <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
           <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
-              <Tooltip delayDuration={100} disableHoverableContent>
+              <Tooltip open={searchTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
@@ -500,6 +503,7 @@ function PdfViewerContent({
                     }
                     aria-label="show-search-panel"
                     aria-pressed={panelMode === "search"}
+                    {...searchTooltip.triggerProps}
                   >
                     {panelMode === "search" ? (
                       <X size={16} />
@@ -512,7 +516,7 @@ function PdfViewerContent({
                   {panelMode === "search" ? "Close Search" : "Open Search"}
                 </TooltipContent>
               </Tooltip>
-              <Tooltip delayDuration={100} disableHoverableContent>
+              <Tooltip open={thumbnailsTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
@@ -526,6 +530,7 @@ function PdfViewerContent({
                     }
                     aria-label="show-thumbnails-panel"
                     aria-pressed={panelMode === "thumbnails"}
+                    {...thumbnailsTooltip.triggerProps}
                   >
                     {panelMode === "thumbnails" ? (
                       <X size={16} />

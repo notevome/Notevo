@@ -23,6 +23,7 @@ import { useQuery } from "@/cache/useQuery";
 import { Button } from "@/components/ui/button";
 import { Pin, PinOff, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 interface PdfSettingsSidebarProps {
   pdfId: Id<"pdfs">;
@@ -46,6 +47,9 @@ export default function PdfSettingsSidebar({
     });
   };
 
+  const pinTooltip = useHoverTooltip(200);
+  const deleteTooltip = useHoverTooltip(200);
+
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
@@ -65,13 +69,14 @@ export default function PdfSettingsSidebar({
             containerClassName,
           )}
         >
-          <Tooltip disableHoverableContent>
+          <Tooltip open={pinTooltip.open}>
             <TooltipTrigger asChild>
               <Button
                 onClick={handleFavoritePin}
                 variant="SidebarMenuButton"
                 className="px-2 h-7 hover:bg-card"
                 aria-label="pin-upload"
+                {...pinTooltip.triggerProps}
               >
                 {pdf?.favorite ? (
                   <PinOff size={16} className="text-muted-foreground" />
@@ -85,13 +90,14 @@ export default function PdfSettingsSidebar({
             </TooltipContent>
           </Tooltip>
 
-          <Tooltip disableHoverableContent>
+          <Tooltip open={deleteTooltip.open}>
             <TooltipTrigger asChild>
               <Button
                 onMouseDown={() => setIsAlertOpen(true)}
                 variant="SidebarMenuButton_destructive"
                 className="px-2 h-7 hover:bg-card"
                 aria-label="delete-upload"
+                {...deleteTooltip.triggerProps}
               >
                 <X size={16} />
               </Button>

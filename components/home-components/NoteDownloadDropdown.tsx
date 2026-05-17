@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useNoteDownload, type DownloadFormat } from "@/hooks/useNoteDownload";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 interface NoteDownloadDropdownProps {
   noteBody: string | undefined | null;
@@ -31,6 +32,7 @@ export default function NoteDownloadDropdown({
   className,
 }: NoteDownloadDropdownProps) {
   const { handleDownload } = useNoteDownload({ noteBody, noteTitle });
+  const tooltip = useHoverTooltip();
 
   const formats: {
     label: string;
@@ -60,23 +62,24 @@ export default function NoteDownloadDropdown({
   ];
 
   return (
-    <DropdownMenu>
-      <Tooltip disableHoverableContent>
-          <DropdownMenuTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={`w-8 h-8 mt-0.5 ${className ?? ""}`}
-              >
-                <Download className="h-[1.2rem] w-[1.2rem]" />
-                <span className="sr-only">Download note</span>
-              </Button>
-            </TooltipTrigger>
-          </DropdownMenuTrigger>
-          <TooltipContent align="end" side="bottom">
-            Download note
-          </TooltipContent>
+    <DropdownMenu onOpenChange={(next) => next && tooltip.hide()}>
+      <Tooltip open={tooltip.open}>
+        <DropdownMenuTrigger asChild>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`w-8 h-8 mt-0.5 ${className ?? ""}`}
+              {...tooltip.triggerProps}
+            >
+              <Download className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">Download note</span>
+            </Button>
+          </TooltipTrigger>
+        </DropdownMenuTrigger>
+        <TooltipContent align="end" side="bottom">
+          Download note
+        </TooltipContent>
       </Tooltip>
 
       <DropdownMenuContent align={align} side="bottom" className="w-44">

@@ -51,6 +51,7 @@ import {
 import { Label } from "../ui/label";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import MoveNoteDialog from "./MoveNoteDialog";
 
 interface NoteSettingsProps {
@@ -95,8 +96,8 @@ export default function NoteSettings({
   const [inputValue, setInputValue] = useState(noteTitle);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const tooltip = useHoverTooltip();
 
   const { noteWidth, toggleWidth } = useNoteWidth();
 
@@ -224,20 +225,22 @@ export default function NoteSettings({
     setIsMoveDialogOpen(true);
   };
 
-  const handleTooltipMouseEnter = () => setIsTooltipOpen(true);
-  const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
-
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) tooltip.hide();
+        }}
+      >
+        <Tooltip open={tooltip.open}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
                   variant="Trigger"
                   className={cn("px-0.5 h-8 mt-0.5", BtnClassName)}
-                  onMouseEnter={handleTooltipMouseEnter}
-                  onMouseLeave={handleTooltipMouseLeave}
+                  {...tooltip.triggerProps}
                   aria-label="note-options"
                 >
                   {IconVariant === "vertical_icon" ? (

@@ -31,6 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface TableSettingsProps {
   notesTableId: Id<"notesTables"> | any; // Strongly typed Id
   tableName: string | any;
@@ -179,28 +180,25 @@ export default function TableSettings({
       setIsAlertOpen(false); // Close Alert after deletion
     }
   };
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-
-  const handleTooltipMouseEnter = () => {
-    setIsTooltipOpen(true);
-  };
-
-  const handleTooltipMouseLeave = () => {
-    setIsTooltipOpen(false);
-  };
+  const tooltip = useHoverTooltip();
   const createdAtText = formatTimestamp(table?.createdAt);
   const updatedAtText = formatTimestamp(table?.updatedAt);
   return (
     <>
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen}>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) tooltip.hide();
+        }}
+      >
+        <Tooltip open={tooltip.open}>
             <DropdownMenuTrigger asChild>
               <TooltipTrigger asChild>
                 <Button
                   variant="Trigger"
                   className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
-                  onMouseEnter={handleTooltipMouseEnter}
-                  onMouseLeave={handleTooltipMouseLeave}
+                  {...tooltip.triggerProps}
                   aria-label="table-options"
                 >
                   <FaEllipsisVertical size={18} />

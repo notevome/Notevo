@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tooltip";
 import Link from "next/link";
 import { useMediaQuery } from "react-responsive";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 interface PublicNoteProp {
   noteId: Id<"notes">;
@@ -47,9 +48,9 @@ export default function PublicNote({
 
   const isMobile = useMediaQuery({ maxWidth: 640 });
   const [open, setOpen] = useState(false);
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
+  const tooltip = useHoverTooltip();
+  const copyTooltip = useHoverTooltip(200);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
@@ -91,26 +92,28 @@ export default function PublicNote({
         `https://notevo.me/public/document/${noteId}`,
       );
       setIsCopied(true);
-      setIsCopyTooltipOpen(false);
+      copyTooltip.hide();
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
       console.error("Failed to copy text: ", err);
     }
   };
 
-  const handleTooltipMouseEnter = () => setIsTooltipOpen(true);
-  const handleTooltipMouseLeave = () => setIsTooltipOpen(false);
-
   return (
-      <DropdownMenu open={open} onOpenChange={setOpen}>
-        <Tooltip open={isTooltipOpen} disableHoverableContent>
+      <DropdownMenu
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          if (next) tooltip.hide();
+        }}
+      >
+        <Tooltip open={tooltip.open}>
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 className={cn("h-8 px-2 text-sm mt-0.5 gap-1", BtnClassName)}
-                onMouseEnter={handleTooltipMouseEnter}
-                onMouseLeave={handleTooltipMouseLeave}
+                {...tooltip.triggerProps}
               >
                 {getNote?.published ? (
                   <>
@@ -161,17 +164,12 @@ export default function PublicNote({
                     className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-85% to-transparent to-80% text-transparent bg-clip-text"
                     disabled
                   />
-                  <Tooltip
-                    open={isCopyTooltipOpen}
-                    onOpenChange={setIsCopyTooltipOpen}
-                    delayDuration={200}
-                  >
+                  <Tooltip open={copyTooltip.open}>
                     <TooltipTrigger asChild>
                       <Button
                         onMouseDown={handleCopy}
                         onPointerMove={(e) => e.stopPropagation()}
-                        onMouseEnter={() => setIsCopyTooltipOpen(true)}
-                        onMouseLeave={() => setIsCopyTooltipOpen(false)}
+                        {...copyTooltip.triggerProps}
                         className={`w-fit h-8 absolute top-1/2 -translate-y-1/2 right-0  text-primary hover:text-primary`}
                         disabled={isCopied && true}
                         variant="Trigger"

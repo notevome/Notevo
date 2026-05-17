@@ -21,10 +21,12 @@ import { parseSlug } from "@/lib/parseSlug";
 import { formatUserNoteTitle } from "@/lib/utils";
 import { ReadOnlyWarning } from "@/components/readOnly-warning";
 import NoteDownloadDropdown from "@/components/home-components/NoteDownloadDropdown";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
+  const themeTooltip = useHoverTooltip(200);
 
   const cycleTheme = () => {
     if (resolvedTheme === "light") setTheme("dark");
@@ -121,13 +123,14 @@ export default function PublicNotePage() {
               noteBody={JSON.stringify(content)}
               noteTitle={getNote.title ?? "note"}
             />
-            <Tooltip disableHoverableContent>
+            <Tooltip open={themeTooltip.open}>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     className="w-8 h-8 mt-0.5"
                     size="icon"
                     onClick={cycleTheme}
+                    {...themeTooltip.triggerProps}
                   >
                     {getThemeIcon()}
                     <span className="sr-only">Toggle theme</span>

@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -5,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import {
   BoldIcon,
   CodeIcon,
@@ -24,6 +26,33 @@ const isMac =
   typeof navigator !== "undefined" &&
   /Mac|iPhone|iPad/.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
+
+function ToolbarTooltipButton({
+  label,
+  shortcut,
+  ...buttonProps
+}: {
+  label: string;
+  shortcut: string;
+} & ComponentProps<typeof Button>) {
+  const tooltip = useHoverTooltip(300);
+
+  return (
+    <Tooltip open={tooltip.open}>
+      <TooltipTrigger asChild>
+        <Button {...buttonProps} {...tooltip.triggerProps} />
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        className=" flex justify-center items-center px-1.5"
+        sideOffset={6}
+      >
+        <span>{label}</span>
+        <ShortcutBadge keys={shortcut} />
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export const TextButtons = () => {
   const { editor } = useEditor();
@@ -108,68 +137,45 @@ export const TextButtons = () => {
               item.command(editor);
             }}
           >
-            <Tooltip delayDuration={300} disableHoverableContent>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  className="border-none px-2 h-8"
-                  variant="SidebarMenuButton"
-                  type="button"
-                >
-                  <item.icon
-                    className={cn("h-4 w-4", {
-                      "text-primary": item.isActive(editor),
-                      "text-foreground": !item.isActive(editor),
-                    })}
-                  />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                className=" flex justify-center items-center px-1.5"
-                sideOffset={6}
-              >
-                <span>{item.label}</span>
-                <ShortcutBadge keys={item.shortcut} />
-              </TooltipContent>
-            </Tooltip>
+            <ToolbarTooltipButton
+              label={item.label}
+              shortcut={item.shortcut}
+              size="sm"
+              className="border-none px-2 h-8"
+              variant="SidebarMenuButton"
+              type="button"
+            >
+              <item.icon
+                className={cn("h-4 w-4", {
+                  "text-primary": item.isActive(editor),
+                  "text-foreground": !item.isActive(editor),
+                })}
+              />
+            </ToolbarTooltipButton>
           </EditorBubbleItem>
         ))}
 
         {alignItems.map((item) => (
-          <Tooltip
+          <ToolbarTooltipButton
             key={item.name}
-            delayDuration={300}
-            disableHoverableContent
+            label={item.label}
+            shortcut={item.shortcut}
+            size="sm"
+            className="border-none px-2 h-8"
+            variant="SidebarMenuButton"
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              (editor.commands as any).setTextAlign(item.align);
+            }}
           >
-            <TooltipTrigger asChild>
-              <Button
-                size="sm"
-                className="border-none px-2 h-8"
-                variant="SidebarMenuButton"
-                type="button"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  (editor.commands as any).setTextAlign(item.align);
-                }}
-              >
-                <item.icon
-                  className={cn("h-4 w-4", {
-                    "text-primary": item.isActive(editor),
-                    "text-foreground": !item.isActive(editor),
-                  })}
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className=" flex justify-center items-center px-1.5"
-              sideOffset={6}
-            >
-              <span>{item.label}</span>
-              <ShortcutBadge keys={item.shortcut} />
-            </TooltipContent>
-          </Tooltip>
+            <item.icon
+              className={cn("h-4 w-4", {
+                "text-primary": item.isActive(editor),
+                "text-foreground": !item.isActive(editor),
+              })}
+            />
+          </ToolbarTooltipButton>
         ))}
       </div>
   );
