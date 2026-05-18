@@ -452,6 +452,13 @@ function SliderTabsList({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const canScroll = canScrollLeft || canScrollRight;
 
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const saved = sessionStorage.getItem("slider-tabs-scrollX");
+    if (saved) el.scrollLeft = parseInt(saved);
+  }, []);
+
   const checkScroll = useCallback(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -471,6 +478,20 @@ function SliderTabsList({
       ro.disconnect();
     };
   }, [checkScroll, tables]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    sessionStorage.setItem("slider-tabs-scrollX", String(el.scrollLeft));
+    checkScroll();
+  }, [checkScroll]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
@@ -549,7 +570,11 @@ function SliderTabsList({
             }
           >
             {tables.map((table) => (
-              <TableTab key={table._id} table={table} />
+              <TableTab
+                key={table._id}
+                data-table-id={table._id}
+                table={table}
+              />
             ))}
           </div>
         </TabsList>
