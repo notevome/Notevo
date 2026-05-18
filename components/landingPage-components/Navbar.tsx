@@ -41,7 +41,7 @@ export default function Navbar() {
         }}
       >
         {inView && (
-          <div className=" fixed top-0 w-full min-h-24 bg-gradient-to-b from-background via-background/75 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
+          <div className=" fixed top-0 w-full min-h-[4.5rem] bg-gradient-to-b from-background via-background/60 from-10% via-50% to-100% to-transparent -z-50 left-0 pointer-events-none" />
         )}
         <div className="flex justify-center items-center gap-4">
           <Link
