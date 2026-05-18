@@ -67,7 +67,7 @@ function YoutubeDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className=" pb-2.5 px-4">
         <DialogHeader>
           <DialogTitle>Embed YouTube Video</DialogTitle>
           <DialogDescription>
