@@ -32,20 +32,17 @@ export default function Navbar() {
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center border-solid border p-4 my-2 rounded-tl-2xl transition-all duration-300",
-          inView
-            ? "border-border bg-background/50 backdrop-blur-xl"
-            : "border-transparent bg-transparent",
+          "container mx-auto flex justify-between items-center p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
         )}
-        animate={{
-          width: inView && !isMobile ? "60%" : "90%",
-        }}
         transition={{
           ease: "easeInOut",
           duration: 0.1,
           delay: 0,
         }}
       >
+        {inView && (
+          <div className=" fixed top-0 w-full min-h-24 bg-gradient-to-b from-background via-background/75 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
+        )}
         <div className="flex justify-center items-center gap-4">
           <Link
             href="/"
@@ -136,7 +133,7 @@ export default function Navbar() {
         </div>
 
         <button
-          className="lg:hidden p-2 hover:bg-primary/10 rounded-lg transition-colors relative group"
+          className="lg:hidden p-2 hover:bg-border app-radius-lg transition-colors relative group"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           aria-label="Toggle menu"
         >
@@ -176,13 +173,13 @@ export default function Navbar() {
           exit={{ opacity: 0, y: -10 }}
           className="lg:hidden absolute top-full left-0 right-0 mt-2 mx-4"
         >
-          <div className="bg-background/95 backdrop-blur-xl border border-border rounded-2xl p-4 shadow-lg">
+          <div className="bg-background/95 backdrop-blur-xl border border-border app-radius-xl p-4 shadow-lg">
             <nav className="flex flex-col gap-2">
               {NavLinks.map((link, i) => (
                 <Link
                   key={i}
                   href={link.path}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/10 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-border app-radius-md transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.Name}
@@ -213,3 +210,4 @@ export default function Navbar() {
     </motion.header>
   );
 }
+3;
