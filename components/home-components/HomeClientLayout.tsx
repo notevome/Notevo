@@ -94,8 +94,8 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
         } rounded-none`}
       >
-        <div className="z-[10] relative w-full flex min-h-12 items-center justify-start  gap-3 mx-auto bg-background rounded-tl-lg border-none ">
-          <div className="  flex justify-between items-center w-full px-4 py-2 ">
+        <div className="z-[10] absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
+          <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
               {(!open || isMobile) && <SidebarTrigger />}
               <BreadcrumbWithCustomSeparator />
@@ -131,20 +131,16 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         <div
           ref={scrollContainerRef}
           className={`min-h-0 flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent ${
-            isPdfRoute ? "overflow-hidden py-0" : "overflow-y-auto py-6"
+            isPdfRoute ? "overflow-hidden pt-12" : "overflow-y-auto pt-16"
           }`}
         >
-          {!isPdfRoute ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: showTopFade ? 1 : 0 }}
-              transition={
-                showTopFade ? fadeTransition.show : fadeTransition.hide
-              }
-              className="sticky -top-12 left-0 w-full h-28 bg-gradient-to-b from-background from-25% to-transparent to-100% z-[5] pointer-events-none -mb-32"
-              aria-hidden
-            />
-          ) : null}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showTopFade ? 1 : 0 }}
+            transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
+            className="rounded-tl-lg absolute top-0 left-0 w-full h-[7rem] bg-gradient-to-b from-background from-10% via-background/55 via-55% to-100% to-transparent z-[5] pointer-events-none -mb-16"
+            aria-hidden
+          />
           {children}
         </div>
         <MobileWarning />

@@ -54,7 +54,7 @@ export default function BreadcrumbWithCustomSeparator() {
   };
 
   return (
-    <div className="bg-background py-2">
+    <div className="py-2">
       <Breadcrumb>
         <BreadcrumbList className="flex flex-nowrap overflow-x-auto whitespace-nowrap text-primary scrollbar-thin">
           {pathSegments.map((segment, index) => {
