@@ -261,7 +261,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const fullMenu = menu.show && (
     <div
       ref={menuRef}
-      className="fixed bg-muted border border-border rounded-lg py-2 px-1 w-[320px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+      className="fixed bg-muted border border-border rounded-tl-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
       style={{ left: menu.x, top: menu.y }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
@@ -289,27 +289,18 @@ export const TableControls = ({ editor }: TableControlsProps) => {
               withRow(() => editor.chain().focus().addRowBefore().run())
             }
             variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-2.5 py-2 h-8"
           >
-            <ArrowUp className="w-4 h-4 mr-2" /> Insert Above
+            <ArrowUp className="w-4 h-4 text-muted-foreground" /> Insert Above
           </Button>
           <Button
             onClick={() =>
               withRow(() => editor.chain().focus().addRowAfter().run())
             }
             variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-2.5 py-2 h-8"
           >
-            <ArrowDown className="w-4 h-4 mr-2" /> Insert Below
-          </Button>
-          <Button
-            onClick={() =>
-              withRow(() => editor.chain().focus().addRowAfter().run())
-            }
-            variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
-          >
-            <Copy className="w-4 h-4 mr-2" /> Duplicate
+            <ArrowDown className="w-4 h-4 text-muted-foreground" /> Insert Below
           </Button>
           {rows.length > 1 && (
             <Button
@@ -317,9 +308,9 @@ export const TableControls = ({ editor }: TableControlsProps) => {
                 withRow(() => editor.chain().focus().deleteRow().run())
               }
               variant="SidebarMenuButton_destructive"
-              className="w-full justify-start px-4 py-2 h-auto"
+              className="w-full justify-start px-2.5 py-2 h-8"
             >
-              <Trash2 className="w-4 h-4 mr-2" /> Delete Row
+              <Trash2 className="w-4 h-4 text-muted-foreground" /> Delete Row
             </Button>
           )}
         </div>
@@ -333,27 +324,20 @@ export const TableControls = ({ editor }: TableControlsProps) => {
               withCol(() => editor.chain().focus().addColumnBefore().run())
             }
             variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-2.5 py-2 h-8"
           >
-            <ArrowUp className="w-4 h-4 mr-2 -rotate-90" /> Insert Left
+            <ArrowUp className="w-4 h-4 -rotate-90 text-muted-foreground" />{" "}
+            Insert Left
           </Button>
           <Button
             onClick={() =>
               withCol(() => editor.chain().focus().addColumnAfter().run())
             }
             variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
+            className="w-full justify-start px-2.5 py-2 h-8"
           >
-            <ArrowDown className="w-4 h-4 mr-2 -rotate-90" /> Insert Right
-          </Button>
-          <Button
-            onClick={() =>
-              withCol(() => editor.chain().focus().addColumnAfter().run())
-            }
-            variant="SidebarMenuButton"
-            className="w-full justify-start px-4 py-2 h-auto"
-          >
-            <Copy className="w-4 h-4 mr-2" /> Duplicate
+            <ArrowDown className="w-4 h-4 -rotate-90 text-muted-foreground" />{" "}
+            Insert Right
           </Button>
           {cols.length > 1 && (
             <Button
@@ -361,9 +345,9 @@ export const TableControls = ({ editor }: TableControlsProps) => {
                 withCol(() => editor.chain().focus().deleteColumn().run())
               }
               variant="SidebarMenuButton_destructive"
-              className="w-full justify-start px-4 py-2 h-auto"
+              className="w-full justify-start px-2.5 py-2 h-8"
             >
-              <Trash2 className="w-4 h-4 mr-2" /> Delete Column
+              <Trash2 className="w-4 h-4 text-muted-foreground" /> Delete Column
             </Button>
           )}
         </div>
@@ -372,7 +356,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
       <div className="h-px bg-border my-1.5 mx-2" />
 
       {/* CELL COLOR */}
-      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
         <Palette className="w-3 h-3" /> Cell Background
       </p>
       <div className="px-3 py-2">
@@ -403,18 +387,15 @@ export const TableControls = ({ editor }: TableControlsProps) => {
       <div className="h-px bg-border my-1.5 mx-2" />
 
       {/* TABLE */}
-      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-        Table
-      </p>
       <Button
         onClick={() => {
           editor.chain().focus().deleteTable().run();
           closeAll();
         }}
         variant="SidebarMenuButton_destructive"
-        className="w-full justify-start px-4 py-2 h-auto"
+        className="w-full justify-start px-2.5 py-2 h-8"
       >
-        <Trash2 className="w-4 h-4 mr-2" /> Delete Table
+        <Trash2 className="w-4 h-4 text-muted-foreground" /> Delete Table
       </Button>
     </div>
   );
