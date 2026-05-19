@@ -512,7 +512,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-20 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -527,7 +527,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-20 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -537,7 +537,7 @@ function SliderTabsList({
         </Button>
 
         <div
-          className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute left-0 top-0 bottom-0 w-32 z-[5] pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollLeft ? 1 : 0,
             background:
@@ -545,7 +545,7 @@ function SliderTabsList({
           }}
         />
         <div
-          className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none transition-opacity duration-200"
+          className="absolute right-0 top-0 bottom-0 w-32 z-[5] pointer-events-none transition-opacity duration-200"
           style={{
             opacity: canScrollRight ? 1 : 0,
             background:
@@ -797,7 +797,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" z-50 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
+              className=" z-10 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
               aria-label="create-table"
             />
           )}

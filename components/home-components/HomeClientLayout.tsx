@@ -94,7 +94,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
         } rounded-none`}
       >
-        <div className="z-[10] absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
+        <div className="z-50 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
           <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
               {(!open || isMobile) && <SidebarTrigger />}
@@ -138,7 +138,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: showTopFade ? 1 : 0 }}
             transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
-            className="rounded-tl-lg absolute top-0 left-0 w-full h-[7rem] bg-gradient-to-b from-background from-10% via-background/55 via-55% to-100% to-transparent z-[5] pointer-events-none -mb-16"
+            className="rounded-tl-lg absolute top-0 left-0 w-full h-[7rem] bg-gradient-to-b from-background from-10% via-background/55 via-55% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
           {children}
