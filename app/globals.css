@@ -888,6 +888,21 @@ hr {
 }
 
 /* Enhanced Table Styles */
+
+/* Table column resize handle */
+.ProseMirror .column-resize-handle {
+  background-color: hsl(var(--border)) !important;
+  width: 2px;
+  opacity: 0.6;
+}
+
+.ProseMirror .column-resize-handle:hover,
+.ProseMirror.resize-cursor .column-resize-handle {
+  background-color: hsl(var(--border)) !important;
+  opacity: 1;
+}
+
+
 .ProseMirror table {
   border-collapse: collapse;
   table-layout: fixed;
@@ -929,7 +944,7 @@ hr {
   bottom: 0;
   background: rgba(59, 130, 246, 0.15);
   pointer-events: none;
-  border: 2px solid rgb(59, 130, 246);
+  border: 2px solid hsl(var(--border));
 }
 
 .ProseMirror .column-resize-handle {
@@ -938,7 +953,7 @@ hr {
   top: 0;
   bottom: -2px;
   width: 4px;
-  background-color: rgb(59, 130, 246);
+  background-color: hsl(var(--border));
   pointer-events: none;
   z-index: 20;
 }
@@ -947,13 +962,6 @@ hr {
   cursor: ew-resize;
   cursor: col-resize;
 }
-
-/* Table hover effect */
-.ProseMirror table:hover {
-  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
-  transition: box-shadow 0.15s ease;
-}
-
 
 /* Responsive YouTube Embed */
 [data-youtube-video] {

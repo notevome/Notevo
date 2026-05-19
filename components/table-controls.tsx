@@ -1,20 +1,16 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Editor } from "@tiptap/core";
 import {
   Plus,
   Trash2,
   ChevronDown,
-  GripVertical,
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
   Copy,
-  Table as TableIcon,
   ArrowUp,
   ArrowDown,
   Palette,
+  X,
 } from "lucide-react";
 import { Button } from "./ui/button";
 
@@ -22,16 +18,21 @@ interface TableControlsProps {
   editor: Editor;
 }
 
-interface ContextMenuState {
+interface ActiveCell {
+  element: HTMLElement;
+  rowIndex: number;
+  colIndex: number;
+  table: HTMLTableElement;
+}
+
+interface MenuState {
   show: boolean;
   x: number;
   y: number;
-  type: "row" | "column" | "cell" | null;
-  index: number;
 }
 
 const highlightColors = [
-  { name: "Default", value: "" }, // clear
+  { name: "Default", value: "" },
   { name: "Purple", value: "var(--novel-highlight-purple)" },
   { name: "Red", value: "var(--novel-highlight-red)" },
   { name: "Yellow", value: "var(--novel-highlight-yellow)" },
@@ -43,470 +44,386 @@ const highlightColors = [
 ];
 
 export const TableControls = ({ editor }: TableControlsProps) => {
-  const [activeTable, setActiveTable] = useState<HTMLTableElement | null>(null);
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
-    null,
+  const [activeCell, setActiveCell] = useState<ActiveCell | null>(null);
+  const [menu, setMenu] = useState<MenuState>({ show: false, x: 0, y: 0 });
+
+  const menuRef = useRef<HTMLDivElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
+
+  const focusCell = useCallback(
+    (cell: HTMLElement) => {
+      try {
+        const pos = editor.view.posAtDOM(cell, 0);
+        editor.chain().focus().setTextSelection(pos).run();
+      } catch (_) {}
+    },
+    [editor],
   );
-  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
-    show: false,
-    x: 0,
-    y: 0,
-    type: null,
-    index: 0,
-  });
-  const timeoutRef = useRef<number | null>(null);
+
+  const focusRow = useCallback(
+    (table: HTMLTableElement, rowIndex: number) => {
+      const rows = Array.from(table.querySelectorAll("tr"));
+      const cell = rows[rowIndex]?.querySelector(
+        "th, td",
+      ) as HTMLElement | null;
+      if (cell) focusCell(cell);
+    },
+    [focusCell],
+  );
+
+  const focusCol = useCallback(
+    (table: HTMLTableElement, colIndex: number) => {
+      const cell = table.querySelector(
+        `tr:first-child > *:nth-child(${colIndex + 1})`,
+      ) as HTMLElement | null;
+      if (cell) focusCell(cell);
+    },
+    [focusCell],
+  );
 
   useEffect(() => {
     if (!editor) return;
+    const editorEl = editor.view.dom;
 
-    const editorElement = editor.view.dom;
-    let container = editorElement.parentElement?.querySelector(
-      ".table-controls-portal",
-    ) as HTMLElement;
+    const handleClick = (e: MouseEvent) => {
+      if (
+        pillRef.current?.contains(e.target as Node) ||
+        menuRef.current?.contains(e.target as Node)
+      )
+        return;
 
-    if (!container) {
-      container = document.createElement("div");
-      container.className = "table-controls-portal";
-      container.style.cssText =
-        "position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999;";
-
-      if (editorElement.parentElement) {
-        const parent = editorElement.parentElement;
-        const currentPosition = window.getComputedStyle(parent).position;
-        if (currentPosition === "static") {
-          parent.style.position = "relative";
-        }
-        parent.appendChild(container);
-      }
-    }
-    setPortalContainer(container);
-
-    const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const th = target.closest("th");
-      const firstRow = target.closest("tr:first-child");
+      const cell = target.closest("th, td") as HTMLElement | null;
 
-      if ((th || firstRow) && target.closest("table")) {
-        const table = target.closest("table");
-        if (table && table.closest(".ProseMirror")) {
-          setActiveTable(table as HTMLTableElement);
-          if (timeoutRef.current !== null) {
-            window.clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-          }
+      if (!cell || !cell.closest(".ProseMirror")) {
+        setActiveCell(null);
+        setMenu({ show: false, x: 0, y: 0 });
+        return;
+      }
+
+      const table = cell.closest("table") as HTMLTableElement | null;
+      if (!table) return;
+
+      const rows = Array.from(
+        table.querySelectorAll("tr"),
+      ) as HTMLTableRowElement[];
+      let rowIndex = -1;
+      let colIndex = -1;
+      rows.forEach((row, ri) => {
+        const cells = Array.from(row.querySelectorAll("th, td"));
+        const ci = cells.indexOf(cell);
+        if (ci !== -1) {
+          rowIndex = ri;
+          colIndex = ci;
         }
+      });
+
+      if (rowIndex === -1) return;
+
+      setActiveCell({ element: cell, rowIndex, colIndex, table });
+      setMenu({ show: false, x: 0, y: 0 });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveCell(null);
+        setMenu({ show: false, x: 0, y: 0 });
       }
     };
 
-    const handleMouseLeave = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const table = target.closest("table");
-      if (table) {
-        timeoutRef.current = window.setTimeout(() => {
-          setActiveTable(null);
-        }, 10);
-      }
-    };
-
-    const handleClickOutside = () => {
-      setContextMenu({ show: false, x: 0, y: 0, type: null, index: 0 });
-    };
-
-    editorElement.addEventListener("mousemove", handleMouseMove);
-    editorElement.addEventListener("mouseleave", handleMouseLeave);
-    document.addEventListener("click", handleClickOutside);
-
+    editorEl.addEventListener("click", handleClick);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      editorElement.removeEventListener("mousemove", handleMouseMove);
-      editorElement.removeEventListener("mouseleave", handleMouseLeave);
-      document.removeEventListener("click", handleClickOutside);
-      if (timeoutRef.current !== null) {
-        window.clearTimeout(timeoutRef.current);
-      }
+      editorEl.removeEventListener("click", handleClick);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [editor]);
 
-  if (!activeTable || !portalContainer) return null;
-
-  const rows = Array.from(activeTable.querySelectorAll("tr"));
-  const firstRow = rows[0];
-  const columns = Array.from(firstRow?.querySelectorAll("th, td") || []);
-
-  const getCellPos = (cell: Element): number | null => {
-    try {
-      return editor.view.posAtDOM(cell, 0);
-    } catch (e) {
-      return null;
-    }
-  };
-
-  const handleContextMenu = (
-    e: React.MouseEvent,
-    type: "row" | "column",
-    index: number,
-  ) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({
-      show: true,
-      x: e.clientX,
-      y: e.clientY,
-      type,
-      index,
+  // Hide pill and menu when the user scrolls
+  useEffect(() => {
+    if (!activeCell) return;
+    const handleScroll = () => {
+      setActiveCell(null);
+      setMenu({ show: false, x: 0, y: 0 });
+    };
+    window.addEventListener("scroll", handleScroll, {
+      passive: true,
+      capture: true,
     });
-  };
+    return () =>
+      window.removeEventListener("scroll", handleScroll, { capture: true });
+  }, [activeCell]);
 
-  const selectRow = (rowIndex: number) => {
-    const row = rows[rowIndex];
-    if (!row) return;
-    const cell = row.querySelector("th, td");
-    if (!cell) return;
-    const pos = getCellPos(cell);
-    if (pos !== null) {
-      editor.chain().focus().setTextSelection(pos).run();
-    }
-  };
-
-  const selectColumn = (colIndex: number) => {
-    const cell = activeTable.querySelector(
-      `tr:first-child > *:nth-child(${colIndex + 1})`,
+  // Close full menu on outside click
+  useEffect(() => {
+    if (!menu.show) return;
+    const handle = (e: MouseEvent) => {
+      if (
+        menuRef.current?.contains(e.target as Node) ||
+        pillRef.current?.contains(e.target as Node)
+      )
+        return;
+      setMenu({ show: false, x: 0, y: 0 });
+    };
+    const id = setTimeout(
+      () => document.addEventListener("mousedown", handle),
+      0,
     );
-    if (!cell) return;
-    const pos = getCellPos(cell);
-    if (pos !== null) {
-      editor.chain().focus().setTextSelection(pos).run();
-    }
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("mousedown", handle);
+    };
+  }, [menu.show]);
+
+  if (!activeCell) return null;
+
+  const { element: cellEl, rowIndex, colIndex, table } = activeCell;
+  const rows = Array.from(
+    table.querySelectorAll("tr"),
+  ) as HTMLTableRowElement[];
+  const cols = rows[0] ? Array.from(rows[0].querySelectorAll("th, td")) : [];
+
+  const cellRect = cellEl.getBoundingClientRect();
+
+  // Pill floats to the right of the cell, vertically centred
+  const pillX = cellRect.right + window.scrollX + -65;
+  const pillY = cellRect.top + window.scrollY + cellRect.height / 2 - 14;
+
+  const openMenu = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const btnRect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    let mx = btnRect.left + window.scrollX;
+    let my = btnRect.bottom + window.scrollY + 4;
+    if (mx + 260 > window.innerWidth + window.scrollX)
+      mx -= 260 - btnRect.width;
+    setMenu({ show: true, x: mx, y: my });
   };
 
-  const addColumnAfter = (colIndex: number) => {
-    selectColumn(colIndex);
-    editor.chain().focus().addColumnAfter().run();
-  };
-
-  const addColumnBefore = (colIndex: number) => {
-    selectColumn(colIndex);
-    editor.chain().focus().addColumnBefore().run();
-  };
-
-  const deleteColumn = (colIndex: number) => {
-    if (columns.length <= 1) return;
-    selectColumn(colIndex);
-    editor.chain().focus().deleteColumn().run();
-  };
-
-  const duplicateColumn = (colIndex: number) => {
-    selectColumn(colIndex);
-    editor.chain().focus().addColumnAfter().run();
-  };
-
-  const addRowAfter = (rowIndex: number) => {
-    selectRow(rowIndex);
+  const quickAdd = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    focusRow(table, rowIndex);
     editor.chain().focus().addRowAfter().run();
   };
 
-  const addRowBefore = (rowIndex: number) => {
-    selectRow(rowIndex);
-    editor.chain().focus().addRowBefore().run();
+  const closeAll = () => {
+    setActiveCell(null);
+    setMenu({ show: false, x: 0, y: 0 });
   };
 
-  const deleteRow = (rowIndex: number) => {
-    if (rows.length <= 1) return;
-    selectRow(rowIndex);
-    editor.chain().focus().deleteRow().run();
+  const closeMenu = () => setMenu({ show: false, x: 0, y: 0 });
+
+  const withRow = (fn: () => void) => {
+    focusRow(table, rowIndex);
+    fn();
+    closeMenu();
+  };
+  const withCol = (fn: () => void) => {
+    focusCol(table, colIndex);
+    fn();
+    closeMenu();
+  };
+  const withCell = (fn: () => void) => {
+    focusCell(cellEl);
+    fn();
+    closeMenu();
   };
 
-  const duplicateRow = (rowIndex: number) => {
-    selectRow(rowIndex);
-    editor.chain().focus().addRowAfter().run();
-  };
-
-  const toggleHeaderRow = () => {
-    editor.chain().focus().toggleHeaderRow().run();
-  };
-
-  const toggleHeaderColumn = () => {
-    editor.chain().focus().toggleHeaderColumn().run();
-  };
-
-  const setCellBackground = (color: string) => {
-    editor.chain().focus().setCellAttribute("backgroundColor", color).run();
-  };
-  // .setCellAttribute("backgroundColor", color || null)
-
-  const deleteTable = () => {
-    editor.chain().focus().deleteTable().run();
-  };
-
-  const editorRect = editor.view.dom.parentElement?.getBoundingClientRect();
-  const tableRect = activeTable.getBoundingClientRect();
-
-  if (!editorRect) return null;
-
-  const ContextMenuComponent = () => {
-    if (!contextMenu.show) return null;
-
-    return createPortal(
-      <div
-        className="fixed bg-accent border border-border rounded-lg  py-2 px-0.5 w-[260px] z-[9999] animate-in fade-in-0 zoom-in-95"
-        style={{
-          left: `${contextMenu.x}px`,
-          top: `${contextMenu.y}px`,
-        }}
-        onClick={(e) => e.stopPropagation()}
+  const pill = (
+    <div
+      ref={pillRef}
+      className="fixed flex items-center gap-0.5 bg-muted border border-border rounded-tl-md shadow-md px-0.5 py-0.5 z-[9998]"
+      style={{ left: pillX, top: pillY }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <Button
+        variant="ghost"
+        title="Add row below"
+        aria-label="Add row below"
+        onClick={quickAdd}
+        className=" w-6 h-6 "
+        size="icon"
       >
-        {(contextMenu.type === "row" || contextMenu.type === "column") && (
-          <>
-            <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {contextMenu.type === "row" ? "Row" : "Column"} Actions
-            </div>
-
-            {contextMenu.type === "row" && (
-              <>
-                <Button
-                  onClick={() => {
-                    toggleHeaderRow();
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto "
-                >
-                  <TableIcon className="w-4 h-4 mr-2" />
-                  Toggle Header Row
-                </Button>
-                <Button
-                  onClick={() => {
-                    addRowBefore(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <ArrowUp className="w-4 h-4 mr-2" />
-                  Insert Row Above
-                </Button>
-                <Button
-                  onClick={() => {
-                    addRowAfter(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto "
-                >
-                  <ArrowDown className="w-4 h-4 mr-2" />
-                  Insert Row Below
-                </Button>
-                <Button
-                  onClick={() => {
-                    duplicateRow(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Duplicate Row
-                </Button>
-              </>
-            )}
-
-            {contextMenu.type === "column" && (
-              <>
-                <Button
-                  onClick={() => {
-                    toggleHeaderColumn();
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <TableIcon className="w-4 h-4 mr-2" />
-                  Toggle Header Column
-                </Button>
-                <Button
-                  onClick={() => {
-                    addColumnBefore(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <ArrowUp className="w-4 h-4 mr-2 rotate-[-90deg]" />
-                  Insert Column Left
-                </Button>
-                <Button
-                  onClick={() => {
-                    addColumnAfter(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <ArrowDown className="w-4 h-4 mr-2 rotate-[-90deg]" />
-                  Insert Column Right
-                </Button>
-                <Button
-                  onClick={() => {
-                    duplicateColumn(contextMenu.index);
-                    setContextMenu({ ...contextMenu, show: false });
-                  }}
-                  variant="SidebarMenuButton"
-                  className="w-full justify-start px-4 py-2 h-auto"
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Duplicate Column
-                </Button>
-              </>
-            )}
-
-            {/* Color picker section */}
-            <div className="px-3 py-2">
-              <div className="text-xs font-semibold text-muted-foreground mb-2 flex items-center">
-                <Palette className="w-3 h-3 mr-1" />
-                Background Color
-              </div>
-              <div className="grid grid-cols-9 gap-1">
-                {highlightColors.map((color) => (
-                  <button
-                    key={color.name}
-                    className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
-                    style={{
-                      backgroundColor: color.value || "transparent",
-                      borderColor: color.value ? "transparent" : "#888",
-                    }}
-                    onClick={() => {
-                      if (contextMenu.type === "row")
-                        selectRow(contextMenu.index);
-                      if (contextMenu.type === "column")
-                        selectColumn(contextMenu.index);
-                      setCellBackground(color.value);
-                      setContextMenu({ ...contextMenu, show: false });
-                    }}
-                    title={color.name}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="h-px bg-border my-1" />
-
-            {(contextMenu.type === "row"
-              ? rows.length > 1
-              : columns.length > 1) && (
-              <Button
-                onClick={() => {
-                  if (contextMenu.type === "row") deleteRow(contextMenu.index);
-                  if (contextMenu.type === "column")
-                    deleteColumn(contextMenu.index);
-                  setContextMenu({ ...contextMenu, show: false });
-                }}
-                variant="SidebarMenuButton_destructive"
-                className="w-full justify-start px-4 py-2 h-auto"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete {contextMenu.type === "row" ? "Row" : "Column"}
-              </Button>
-            )}
-          </>
-        )}
-
-        <div className="h-px bg-border my-1" />
-
-        <Button
-          onClick={() => {
-            deleteTable();
-            setContextMenu({ ...contextMenu, show: false });
-          }}
-          variant="SidebarMenuButton_destructive"
-          className="w-full justify-start px-4 py-2 h-auto"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Delete Table
-        </Button>
-      </div>,
-      document.body,
-    );
-  };
-
-  const controls = (
-    <div style={{ pointerEvents: "auto" }}>
-      {/* Column controls */}
-      {columns.map((column, colIndex) => {
-        const columnRect = (column as HTMLElement).getBoundingClientRect();
-        return (
-          <div
-            key={`col-control-${colIndex}`}
-            className="absolute z-50 group"
-            style={{
-              left: `${columnRect.left - editorRect.left}px`,
-              top: `${tableRect.top - editorRect.top - 32}px`,
-              width: `${columnRect.width}px`,
-            }}
-          >
-            <div className="flex items-center justify-center mx-auto w-fit">
-              <Button
-                onContextMenu={(e) => handleContextMenu(e, "column", colIndex)}
-                onClick={() => addColumnAfter(colIndex)}
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 rounded-md hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={(e) => handleContextMenu(e, "column", colIndex)}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 rounded-md hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Row controls */}
-      {rows.map((row, rowIndex) => {
-        const rowRect = (row as HTMLElement).getBoundingClientRect();
-        return (
-          <div
-            key={`row-control-${rowIndex}`}
-            className="absolute z-50 group"
-            style={{
-              left: `${tableRect.left - editorRect.left - 32}px`,
-              top: `${rowRect.top - editorRect.top}px`,
-              height: `${rowRect.height}px`,
-            }}
-          >
-            <div className="flex flex-col items-center h-full justify-center">
-              <Button
-                onContextMenu={(e) => handleContextMenu(e, "row", rowIndex)}
-                onClick={() => addRowAfter(rowIndex)}
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 rounded-md hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={(e) => handleContextMenu(e, "row", rowIndex)}
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 rounded-md hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity mt-1"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        );
-      })}
+        <Plus className="w-3.5 h-3.5 " />
+      </Button>
+      <Button
+        variant="ghost"
+        title="Cell options"
+        aria-label="Cell options"
+        onClick={openMenu}
+        className=" w-6 h-6"
+        size="icon"
+      >
+        <ChevronDown className="w-3.5 h-3.5" />
+      </Button>
     </div>
   );
 
-  return (
+  const fullMenu = menu.show && (
+    <div
+      ref={menuRef}
+      className="fixed bg-muted border border-border rounded-lg py-2 px-1 w-[320px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+      style={{ left: menu.x, top: menu.y }}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <div className="px-2 py-1 flex items-center justify-between mb-0.5">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          Cell Actions
+        </span>
+        <button
+          onClick={closeMenu}
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+
+      <div className=" w-full flex justify-between items-center">
+        <div>
+          {/* ROW */}
+          <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-0.5">
+            Row
+          </p>
+          <Button
+            onClick={() =>
+              withRow(() => editor.chain().focus().addRowBefore().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <ArrowUp className="w-4 h-4 mr-2" /> Insert Above
+          </Button>
+          <Button
+            onClick={() =>
+              withRow(() => editor.chain().focus().addRowAfter().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <ArrowDown className="w-4 h-4 mr-2" /> Insert Below
+          </Button>
+          <Button
+            onClick={() =>
+              withRow(() => editor.chain().focus().addRowAfter().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <Copy className="w-4 h-4 mr-2" /> Duplicate
+          </Button>
+          {rows.length > 1 && (
+            <Button
+              onClick={() =>
+                withRow(() => editor.chain().focus().deleteRow().run())
+              }
+              variant="SidebarMenuButton_destructive"
+              className="w-full justify-start px-4 py-2 h-auto"
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Delete Row
+            </Button>
+          )}
+        </div>
+        <div>
+          {/* COLUMN */}
+          <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+            Column
+          </p>
+          <Button
+            onClick={() =>
+              withCol(() => editor.chain().focus().addColumnBefore().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <ArrowUp className="w-4 h-4 mr-2 -rotate-90" /> Insert Left
+          </Button>
+          <Button
+            onClick={() =>
+              withCol(() => editor.chain().focus().addColumnAfter().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <ArrowDown className="w-4 h-4 mr-2 -rotate-90" /> Insert Right
+          </Button>
+          <Button
+            onClick={() =>
+              withCol(() => editor.chain().focus().addColumnAfter().run())
+            }
+            variant="SidebarMenuButton"
+            className="w-full justify-start px-4 py-2 h-auto"
+          >
+            <Copy className="w-4 h-4 mr-2" /> Duplicate
+          </Button>
+          {cols.length > 1 && (
+            <Button
+              onClick={() =>
+                withCol(() => editor.chain().focus().deleteColumn().run())
+              }
+              variant="SidebarMenuButton_destructive"
+              className="w-full justify-start px-4 py-2 h-auto"
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Delete Column
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="h-px bg-border my-1.5 mx-2" />
+
+      {/* CELL COLOR */}
+      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+        <Palette className="w-3 h-3" /> Cell Background
+      </p>
+      <div className="px-3 py-2">
+        <div className="grid grid-cols-9 gap-1">
+          {highlightColors.map((color) => (
+            <button
+              key={color.name}
+              title={color.name}
+              className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+              style={{
+                backgroundColor: color.value || "transparent",
+                borderColor: color.value ? "transparent" : "#888",
+              }}
+              onClick={() =>
+                withCell(() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .setCellAttribute("backgroundColor", color.value)
+                    .run(),
+                )
+              }
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-border my-1.5 mx-2" />
+
+      {/* TABLE */}
+      <p className="px-3 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+        Table
+      </p>
+      <Button
+        onClick={() => {
+          editor.chain().focus().deleteTable().run();
+          closeAll();
+        }}
+        variant="SidebarMenuButton_destructive"
+        className="w-full justify-start px-4 py-2 h-auto"
+      >
+        <Trash2 className="w-4 h-4 mr-2" /> Delete Table
+      </Button>
+    </div>
+  );
+
+  return createPortal(
     <>
-      {createPortal(controls, portalContainer)}
-      <ContextMenuComponent />
-    </>
+      {pill}
+      {fullMenu}
+    </>,
+    document.body,
   );
 };
