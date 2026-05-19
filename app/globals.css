@@ -927,7 +927,6 @@ hr {
 .ProseMirror th {
   font-weight: 600;
   text-align: left;
-  background-color: hsl(var(--muted) / 0.5);
 }
 
 .ProseMirror .selectedCell {

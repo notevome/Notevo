@@ -188,9 +188,28 @@ const tableRow = TableRow.configure({
 
 const tableHeader = TableHeader.configure({
   HTMLAttributes: {
-    class: cx(
-      "border border-border bg-muted font-semibold text-left p-3 min-w-[100px]",
-    ),
+    class: cx("border border-border font-semibold text-left p-3 min-w-[100px]"),
+  },
+});
+const TipTapExtensionTableHeader = tableHeader.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      backgroundColor: {
+        default: null,
+        renderHTML: (attributes) => {
+          if (!attributes.backgroundColor) {
+            return {};
+          }
+          return {
+            style: `background-color: ${attributes.backgroundColor}`,
+          };
+        },
+        parseHTML: (element) => {
+          return element.style.backgroundColor.replace(/['"]+/g, "");
+        },
+      },
+    };
   },
 });
 
@@ -237,7 +256,7 @@ export const defaultExtensions = [
   youtube,
   table,
   tableRow,
-  tableHeader,
   TipTapExtensionTableCell,
+  TipTapExtensionTableHeader,
   textAlign,
 ];
