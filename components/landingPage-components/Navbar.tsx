@@ -41,7 +41,7 @@ export default function Navbar() {
         }}
       >
         {inView && (
-          <div className=" fixed top-0 w-full min-h-[4.5rem] bg-gradient-to-b from-background via-background/60 from-10% via-50% to-100% to-transparent -z-50 left-0 pointer-events-none" />
+          <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
         )}
         <div className="flex justify-center items-center gap-4">
           <Link
@@ -80,7 +80,7 @@ export default function Navbar() {
               <Button key={i} variant="SidebarMenuButton" className="px-2">
                 <Link
                   href={link.path}
-                  className="relative text-sm font-medium text-foreground transition-colors group"
+                  className="relative text-sm font-bold text-foreground transition-colors group"
                 >
                   {link.Name}
                   <motion.span
@@ -100,11 +100,7 @@ export default function Navbar() {
             asChild
             className="relative group"
           >
-            <Link
-              prefetch={true}
-              href="/signup"
-              className="text-sm font-medium"
-            >
+            <Link prefetch={true} href="/signup" className="text-sm font-bold">
               Sign In
               <motion.span
                 className="absolute inset-0 rounded-lg bg-primary/10"
@@ -116,11 +112,7 @@ export default function Navbar() {
           </Button>
 
           <Button asChild className="relative group">
-            <Link
-              prefetch={true}
-              href="/signup"
-              className="text-sm font-medium"
-            >
+            <Link prefetch={true} href="/signup" className="text-sm font-bold">
               Get Started
               <motion.span
                 className="absolute inset-0 rounded-lg bg-primary/20"
@@ -192,13 +184,13 @@ export default function Navbar() {
                   asChild
                   className="w-full justify-center"
                 >
-                  <Link href="/signup" className="text-sm font-medium">
+                  <Link href="/signup" className="text-sm font-bold">
                     Sign In
                   </Link>
                 </Button>
 
                 <Button asChild className="w-full justify-center">
-                  <Link href="/signup" className="text-sm font-medium">
+                  <Link href="/signup" className="text-sm font-bold">
                     Get Started
                   </Link>
                 </Button>
