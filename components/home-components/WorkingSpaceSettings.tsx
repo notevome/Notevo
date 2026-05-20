@@ -218,21 +218,21 @@ export default function WorkingSpaceSettings({
         }}
       >
         <Tooltip open={tooltip.open}>
-            <DropdownMenuTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="Trigger"
-                  className={cn("px-1.5 h-8", className)}
-                  {...tooltip.triggerProps}
-                  aria-label="workspace-options"
-                >
-                  <FaEllipsis size={22} />
-                </Button>
-              </TooltipTrigger>
-            </DropdownMenuTrigger>
-            <TooltipContent side="bottom" alignOffset={1} align="start">
-              Rename, Delete
-            </TooltipContent>
+          <DropdownMenuTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                variant="Trigger"
+                className={cn("px-1.5 h-8", className)}
+                {...tooltip.triggerProps}
+                aria-label="workspace-options"
+              >
+                <FaEllipsis size={22} />
+              </Button>
+            </TooltipTrigger>
+          </DropdownMenuTrigger>
+          <TooltipContent side="bottom" alignOffset={1} align="start">
+            Rename, Delete
+          </TooltipContent>
         </Tooltip>
         <DropdownMenuContent
           side="bottom"
@@ -252,29 +252,31 @@ export default function WorkingSpaceSettings({
               ref={inputRef}
             />
           </DropdownMenuGroup>{" "}
-          <Button
-            variant="SidebarMenuButton_destructive"
-            className="w-full h-8 px-2 text-sm"
-            onClick={initiateDelete}
-            disabled={isDeleting}
-            aria-label="delete-workspace"
-          >
-            {isDeleting ? (
-              <>
-                <LoadingAnimation className="text-destructive/10 animate-spin fill-destructive h-3 w-3" />{" "}
-                Deleting...
-              </>
-            ) : (
-              <>
-                <FaRegTrashCan size={14} className=" text-current" /> Delete
-              </>
-            )}
-          </Button>
-          <DropdownMenuSeparator />
-          <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
-            <p>Last updated {updatedAtText}</p>
-            <p>Created {createdAtText}</p>
-          </div>
+          <DropdownMenuGroup>
+            <Button
+              variant="SidebarMenuButton_destructive"
+              className="w-full h-8 px-2 text-sm"
+              onClick={initiateDelete}
+              disabled={isDeleting}
+              aria-label="delete-workspace"
+            >
+              {isDeleting ? (
+                <>
+                  <LoadingAnimation className="text-destructive/10 animate-spin fill-destructive h-3 w-3" />{" "}
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <FaRegTrashCan size={14} className=" text-current" /> Delete
+                </>
+              )}
+            </Button>
+            <DropdownMenuSeparator />
+            <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
+              <p>Last updated {updatedAtText}</p>
+              <p>Created {createdAtText}</p>
+            </div>
+          </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -1430,7 +1430,7 @@ const AppSidebar = React.memo(function AppSidebar() {
         <SidebarContent
           ref={sidebarContentRef}
           onScroll={handleSidebarScroll}
-          className="pb-16 relative text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent group-hover:scrollbar-thumb-border"
+          className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent group-hover:scrollbar-thumb-border"
         >
           <SidebarNavigation
             pathname={pathname}

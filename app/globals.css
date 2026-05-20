@@ -305,6 +305,10 @@ input[type=number] {
   }
 }
 
+.scrollbar-gutter-stable {
+  scrollbar-gutter: stable;
+}
+
 .frosted-area {
   backdrop-filter: blur(10px);
   mask-image: linear-gradient(to top, black 10%, black 5%, black 3%, black 0%, transparent 100%);
