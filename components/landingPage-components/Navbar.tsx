@@ -32,7 +32,7 @@ export default function Navbar() {
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center w-[90%] p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
+          "container mx-auto flex justify-between items-center md:w-[90%] p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
         )}
         transition={{
           ease: "easeInOut",

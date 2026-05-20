@@ -157,18 +157,15 @@ export default function HeroSection() {
         </motion.svg>
       </div>
 
-      <MaxWContainer className="z-[6] relative flex flex-col items-center justify-center space-y-5">
+      <MaxWContainer className="z-[6] relative flex flex-col items-start justify-center space-y-5">
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.45 }}
-          className="relative space-y-3 text-center"
+          className="relative space-y-4 text-start"
         >
-          <Badge className="absolute -top-7 w-fit text-nowrap text-sm left-1/2 -translate-x-1/2 z-50 bg-secondary text-secondary-foreground shadow-xl shadow-black/30">
-            we're working on adding AI coming soon 🤞🏽
-          </Badge>
           <motion.h1
-            className="bg-gradient-to-r from-primary/80 via-primary to-primary/80 bg-clip-text text-transparent leading-[50px] text-[46px] md:text-8xl Desktop:text-[100px] font-bold tracking-tight"
+            className=" pt-3.5 bg-gradient-to-r from-primary/90 via-primary to-primary/90 bg-clip-text text-transparent leading-[50px] md:leading-[95px] md:text-[100px] text-[46px] font-bold tracking-tight"
             initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.1 }}
@@ -176,12 +173,12 @@ export default function HeroSection() {
             <span>Simple, Structured</span>
             <br />
             <motion.span
-              className="relative inline-block px-2"
+              className="relative inline-block "
               initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
               animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
               transition={{ duration: 0.35, ease: "easeOut" }}
             >
-              <span className="bg-gradient-to-r from-primary/80 via-primary to-primary/80 bg-clip-text">
+              <span className=" text-start bg-gradient-to-r from-primary/90 via-primary to-primary/90 bg-clip-text">
                 Note Taking
               </span>
               <motion.svg
@@ -209,7 +206,7 @@ export default function HeroSection() {
             </motion.span>
           </motion.h1>
           <motion.p
-            className="mx-auto max-w-2xl text-lg md:text-2xl text-muted-foreground font-bold"
+            className="text-start px-2.5 max-w-2xl text-lg md:text-2xl text-muted-foreground font-bold"
             initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.2 }}
@@ -219,7 +216,7 @@ export default function HeroSection() {
             and organize them in one clean, modern interface.
           </motion.p>
           <motion.div
-            className="flex gap-4 justify-center items-center"
+            className="flex px-2.5 gap-4 justify-start items-center"
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.3 }}
@@ -257,7 +254,7 @@ export default function HeroSection() {
             </Button>
           </motion.div>
           <motion.div
-            className="flex items-center justify-center gap-8 pb-2"
+            className="flex items-center justify-start gap-8 px-2.5 "
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.42 }}
@@ -265,16 +262,11 @@ export default function HeroSection() {
             <div className="flex -space-x-4">
               {status === "LoadingFirstPage" ? (
                 Array.from({ length: 5 }).map((_, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: 0.6 + index * 0.08 }}
-                  >
+                  <div key={index}>
                     <Avatar className="w-10 h-10">
                       <AvatarFallback className="bg-primary/20 rounded-full animate-pulse" />
                     </Avatar>
-                  </motion.div>
+                  </div>
                 ))
               ) : (
                 <>
@@ -282,12 +274,7 @@ export default function HeroSection() {
                     .filter((user) => user.image && user.name)
                     .slice(0, 5)
                     .map((user, indx) => (
-                      <motion.div
-                        key={user._id}
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.6 + indx * 0.08 }}
-                      >
+                      <div key={user._id}>
                         <Avatar className="w-10 h-10">
                           <AvatarImage
                             src={user.image || "/placeholder.svg"}
@@ -298,7 +285,7 @@ export default function HeroSection() {
                             {user.name ? user.name.charAt(0) : "U"}
                           </AvatarFallback>
                         </Avatar>
-                      </motion.div>
+                      </div>
                     ))}
                   {results.length > 5 && (
                     <motion.div
