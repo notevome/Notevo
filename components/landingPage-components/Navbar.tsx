@@ -80,7 +80,7 @@ export default function Navbar() {
               <Button key={i} variant="SidebarMenuButton" className="px-2">
                 <Link
                   href={link.path}
-                  className="relative text-sm font-bold text-foreground transition-colors group"
+                  className="relative text-sm font-medium text-foreground transition-colors group"
                 >
                   {link.Name}
                   <motion.span
@@ -100,7 +100,11 @@ export default function Navbar() {
             asChild
             className="relative group"
           >
-            <Link prefetch={true} href="/signup" className="text-sm font-bold">
+            <Link
+              prefetch={true}
+              href="/signup"
+              className="text-sm font-medium"
+            >
               Sign In
               <motion.span
                 className="absolute inset-0 rounded-lg bg-primary/10"
@@ -112,7 +116,11 @@ export default function Navbar() {
           </Button>
 
           <Button asChild className="relative group">
-            <Link prefetch={true} href="/signup" className="text-sm font-bold">
+            <Link
+              prefetch={true}
+              href="/signup"
+              className="text-sm font-medium"
+            >
               Get Started
               <motion.span
                 className="absolute inset-0 rounded-lg bg-primary/20"
@@ -184,13 +192,13 @@ export default function Navbar() {
                   asChild
                   className="w-full justify-center"
                 >
-                  <Link href="/signup" className="text-sm font-bold">
+                  <Link href="/signup" className="text-sm font-medium">
                     Sign In
                   </Link>
                 </Button>
 
                 <Button asChild className="w-full justify-center">
-                  <Link href="/signup" className="text-sm font-bold">
+                  <Link href="/signup" className="text-sm font-medium">
                     Get Started
                   </Link>
                 </Button>
