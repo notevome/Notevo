@@ -235,32 +235,32 @@ export default function NoteSettings({
         }}
       >
         <Tooltip open={tooltip.open}>
-            <DropdownMenuTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="Trigger"
-                  className={cn("px-0.5 h-8 mt-0.5", BtnClassName)}
-                  {...tooltip.triggerProps}
-                  aria-label="note-options"
-                >
-                  {IconVariant === "vertical_icon" ? (
-                    <FaEllipsisVertical
-                      size={18}
-                      className="text-muted-foreground"
-                    />
-                  ) : (
-                    <FaEllipsis size={22} className="text-muted-foreground" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-            </DropdownMenuTrigger>
-            <TooltipContent
-              side="bottom"
-              alignOffset={1}
-              align={TooltipContentAlign}
-            >
-              Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
-            </TooltipContent>
+          <DropdownMenuTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                variant="Trigger"
+                className={cn("px-0.5 h-8 mt-0.5", BtnClassName)}
+                {...tooltip.triggerProps}
+                aria-label="note-options"
+              >
+                {IconVariant === "vertical_icon" ? (
+                  <FaEllipsisVertical
+                    size={18}
+                    className="text-muted-foreground"
+                  />
+                ) : (
+                  <FaEllipsis size={22} className="text-muted-foreground" />
+                )}
+              </Button>
+            </TooltipTrigger>
+          </DropdownMenuTrigger>
+          <TooltipContent
+            side="bottom"
+            alignOffset={1}
+            align={TooltipContentAlign}
+          >
+            Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
+          </TooltipContent>
         </Tooltip>
 
         <DropdownMenuContent
@@ -382,7 +382,7 @@ export default function NoteSettings({
             </Button>
 
             <DropdownMenuSeparator />
-            <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+            <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
               <p>Last updated {updatedAtText}</p>
               <p>Created {createdAtText}</p>
             </div>

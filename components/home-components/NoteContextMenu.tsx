@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
@@ -9,7 +8,6 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +18,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
 import { generateSlug } from "@/lib/generateSlug";
-import { cn } from "@/lib/utils";
 import {
   Pin,
   FileText,
@@ -29,6 +37,7 @@ import {
   FileType,
   FileDown,
   FileOutput,
+  Download,
 } from "lucide-react";
 import { FaRegTrashCan } from "react-icons/fa6";
 import MoveNoteDialog from "./MoveNoteDialog";
@@ -41,9 +50,6 @@ interface NoteContextMenuProps {
 }
 
 const NOTE_TITLE_MAX_LENGTH = 55;
-
-const itemClassName =
-  "h-8 w-full justify-start gap-2 px-2 text-sm text-foreground hover:bg-accent hover:text-accent-foreground";
 
 const formatNoteTimestamp = (timestamp?: number) => {
   if (!timestamp) return "";
@@ -65,13 +71,10 @@ export default function NoteContextMenu({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const menuRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [inputValue, setInputValue] = useState(noteTitle);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
 
@@ -107,63 +110,22 @@ export default function NoteContextMenu({
   });
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     setInputValue(noteTitle);
   }, [noteTitle]);
 
   useEffect(() => {
     if (!open) return;
-
     const timeoutId = window.setTimeout(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
-    }, 10);
-
-    const handlePointerDown = (event: MouseEvent) => {
-      if (event.button !== 0) return;
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    document.addEventListener("keydown", handleEscape);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      document.removeEventListener("mousedown", handlePointerDown);
-      document.removeEventListener("keydown", handleEscape);
-    };
+    }, 50);
+    return () => window.clearTimeout(timeoutId);
   }, [open]);
 
   if (!getNote) return <>{children}</>;
 
   const createdAtText = formatNoteTimestamp(getNote.createdAt);
   const updatedAtText = formatNoteTimestamp(getNote.updatedAt);
-
-  const handleContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    const menuWidth = 220;
-    const menuHeight = 360;
-    const maxX = window.innerWidth - menuWidth - 8;
-    const maxY = window.innerHeight - menuHeight - 8;
-
-    setPosition({
-      x: Math.max(8, Math.min(event.clientX, maxX)),
-      y: Math.max(8, Math.min(event.clientY, maxY)),
-    });
-    setOpen(true);
-  };
 
   const handleBlur = async () => {
     const trimmedValue = inputValue.trim();
@@ -172,6 +134,7 @@ export default function NoteContextMenu({
 
     if (!isValid) {
       setInputValue(noteTitle);
+      router.refresh();
       return;
     }
 
@@ -185,10 +148,10 @@ export default function NoteContextMenu({
         const newPath = pathSegments.join("/");
         router.replace(`${newPath}?id=${noteId}`);
       }
+      router.refresh();
     }
 
     setInputValue(trimmedValue);
-    router.refresh();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -225,136 +188,132 @@ export default function NoteContextMenu({
 
   return (
     <>
-      <div onContextMenu={handleContextMenu}>{children}</div>
-
-      {mounted &&
-        open &&
-        createPortal(
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger
+          asChild
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setOpen(true);
+          }}
+        >
+          {/* Wrap children so right-click opens the menu */}
           <div
-            ref={menuRef}
-            className="fixed z-[10000] w-[220px] app-radius-md border border-border bg-popover p-1.5 text-popover-foreground shadow-md"
-            style={{ left: position.x, top: position.y }}
-            onContextMenu={(event) => event.preventDefault()}
-            onMouseDown={(event) => event.stopPropagation()}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              setOpen(true);
+            }}
           >
-            <div className="space-y-4">
-              <div className="relative">
-                <Label>Rename :</Label>
-                <Input
-                  ref={inputRef}
-                  type="text"
-                  value={inputValue}
-                  onChange={(event) => setInputValue(event.target.value)}
-                  onBlur={() => void handleBlur()}
-                  onKeyDown={handleKeyDown}
-                  onMouseDown={(event) => event.stopPropagation()}
-                  placeholder="Rename your note"
-                  className="mt-1 h-8 text-foreground"
-                />
-              </div>
+            {children}
+          </div>
+        </DropdownMenuTrigger>
 
-              <div className="space-y-1 text-muted-foreground">
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
-                  onClick={() => void handleFavoritePin()}
-                  aria-label="pin-note"
-                >
-                  <Pin size={14} className="text-muted-foreground" />
-                  {getNote.favorite ? "Unpin Note" : "Pin Note"}
-                </Button>
+        <DropdownMenuContent
+          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-[10000]"
+          // Prevent closing when clicking inside the rename input
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          <DropdownMenuGroup>
+            <Label className="text-xs text-muted-foreground">Rename</Label>
+            <Input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onBlur={() => void handleBlur()}
+              onKeyDown={handleKeyDown}
+              // Prevent dropdown from closing on click inside input
+              onPointerDown={(e) => e.stopPropagation()}
+              placeholder="Rename your note"
+              className="text-foreground h-7"
+            />
+          </DropdownMenuGroup>
 
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
-                  onClick={() => {
-                    setOpen(false);
-                    setIsMoveDialogOpen(true);
-                  }}
-                  aria-label="move-note"
-                >
-                  <FileOutput size={14} className="text-muted-foreground" />
-                  Move Note
-                </Button>
+          <DropdownMenuGroup>
+            <DropdownMenuItem onClick={() => void handleFavoritePin()}>
+              <Pin size={14} className="mr-2 text-muted-foreground" />
+              {getNote.favorite ? "Unpin Note" : "Pin Note"}
+            </DropdownMenuItem>
 
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
+            <DropdownMenuItem
+              onClick={() => {
+                setOpen(false);
+                setIsMoveDialogOpen(true);
+              }}
+            >
+              <FileOutput size={14} className="mr-2 text-muted-foreground" />
+              Move Note
+            </DropdownMenuItem>
+
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <Download size={14} className="mr-2 text-muted-foreground" />
+                Download
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-[200px]">
+                <DropdownMenuItem
                   onClick={() => {
                     handleDownload("markdown");
                     setOpen(false);
                   }}
-                  aria-label="download-markdown"
                 >
-                  <FileText size={14} className="text-muted-foreground" />
-                  Download Markdown (.md)
-                </Button>
+                  <FileText size={14} className="mr-2 text-muted-foreground" />
+                  Markdown (.md)
+                </DropdownMenuItem>
 
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
+                <DropdownMenuItem
                   onClick={() => {
                     handleDownload("json");
                     setOpen(false);
                   }}
-                  aria-label="download-json"
                 >
-                  <FileJson size={14} className="text-muted-foreground" />
-                  Download JSON
-                </Button>
+                  <FileJson size={14} className="mr-2 text-muted-foreground" />
+                  JSON
+                </DropdownMenuItem>
 
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
+                <DropdownMenuItem
                   onClick={() => {
                     handleDownload("docx");
                     setOpen(false);
                   }}
-                  aria-label="download-docx"
                 >
-                  <FileType size={14} className="text-muted-foreground" />
-                  Download Word (.docx)
-                </Button>
+                  <FileType size={14} className="mr-2 text-muted-foreground" />
+                  Word (.docx)
+                </DropdownMenuItem>
 
-                <Button
-                  variant="ghost"
-                  className={itemClassName}
+                <DropdownMenuItem
                   onClick={() => {
                     handleDownload("pdf");
                     setOpen(false);
                   }}
-                  aria-label="download-pdf"
                 >
-                  <FileDown size={14} className="text-muted-foreground" />
-                  Download PDF
-                </Button>
+                  <FileDown size={14} className="mr-2 text-muted-foreground" />
+                  PDF
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-                <div className="my-1 h-px bg-border" />
+            <DropdownMenuSeparator />
 
-                <Button
-                  variant="SidebarMenuButton_destructive"
-                  className="w-full h-8 px-2 text-sm"
-                  onClick={() => {
-                    setOpen(false);
-                    setIsAlertOpen(true);
-                  }}
-                  aria-label="delete-note"
-                >
-                  <FaRegTrashCan size={14} className="text-muted-foreground" />
-                  Delete
-                </Button>
+            <DropdownMenuItem
+              className=""
+              onClick={() => {
+                setOpen(false);
+                setIsAlertOpen(true);
+              }}
+            >
+              <FaRegTrashCan size={14} className="mr-2 text-muted-foreground" />
+              Delete
+            </DropdownMenuItem>
 
-                <div className="my-1 h-px bg-border" />
+            <DropdownMenuSeparator />
 
-                <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
-                  <p>Last updated {updatedAtText}</p>
-                  <p>Created {createdAtText}</p>
-                </div>
-              </div>
+            <div className="px-2 py-0.5 text-[10px] leading-5 text-nowrap overflow-hidden text-muted-foreground/80">
+              <p>Last updated {updatedAtText}</p>
+              <p>Created {createdAtText}</p>
             </div>
-          </div>,
-          document.body,
-        )}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">

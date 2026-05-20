@@ -193,35 +193,36 @@ export default function TableSettings({
         }}
       >
         <Tooltip open={tooltip.open}>
-            <DropdownMenuTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="Trigger"
-                  className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
-                  {...tooltip.triggerProps}
-                  aria-label="table-options"
-                >
-                  <FaEllipsisVertical size={18} />
-                </Button>
-              </TooltipTrigger>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="bottom"
-              align="end"
-              className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground "
-            >
-              <DropdownMenuGroup className="relative">
-                <Label>Rename :</Label>
-                <Input
-                  type="text"
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  onKeyDown={handleKeyDown}
-                  className="text-foreground h-8/80"
-                  ref={inputRef}
-                />
-              </DropdownMenuGroup>
+          <DropdownMenuTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                variant="Trigger"
+                className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
+                {...tooltip.triggerProps}
+                aria-label="table-options"
+              >
+                <FaEllipsisVertical size={18} />
+              </Button>
+            </TooltipTrigger>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="bottom"
+            align="end"
+            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground "
+          >
+            <DropdownMenuGroup className="relative">
+              <Label>Rename :</Label>
+              <Input
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                className="text-foreground h-8/80"
+                ref={inputRef}
+              />
+            </DropdownMenuGroup>
+            <DropdownMenuGroup>
               <Button
                 variant="SidebarMenuButton_destructive"
                 className="w-full h-8 px-2 text-sm"
@@ -232,14 +233,15 @@ export default function TableSettings({
                 Delete
               </Button>
               <DropdownMenuSeparator />
-              <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+              <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
                 <p>Last updated {updatedAtText}</p>
                 <p>Created {createdAtText}</p>
               </div>
-            </DropdownMenuContent>
-            <TooltipContent side="bottom" alignOffset={1} align="end">
-              Rename , Delete
-            </TooltipContent>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+          <TooltipContent side="bottom" alignOffset={1} align="end">
+            Rename , Delete
+          </TooltipContent>
         </Tooltip>
       </DropdownMenu>
 
