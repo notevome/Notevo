@@ -18,7 +18,9 @@ export default async function HomePage() {
     // Force light mode for the entire landing page regardless of user theme
     <div className="force-light">
       <div className="relative flex flex-col min-h-screen bg-background text-foreground">
-        <Navbar />
+        <div className="absolute inset-0">
+          <Navbar />
+        </div>
         <div className="flex-grow flex-1">
           <HeroSection />
           <HowToStartSection />
