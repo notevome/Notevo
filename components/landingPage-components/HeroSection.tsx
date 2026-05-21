@@ -156,7 +156,7 @@ export default function HeroSection() {
           />
         </motion.svg>
       </div>
-      <MaxWContainer className="z-[6] relative flex flex-col items-start justify-center space-y-5">
+      <MaxWContainer className="z-[6] relative flex flex-col items-start justify-center space-y-3">
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
