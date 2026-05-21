@@ -156,7 +156,6 @@ export default function HeroSection() {
           />
         </motion.svg>
       </div>
-
       <MaxWContainer className="z-[6] relative flex flex-col items-start justify-center space-y-5">
         <motion.div
           initial={{ opacity: 0, y: 20, filter: "blur(12px)" }}
@@ -206,7 +205,7 @@ export default function HeroSection() {
             </motion.span>
           </motion.h1>
           <motion.p
-            className="text-start px-2.5 max-w-2xl text-lg md:text-2xl text-muted-foreground font-bold"
+            className="text-start max-w-2xl text-lg md:text-2xl text-muted-foreground font-bold"
             initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.2 }}
@@ -215,46 +214,15 @@ export default function HeroSection() {
             <br className="hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
             and organize them in one clean, modern interface.
           </motion.p>
+        </motion.div>
+        <motion.div
+          className=" w-full flex gap-4 md:flex-row flex-col-reverse md:justify-between justify-center md:items-center items-start"
+          initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.45, delay: 0.3 }}
+        >
           <motion.div
-            className="flex px-2.5 gap-4 justify-start items-center"
-            initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.45, delay: 0.3 }}
-          >
-            <Button
-              asChild
-              size="lg"
-              className="relative group overflow-hidden"
-            >
-              <Link prefetch={true} href="/signup">
-                <span className="relative z-10">Get Started for Free</span>
-                <motion.div
-                  className="absolute inset-0 bg-gradient-to-r from-primary to-primary/80"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: 0 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              className="relative group"
-            >
-              <Link prefetch={true} href="#features">
-                <span className="relative z-10">Learn More</span>
-                <motion.span
-                  className="absolute inset-0 rounded-lg bg-primary/10"
-                  initial={{ scale: 0 }}
-                  whileHover={{ scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
-              </Link>
-            </Button>
-          </motion.div>
-          <motion.div
-            className="flex items-center justify-start gap-8 px-2.5 "
+            className=" flex-1 flex items-center justify-start gap-8 px-1"
             initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.42 }}
@@ -303,7 +271,7 @@ export default function HeroSection() {
                 </>
               )}
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm font-semibold text-muted-foreground">
               Join{" "}
               <span className="font-semibold text-foreground">
                 {!results ? (
@@ -315,6 +283,27 @@ export default function HeroSection() {
               Active users
             </p>
           </motion.div>
+          <div className="flex gap-4 justify-start items-center">
+            <Button
+              asChild
+              size="lg"
+              className="relative group overflow-hidden"
+            >
+              <Link prefetch={true} href="/signup">
+                Get Started for Free
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              asChild
+              className="relative group h-11"
+            >
+              <Link prefetch={true} href="#features">
+                Learn More
+              </Link>
+            </Button>
+          </div>
         </motion.div>
 
         <motion.div
@@ -323,25 +312,6 @@ export default function HeroSection() {
           transition={{ duration: 0.55, delay: 0.38 }}
           className="relative w-full p-1 Desktop:p-2 rounded-tl-lg bg-primary/50 backdrop-blur-lg"
         >
-          <p className="absolute -top-9 right-12 font-extrabold text-primary/80 leading-relaxed">
-            yep its that fast
-          </p>
-          <svg
-            width="128"
-            height="90"
-            viewBox="0 0 228 90"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="absolute -top-8 right-12"
-          >
-            <path
-              d="M222.722 8.85C222.722 8.01455 217.71 6.74873 179.621 5.48291C146.561 4.38419 85.5579 5.05253 54.3491 8.60316C23.1402 12.1538 23.5579 19.2551 24.3997 28.3437C26.2496 48.3172 27.7858 62.8247 28.2035 67.2614C28.9055 74.7172 37.4693 46.8627 40.425 44.2994C46.0726 39.4016 37.52 64.4829 31.001 76.0652C27.8531 81.658 23.2288 85.5589 19.6149 84.1601C13.0769 75.6601 9.64655 64.5842 8.38705 59.3057C7.54528 57.7867 6.29212 58.6221 5.00098 59.4829"
-              stroke="#644A40"
-              strokeOpacity="0.7"
-              strokeWidth="10"
-              strokeLinecap="round"
-            />
-          </svg>
           <HeroVideo
             src="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.mp4"
             poster="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.jpg"
