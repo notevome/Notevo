@@ -32,7 +32,7 @@ export default function Navbar() {
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center md:w-[90%] p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
+          "container mx-auto flex justify-between items-center  p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
         )}
         transition={{
           ease: "easeInOut",
@@ -43,94 +43,51 @@ export default function Navbar() {
         {inView && (
           <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
         )}
-        <div className="flex justify-center items-center gap-4">
-          <Link
-            href="/"
-            onClick={() => {
-              if (window.location.pathname === "/") {
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }
-            }}
-            className="flex items-center gap-2 group"
+        <Link
+          href="/"
+          onClick={() => {
+            if (window.location.pathname === "/") {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+          }}
+          className="flex items-center gap-2 group"
+        >
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative"
           >
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              className="relative"
-            >
-              <Image
-                src={NotevoLogo}
-                alt="Notevo Logo"
-                className="Desktop:hover:opacity-80 transition-opacity"
-                priority
-                width={40}
-                height={40}
-              />
-              <motion.div
-                className="absolute inset-0 rounded-full bg-primary/20"
-                initial={{ scale: 0 }}
-                whileHover={{ scale: 1.5, opacity: 0 }}
-                transition={{ duration: 0.5 }}
-              />
-            </motion.div>
-          </Link>
-
+            <Image
+              src={NotevoLogo}
+              alt="Notevo Logo"
+              className="Desktop:hover:opacity-80 transition-opacity"
+              priority
+              width={40}
+              height={40}
+            />
+          </motion.div>
+        </Link>
+        {/* 
+        <div className="flex justify-center items-center gap-4">
           <nav className="hidden lg:flex items-center gap-3">
             {NavLinks.map((link, i) => (
-              <Button key={i} variant="SidebarMenuButton" className="px-2">
+              <Button key={i} variant="ghost" className="px-2 h-8">
                 <Link
                   href={link.path}
                   className="relative text-sm font-medium text-foreground transition-colors group"
                 >
                   {link.Name}
-                  <motion.span
-                    className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary"
-                    whileHover={{ width: "100%" }}
-                    transition={{ duration: 0.3 }}
-                  />
                 </Link>
               </Button>
             ))}
           </nav>
-        </div>
+        </div> */}
 
-        <div className="hidden lg:flex items-center gap-4">
-          <Button
-            variant="SidebarMenuButton"
-            asChild
-            className="relative group"
-          >
-            <Link
-              prefetch={true}
-              href="/signup"
-              className="text-sm font-medium"
-            >
-              Sign In
-              <motion.span
-                className="absolute inset-0 rounded-lg bg-primary/10"
-                initial={{ scale: 0 }}
-                whileHover={{ scale: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            </Link>
-          </Button>
-
-          <Button asChild className="relative group">
-            <Link
-              prefetch={true}
-              href="/signup"
-              className="text-sm font-medium"
-            >
-              Get Started
-              <motion.span
-                className="absolute inset-0 rounded-lg bg-primary/20"
-                initial={{ scale: 0 }}
-                whileHover={{ scale: 1 }}
-                transition={{ duration: 0.3 }}
-              />
-            </Link>
-          </Button>
-        </div>
+        <Button asChild className="hidden lg:block relative group h-9">
+          <Link prefetch={true} href="/signup" className="text-sm font-medium">
+            Login Or Create An Account
+          </Link>
+        </Button>
 
         <button
           className="lg:hidden p-2 hover:bg-border app-radius-lg transition-colors relative group"
