@@ -53,6 +53,7 @@ import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import MoveNoteDialog from "./MoveNoteDialog";
+import { formatNoteTimestamp } from "@/lib/utils";
 
 interface NoteSettingsProps {
   noteId: Id<"notes">;
@@ -66,18 +67,6 @@ interface NoteSettingsProps {
 }
 
 const NOTE_TITLE_MAX_LENGTH = 55;
-
-const formatNoteTimestamp = (timestamp?: number) => {
-  if (!timestamp) return "";
-
-  return new Date(timestamp).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-};
 
 export default function NoteSettings({
   noteId,

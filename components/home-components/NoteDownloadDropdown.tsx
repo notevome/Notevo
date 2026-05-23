@@ -32,7 +32,7 @@ export default function NoteDownloadDropdown({
   className,
 }: NoteDownloadDropdownProps) {
   const { handleDownload } = useNoteDownload({ noteBody, noteTitle });
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(100);
 
   const formats: {
     label: string;
@@ -69,7 +69,7 @@ export default function NoteDownloadDropdown({
             <Button
               variant="ghost"
               size="icon"
-              className={`w-8 h-8 mt-0.5 ${className ?? ""}`}
+              className={`w-8 h-8 pt-0.5 ${className ?? ""}`}
               {...tooltip.triggerProps}
             >
               <Download className="h-[1.2rem] w-[1.2rem]" />

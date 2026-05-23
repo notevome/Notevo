@@ -53,3 +53,15 @@ export const formatTableName = (TableName: string) => {
   const max = getMaxTableNameLength();
   return TableName.length > max ? `${TableName.slice(0, max)}...` : TableName;
 };
+
+export const formatNoteTimestamp = (timestamp?: number) => {
+  if (!timestamp) return "";
+
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
