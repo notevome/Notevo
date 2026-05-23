@@ -50,6 +50,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import PdfSettings from "@/components/home-components/PdfSettings";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
@@ -447,7 +448,7 @@ function PageNavigator() {
         }}
         inputMode="numeric"
         aria-label="current-page-input"
-        className="h-7 w-7 p-0 mx-1 mb-0.5 bg-transparent border-0 text-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="h-7 w-7 p-0 mx-1 mb-0 bg-transparent border-0 text-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
       <span className=" mr-3"> of {pages || 1}</span>
       <Button
@@ -468,9 +469,13 @@ function PageNavigator() {
 function PdfViewerContent({
   fileUrl,
   title,
+  pdfId,
+  pdftitle,
 }: {
   fileUrl: string;
   title: string;
+  pdfId: Id<"pdfs">;
+  pdftitle: string;
 }) {
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
@@ -486,7 +491,7 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className="pointer-events-none absolute inset-x-0 top-10 z-50">
+        <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
           <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
@@ -535,7 +540,7 @@ function PdfViewerContent({
                     {panelMode === "thumbnails" ? (
                       <X size={16} />
                     ) : (
-                      <span className="text-[11px] font-semibold">Pg</span>
+                      <span className="text-[11px] pb-1 font-semibold">Pg</span>
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -548,6 +553,13 @@ function PdfViewerContent({
               <ZoomDropdown />
             </div>
             <PageNavigator />
+            <PdfSettings
+              pdfId={pdfId}
+              pdfTitle={pdftitle}
+              iconVariant="horizontal_icon"
+              dropdownMenuContentAlign="end"
+              tooltipContentAlign="end"
+            />
           </div>
         </div>
 
@@ -567,11 +579,8 @@ function PdfViewerContent({
             <ThumbnailsPanel onClose={() => setPanelMode(null)} />
           </div>
         ) : null}
+
         <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
-          <div
-            className=" absolute top-0 left-0 w-full h-[4rem] bg-gradient-to-b from-background from-0% via-background/75 via-45% to-100% to-transparent z-[900000] pointer-events-none"
-            aria-hidden
-          />
           <Pages className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <Page>
               <CanvasLayer />
@@ -588,9 +597,13 @@ function PdfViewerContent({
 function PdfViewerShell({
   fileUrl,
   title,
+  pdfId,
+  pdftitle,
 }: {
   fileUrl: string;
   title: string;
+  pdfId: Id<"pdfs">;
+  pdftitle: string;
 }) {
   return (
     <Root
@@ -607,7 +620,12 @@ function PdfViewerShell({
         maxZoom: 10,
       }}
     >
-      <PdfViewerContent fileUrl={fileUrl} title={title} />
+      <PdfViewerContent
+        fileUrl={fileUrl}
+        title={title}
+        pdfId={pdfId}
+        pdftitle={pdftitle}
+      />
     </Root>
   );
 }
@@ -701,6 +719,8 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
         <PdfViewerShell
           fileUrl={pdf.fileUrl}
           title={pdf.title || "Untitled PDF"}
+          pdfId={pdf._id}
+          pdftitle={pdf.title || "Untitled PDF"}
         />
       ) : (
         <div className="flex-1 bg-card animate-pulse" />
