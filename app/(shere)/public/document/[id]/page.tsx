@@ -11,22 +11,31 @@ import NoteLoadingSkeletonUI from "@/components/ui/NoteLoadingSkeletonUI";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 import Link from "next/link";
-import { Moon, Sun, Slash } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  Slash,
+  ChevronsLeftRightEllipsis,
+  ChevronsRightLeft,
+} from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { parseSlug } from "@/lib/parseSlug";
-import { formatUserNoteTitle } from "@/lib/utils";
+import { cn, formatNoteTimestamp, formatUserNoteTitle } from "@/lib/utils";
 import { ReadOnlyWarning } from "@/components/readOnly-warning";
 import NoteDownloadDropdown from "@/components/home-components/NoteDownloadDropdown";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { useNoteWidth } from "@/hooks/useNoteWidth";
 
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
-  const themeTooltip = useHoverTooltip(200);
+  const themeTooltip = useHoverTooltip(100);
+  const noteWidthTooltip = useHoverTooltip(100);
+  const { noteWidth, toggleWidth } = useNoteWidth();
 
   const cycleTheme = () => {
     if (resolvedTheme === "light") setTheme("dark");
@@ -115,30 +124,59 @@ export default function PublicNotePage() {
       <header className=" sticky top-0 left-0 w-full z-[10000]">
         <div className=" px-4 p-3 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
           <ReadOnlyWarning />
-          <p className="text-sm text-foreground w-full px-1.5 py-1.5 h-8">
+          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-2.5 h-8">
             {PublicNoteTitle}
+            <span className="px-1 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground">
+              Created {formatNoteTimestamp(getNote.createdAt)}
+            </span>
           </p>
           <div className="flex justify-end items-center gap-1 w-full">
+            <Tooltip open={noteWidthTooltip.open}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-8 h-8 pt-0.5"
+                  size="icon"
+                  onClick={toggleWidth}
+                  aria-label="toggle-note-width"
+                  {...noteWidthTooltip.triggerProps}
+                >
+                  {noteWidth === "false" ? (
+                    <>
+                      <ChevronsLeftRightEllipsis className="h-[1.4rem] w-[1.4rem]" />
+                    </>
+                  ) : (
+                    <>
+                      <ChevronsRightLeft className="h-[1.4rem] w-[1.4rem]" />
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent align="end" side="bottom">
+                Width toggle
+              </TooltipContent>
+            </Tooltip>
+
             <NoteDownloadDropdown
               noteBody={JSON.stringify(content)}
               noteTitle={getNote.title ?? "note"}
             />
             <Tooltip open={themeTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-8 h-8 mt-0.5"
-                    size="icon"
-                    onClick={cycleTheme}
-                    {...themeTooltip.triggerProps}
-                  >
-                    {getThemeIcon()}
-                    <span className="sr-only">Toggle theme</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent align="end" side="bottom">
-                  Toggle theme
-                </TooltipContent>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-8 h-8 pt-0.5"
+                  size="icon"
+                  onClick={cycleTheme}
+                  {...themeTooltip.triggerProps}
+                >
+                  {getThemeIcon()}
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent align="end" side="bottom">
+                Toggle theme
+              </TooltipContent>
             </Tooltip>
             <Button variant="secondary" className="text-sm px-1.5 py-1.5 h-8">
               <Link
@@ -153,7 +191,12 @@ export default function PublicNotePage() {
         </div>
       </header>
 
-      <MaxWContainer className="Desktop:container Desktop:mx-auto flex-1">
+      <MaxWContainer
+        className={cn(
+          noteWidth === "false" ? " Desktop:w-[900px] w-full px-4" : "px-6",
+          " pb-28 mx-auto",
+        )}
+      >
         <TailwindAdvancedEditor
           editorBubblePlacement={true}
           initialContent={parsedContent}
