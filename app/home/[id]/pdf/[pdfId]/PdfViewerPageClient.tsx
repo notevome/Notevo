@@ -486,7 +486,7 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
+        <div className="pointer-events-none absolute inset-x-0 top-10 z-50">
           <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
@@ -568,6 +568,10 @@ function PdfViewerContent({
           </div>
         ) : null}
         <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
+          <div
+            className=" absolute top-0 left-0 w-full h-[4rem] bg-gradient-to-b from-background from-0% via-background/75 via-45% to-100% to-transparent z-[900000] pointer-events-none"
+            aria-hidden
+          />
           <Pages className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
             <Page>
               <CanvasLayer />
@@ -592,7 +596,7 @@ function PdfViewerShell({
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className="pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch"
+      className="rounded-tl-lg pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch"
       loader={
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...
