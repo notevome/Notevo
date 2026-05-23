@@ -126,7 +126,7 @@ export default function PublicNotePage() {
           <ReadOnlyWarning />
           <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-2.5 h-8">
             {PublicNoteTitle}
-            <span className="px-1 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground">
+            <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground">
               Created {formatNoteTimestamp(getNote.createdAt)}
             </span>
           </p>
@@ -153,7 +153,7 @@ export default function PublicNotePage() {
                 </Button>
               </TooltipTrigger>
               <TooltipContent align="end" side="bottom">
-                Width toggle
+                {noteWidth === "false" ? <>Full width</> : <>Max width</>}
               </TooltipContent>
             </Tooltip>
 
