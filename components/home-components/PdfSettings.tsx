@@ -51,6 +51,11 @@ interface PdfSettingsProps {
   pdfTitle?: string;
   iconVariant: "vertical_icon" | "horizontal_icon";
   btnClassName?: string;
+  btnVariant?:
+    | "outline"
+    | "SidebarMenuButton"
+    | "SidebarMenuButton_destructive"
+    | "Trigger";
   dropdownMenuContentAlign: "end" | "start";
   tooltipContentAlign: "end" | "start";
   onDelete?: (pdfId: Id<"pdfs">) => void;
@@ -75,6 +80,7 @@ export default function PdfSettings({
   pdfTitle,
   iconVariant,
   btnClassName,
+  btnVariant,
   dropdownMenuContentAlign,
   tooltipContentAlign,
   onDelete,
@@ -174,8 +180,8 @@ export default function PdfSettings({
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
-                variant="outline"
-                className="h-8 w-8 "
+                variant={btnVariant || "Trigger"}
+                className={cn("px-0.5 h-8 mt-0.5", btnClassName)}
                 size="icon"
                 {...tooltip.triggerProps}
                 aria-label="upload-options"

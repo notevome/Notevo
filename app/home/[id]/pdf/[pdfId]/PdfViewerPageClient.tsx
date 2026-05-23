@@ -417,45 +417,48 @@ function PageNavigator() {
   }, [currentPage, pageNumber]);
 
   return (
-    <div className="flex items-center gap-0 text-sm text-muted-foreground">
+    <div className=" flex items-center gap-0 text-sm text-muted-foreground ">
       <Button
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 "
+        className="h-8 w-8 border-border"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <Input
-        type="number"
-        value={pageNumber}
-        onChange={(e) => setPageNumber(e.target.value)}
-        onBlur={(e) => {
-          const value = Number(e.target.value);
-          if (value >= 1 && value <= pages && currentPage !== value) {
-            jumpToPage(value, { behavior: "auto" });
-          } else {
-            setPageNumber(currentPage);
-          }
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.currentTarget.blur();
-          }
-        }}
-        inputMode="numeric"
-        aria-label="current-page-input"
-        className="h-7 w-7 p-0 mx-1 mb-0 bg-transparent border-0 text-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
-      />
-      <span className=" mr-3"> of {pages || 1}</span>
+      <div className="flex justify-center items-center bg-background border-t border-b border-border h-8 ">
+        <Input
+          type="number"
+          value={pageNumber}
+          onChange={(e) => setPageNumber(e.target.value)}
+          onBlur={(e) => {
+            const value = Number(e.target.value);
+            if (value >= 1 && value <= pages && currentPage !== value) {
+              jumpToPage(value, { behavior: "auto" });
+            } else {
+              setPageNumber(currentPage);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+          }}
+          inputMode="numeric"
+          aria-label="current-page-input"
+          className="h-7 w-7 p-0 mx-1 mb-0 bg-transparent border-0 text-center text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        />
+        <span className=" mr-3"> of {pages || 1}</span>
+      </div>
+
       <Button
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 border-border !rounded-none"
         onClick={handleNextPage}
         disabled={currentPage >= pages}
         aria-label="next-page"
@@ -540,7 +543,7 @@ function PdfViewerContent({
                     {panelMode === "thumbnails" ? (
                       <X size={16} />
                     ) : (
-                      <span className="text-[11px] pb-1 font-semibold">Pg</span>
+                      <span className="text-[11px] font-semibold">Pg</span>
                     )}
                   </Button>
                 </TooltipTrigger>
@@ -559,6 +562,8 @@ function PdfViewerContent({
               iconVariant="horizontal_icon"
               dropdownMenuContentAlign="end"
               tooltipContentAlign="end"
+              btnVariant="outline"
+              btnClassName="h-8 w-8 mt-0 px-1 border-border"
             />
           </div>
         </div>
