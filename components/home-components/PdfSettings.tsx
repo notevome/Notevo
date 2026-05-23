@@ -171,32 +171,33 @@ export default function PdfSettings({
         }}
       >
         <Tooltip open={tooltip.open}>
-            <DropdownMenuTrigger asChild>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="Trigger"
-                  className={cn("px-0.5 h-8 mt-0.5", btnClassName)}
-                  {...tooltip.triggerProps}
-                  aria-label="upload-options"
-                >
-                  {iconVariant === "vertical_icon" ? (
-                    <FaEllipsisVertical
-                      size={18}
-                      className="text-muted-foreground"
-                    />
-                  ) : (
-                    <FaEllipsis size={22} className="text-muted-foreground" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-            </DropdownMenuTrigger>
-            <TooltipContent
-              side="bottom"
-              alignOffset={1}
-              align={tooltipContentAlign}
-            >
-              Rename, Pin, Move, Download, Delete
-            </TooltipContent>
+          <DropdownMenuTrigger asChild>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-8 w-8 "
+                size="icon"
+                {...tooltip.triggerProps}
+                aria-label="upload-options"
+              >
+                {iconVariant === "vertical_icon" ? (
+                  <FaEllipsisVertical
+                    size={18}
+                    className="text-muted-foreground"
+                  />
+                ) : (
+                  <FaEllipsis size={22} className="text-muted-foreground" />
+                )}
+              </Button>
+            </TooltipTrigger>
+          </DropdownMenuTrigger>
+          <TooltipContent
+            side="bottom"
+            alignOffset={1}
+            align={tooltipContentAlign}
+          >
+            Rename, Pin, Move, Download, Delete
+          </TooltipContent>
         </Tooltip>
 
         <DropdownMenuContent

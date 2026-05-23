@@ -98,7 +98,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
               {(!open || isMobile) && <SidebarTrigger />}
-              <BreadcrumbWithCustomSeparator />
+              {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
             </div>
             <div>
               {!isPdfRoute && noteid && noteTitle && (
@@ -111,17 +111,6 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
                     IconVariant="horizontal_icon"
                     DropdownMenuContentAlign="end"
                     TooltipContentAlign="end"
-                  />
-                </span>
-              )}
-              {isPdfRoute && currentPdf && (
-                <span className="flex justify-between items-center gap-2">
-                  <PdfSettings
-                    pdfId={currentPdf._id}
-                    pdfTitle={currentPdf.title}
-                    iconVariant="horizontal_icon"
-                    dropdownMenuContentAlign="end"
-                    tooltipContentAlign="end"
                   />
                 </span>
               )}
