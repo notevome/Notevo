@@ -16,7 +16,7 @@ export default function Navbar() {
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 90) {
+    if (latest > 150) {
       setInView(true);
     } else {
       setInView(false);
