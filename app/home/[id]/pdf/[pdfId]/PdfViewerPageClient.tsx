@@ -422,7 +422,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border"
+        className="h-8 w-8 border-border !rounded-none"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
@@ -495,7 +495,7 @@ function PdfViewerContent({
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
         <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
-          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-3 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
+          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
                 <TooltipTrigger asChild>
@@ -563,7 +563,7 @@ function PdfViewerContent({
               dropdownMenuContentAlign="end"
               tooltipContentAlign="end"
               btnVariant="outline"
-              btnClassName="h-8 w-8 mt-0 px-1 border-border"
+              btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
             />
           </div>
         </div>
