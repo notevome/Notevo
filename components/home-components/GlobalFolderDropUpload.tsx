@@ -353,19 +353,18 @@ export default function GlobalFolderDropUpload() {
   return (
     <>
       {isDragActive ? (
-        <div className="pointer-events-none fixed inset-0 z-[100000] flex items-center justify-center bg-background/60 backdrop-blur-sm">
-          <div className="app-radius-lg border-4 border-dashed border-border bg-card px-4 pb-3 pt-3.5 text-center shadow-2xl">
-            <div className=" mb-3 flex items-center justify-start gap-2 ">
-              <FolderOpen size={20} className=" text-muted-foreground mt-0.5" />
-              <h3 className="text-xl font-semibold text-foreground">
+        <div className="pointer-events-none fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm">
+          <div className=" w-full h-full app-radius-lg border-4 border-dashed border-border bg-card px-4 pb-3 pt-3.5 text-center shadow-2xl">
+            <div className=" mb-3 w-full h-full flex flex-col items-center justify-center gap-2 ">
+              <FolderOpen size={32} className=" text-muted-foreground mt-0.5" />
+              <h3 className="text-xl  font-semibold text-foreground">
                 Drop folder to upload PDFs
               </h3>
+              <p className="mt-2 max-w-72 text-sm text-center text-muted-foreground">
+                We&apos;ll use the "{DEFAULT_TABLE_NAME}" table if it already
+                exists, or create it and add the PDFs there.
+              </p>
             </div>
-
-            <p className="mt-2 max-w-sm text-sm text-start text-muted-foreground">
-              We&apos;ll use the "{DEFAULT_TABLE_NAME}" table if it already
-              exists, or create it and add the PDFs there.
-            </p>
           </div>
         </div>
       ) : null}
