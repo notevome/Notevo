@@ -227,7 +227,7 @@ function SearchPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto p-2 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         {!query.trim() ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <FileSearch className="h-8 w-8 text-muted-foreground" />
@@ -299,7 +299,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div
         ref={panelRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent"
+        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
       >
         <div className="flex flex-col items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => {
@@ -569,7 +569,7 @@ function PdfViewerContent({
         </div>
 
         {panelMode === "search" ? (
-          <div className="absolute left-0 top-0 z-50 h-full w-[290px] max-w-[calc(100%-1.5rem)] overflow-hidden border border-border border-l-0">
+          <div className="absolute left-0 top-0 z-50 h-full w-[290px] max-w-[calc(100%-1.5rem)] overflow-hidden border border-border border-l-0 border-t-0">
             <SearchPanel
               query={query}
               setQuery={setQuery}
@@ -580,7 +580,7 @@ function PdfViewerContent({
         ) : null}
 
         {panelMode === "thumbnails" ? (
-          <div className="absolute left-0 top-0 z-50 h-full overflow-hidden border border-border border-l-0">
+          <div className="absolute left-0 top-0 z-50 h-full overflow-hidden border border-border border-l-0 border-t-0">
             <ThumbnailsPanel onClose={() => setPanelMode(null)} />
           </div>
         ) : null}
