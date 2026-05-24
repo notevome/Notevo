@@ -201,6 +201,7 @@ export default function PdfSettings({
             side="bottom"
             alignOffset={1}
             align={tooltipContentAlign}
+            className=" text-xs px-1.5 py-1"
           >
             Rename, Pin, Move, Download, Delete
           </TooltipContent>
@@ -303,7 +304,7 @@ export default function PdfSettings({
             </Button>
 
             <DropdownMenuSeparator />
-            <div className="px-2 pt-1 text-[10px] leading-4 text-muted-foreground/80">
+            <div className="px-2 pt-1 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
               <p>Last updated {updatedAtText}</p>
               <p>Created {createdAtText}</p>
             </div>
