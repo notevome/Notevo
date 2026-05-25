@@ -97,7 +97,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         <div className="z-[60000] absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
           <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
-              {(!open || isMobile) && <SidebarTrigger />}
+              {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
               {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
             </div>
             <div>

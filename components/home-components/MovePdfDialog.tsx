@@ -180,7 +180,7 @@ export default function MovePdfDialog({
         title: "Upload moved successfully",
         description: "Jump straight to the file in its new location.",
         action: (
-          <Button variant="secondary" className="px-4" size="sm" asChild>
+          <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
               href={`/home/${result.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`}
               className="flex justify-center items-center gap-2"
