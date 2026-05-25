@@ -51,6 +51,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
@@ -480,6 +482,7 @@ function PdfViewerContent({
   pdfId: Id<"pdfs">;
   pdftitle: string;
 }) {
+  const { open, isMobile } = useSidebar();
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const searchTooltip = useHoverTooltip(100);
@@ -494,8 +497,10 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className="pointer-events-none absolute inset-x-0 top-1 z-50">
-          <div className="pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl">
+        <div className=" pointer-events-none absolute inset-x-0 top-1 z-50">
+          <div
+            className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 ${open && !isMobile ? ` app-radius-lg` : null} border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
+          >
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
                 <TooltipTrigger asChild>
@@ -610,11 +615,13 @@ function PdfViewerShell({
   pdfId: Id<"pdfs">;
   pdftitle: string;
 }) {
+  const { open, isMobile } = useSidebar();
+
   return (
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className="rounded-tl-lg pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch"
+      className={`${open && !isMobile ? `app-radius-lg` : null} pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch`}
       loader={
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...

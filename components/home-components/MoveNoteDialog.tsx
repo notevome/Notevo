@@ -189,10 +189,10 @@ export default function MoveNoteDialog({
         title: "Note moved successfully ",
         description: "hey go and take a look at your stuff !!",
         action: (
-          <Button variant="secondary" className="px-4 " size="sm">
+          <Button variant="secondary" className="px-3 h-8" size="sm">
             <IntentPrefetchLink
               href={`/home/${result.workingSpaceId}/${result.slug}?id=${note._id}`}
-              className="flex justify-center items-center gap-2"
+              className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />
               Checkout
