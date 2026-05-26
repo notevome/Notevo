@@ -1,12 +1,12 @@
 "use client";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import Section from "@/components/ui/Section";
 import { useEffect } from "react";
 import imgsrc from "@/public/Notevo-logo.svg";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import { ShieldAlert } from "lucide-react";
 
 export default function Error({
   error,
@@ -25,25 +25,24 @@ export default function Error({
       : "An unexpected error occurred. Please try again.";
 
   return (
-    <section className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-background via-background/95 to-background/90 p-6 overflow-hidden">
+    <section className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-background via-muted to-background p-6 overflow-hidden">
       <MaxWContainer className="flex flex-col items-center justify-center gap-3 *:text-center relative px-4 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden bg-card/70 backdrop-blur-md border-border shadow-lg hover:shadow-xl transition-all duration-300">
-          <CardContent>
-            <div className="p-6 md:p-8">
-              <div className="flex flex-col justify-center">
-                <div className="flex flex-col items-center justify-center gap-4 text-center">
-                  <h2 className="text-2xl sm:text-4xl lg:text-5xl bg-gradient-to-b from-foreground to-transparent bg-clip-text text-transparent font-semibold">
-                    Something went wrong!
-                  </h2>
-                  <p className="text-muted-foreground text-sm sm:text-md lg:text-md font-medium lg:font-medium px-2">
-                    {errorMessage}
-                  </p>
-                  <Button className="w-full sm:w-auto mt-4 h-9">
-                    <Link href="/">Try again</Link>
-                  </Button>
-                </div>
+        <Card className="overflow-hidden bg-card/90 backdrop-blur-md border-border ">
+          <CardContent className="relative pt-4 pb-16">
+            <div className="flex flex-col justify-center">
+              <div className="  flex flex-col items-center justify-center gap-4 text-center">
+                <h2 className="text-3xl md:text-6xl bg-gradient-to-b from-foreground to-transparent bg-clip-text text-transparent font-semibold">
+                  Something went wrong!
+                </h2>
               </div>
             </div>
+            <Button className=" absolute bottom-0 right-0 w-auto mt-4 h-9">
+              <Link href="/">Try again</Link>
+            </Button>
+            <p className=" absolute bottom-0 left-0 flex justify-center items-center gap-1 text-muted-foreground text-xs md:text-sm font-medium lg:font-medium px-2 py-1">
+              <ShieldAlert size={14} className="text-muted-foreground mt-px" />
+              {errorMessage}
+            </p>
           </CardContent>
         </Card>
         <div className="w-full flex justify-center items-center py-2">
