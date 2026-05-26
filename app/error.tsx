@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShieldAlert } from "lucide-react";
+import { formatUserNoteTitle } from "@/lib/utils";
 
 export default function Error({
   error,
@@ -34,27 +35,26 @@ export default function Error({
                 <h2 className="text-3xl md:text-6xl bg-gradient-to-b from-foreground to-transparent bg-clip-text text-transparent font-semibold">
                   Something went wrong!
                 </h2>
+                <p className="  text-muted-foreground text-xs md:text-sm font-medium lg:font-medium px-2 py-1">
+                  {errorMessage}
+                </p>
               </div>
             </div>
             <Button className=" absolute bottom-0 right-0 w-auto mt-4 h-9">
               <Link href="/">Try again</Link>
             </Button>
-            <p className=" absolute bottom-0 left-0 flex justify-center items-center gap-1 text-muted-foreground text-xs md:text-sm font-medium lg:font-medium px-2 py-1">
-              <ShieldAlert size={14} className="text-muted-foreground mt-px" />
-              {errorMessage}
-            </p>
           </CardContent>
         </Card>
-        <div className="w-full flex justify-center items-center py-2">
+        <div className=" w-full flex justify-start items-center ">
           <Image
             src={imgsrc}
             alt="Notevo Logo"
             priority
-            width={20}
-            height={20}
+            width={16}
+            height={16}
           />
-          <p className="text-muted-foreground text-xs font-medium px-2">
-            {` ! Hi this is Notevo team we're sorry | Hit The Try Again Button `}
+          <p className="text-muted-foreground text-xs font-medium px-2 ">
+            {`! Hi this is Notevo team we're sorry | hit the try again button `}
           </p>
         </div>
       </MaxWContainer>
