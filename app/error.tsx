@@ -26,16 +26,16 @@ export default function Error({
       : "An unexpected error occurred. Please try again.";
 
   return (
-    <section className="relative flex min-h-svh flex-col items-center justify-center bg-gradient-to-br from-background via-muted to-background p-6 overflow-hidden">
+    <section className="relative flex min-h-svh flex-col items-center justify-center bg-background p-6 overflow-hidden">
       <MaxWContainer className="flex flex-col items-center justify-center gap-3 *:text-center relative px-4 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden bg-card/90 backdrop-blur-md border-border ">
+        <Card className="overflow-hidden bg-card border-border ">
           <CardContent className="relative pt-4 pb-16">
             <div className="flex flex-col justify-center">
               <div className="  flex flex-col items-center justify-center gap-4 text-center">
-                <h2 className="text-3xl md:text-6xl bg-gradient-to-b from-foreground to-transparent bg-clip-text text-transparent font-semibold">
+                <h2 className="text-3xl md:text-6xl text-muted-foreground font-bold">
                   Something went wrong!
                 </h2>
-                <p className="  text-muted-foreground text-xs md:text-sm font-medium lg:font-medium px-2 py-1">
+                <p className="text-muted-foreground text-xs md:text-sm font-medium px-2 py-1">
                   {errorMessage}
                 </p>
               </div>
@@ -45,7 +45,7 @@ export default function Error({
             </Button>
           </CardContent>
         </Card>
-        <div className=" w-full flex justify-start items-center ">
+        <div className=" w-full flex justify-center items-center ">
           <Image
             src={imgsrc}
             alt="Notevo Logo"
