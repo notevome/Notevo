@@ -496,15 +496,20 @@ const PinnedNotesList = memo(function PinnedNotesList({
   const [isExpanded, setIsExpanded] = useState(true);
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-        <span>Pinned Notes</span>
+      <SidebarGroupLabel>
         <Button
-          variant="ghost"
+          variant="Trigger"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className=" px-1 h-6"
+          className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          {isExpanded ? <ChevronUp size="16" /> : <ChevronDown size="16" />}
+          {isExpanded ? (
+            <ChevronUp size="14" className="mb-[3px]" />
+          ) : (
+            <ChevronDown size="14" className="mb-[3px]" />
+          )}
+
+          <span>Pinned Notes</span>
         </Button>
       </SidebarGroupLabel>
       {isExpanded &&
@@ -766,15 +771,20 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   const [isExpanded, setIsExpanded] = useState(true);
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-        <span>Pinned Uploads</span>
+      <SidebarGroupLabel>
         <Button
-          variant="ghost"
+          variant="Trigger"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className=" px-1 h-6"
+          className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          {isExpanded ? <ChevronUp size="16" /> : <ChevronDown size="16" />}
+          {isExpanded ? (
+            <ChevronUp size="14" className="mb-[3px]" />
+          ) : (
+            <ChevronDown size="14" className="mb-[3px]" />
+          )}
+
+          <span>Pinned Uploads</span>
         </Button>
       </SidebarGroupLabel>
       {isExpanded &&
