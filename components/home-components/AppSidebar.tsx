@@ -103,6 +103,44 @@ const noteTitleSchema = z
 type PreferredAction = "note" | "DiffNote";
 
 const STORAGE_KEY = "notevo_create_note_action";
+const PINNED_NOTES_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_notes_expanded";
+const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_uploads_expanded";
+
+function useStoredExpandedState(storageKey: string, defaultValue = true) {
+  const [isExpanded, setIsExpanded] = useState(defaultValue);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const savedValue = window.localStorage.getItem(storageKey);
+    if (savedValue === "true") {
+      setIsExpanded(true);
+    } else if (savedValue === "false") {
+      setIsExpanded(false);
+    }
+  }, [storageKey]);
+
+  const setStoredExpanded = useCallback(
+    (nextValue: boolean | ((currentValue: boolean) => boolean)) => {
+      setIsExpanded((currentValue) => {
+        const resolvedValue =
+          typeof nextValue === "function" ? nextValue(currentValue) : nextValue;
+
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(storageKey, String(resolvedValue));
+        }
+
+        return resolvedValue;
+      });
+    },
+    [storageKey],
+  );
+
+  return [isExpanded, setStoredExpanded] as const;
+}
+
 const SidebarHeaderSection = memo(function SidebarHeaderSection({
   getWorkingSpaces,
   handleCreateNote,
@@ -465,6 +503,10 @@ const PinnedNotesList = memo(function PinnedNotesList({
   status,
   loadMore,
 }: PinnedNotesListProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_NOTES_EXPANDED_STORAGE_KEY,
+  );
+
   if (status === "LoadingFirstPage") {
     return (
       <SidebarGroup>
@@ -497,14 +539,14 @@ const PinnedNotesList = memo(function PinnedNotesList({
   if (favoriteNotes.length === 0) {
     return null;
   }
-  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>
         <Button
           variant="Trigger"
           size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
           {isExpanded ? (
@@ -740,6 +782,10 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   status,
   loadMore,
 }: PinnedUploadsListProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_UPLOADS_EXPANDED_STORAGE_KEY,
+  );
+
   if (status === "LoadingFirstPage") {
     return (
       <SidebarGroup>
@@ -772,14 +818,14 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   if (favoritePdfs.length === 0) {
     return null;
   }
-  const [isExpanded, setIsExpanded] = useState(true);
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>
         <Button
           variant="Trigger"
           size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
           {isExpanded ? (
