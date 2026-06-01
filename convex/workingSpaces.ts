@@ -124,9 +124,36 @@ export const deleteWorkingSpace = mutation({
       .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
       .collect();
 
+    const pdfsByWorkspace = await ctx.db
+      .query("pdfs")
+      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .collect();
+
+    const pdfsByTable = (
+      await Promise.all(
+        tables.map((table) =>
+          ctx.db
+            .query("pdfs")
+            .withIndex("by_notesTableId", (q) => q.eq("notesTableId", table._id))
+            .collect(),
+        ),
+      )
+    ).flat();
+
+    const pdfsToDelete = [...pdfsByWorkspace, ...pdfsByTable].filter(
+      (pdf, index, pdfs) =>
+        pdfs.findIndex((candidate) => candidate._id === pdf._id) === index,
+    );
+
     // Delete all notes
     for (const note of notes) {
       await ctx.db.delete(note._id);
+    }
+
+    // Delete all PDFs and their stored files
+    for (const pdf of pdfsToDelete) {
+      await ctx.storage.delete(pdf.storageId);
+      await ctx.db.delete(pdf._id);
     }
 
     // Delete all tables
