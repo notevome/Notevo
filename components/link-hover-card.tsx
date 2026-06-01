@@ -10,6 +10,7 @@ import { Check, Copy, Globe } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
+import { Unlink } from "lucide-react";
 
 type LinkHoverCardProps = {
   editor: EditorInstance | null;
@@ -37,7 +38,6 @@ export function LinkHoverCard({
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
-
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
@@ -201,7 +201,7 @@ export function LinkHoverCard({
         align="start"
         side="bottom"
         sideOffset={0}
-        className="z-[10002] flex w-[320px] items-center rounded-tl-xl border-border bg-muted p-0 text-popover-foreground"
+        className="z-[10002] flex w-[300px] items-center rounded-tl-xl border-border bg-muted p-0 text-popover-foreground"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onMouseEnter={clearHideTimer}
@@ -230,6 +230,29 @@ export function LinkHoverCard({
           ) : (
             <Copy className="h-3.5 w-3.5" />
           )}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-8 px-2 text-xs !rounded-none"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            if (!editor || !hoveredAnchorRef.current) return;
+
+            const pos = editor.view.posAtDOM(hoveredAnchorRef.current, 0);
+
+            editor
+              .chain()
+              .setTextSelection(pos)
+              .extendMarkRange("link")
+              .unsetLink()
+              .run();
+
+            hideCard();
+          }}
+        >
+          <Unlink className="h-3.5 w-3.5" />
         </Button>
       </PopoverContent>
     </Popover>
