@@ -12,6 +12,8 @@ import {
   ChevronUp,
   FolderClosed,
   FolderOpen,
+  Globe,
+  Pickaxe,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -76,6 +78,8 @@ import { generateSlug } from "@/lib/generateSlug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
 import NoteContextMenu from "./NoteContextMenu";
+import { FaGithub } from "react-icons/fa6";
+
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
   handleCreateNote: (
@@ -1205,6 +1209,25 @@ const UserAccountSection = memo(function UserAccountSection({
                 />
                 Sign out
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap space-y-1 *:text-muted-foreground/80">
+                <Link
+                  href="https://github.com/notevome"
+                  target="_blank"
+                  className=" flex justify-start items-center gap-1 hover:underline"
+                >
+                  <FaGithub size={12} className="inline mt-px" />
+                  Version {process.env.NEXT_PUBLIC_APP_VERSION}
+                </Link>
+                <Link
+                  href="https://www.mohammedh.dev/"
+                  target="_blank"
+                  className=" flex justify-start items-center gap-1 hover:underline"
+                >
+                  <Pickaxe size={12} className="inline mt-px" />
+                  @Mohammed H.
+                </Link>
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
