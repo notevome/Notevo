@@ -226,7 +226,7 @@ export default function SignInPage() {
                   alt="log Image"
                   width={75}
                   height={75}
-                  className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0 object-cover hover:scale-110 transition-transform duration-200"
+                  className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0 object-cover"
                 />
               </div>
             </CardContent>
