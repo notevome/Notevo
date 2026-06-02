@@ -549,13 +549,8 @@ const PinnedNotesList = memo(function PinnedNotesList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          {isExpanded ? (
-            <ChevronUp size="14" className="mb-[3px]" />
-          ) : (
-            <ChevronDown size="14" className="mb-[3px]" />
-          )}
-
           <span>Pinned Notes</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
       {isExpanded &&
@@ -828,13 +823,8 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          {isExpanded ? (
-            <ChevronUp size="14" className="mb-[3px]" />
-          ) : (
-            <ChevronDown size="14" className="mb-[3px]" />
-          )}
-
           <span>Pinned Uploads</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
       {isExpanded &&
