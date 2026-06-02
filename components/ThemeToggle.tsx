@@ -1,10 +1,11 @@
 "use client";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { DesktopIcon, MoonIcon, SunIcon } from "@radix-ui/react-icons";
+import { Toggle } from "@/components/ui/toggle";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   // Prevent hydration mismatch
   useEffect(() => {
@@ -15,40 +16,29 @@ export function ThemeToggle() {
     return null;
   }
 
+  const isDarkMode = resolvedTheme === "dark";
+  const nextTheme = isDarkMode ? "light" : "dark";
+  const Icon = isDarkMode ? Sun : Moon;
+
   return (
-    <ToggleGroup
-      type="single"
-      size="sm"
-      onValueChange={(value) => {
-        if (value) {
-          setTheme(value);
-        }
-      }}
-      value={theme}
-      className="w-full border border-border bg-muted rounded-tl-md px-[3px] h-[31px] justify-center items-center flex-1 gap-1"
-      variant="SidebarMenuButton"
+    <Toggle
+      pressed={isDarkMode}
+      onPressedChange={() => setTheme(nextTheme)}
+      aria-label={`Switch to ${nextTheme} mode`}
+      className="group flex h-8 w-full min-w-0 items-center justify-between gap-2 px-2 text-sm font-normal text-foreground hover:bg-border data-[state=on]:border-transparent data-[state=on]:bg-transparent data-[state=on]:text-foreground"
     >
-      <ToggleGroupItem
-        value="light"
-        aria-label="Light"
-        className="flex-1 px-1 h-6 rounded-md"
+      <span className="flex min-w-0 items-center">
+        <Icon className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="truncate capitalize text-foreground">
+          {nextTheme} mode
+        </span>
+      </span>
+      <span
+        className="relative h-5 w-9 shrink-0 rounded-full bg-border/70 transition-colors group-data-[state=on]:bg-primary"
+        aria-hidden
       >
-        <SunIcon className="h-3 w-3 text-muted-foreground" />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="dark"
-        aria-label="Dark"
-        className="flex-1 px-1 h-6 rounded-md"
-      >
-        <MoonIcon className="h-3 w-3 text-muted-foreground " />
-      </ToggleGroupItem>
-      <ToggleGroupItem
-        value="system"
-        aria-label="System"
-        className="flex-1 px-1 h-6 rounded-md"
-      >
-        <DesktopIcon className="h-3 w-3 text-muted-foreground " />
-      </ToggleGroupItem>
-    </ToggleGroup>
+        <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-background shadow-sm transition-transform group-data-[state=on]:translate-x-4" />
+      </span>
+    </Toggle>
   );
 }

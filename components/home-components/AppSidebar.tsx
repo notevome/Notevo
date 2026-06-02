@@ -1238,17 +1238,13 @@ const UserAccountSection = memo(function UserAccountSection({
                 </div>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <div className="w-full p-1">
-                <div className=" flex items-center justify-between">
-                  <p className=" text-sm flex items-center flex-1 text-nowrap truncate">
-                    Theme :
-                  </p>
-                  <ThemeToggle />
-                </div>
-              </div>
+              <ThemeToggle />
               <DropdownMenuSeparator />
               <Feedback />
-              <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="group flex h-8 w-full min-w-0 items-center justify-start gap-0 px-2 text-sm font-normal text-foreground "
+              >
                 <LogOut
                   size="16"
                   className="mr-2 h-4 w-4 text-muted-foreground"
