@@ -77,7 +77,10 @@ export default function Feedback() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="SidebarMenuButton" className=" px-2 h-8 ">
+        <Button
+          variant="SidebarMenuButton"
+          className="group flex h-8 w-full min-w-0 items-center justify-start gap-0 px-2 text-sm font-normal text-foreground "
+        >
           <MessageCircleHeart
             size="16"
             className="mr-2 h-4 w-4 text-muted-foreground"
