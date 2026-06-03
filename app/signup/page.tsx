@@ -25,6 +25,8 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
+import NotevoLogo from "@/public/Notevo-logo.svg";
+import NoteImage from "@/public/LightModeImage.svg";
 function SignInWithMagicLink({
   handleLinkSent,
 }: {
@@ -101,8 +103,6 @@ function SignInWithMagicLink({
 
 export default function SignInPage() {
   const [step, setStep] = useState<"signIn" | "linkSent">("signIn");
-  const [Timage, setTimage] = useState<string>("/NotevoLightNotePic.svg");
-  const [IconImage, setIconImage] = useState<string>("/Notevo-logo.svg");
   return (
     <div className=" force-light relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
       {/* Real PNG grain noise overlay — always light mode, fixed values */}
@@ -165,7 +165,7 @@ export default function SignInPage() {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center mb-2 text-center">
                     <Image
-                      src={IconImage}
+                      src={NotevoLogo}
                       alt="log Image"
                       width={45}
                       height={45}
@@ -215,17 +215,17 @@ export default function SignInPage() {
               </div>
               <div className="relative hidden bg-card/60 backdrop-blur-md md:block">
                 <Image
-                  src={Timage}
+                  src={NoteImage}
                   alt="login Image"
                   width={800}
                   height={600}
                   className="absolute blur-sm opacity-60 inset-0 h-full w-full object-cover"
                 />
                 <Image
-                  src={IconImage}
+                  src={NotevoLogo}
                   alt="log Image"
-                  width={75}
-                  height={75}
+                  width={65}
+                  height={65}
                   className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0 object-cover"
                 />
               </div>
