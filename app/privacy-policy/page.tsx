@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import { NOISE_PNG } from "@/lib/data";
 import { useMediaQuery } from "react-responsive";
 function SubSection({
   title,
@@ -61,26 +60,12 @@ export default function PrivacyPage() {
 
   return (
     <div className=" relative force-light fadeUp bg-background text-foreground flex flex-col min-h-screen">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 "
-        style={{
-          backgroundImage: `url(${NOISE_PNG})`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.07,
-          mixBlendMode: "multiply",
-          zIndex: 5,
-        }}
-      />
-
       <div className="flex-grow">
         <MaxWContainer className="max-w-[760px] mx-auto px-6 pb-44">
           {/* Hero */}
           <div className="pt-16 pb-10 opacity-0 translate-y-3 animate-[fadeUp_0.4s_0.05s_ease_forwards]">
             <div className="text-[0.68rem] tracking-widest uppercase mb-0.5 opacity-60">
-              <p className="leading-tight text-[0.78rem] font-medium text-primary">
+              <p className="leading-tight text-[0.78rem] font-semibold text-primary">
                 Last Modified: December 2, 2025
               </p>
             </div>
