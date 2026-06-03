@@ -532,7 +532,7 @@ const PinnedNoteItem = memo(
 
     const content = (
       <SidebarGroupContent
-        className="relative h-8 w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
@@ -817,7 +817,7 @@ const PinnedUploadItem = memo(
 
     return (
       <SidebarGroupContent
-        className="relative h-8 w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
@@ -1135,7 +1135,7 @@ const WorkspaceItem = memo(
 
     return (
       <SidebarGroupContent
-        className="relative h-8 w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >

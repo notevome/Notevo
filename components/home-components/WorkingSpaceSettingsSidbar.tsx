@@ -101,7 +101,10 @@ export default function WorkingSpaceSettingsSidbar({
   return (
     <>
       <div
-        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          ContainerClassName,
+        )}
       >
         <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
