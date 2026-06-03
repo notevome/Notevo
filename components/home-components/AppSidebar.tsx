@@ -145,7 +145,9 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   handleCreateWorkingSpace,
   loading,
 }: SidebarHeaderSectionProps) {
-  const [savedWorkspaceId, setSavedWorkspaceId] = useState<string | null>(null);
+  const [savedWorkspaceId, setSavedWorkspaceId] = useState<
+    string | null | undefined
+  >(undefined);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -161,6 +163,25 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
     );
   }, [getWorkingSpaces, savedWorkspaceId]);
 
+  const firstCreatedWorkspace = useMemo(() => {
+    return getWorkingSpaces?.reduce<Doc<"workingSpaces"> | undefined>(
+      (oldestWorkspace, workingSpace) => {
+        if (!oldestWorkspace) return workingSpace;
+
+        const oldestCreatedAt =
+          oldestWorkspace.createdAt ?? oldestWorkspace._creationTime;
+        const workingSpaceCreatedAt =
+          workingSpace.createdAt ?? workingSpace._creationTime;
+
+        return workingSpaceCreatedAt < oldestCreatedAt
+          ? workingSpace
+          : oldestWorkspace;
+      },
+      undefined,
+    );
+  }, [getWorkingSpaces]);
+
+  const createNoteWorkspace = savedWorkspace ?? firstCreatedWorkspace;
   useEffect(() => {
     if (
       typeof window === "undefined" ||
@@ -174,6 +195,20 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
     window.localStorage.removeItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY);
     setSavedWorkspaceId(null);
   }, [getWorkingSpaces, savedWorkspace, savedWorkspaceId]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      savedWorkspaceId !== null ||
+      !firstCreatedWorkspace
+    ) {
+      return;
+    }
+
+    const workspaceId = String(firstCreatedWorkspace._id);
+    window.localStorage.setItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY, workspaceId);
+    setSavedWorkspaceId(workspaceId);
+  }, [firstCreatedWorkspace, savedWorkspaceId]);
 
   const createNoteInWorkspace = useCallback(
     async (workingSpace: Doc<"workingSpaces">) => {
@@ -238,13 +273,13 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             )}
           </Button>
         ))
-      ) : savedWorkspace ? (
+      ) : createNoteWorkspace ? (
         <div className="flex h-9 w-full items-center overflow-hidden app-radius-lg">
           <Button
             variant="outline"
             className="font-medium h-9 flex-1 justify-start gap-2 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
             disabled={loading}
-            onClick={() => void createNoteInWorkspace(savedWorkspace)}
+            onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
           >
             {loading ? (
               <>
