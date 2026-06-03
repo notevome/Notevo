@@ -120,7 +120,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         <div
           ref={scrollContainerRef}
           className={`min-h-0 flex-1 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent ${
-            isPdfRoute ? "overflow-hidden pt-0" : "overflow-y-auto pt-16"
+            isPdfRoute ? "overflow-hidden pt-0" : "overflow-y-auto py-16"
           }`}
         >
           <motion.div
