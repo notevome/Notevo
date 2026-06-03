@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import { NOISE_PNG } from "@/lib/data";
 import { useMediaQuery } from "react-responsive";
 function SubSection({
   title,
@@ -61,25 +60,12 @@ export default function TermsPage() {
 
   return (
     <div className=" relative force-light fadeUp bg-background  text-foreground flex flex-col min-h-screen">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 "
-        style={{
-          backgroundImage: `url(${NOISE_PNG})`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.07,
-          mixBlendMode: "multiply",
-          zIndex: 5,
-        }}
-      />
       <div className="flex-grow">
         <MaxWContainer className="max-w-[760px] mx-auto px-6 pb-44">
           {/* Hero */}
           <div className="pt-16 pb-10 opacity-0 translate-y-3 animate-[fadeUp_0.4s_0.05s_ease_forwards]">
             <div className="text-[0.68rem]  tracking-widest uppercase mb-0.5 opacity-60">
-              <p className="leading-tight text-[0.78rem] font-medium text-primary">
+              <p className="leading-tight text-[0.78rem] font-semibold text-primary">
                 last modified: March 6, 2025
               </p>
             </div>
@@ -88,7 +74,7 @@ export default function TermsPage() {
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
               These terms govern your use of Notevo. By using our platform, you
-              agree to the following conditions — please take a moment to read
+              agree to the following conditions , please take a moment to read
               through them carefully.
             </p>
           </div>
@@ -105,10 +91,10 @@ export default function TermsPage() {
             </SubSection>
             <SubSection title="Exclusion of Liability">
               In no event shall Notevo be liable for any direct, indirect,
-              incidental, consequential, special, or exemplary damages —
-              including but not limited to damages for loss of profits,
-              goodwill, use, data, or other intangible losses — resulting from
-              the use or inability to use our services.
+              incidental, consequential, special, or exemplary damages including
+              but not limited to damages for loss of profits, goodwill, use,
+              data, or other intangible losses resulting from the use or
+              inability to use our services.
             </SubSection>
             <SubSection title="User Responsibility">
               You acknowledge and agree that your use of this service is at your
@@ -120,9 +106,9 @@ export default function TermsPage() {
             <SubSection title="Indemnification">
               By using our service, you agree to indemnify and hold Notevo
               harmless from any claims, actions, damages, liabilities, costs,
-              and expenses — including reasonable attorneys&apos; fees — arising
-              out of or in connection with your use of the service or any
-              violation of these terms.
+              and expenses including reasonable attorneys&apos; fees arising out
+              of or in connection with your use of the service or any violation
+              of these terms.
             </SubSection>
           </SectionBlock>
 
@@ -218,7 +204,7 @@ export default function TermsPage() {
               efforts.
             </SubSection>
             <SubSection title="Impact on User Experience">
-              Changes to the system — including new features or bug fixes — may
+              Changes to the system including new features or bug fixes may
               impact your overall experience. By agreeing to our terms, you
               accept that such changes are inherent in the nature of software
               development.
