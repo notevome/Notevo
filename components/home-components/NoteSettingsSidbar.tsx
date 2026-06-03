@@ -115,7 +115,10 @@ export default function NoteSettingsSidbar({
   return (
     <>
       <div
-        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          ContainerClassName,
+        )}
       >
         <Tooltip open={pinTooltip.open}>
           <TooltipTrigger asChild>

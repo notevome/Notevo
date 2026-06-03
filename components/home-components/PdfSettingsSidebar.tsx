@@ -63,50 +63,50 @@ export default function PdfSettingsSidebar({
 
   return (
     <>
-        <div
-          className={cn(
-            "flex justify-end items-center px-1",
-            containerClassName,
-          )}
-        >
-          <Tooltip open={pinTooltip.open}>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleFavoritePin}
-                variant="SidebarMenuButton"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="pin-upload"
-                {...pinTooltip.triggerProps}
-              >
-                {pdf?.favorite ? (
-                  <PinOff size={16} className="text-muted-foreground" />
-                ) : (
-                  <Pin size={16} className="text-muted-foreground" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              {pdf?.favorite ? "Unpin upload" : "Pin upload"}
-            </TooltipContent>
-          </Tooltip>
+      <div
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          containerClassName,
+        )}
+      >
+        <Tooltip open={pinTooltip.open}>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleFavoritePin}
+              variant="SidebarMenuButton"
+              className="px-2 h-7 hover:bg-card"
+              aria-label="pin-upload"
+              {...pinTooltip.triggerProps}
+            >
+              {pdf?.favorite ? (
+                <PinOff size={16} className="text-muted-foreground" />
+              ) : (
+                <Pin size={16} className="text-muted-foreground" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            {pdf?.favorite ? "Unpin upload" : "Pin upload"}
+          </TooltipContent>
+        </Tooltip>
 
-          <Tooltip open={deleteTooltip.open}>
-            <TooltipTrigger asChild>
-              <Button
-                onMouseDown={() => setIsAlertOpen(true)}
-                variant="SidebarMenuButton_destructive"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="delete-upload"
-                {...deleteTooltip.triggerProps}
-              >
-                <X size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Delete upload
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <Tooltip open={deleteTooltip.open}>
+          <TooltipTrigger asChild>
+            <Button
+              onMouseDown={() => setIsAlertOpen(true)}
+              variant="SidebarMenuButton_destructive"
+              className="px-2 h-7 hover:bg-card"
+              aria-label="delete-upload"
+              {...deleteTooltip.triggerProps}
+            >
+              <X size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5}>
+            Delete upload
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
