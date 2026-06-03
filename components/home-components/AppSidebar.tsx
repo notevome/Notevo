@@ -250,124 +250,63 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
           <Plus size={16} /> Create Workspace
         </Button>
       )}
-      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0 ? (
-        getWorkingSpaces.map((workingSpace) => (
-          <Button
-            key={workingSpace._id}
-            variant="outline"
-            className="font-medium w-full h-9 flex justify-start items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
-            disabled={loading}
-            onMouseDown={() => void createNoteInWorkspace(workingSpace)}
-          >
-            {loading ? (
-              <>
-                <LoadingAnimation className=" h-3 w-3" />
-                redirecting...
-              </>
-            ) : (
-              <>
-                {" "}
-                <Plus size={16} className="font-bold" />
-                Create Note
-              </>
-            )}
-          </Button>
-        ))
-      ) : createNoteWorkspace ? (
-        <div className="flex h-9 w-full items-center overflow-hidden app-radius-lg">
-          <Button
-            variant="outline"
-            className="font-medium h-9 flex-1 justify-start gap-2 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
-            disabled={loading}
-            onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
-          >
-            {loading ? (
-              <>
-                <LoadingAnimation className=" h-3 w-3" />
-                redirecting...
-              </>
-            ) : (
-              <>
-                <Plus size={16} className="font-bold" />
-                Create Note
-              </>
-            )}
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
+        ? getWorkingSpaces.map((workingSpace) => (
+            <Button
+              key={workingSpace._id}
+              variant="outline"
+              className="font-medium w-full h-9 flex justify-start items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
+              disabled={loading}
+              onMouseDown={() => void createNoteInWorkspace(workingSpace)}
+            >
+              {loading ? <>redirecting...</> : <> Create Note</>}
+            </Button>
+          ))
+        : createNoteWorkspace && (
+            <div className="flex h-9 w-full items-center overflow-hidden app-radius-lg">
               <Button
                 variant="outline"
-                className="h-9 px-2 !rounded-l-none border-l-0 bg-primary text-primary-foreground hover:bg-primary/90"
+                className="font-medium h-9 flex-1 justify-start gap-2 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={loading}
-                aria-label="select-create-note-workspace"
+                onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
-                <ChevronDown size={16} className="font-bold" />
+                {loading ? <>redirecting...</> : <>Create Note</>}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              side="bottom"
-              align="end"
-              className="app-radius-lg p-1 bg-background/90 backdrop-blur border border-solid border-border w-52"
-            >
-              <DropdownMenuGroup className="flex-col">
-                {getWorkingSpaces?.map((workingSpace) => (
-                  <DropdownMenuItem
-                    key={workingSpace._id}
-                    className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
-                    onSelect={() => void createNoteInWorkspace(workingSpace)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className=" font-medium h-9 px-2 !rounded-l-none border-l-0 bg-primary text-primary-foreground hover:bg-primary/90"
                     disabled={loading}
+                    aria-label="select-create-note-workspace"
                   >
-                    <FolderClosed size="16" className="mr-2" />
-                    <span>{formatWorkspaceName(workingSpace.name)}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="font-medium w-full h-9 flex justify-between items-center gap-1 bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <LoadingAnimation className=" h-3 w-3" />
-                  redirecting...
-                </>
-              ) : (
-                <>
-                  {" "}
-                  Create Note
-                  <ChevronDown size={16} className="font-bold" />
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side="bottom"
-            align="end"
-            className="app-radius-lg m-2 p-1.5 bg-background/90 backdrop-blur border border-solid border-border w-[--radix-popper-anchor-width]"
-          >
-            <DropdownMenuGroup className="flex-col">
-              {getWorkingSpaces?.map((workingSpace) => (
-                <DropdownMenuItem
-                  key={workingSpace._id}
-                  className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
-                  onSelect={() => void createNoteInWorkspace(workingSpace)}
-                  disabled={loading}
+                    <ChevronDown size={16} className="font-bold" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="bottom"
+                  align="end"
+                  className="app-radius-xl p-1 bg-background/90 backdrop-blur border border-solid border-border w-52"
                 >
-                  <FolderClosed size="16" className="mr-2" />
-                  <span>{formatWorkspaceName(workingSpace.name)}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+                  <DropdownMenuGroup className="flex-col">
+                    {getWorkingSpaces?.map((workingSpace) => (
+                      <DropdownMenuItem
+                        key={workingSpace._id}
+                        className="relative flex-1 px-2 h-7 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
+                        onSelect={() =>
+                          void createNoteInWorkspace(workingSpace)
+                        }
+                        disabled={loading}
+                      >
+                        <FolderClosed size="16" className="mr-2" />
+                        <span>{formatWorkspaceName(workingSpace.name)}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
     </SidebarHeader>
   );
 });
