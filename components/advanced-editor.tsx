@@ -143,14 +143,14 @@ const TailwindAdvancedEditor = ({
                   <button
                     type="button"
                     aria-label="Insert block below"
-                    className="flex h-5 w-5 items-center justify-center text-muted-foreground rounded-tl-lg opacity-50 transition-colors hover:bg-border"
+                    className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-md opacity-50 transition-colors hover:bg-border"
                     onMouseDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
                       insertBlockBelowWithSlashMenu(editorInstance);
                     }}
                   >
-                    <Plus className="h-4 w-4 mt-0.5" />
+                    <Plus className="h-4 w-4 " />
                   </button>
                   <div className="flex h-5 w-5 items-center justify-center">
                     <svg
