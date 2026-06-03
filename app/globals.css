@@ -255,6 +255,10 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
+  background: hsl(var(--muted)) !important;
+  z-index: 90000 !important;
+}
 
 .pdf-viewer-shell ::selection,
 .pdf-viewer-shell .textLayer ::selection,
