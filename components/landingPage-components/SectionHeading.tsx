@@ -1,3 +1,4 @@
+"use client";
 interface SectionHeadingProps {
   SectionTitle: string;
   SectionSubTitle: string;

@@ -3,6 +3,10 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import { useMediaQuery } from "react-responsive";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 function SubSection({
   title,
   children,
@@ -57,6 +61,8 @@ export default function TermsPage() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const router = useRouter();
 
   return (
     <div className=" relative force-light fadeUp bg-background  text-foreground flex flex-col min-h-screen">
@@ -263,6 +269,24 @@ export default function TermsPage() {
             </SubSection>
           </SectionBlock>
         </MaxWContainer>
+        <div
+          className={cn(
+            "pointer-events-auto w-full flex items-center justify-center mt-12 py-1.5",
+          )}
+        >
+          <Button
+            aria-label="Home"
+            variant="link"
+            className="cursor-pointer relative group flex justify-center items-center gap-0.5 text-foreground transition-all ease-in-out duration-150 hover:text-primary hover:no-underline"
+            onMouseDown={() => router.back()}
+          >
+            <ChevronLeft
+              size={16}
+              className="transition-all ease-in-out duration-150 text-foreground absolute top-2.5 -left-0.5 group-hover:text-primary group-hover:-left-1.5"
+            />
+            Home
+          </Button>
+        </div>
       </div>
     </div>
   );
