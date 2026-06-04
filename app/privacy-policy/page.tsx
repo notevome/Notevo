@@ -241,25 +241,25 @@ export default function PrivacyPage() {
               These changes are effective immediately upon posting.
             </SubSection>
           </SectionBlock>
-        </MaxWContainer>
-        <div
-          className={cn(
-            "pointer-events-auto w-full flex items-center justify-center mt-12 py-1.5",
-          )}
-        >
-          <Button
-            aria-label="Home"
-            variant="link"
-            className="cursor-pointer relative group flex justify-center items-center gap-0.5 text-foreground transition-all ease-in-out duration-150 hover:text-primary hover:no-underline"
-            onMouseDown={() => router.back()}
+          <div
+            className={cn(
+              "pointer-events-auto w-full flex items-center justify-center mt-12 py-1.5",
+            )}
           >
-            <ChevronLeft
-              size={16}
-              className="transition-all ease-in-out duration-150 text-foreground absolute top-2.5 -left-0.5 group-hover:text-primary group-hover:-left-1.5"
-            />
-            Home
-          </Button>
-        </div>
+            <Button
+              aria-label="Home"
+              variant="link"
+              className="cursor-pointer relative group flex justify-center items-center gap-0.5 text-foreground transition-all ease-in-out duration-150 hover:text-primary hover:no-underline"
+              onMouseDown={() => router.push("/")}
+            >
+              <ChevronLeft
+                size={16}
+                className="transition-all ease-in-out duration-150 text-foreground absolute top-3 -left-0.5 group-hover:text-primary group-hover:-left-1.5"
+              />
+              Home
+            </Button>
+          </div>
+        </MaxWContainer>
       </div>
     </div>
   );
