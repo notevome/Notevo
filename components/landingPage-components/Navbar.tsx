@@ -69,7 +69,7 @@ export default function Navbar() {
               <Button key={i} variant="ghost" className="p-1.5 h-9">
                 <Link
                   href={link.path}
-                  className="relative text-base font-medium text-foreground transition-colors group"
+                  className="relative text-base font-medium text-foreground transition-colors group "
                 >
                   {link.Name}
                 </Link>
