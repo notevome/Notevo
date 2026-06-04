@@ -8,7 +8,7 @@ import Footer from "@/components/landingPage-components/Footer";
 import MoreAboutMe from "@/components/landingPage-components/MoreAboutMe";
 import PricingSection from "@/components/landingPage-components/pricingSection";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
-
+import FAQ from "@/components/landingPage-components/faq";
 export default async function HomePage() {
   if (await isAuthenticatedNextjs()) {
     redirect("/home");
@@ -26,6 +26,7 @@ export default async function HomePage() {
           <HowToStartSection />
           <FeaturesSection />
           <MoreAboutMe />
+          <FAQ />
           {/* <PricingSection /> */}
           <SignUpToday />
         </div>

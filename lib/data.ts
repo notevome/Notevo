@@ -23,6 +23,11 @@ export const NavLinks = [
     clicked: false,
   },
   {
+    Name: "FAQ",
+    path: "/#faq",
+    clicked: false,
+  },
+  {
     Name: "About",
     path: "/#about",
     clicked: false,
@@ -32,6 +37,23 @@ export const NavLinks = [
   //     path:"/#pricing",
   //     clicked:false,
   // },
+] as const;
+
+export const AccordionData = [
+  {
+    id: "1",
+    itmevalue: "notevosfee",
+    trigger: "is notevo free?",
+    content:
+      "Well, for now and as long as we're still in beta it's free. But as I add real-time collaboration and AI, there will be a fee for that, but it's going to be $8 a month.",
+  },
+  {
+    id: "2",
+    itmevalue: "OSS",
+    trigger: "why is it open source?",
+    content:
+      "I want to create a product that is truly for the users, and I believe that being open source is the best way to achieve that. It allows anyone to contribute, suggest features, and even fork the project if they want to take it in a different direction. Plus, it just feels good to share your work with the world and see how others can build on it.",
+  },
 ] as const;
 
 export const HowToStartSteps = [
