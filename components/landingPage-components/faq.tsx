@@ -11,7 +11,7 @@ export default function FAQ() {
   return (
     <section
       id="faq"
-      className="relative px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 Desktop:py-24 "
+      className="relative px-4 sm:px-6 md:px-8 pt-12 sm:pt-16 md:pt-20 Desktop:pt-24 "
     >
       <MaxWContainer>
         <SectionHeading
@@ -23,7 +23,7 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-lg mx-auto min-h-[250px]"
+          className="max-w-lg mx-auto min-h-[238px]"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem key={index} value={item.itmevalue}>

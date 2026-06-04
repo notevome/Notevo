@@ -28,7 +28,7 @@ export default function Navbar() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ ease: "linear", duration: 0.5 }}
-      className=" sticky top-0 w-full z-50 transition-all"
+      className=" sticky top-2 w-full z-50 transition-all"
     >
       <motion.div
         className={cn(
@@ -41,21 +41,19 @@ export default function Navbar() {
         }}
       >
         {inView && (
-          <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
+          <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-50% to-100% to-transparent -z-50 left-0 pointer-events-none" />
         )}
-        <Link
-          href="/"
-          onClick={() => {
-            if (window.location.pathname === "/") {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
-          className="flex items-center gap-2 group"
-        >
+
+        <div className="flex justify-start items-center gap-20">
           <motion.div
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="relative"
+            className="relative "
+            onClick={() => {
+              if (window.location.pathname === "/") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
           >
             <Image
               src={NotevoLogo}
@@ -66,22 +64,19 @@ export default function Navbar() {
               height={40}
             />
           </motion.div>
-        </Link>
-        {/* 
-        <div className="flex justify-center items-center gap-4">
-          <nav className="hidden lg:flex items-center gap-3">
+          <nav className="hidden lg:flex justify-center items-center gap-3">
             {NavLinks.map((link, i) => (
-              <Button key={i} variant="ghost" className="px-2 h-8">
+              <Button key={i} variant="ghost" className="p-1.5 h-9">
                 <Link
                   href={link.path}
-                  className="relative text-sm font-medium text-foreground transition-colors group"
+                  className="relative text-base font-medium text-foreground transition-colors group "
                 >
                   {link.Name}
                 </Link>
               </Button>
             ))}
           </nav>
-        </div> */}
+        </div>
 
         <Button asChild className="hidden lg:block relative group h-9">
           <Link prefetch={true} href="/signup" className="text-sm font-medium">
