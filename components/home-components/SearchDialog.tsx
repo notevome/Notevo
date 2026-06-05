@@ -243,44 +243,36 @@ function TableSection({
       {isExpanded && (
         <div className=" relative ">
           <div className=" ml-5 absolute top-0 left-0 h-full w-px bg-muted-foreground/30" />
-          {items.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground/40 text-center py-2 ml-6">
-              {query
-                ? `No notes or uploads match "${query}" here.`
-                : "No notes or uploads here."}
-            </p>
-          ) : (
-            items.map((item: any) =>
-              item.kind === "pdf" ? (
-                <PdfItem
-                  key={item._id}
-                  pdf={{
-                    ...item,
-                    workingSpaceName: workspace.name,
-                    tableName: table.name,
-                  }}
-                  onClick={() => onNoteClick(item)}
-                  isSelected={selectedNoteId === String(item._id)}
-                  query={query}
-                  onIntentPrefetch={onIntentPrefetch}
-                  indented
-                />
-              ) : (
-                <NoteItem
-                  key={item._id}
-                  note={{
-                    ...item,
-                    workingSpaceName: workspace.name,
-                    tableName: table.name,
-                  }}
-                  onClick={() => onNoteClick(item)}
-                  isSelected={selectedNoteId === String(item._id)}
-                  query={query}
-                  onIntentPrefetch={onIntentPrefetch}
-                  indented
-                />
-              ),
-            )
+          {items.map((item: any) =>
+            item.kind === "pdf" ? (
+              <PdfItem
+                key={item._id}
+                pdf={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={() => onNoteClick(item)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                onIntentPrefetch={onIntentPrefetch}
+                indented
+              />
+            ) : (
+              <NoteItem
+                key={item._id}
+                note={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={() => onNoteClick(item)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                onIntentPrefetch={onIntentPrefetch}
+                indented
+              />
+            ),
           )}
         </div>
       )}
@@ -311,17 +303,14 @@ function WorkspaceTree({
         const workspaceId = String(workspace._id);
         const isExpanded = expandedWorkspaceIds.includes(workspaceId);
         const tables: any[] = workspace.tables ?? [];
-        const totalNotes = tables.reduce(
-          (acc: number, t: any) => acc + (t.notes?.length ?? 0),
-          0,
-        );
+        if (tables.length === 0) return null;
 
         return (
           <div key={workspace._id} className="overflow-hidden app-radius-lg">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-border/50 hover:border-2 hover:bg-transparent"
+              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-transparent hover:border-2 hover:bg-transparent"
               onClick={() => toggleWorkspace(workspaceId)}
             >
               <ChevronRight
@@ -345,23 +334,17 @@ function WorkspaceTree({
 
             {isExpanded && (
               <div className="space-y-0.5 px-1 py-1">
-                {tables.length === 0 ? (
-                  <p className="text-xs text-muted-foreground/50 text-center py-3">
-                    No tables in this workspace yet.
-                  </p>
-                ) : (
-                  tables.map((table: any) => (
-                    <TableSection
-                      key={table._id}
-                      table={table}
-                      workspace={workspace}
-                      selectedNoteId={selectedNoteId}
-                      query={query}
-                      onNoteClick={onNoteClick}
-                      onIntentPrefetch={onIntentPrefetch}
-                    />
-                  ))
-                )}
+                {tables.map((table: any) => (
+                  <TableSection
+                    key={table._id}
+                    table={table}
+                    workspace={workspace}
+                    selectedNoteId={selectedNoteId}
+                    query={query}
+                    onNoteClick={onNoteClick}
+                    onIntentPrefetch={onIntentPrefetch}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -434,7 +417,7 @@ export default function SearchDialog({
     );
   }, [searchTargets]);
 
-  const hasResults = (searchTargets?.length ?? 0) > 0;
+  const hasResults = allNotes.length > 0;
 
   const handleResultsScroll = useCallback(() => {
     const el = resultsScrollRef.current;
@@ -511,7 +494,9 @@ export default function SearchDialog({
   const handleNoteClick = (note: any) => {
     setOpen(false);
     if (note.kind === "pdf") {
-      router.push(`/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`);
+      router.push(
+        `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`,
+      );
       return;
     }
     router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);

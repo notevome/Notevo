@@ -354,7 +354,7 @@ export default function GlobalFolderDropUpload() {
     <>
       {isDragActive ? (
         <div className="pointer-events-none fixed inset-0 z-[100000] flex items-center justify-center p-4 bg-background/60 backdrop-blur-sm">
-          <div className=" w-full h-full app-radius-lg border-4 border-dashed border-border bg-card px-4 pb-3 pt-3.5 text-center shadow-2xl">
+          <div className=" w-full h-full rounded-lg border-4 border-dashed border-border bg-card px-4 pb-3 pt-3.5 text-center shadow-2xl">
             <div className=" mb-3 w-full h-full flex flex-col items-center justify-center gap-2 ">
               <FolderOpen size={32} className=" text-muted-foreground mt-0.5" />
               <h3 className="text-xl  font-semibold text-foreground">
