@@ -443,7 +443,6 @@ export const getWorkspaceTree = query({
           (a, b) => b.updatedAt - a.updatedAt,
         );
 
-        // On initial load, limit tables
         const tablesToProcess = isSearching
           ? sortedTables
           : sortedTables.slice(0, TREE_TABLES_PER_WORKSPACE);
@@ -465,6 +464,7 @@ export const getWorkspaceTree = query({
                 )
                 .order("desc")
                 .collect();
+
               return {
                 ...table,
                 notes: allNotes.map(({ body, ...rest }) => rest),
@@ -472,7 +472,6 @@ export const getWorkspaceTree = query({
               };
             }
 
-            // Initial load — .take() stops at DB level
             const firstNotes = await ctx.db
               .query("notes")
               .withIndex("by_notesTableId", (q) =>
@@ -496,16 +495,24 @@ export const getWorkspaceTree = query({
           }),
         );
 
+        // Only keep tables that have at least one note or pdf
+        const nonEmptyTables = tablesWithNotes.filter(
+          (table) => table.notes.length > 0 || table.pdfs.length > 0,
+        );
+
+        // Drop workspace entirely if it has no non-empty tables
+        if (nonEmptyTables.length === 0) return null;
+
         if (!isSearching) {
-          return { ...workspace, tables: tablesWithNotes };
+          return { ...workspace, tables: nonEmptyTables };
         }
 
-        // Filter by query
+        // Search path
         const workspaceMatches = normalizeSearchText(workspace.name).includes(
           normalizedQuery,
         );
 
-        const filteredTables = tablesWithNotes
+        const filteredTables = nonEmptyTables
           .map((table) => {
             const tableMatches = normalizeSearchText(table.name).includes(
               normalizedQuery,
@@ -513,24 +520,20 @@ export const getWorkspaceTree = query({
             const matchingNotes = table.notes.filter((note: any) =>
               normalizeSearchText(note.title).includes(normalizedQuery),
             );
-            const matchingPdfs = (table.pdfs ?? []).filter((pdf: any) =>
+            const matchingPdfs = table.pdfs.filter((pdf: any) =>
               normalizeSearchText(pdf.title).includes(normalizedQuery),
             );
 
             if (tableMatches) return table;
             if (matchingNotes.length > 0 || matchingPdfs.length > 0)
-              return {
-                ...table,
-                notes: matchingNotes,
-                pdfs: matchingPdfs,
-              };
+              return { ...table, notes: matchingNotes, pdfs: matchingPdfs };
+
             return null;
           })
           .filter(Boolean);
 
-        if (workspaceMatches && filteredTables.length === 0)
-          return { ...workspace, tables: [] };
-        if (!workspaceMatches && filteredTables.length === 0) return null;
+        // Drop workspace if no tables matched and workspace name didn't match
+        if (filteredTables.length === 0) return null;
 
         return { ...workspace, tables: filteredTables };
       }),
