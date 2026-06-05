@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     path: "/",
   }),
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: "/google-notevo-logo.png",
+    shortcut: "/google-notevo-logo.png",
+    apple: "/google-notevo-logo.png",
   },
 };
 
