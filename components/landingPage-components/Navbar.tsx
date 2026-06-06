@@ -66,10 +66,11 @@ export default function Navbar() {
           </motion.div>
           <nav className="hidden lg:flex justify-center items-center gap-3">
             {NavLinks.map((link, i) => (
-              <Button key={i} variant="ghost" className="p-1.5 h-9">
+              <Button key={i} variant="link" className="p-2 h-9">
                 <Link
                   href={link.path}
-                  className="relative text-base font-medium text-foreground transition-colors group "
+                  target={link.target || "_self"}
+                  className="relative text-sm font-medium text-foreground group "
                 >
                   {link.Name}
                 </Link>
