@@ -21,16 +21,26 @@ export const NavLinks = [
     Name: "Features",
     path: "/#features",
     clicked: false,
-  },
-  {
-    Name: "FAQ",
-    path: "/#faq",
-    clicked: false,
+    target: "_self",
   },
   {
     Name: "About",
     path: "/#about",
     clicked: false,
+    target: "_self",
+  },
+  {
+    Name: "FAQ",
+    path: "/#faq",
+    clicked: false,
+    target: "_self",
+  },
+
+  {
+    Name: "Give our text editor a try.",
+    path: "https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn",
+    clicked: false,
+    target: "_blank",
   },
   // {
   //     Name:"Pricing",
