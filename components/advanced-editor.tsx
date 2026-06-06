@@ -14,7 +14,7 @@ import {
 } from "novel";
 import { Color } from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { defaultExtensions } from "./extensions";
 import { slashCommand, suggestionItems } from "./slash-command";
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
@@ -38,6 +38,11 @@ import { useMediaQuery } from "react-responsive";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Plus } from "lucide-react";
 import { LinkHoverCard } from "./link-hover-card";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 const TailwindAdvancedEditor = ({
   initialContent,
   onUpdate,
@@ -57,6 +62,15 @@ const TailwindAdvancedEditor = ({
   const [items, setItems] = useState<any[]>([]);
   const [dragHandleColor, setDragHandleColor] = useState<string>();
   const [imagePreviewSrc, setImagePreviewSrc] = useState<string | null>(null);
+  const plusMenuRef = useRef<HTMLDivElement>(null);
+  const [plusMenuOpen, setPlusMenuOpen] = useState(false);
+  const [plusMenuPos, setPlusMenuPos] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+  const [plusMenuInsertAt, setPlusMenuInsertAt] = useState<number | null>(null);
+  const [plusSearchQuery, setPlusSearchQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const { resolvedTheme } = useTheme();
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
@@ -67,6 +81,27 @@ const TailwindAdvancedEditor = ({
       setDragHandleColor("#646464");
     }
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    if (!plusMenuOpen) return;
+    const handleOutside = (e: MouseEvent) => {
+      if (
+        plusMenuRef.current &&
+        !plusMenuRef.current.contains(e.target as Node)
+      ) {
+        setPlusMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPlusMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [plusMenuOpen]);
 
   const handleOpenNode = (open: boolean) => {
     if (open) {
@@ -92,23 +127,60 @@ const TailwindAdvancedEditor = ({
     setOpenLink(open);
   };
 
-  const insertBlockBelowWithSlashMenu = (editor: EditorInstance) => {
-    const { $from } = editor.state.selection;
+  const openPlusMenu = (editor: EditorInstance, buttonEl: HTMLElement) => {
+    // Get the node position from the drag handle's current hovered element
+    const dragHandleEl =
+      buttonEl.closest("[data-drag-handle]")?.parentElement ??
+      buttonEl.closest(".novel-drag-handle")?.parentElement ??
+      buttonEl.parentElement?.parentElement;
 
-    if ($from.depth < 1) {
-      return;
+    // Find which block the drag handle is currently next to by checking DOM position
+    const rect = buttonEl.getBoundingClientRect();
+    const editorView = (editor as any).view;
+
+    // Use the DOM position to find the ProseMirror node position
+    const posAtCoords = editorView.posAtCoords({
+      left: rect.right + 30,
+      top: rect.top + rect.height / 2,
+    });
+
+    let insertAt: number | null = null;
+    if (posAtCoords) {
+      const $pos = editor.state.doc.resolve(posAtCoords.pos);
+      // Go up to depth 1 to get the top-level block
+      const depth = $pos.depth >= 1 ? 1 : $pos.depth;
+      const nodeStart = $pos.before(depth);
+      const node = editor.state.doc.nodeAt(nodeStart);
+      if (node) {
+        insertAt = nodeStart + node.nodeSize;
+      } else {
+        insertAt = $pos.after(depth);
+      }
     }
-    const insertAt = $from.after(1);
 
+    setPlusMenuInsertAt(insertAt);
+    setPlusMenuPos({ x: rect.left, y: rect.bottom + 4 });
+    setPlusSearchQuery("");
+    setSelectedIndex(0);
+    setPlusMenuOpen(true);
+  };
+
+  const executePlusMenuItem = (editor: EditorInstance, item: any) => {
+    if (plusMenuInsertAt === null) return;
+    setPlusMenuOpen(false);
+
+    // Insert an empty paragraph at the target position first, then apply the command
     editor
       .chain()
       .focus()
-      .insertContentAt(insertAt, {
-        type: "paragraph",
-        content: [{ type: "text", text: "/" }],
-      })
-      .setTextSelection(insertAt + 2)
+      .insertContentAt(plusMenuInsertAt, { type: "paragraph" })
+      .setTextSelection(plusMenuInsertAt + 1)
       .run();
+
+    // Now run the item's command with a fake range pointing to the new empty paragraph
+    const from = plusMenuInsertAt + 1;
+    const to = plusMenuInsertAt + 1;
+    item.command({ editor, range: { from, to } });
   };
 
   // Create extensions array with ToC configuration
@@ -140,29 +212,46 @@ const TailwindAdvancedEditor = ({
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
                 <div className="flex items-center justify-center ">
-                  <button
-                    type="button"
-                    aria-label="Insert block below"
-                    className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-md opacity-50 transition-colors hover:bg-border"
-                    onMouseDown={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      insertBlockBelowWithSlashMenu(editorInstance);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 " />
-                  </button>
-                  <div className="flex h-5 w-5 items-center justify-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="3"
-                      className="h-4 w-4 opacity-90"
-                      stroke={dragHandleColor}
+                  <Tooltip delayDuration={150} disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Insert block below"
+                        className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-md opacity-50 transition-colors hover:bg-border"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          openPlusMenu(
+                            editorInstance,
+                            event.currentTarget as HTMLElement,
+                          );
+                        }}
+                      >
+                        <Plus className="h-4 w-4 " />
+                      </button>
+                    </TooltipTrigger>
+
+                    <TooltipContent
+                      side="left"
+                      align="center"
+                      className=" text-xs font-bold py-0.5 px-1.5 rounded "
                     >
-                      <path
-                        d="
+                      <p>Insert block</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip delayDuration={150} disableHoverableContent>
+                    <TooltipTrigger asChild>
+                      <div className="flex h-5 w-5 items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth="3"
+                          className="h-4 w-4 opacity-90"
+                          stroke={dragHandleColor}
+                        >
+                          <path
+                            d="
                           M9 6
                           a1.25 1.25 0 1 0 0.01 0
                           M15 6
@@ -176,9 +265,18 @@ const TailwindAdvancedEditor = ({
                           M15 18
                           a1.25 1.25 0 1 0 0.01 0
                         "
-                      />
-                    </svg>
-                  </div>
+                          />
+                        </svg>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="left"
+                      align="center"
+                      className=" text-xs font-bold py-0.5 px-1.5 rounded "
+                    >
+                      <p>Drag</p>
+                    </TooltipContent>
+                  </Tooltip>
                 </div>
               </DragHandle>
             </>
@@ -269,6 +367,100 @@ const TailwindAdvancedEditor = ({
       {/* Compact Floating ToC */}
       {!isMobile && (
         <CompactFloatingToC items={items} editor={editorInstance} />
+      )}
+
+      {/* Plus button block-insert dropdown */}
+      {plusMenuOpen && editorInstance && (
+        <div
+          ref={plusMenuRef}
+          style={{
+            position: "fixed",
+            left: plusMenuPos.x,
+            top: plusMenuPos.y,
+            zIndex: 9999,
+          }}
+          className=" relative w-64 max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+        >
+          <input
+            autoFocus
+            type="text"
+            placeholder="Search..."
+            value={plusSearchQuery}
+            onChange={(e) => {
+              setPlusSearchQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
+            onKeyDown={(e) => {
+              const filtered = suggestionItems.filter(
+                (item: any) =>
+                  item.title
+                    .toLowerCase()
+                    .includes(plusSearchQuery.toLowerCase()) ||
+                  (item.searchTerms ?? []).some((t: string) =>
+                    t.includes(plusSearchQuery.toLowerCase()),
+                  ),
+              );
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
+              }
+              if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setSelectedIndex((i) => Math.max(i - 1, 0));
+              }
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (filtered[selectedIndex])
+                  executePlusMenuItem(editorInstance, filtered[selectedIndex]);
+              }
+            }}
+            className=" sticky top-0 left-0 w-full px-2 py-1 m-0 text-xs bg-muted/50 backdrop-blur-md border-b border-border rounded text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
+          />
+          {(() => {
+            const filtered = suggestionItems.filter(
+              (item: any) =>
+                item.title
+                  .toLowerCase()
+                  .includes(plusSearchQuery.toLowerCase()) ||
+                (item.searchTerms ?? []).some((t: string) =>
+                  t.includes(plusSearchQuery.toLowerCase()),
+                ),
+            );
+            if (filtered.length === 0) {
+              return (
+                <p className="px-2 py-2 text-xs text-muted-foreground">
+                  No results
+                </p>
+              );
+            }
+            return filtered.map((item: any, idx: number) => (
+              <button
+                key={item.title}
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  executePlusMenuItem(editorInstance, item);
+                }}
+                onMouseEnter={() => setSelectedIndex(idx)}
+                className={`flex w-full items-center space-x-2.5 rounded-tl-lg my-0.5 px-1 py-1 text-left text-sm text-foreground transition-colors ${
+                  idx === selectedIndex ? "bg-border" : "hover:bg-border"
+                }`}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border rounded-tl-lg text-muted-foreground">
+                  {item.icon}
+                </div>
+                <div>
+                  <p className="font-medium text-xs text-foreground">
+                    {item.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {item.description}
+                  </p>
+                </div>
+              </button>
+            ));
+          })()}
+        </div>
       )}
       <Dialog
         open={Boolean(imagePreviewSrc)}
