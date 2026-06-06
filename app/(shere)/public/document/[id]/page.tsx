@@ -29,6 +29,7 @@ import { ReadOnlyWarning } from "@/components/readOnly-warning";
 import NoteDownloadDropdown from "@/components/home-components/NoteDownloadDropdown";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
+import { useMediaQuery } from "react-responsive";
 
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -36,6 +37,7 @@ export default function PublicNotePage() {
   const themeTooltip = useHoverTooltip(100);
   const noteWidthTooltip = useHoverTooltip(100);
   const { noteWidth, toggleWidth } = useNoteWidth();
+  const isMobile = useMediaQuery({ maxWidth: 640 });
 
   const cycleTheme = () => {
     if (resolvedTheme === "light") setTheme("dark");
@@ -122,45 +124,50 @@ export default function PublicNotePage() {
       </div>
 
       <header className=" sticky top-0 left-0 w-full z-[10000]">
-        <div className=" px-4 p-3 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
+        <div className=" px-2 py-2.5 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
           <ReadOnlyWarning />
-          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-2.5 h-8">
+          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-3 h-8">
             {PublicNoteTitle}
-            <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground">
-              Created {formatNoteTimestamp(getNote.createdAt)}
+            <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground ">
+              Created {formatNoteTimestamp(getNote.createdAt)} - Last updated{" "}
+              {formatNoteTimestamp(getNote.updatedAt)}
             </span>
           </p>
           <div className="flex justify-end items-center gap-1 w-full">
-            <Tooltip open={noteWidthTooltip.open}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-8 h-8 pt-0.5"
-                  size="icon"
-                  onClick={toggleWidth}
-                  aria-label="toggle-note-width"
-                  {...noteWidthTooltip.triggerProps}
-                >
-                  {noteWidth === "false" ? (
-                    <>
-                      <ChevronsLeftRightEllipsis className="h-[1.4rem] w-[1.4rem]" />
-                    </>
-                  ) : (
-                    <>
-                      <ChevronsRightLeft className="h-[1.4rem] w-[1.4rem]" />
-                    </>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent align="end" side="bottom">
-                {noteWidth === "false" ? <>Full width</> : <>Max width</>}
-              </TooltipContent>
-            </Tooltip>
+            {!isMobile && (
+              <>
+                <Tooltip open={noteWidthTooltip.open}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-8 h-8 pt-0.5"
+                      size="icon"
+                      onClick={toggleWidth}
+                      aria-label="toggle-note-width"
+                      {...noteWidthTooltip.triggerProps}
+                    >
+                      {noteWidth === "false" ? (
+                        <>
+                          <ChevronsLeftRightEllipsis className="h-[1.4rem] w-[1.4rem]" />
+                        </>
+                      ) : (
+                        <>
+                          <ChevronsRightLeft className="h-[1.4rem] w-[1.4rem]" />
+                        </>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent align="end" side="bottom">
+                    {noteWidth === "false" ? <>Full width</> : <>Max width</>}
+                  </TooltipContent>
+                </Tooltip>
+                <NoteDownloadDropdown
+                  noteBody={JSON.stringify(content)}
+                  noteTitle={getNote.title ?? "note"}
+                />
+              </>
+            )}
 
-            <NoteDownloadDropdown
-              noteBody={JSON.stringify(content)}
-              noteTitle={getNote.title ?? "note"}
-            />
             <Tooltip open={themeTooltip.open}>
               <TooltipTrigger asChild>
                 <Button

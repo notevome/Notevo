@@ -61,7 +61,5 @@ export const formatNoteTimestamp = (timestamp?: number) => {
     month: "short",
     day: "numeric",
     year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
   });
 };
