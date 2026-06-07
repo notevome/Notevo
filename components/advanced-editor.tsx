@@ -414,7 +414,7 @@ const TailwindAdvancedEditor = ({
                   executePlusMenuItem(editorInstance, filtered[selectedIndex]);
               }
             }}
-            className=" sticky top-0 left-0 w-full px-2 py-1 m-0 text-xs bg-muted/50 backdrop-blur-md border-b border-border rounded text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
+            className=" sticky -top-1.5 left-0 w-full px-2 py-1 m-0 text-xs bg-muted border-b border-border rounded-tl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
           />
           {(() => {
             const filtered = suggestionItems.filter(
