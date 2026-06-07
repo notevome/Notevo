@@ -12,7 +12,8 @@
  
  3. **Create a New Branch**
     ```bash
-    git checkout -b feature-name
+    git checkout -b feature-name or
+    git switch -c feature-name
     ```
  
  4. **Make Changes**
