@@ -1,14 +1,13 @@
 ## Contributing
- We appreciate contributions to Notevo! Follow these steps to contribute:
- 
- 1. **Fork the Repository**
-    - Click the 'Fork' button at the top right of the repository page on GitHub.
- 
- 2. **Clone Your Fork**
-    ```bash
-    git clone https://github.com/notevome/Notevo.git
-    cd Notevo
-    ```
+We appreciate contributions to Notevo! Follow these steps to contribute:
+
+1. **Fork the Repository**
+   - Click the **'Fork'** button at the top right of the repository page on GitHub.
+
+2. **Clone Your Fork**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/Notevo.git
+   cd Notevo
  
  3. **Create a New Branch**
     ```bash
