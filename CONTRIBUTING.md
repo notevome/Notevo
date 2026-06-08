@@ -6,8 +6,9 @@ We appreciate contributions to Notevo! Follow these steps to contribute:
 
 2. **Clone Your Fork**
    ```bash
+   mkdir(Creating a new directory (folder))
+   cd new_directory
    git clone https://github.com/YOUR_USERNAME/Notevo.git
-   cd Notevo
  
  3. **Create a New Branch**
     ```bash
