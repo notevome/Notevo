@@ -85,7 +85,7 @@ export default function PdfSettingsSidebar({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
+          <TooltipContent side="right" sideOffset={5} className="!rounded">
             {pdf?.favorite ? "Unpin upload" : "Pin upload"}
           </TooltipContent>
         </Tooltip>
@@ -102,7 +102,7 @@ export default function PdfSettingsSidebar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
+          <TooltipContent side="right" sideOffset={5} className="!rounded">
             Delete upload
           </TooltipContent>
         </Tooltip>
