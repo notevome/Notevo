@@ -697,7 +697,7 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   if (pdf === undefined) {
     return (
       <div className="flex h-full max-w-full min-h-0 flex-col px-0 py-0 mx-0">
-        <div className="flex-1 rounded-none border border-border bg-card animate-pulse" />
+        <div className="flex-1 rounded-none border-none bg-transparent animate-pulse" />
       </div>
     );
   }
