@@ -124,7 +124,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="https://github.com/notevome"
+                    href="https://github.com/notevome/Notevo"
                     target="_blank"
                     className="hover:underline"
                   >
