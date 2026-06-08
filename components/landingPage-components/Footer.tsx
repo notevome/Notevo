@@ -72,6 +72,15 @@ export default function Footer() {
                     Features
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    Give our text editor a try
+                  </Link>
+                </li>
               </ul>
             </div>
 
@@ -111,6 +120,15 @@ export default function Footer() {
                     target="_blank"
                   >
                     Linkedin
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="https://github.com/notevome"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    Version {process.env.NEXT_PUBLIC_APP_VERSION}
                   </Link>
                 </li>
                 <li>
