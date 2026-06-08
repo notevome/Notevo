@@ -62,6 +62,7 @@ import {
   formatWorkspaceName,
   formatUserName,
   formatUserEmail,
+  formatWorkspaceNameForCreateSideBarBtn,
 } from "@/lib/utils";
 import { Doc } from "@/convex/_generated/dataModel";
 import { Input } from "../ui/input";
@@ -301,7 +302,11 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                         disabled={loading}
                       >
                         <FolderClosed size="16" className="mr-2" />
-                        <span>{formatWorkspaceName(workingSpace.name)}</span>
+                        <span>
+                          {formatWorkspaceNameForCreateSideBarBtn(
+                            workingSpace.name,
+                          )}
+                        </span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuGroup>

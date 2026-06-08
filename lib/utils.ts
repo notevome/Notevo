@@ -23,6 +23,10 @@ const getMaxTableNameLength = () => {
 };
 const MAX_NAME_LENGTH = 50;
 const EMAIL_DISPLAY_REGEX = /(.{3}).*?(@.{3}).*/;
+
+export const formatWorkspaceNameForCreateSideBarBtn = (name: string) =>
+  name.length > 10 ? `${name.substring(0, 20)}...` : name;
+
 export const formatWorkspaceName = (name: string) =>
   name.length > MAX_NAME_LENGTH
     ? `${name.substring(0, MAX_NAME_LENGTH)}...`
