@@ -9,6 +9,7 @@ We appreciate contributions to Notevo! Follow these steps to contribute:
    mkdir(Creating a new directory (folder))
    cd new_directory
    git clone https://github.com/YOUR_USERNAME/Notevo.git
+   cd Notevo
  
  3. **Create a New Branch**
     ```bash
