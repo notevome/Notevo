@@ -14,6 +14,8 @@ import {
   FolderOpen,
   Globe,
   Pickaxe,
+  Scale,
+  Gavel,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -520,7 +522,11 @@ const PinnedNoteItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className="!rounded"
+                >
                   {note.title || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -805,7 +811,11 @@ const PinnedUploadItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className="!rounded"
+                >
                   {pdf.title || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -1123,7 +1133,11 @@ const WorkspaceItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className="!rounded"
+                >
                   {workingSpace.name || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -1182,7 +1196,7 @@ const WorkspacesList = memo(function WorkspacesList({
             <span className="sr-only">Add Workspace</span>
           </SidebarGroupAction>
         </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={5}>
+        <TooltipContent side="right" sideOffset={5} className=" !rounded">
           Add Workspace
         </TooltipContent>
       </Tooltip>
@@ -1310,23 +1324,40 @@ const UserAccountSection = memo(function UserAccountSection({
                 Sign out
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <div className="px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap space-y-1 *:text-muted-foreground/80">
-                <Link
-                  href="https://github.com/notevome"
-                  target="_blank"
-                  className=" flex justify-start items-center gap-1 hover:underline"
-                >
-                  <FaGithub size={12} className="inline mt-px" />
-                  Version {process.env.NEXT_PUBLIC_APP_VERSION}
-                </Link>
-                <Link
-                  href="https://www.mohammedh.dev/"
-                  target="_blank"
-                  className=" flex justify-start items-center gap-1 hover:underline"
-                >
-                  <Pickaxe size={12} className="inline mt-px" />
-                  @Mohammed H.
-                </Link>
+              <div className=" flex flex-col gap-px justify-center items-start px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap *:text-muted-foreground/80">
+                <span className=" w-full flex justify-between items-center">
+                  <Link
+                    href="https://github.com/notevome"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    Version {process.env.NEXT_PUBLIC_APP_VERSION}
+                  </Link>
+                  <Link
+                    href="https://www.mohammedh.dev/"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    @Mohammed H.
+                  </Link>
+                </span>
+
+                <span className=" w-full flex justify-between items-center">
+                  <Link
+                    href="/terms-of-service"
+                    target="_blank"
+                    className=" hover:underline"
+                  >
+                    Terms of Service
+                  </Link>
+                  <Link
+                    href="mailto:support@notevo.me"
+                    target="_blank"
+                    className=" hover:underline"
+                  >
+                    Help & Support
+                  </Link>
+                </span>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

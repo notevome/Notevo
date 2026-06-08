@@ -1,7 +1,9 @@
 import MaxWContainer from "@/components/ui/MaxWContainer";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`bg-border app-radius-md animate-pulse ${className}`} />;
+  return (
+    <div className={`bg-border app-radius-md animate-pulse ${className}`} />
+  );
 }
 
 function TabsSkeleton({ count }: { count: number }) {
@@ -9,10 +11,7 @@ function TabsSkeleton({ count }: { count: number }) {
     <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
       <div className="inline-flex items-center gap-3 p-1 bg-card/90 backdrop-blur-sm app-radius-lg border border-border">
         {Array.from({ length: count }).map((_, i) => (
-          <div
-            key={i}
-            className="px-6 py-2.5 app-radius-lg bg-muted/30"
-          >
+          <div key={i} className="px-6 py-2.5 app-radius-lg bg-muted/30">
             <Skeleton className="h-5 w-24" />
           </div>
         ))}

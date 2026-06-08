@@ -811,7 +811,7 @@ export default function WorkingSpacePageClient({
             onValueChange={handleTabChange}
             className="mt-6"
           >
-            <div className="mb-6">
+            <div className=" sticky top-0 left-0 mb-6 z-[900000]">
               <SliderTabsList
                 tables={tables}
                 activeTableId={defaultTableId ?? ""}
