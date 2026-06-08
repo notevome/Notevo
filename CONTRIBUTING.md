@@ -34,13 +34,10 @@ We appreciate contributions to Notevo! Follow these steps to contribute:
     - Click 'New Pull Request' and select your branch.
     - Provide a clear description of your changes.
     - Submit the pull request for review.
-   
-    ====
-
-###Important Notes:
-
-origin points to your fork, not the original repo. That's why you push to origin.
-The Pull Request is how you ask the original repo owners to merge your changes.
-After pushing, GitHub will show you the button to open the PR from your fork → original repo.
  
  We will review your PR and provide feedback as needed. Thanks for contributing! 🚀
+
+ ## Important Notes:
+- origin points to your fork, not the original repo. That's why you push to origin.
+- The Pull Request is how you ask the original repo owners to merge your changes.
+- After pushing, GitHub will show you the button to open the PR from your fork → original repo.
