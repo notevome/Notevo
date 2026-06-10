@@ -4,7 +4,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 const getMaxTitleLength = () => {
-  if (typeof window === "undefined") return 12; // SSR safety
+  if (typeof window === "undefined") return 14; // SSR safety
 
   const width = window.innerWidth;
 
