@@ -321,7 +321,7 @@ const TailwindAdvancedEditor = ({
             }}
             slotAfter={<ImageResizer />}
           >
-            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent">
               <EditorCommandEmpty className="px-2 text-muted-foreground">
                 No results
               </EditorCommandEmpty>
@@ -379,7 +379,7 @@ const TailwindAdvancedEditor = ({
             top: plusMenuPos.y,
             zIndex: 9999,
           }}
-          className=" relative w-64 max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+          className=" relative w-64 max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent"
         >
           <input
             autoFocus
