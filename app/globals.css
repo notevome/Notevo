@@ -225,10 +225,21 @@
   color-scheme: light;
 }
 
-html {
-  scroll-padding-top: 100px;
-  scroll-behavior: smooth;
-  scrollbar-width: thin;
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--accent));
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
 }
 
 ::selection {

@@ -371,9 +371,9 @@ function TableTab({ table }: { table: any }) {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent
-                  className=" px-1.5"
+                  className=" px-1.5 rounded"
                   side="bottom"
-                  sideOffset={5}
+                  sideOffset={10}
                 >
                   Delete table
                 </TooltipContent>
