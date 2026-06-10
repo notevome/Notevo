@@ -365,7 +365,7 @@ const Sidebar = React.memo(
       const resizeHandle =
         state === "expanded" && !isMobile ? (
           <div
-            className="group/resize absolute right-0 top-0 h-full w-2.5 cursor-col-resize "
+            className="group/resize absolute right-0 top-0 h-full w-1 cursor-col-resize "
             onMouseDown={handleMouseDown}
           >
             <div className="absolute -right-[1px] top-0 h-full w-px cursor-col-resize bg-gradient-to-t from-transparent from-5% to-95% to-transparent via-50% group-hover/resize:via-primary" />
