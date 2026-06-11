@@ -236,7 +236,7 @@ const TailwindAdvancedEditor = ({
                       align="center"
                       className=" text-xs font-bold py-0.5 px-1.5 rounded "
                     >
-                      <p>Insert block</p>
+                      <p> Click to insert block below </p>
                     </TooltipContent>
                   </Tooltip>
                   <Tooltip delayDuration={150} disableHoverableContent>
