@@ -357,11 +357,11 @@ function Slider({ children }: { children: React.ReactNode }) {
       )}
 
       {(canScrollRight || canScrollLeft) && (
-        <div className="z-10 absolute -bottom-10 right-0 flex justify-center items-center gap-2">
+        <div className="z-10 absolute -bottom-8 right-0 flex justify-center items-center gap-2">
           <Button
             size="icon"
             variant={canScrollLeft ? "default" : "outline"}
-            className=" h-8 w-8 sm:h-10 sm:w-10 "
+            className="h-9 w-8"
             onClick={() => scroll("left")}
           >
             <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -369,7 +369,7 @@ function Slider({ children }: { children: React.ReactNode }) {
           <Button
             size="icon"
             variant={canScrollRight ? "default" : "outline"}
-            className="h-8 w-8 sm:h-10 sm:w-10 !rounded-none"
+            className="h-9 w-8 !rounded-none"
             onClick={() => scroll("right")}
           >
             <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />

@@ -363,7 +363,7 @@ function TableTab({ table }: { table: any }) {
                       e.stopPropagation();
                       setIsDeleteAlertOpen(true);
                     }}
-                    className=" px-1 h-6 text-foreground hover:text-destructive"
+                    className=" px-1.5 h-7 text-foreground hover:text-destructive"
                     aria-label="delete-table"
                     {...deleteTooltip.triggerProps}
                   >
@@ -371,9 +371,9 @@ function TableTab({ table }: { table: any }) {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent
-                  className=" px-1.5 rounded"
-                  side="bottom"
-                  sideOffset={10}
+                  className=" !rounded-none"
+                  side="right"
+                  sideOffset={5}
                 >
                   Delete table
                 </TooltipContent>
