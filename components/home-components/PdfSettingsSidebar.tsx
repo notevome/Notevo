@@ -95,7 +95,7 @@ export default function PdfSettingsSidebar({
             <Button
               onMouseDown={() => setIsAlertOpen(true)}
               variant="SidebarMenuButton_destructive"
-              className="px-2 h-7 hover:bg-card"
+              className="px-2 h-7 hover:bg-card !rounded-none"
               aria-label="delete-upload"
               {...deleteTooltip.triggerProps}
             >
