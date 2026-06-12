@@ -111,14 +111,14 @@ export default function WorkingSpaceSettingsSidbar({
             <Button
               onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
-              className="px-2 h-7 hover:bg-card"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-workspace"
               {...deleteTooltip.triggerProps}
             >
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!rounded">
+          <TooltipContent side="right" sideOffset={5} className="!rounded-none">
             Delete workspace
           </TooltipContent>
         </Tooltip>

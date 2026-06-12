@@ -1196,12 +1196,17 @@ const WorkspacesList = memo(function WorkspacesList({
           <SidebarGroupAction
             onClick={handleCreateWorkingSpace}
             {...addWorkspaceTooltip.triggerProps}
+            className=" !rounded-none"
           >
             <Plus size={16} className=" text-muted-foreground" />{" "}
             <span className="sr-only">Add Workspace</span>
           </SidebarGroupAction>
         </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={5} className=" !rounded">
+        <TooltipContent
+          side="right"
+          sideOffset={5}
+          className=" text-xs py-0.5 px-1.5 !rounded-none"
+        >
           Add Workspace
         </TooltipContent>
       </Tooltip>
