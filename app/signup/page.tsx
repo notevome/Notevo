@@ -87,7 +87,7 @@ function SignInWithMagicLink({
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={loading} className="mt-3">
+        <Button type="submit" disabled={loading} className="mt-3 ">
           {loading ? (
             <>
               <LoadingAnimation className="mx-2 w-4 h-4" /> Sending...
@@ -190,7 +190,7 @@ export default function SignInPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2">
                         <SignInWithGitHub />
                         <SignInWithGoogle />
                       </div>
@@ -253,7 +253,7 @@ function SignInWithGitHub() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1"
+      className="w-full flex-1 "
       variant="outline"
       type="button"
       onClick={() => {
@@ -282,7 +282,7 @@ function SignInWithGoogle() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1"
+      className="w-full flex-1 !rounded-none"
       variant="outline"
       type="button"
       onClick={() => {

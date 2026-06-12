@@ -146,7 +146,7 @@ export default function NoteSettingsSidbar({
             <Button
               onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
-              className="px-2 h-7 hover:bg-card"
+              className="px-2 h-7 hover:bg-card !rounded-none"
               aria-label="delete-note"
               {...deleteTooltip.triggerProps}
             >
