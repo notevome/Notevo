@@ -217,7 +217,7 @@ const TailwindAdvancedEditor = ({
                       <button
                         type="button"
                         aria-label="Insert block below"
-                        className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-md opacity-50 transition-colors hover:bg-border"
+                        className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -234,7 +234,7 @@ const TailwindAdvancedEditor = ({
                     <TooltipContent
                       side="left"
                       align="center"
-                      className=" text-xs font-bold py-0.5 px-1.5 rounded "
+                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none "
                     >
                       <p> Click to insert block below </p>
                     </TooltipContent>
@@ -272,7 +272,7 @@ const TailwindAdvancedEditor = ({
                     <TooltipContent
                       side="left"
                       align="center"
-                      className=" text-xs font-bold py-0.5 px-1.5 rounded "
+                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none "
                     >
                       <p>Drag</p>
                     </TooltipContent>
