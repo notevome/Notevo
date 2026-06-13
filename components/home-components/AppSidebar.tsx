@@ -530,7 +530,7 @@ const PinnedNoteItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!rounded"
+                  className="!rounded-none"
                 >
                   {note.title || "Untitled"}
                 </TooltipContent>
@@ -819,7 +819,7 @@ const PinnedUploadItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!rounded"
+                  className=" !rounded-none"
                 >
                   {pdf.title || "Untitled"}
                 </TooltipContent>
@@ -1141,7 +1141,7 @@ const WorkspaceItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!rounded"
+                  className="!rounded-none"
                 >
                   {workingSpace.name || "Untitled"}
                 </TooltipContent>
