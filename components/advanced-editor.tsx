@@ -128,17 +128,14 @@ const TailwindAdvancedEditor = ({
   };
 
   const openPlusMenu = (editor: EditorInstance, buttonEl: HTMLElement) => {
-    // Get the node position from the drag handle's current hovered element
     const dragHandleEl =
       buttonEl.closest("[data-drag-handle]")?.parentElement ??
       buttonEl.closest(".novel-drag-handle")?.parentElement ??
       buttonEl.parentElement?.parentElement;
 
-    // Find which block the drag handle is currently next to by checking DOM position
     const rect = buttonEl.getBoundingClientRect();
     const editorView = (editor as any).view;
 
-    // Use the DOM position to find the ProseMirror node position
     const posAtCoords = editorView.posAtCoords({
       left: rect.right + 30,
       top: rect.top + rect.height / 2,
@@ -147,7 +144,6 @@ const TailwindAdvancedEditor = ({
     let insertAt: number | null = null;
     if (posAtCoords) {
       const $pos = editor.state.doc.resolve(posAtCoords.pos);
-      // Go up to depth 1 to get the top-level block
       const depth = $pos.depth >= 1 ? 1 : $pos.depth;
       const nodeStart = $pos.before(depth);
       const node = editor.state.doc.nodeAt(nodeStart);
@@ -169,7 +165,6 @@ const TailwindAdvancedEditor = ({
     if (plusMenuInsertAt === null) return;
     setPlusMenuOpen(false);
 
-    // Insert an empty paragraph at the target position first, then apply the command
     editor
       .chain()
       .focus()
@@ -177,13 +172,11 @@ const TailwindAdvancedEditor = ({
       .setTextSelection(plusMenuInsertAt + 1)
       .run();
 
-    // Now run the item's command with a fake range pointing to the new empty paragraph
     const from = plusMenuInsertAt + 1;
     const to = plusMenuInsertAt + 1;
     item.command({ editor, range: { from, to } });
   };
 
-  // Create extensions array with ToC configuration
   const extensions = [
     TextStyle,
     Color,

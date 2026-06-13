@@ -183,10 +183,19 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
               setEditedTitle(e.target.value);
               debouncedUpdateNoteTitle(e.target.value.trim());
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const editor = document.querySelector<HTMLElement>(
+                  ".tiptap.ProseMirror.py-6",
+                );
+                editor?.focus();
+              }
+            }}
             aria-label="note title"
             placeholder="Untitled Note"
             autoFocus={true}
-            className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       </div>

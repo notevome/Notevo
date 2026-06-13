@@ -30,7 +30,7 @@ import NoteDownloadDropdown from "@/components/home-components/NoteDownloadDropd
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { useMediaQuery } from "react-responsive";
-
+import { Input } from "@/components/ui/input";
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -58,10 +58,14 @@ export default function PublicNotePage() {
   });
 
   const [content, setContent] = useState<JSONContent | undefined>(undefined);
+  const [editedTitle, setEditedTitle] = useState(getNote?.title || "");
 
   useEffect(() => {
     if (getNote?.body) {
       setContent(JSON.parse(getNote.body));
+    }
+    if (getNote?.title) {
+      setEditedTitle(getNote.title);
     }
   }, [getNote]);
 
@@ -126,20 +130,20 @@ export default function PublicNotePage() {
       <header className=" sticky top-0 left-0 w-full z-[10000]">
         <div className=" px-2 py-2.5 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
           <ReadOnlyWarning />
-          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-3 h-8">
+          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-1.5 h-8">
             {PublicNoteTitle}
             <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground ">
               Created {formatNoteTimestamp(getNote.createdAt)} - Last updated{" "}
               {formatNoteTimestamp(getNote.updatedAt)}
             </span>
           </p>
-          <div className="flex justify-end items-center gap-1 w-full">
+          <div className="flex justify-end items-center gap-0 w-full">
             {!isMobile && (
               <>
                 <Tooltip open={noteWidthTooltip.open}>
                   <TooltipTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       className="w-8 h-8 pt-0.5"
                       size="icon"
                       onClick={toggleWidth}
@@ -157,11 +161,16 @@ export default function PublicNotePage() {
                       )}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent align="end" side="bottom">
+                  <TooltipContent
+                    align="end"
+                    side="bottom"
+                    className=" text-xs py-0.5 px-1.5"
+                  >
                     {noteWidth === "false" ? <>Full width</> : <>Max width</>}
                   </TooltipContent>
                 </Tooltip>
                 <NoteDownloadDropdown
+                  className=" !rounded-none"
                   noteBody={JSON.stringify(content)}
                   noteTitle={getNote.title ?? "note"}
                 />
@@ -171,8 +180,8 @@ export default function PublicNotePage() {
             <Tooltip open={themeTooltip.open}>
               <TooltipTrigger asChild>
                 <Button
-                  variant="ghost"
-                  className="w-8 h-8 pt-0.5"
+                  variant="outline"
+                  className="w-8 h-8 pt-0.5 !rounded-none"
                   size="icon"
                   onClick={cycleTheme}
                   {...themeTooltip.triggerProps}
@@ -181,11 +190,18 @@ export default function PublicNotePage() {
                   <span className="sr-only">Toggle theme</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent align="end" side="bottom">
+              <TooltipContent
+                align="end"
+                side="bottom"
+                className=" text-xs py-0.5 px-1.5"
+              >
                 Toggle theme
               </TooltipContent>
             </Tooltip>
-            <Button variant="secondary" className="text-sm px-1.5 py-1.5 h-8">
+            <Button
+              variant="outline"
+              className="text-sm px-1.5 py-1.5 h-8 bg-secondary/70 hover:bg-secondary !rounded-none"
+            >
               <Link
                 href="https://notevo.me/"
                 target="_blank"
@@ -204,6 +220,20 @@ export default function PublicNotePage() {
           " pb-28 mx-auto",
         )}
       >
+        <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
+          <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
+            <Input
+              value={editedTitle}
+              onChange={(e: any) => {
+                setEditedTitle(e.target.value);
+              }}
+              aria-label="note title"
+              placeholder="Untitled Note"
+              autoFocus={true}
+              className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            />
+          </div>
+        </div>
         <TailwindAdvancedEditor
           editorBubblePlacement={true}
           initialContent={parsedContent}
