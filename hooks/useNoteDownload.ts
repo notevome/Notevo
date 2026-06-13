@@ -51,6 +51,10 @@ export function useNoteDownload({
       return;
     }
 
+    if (!noteTitle) {
+      alert("No Title available for this note to download.");
+      return;
+    }
     let parsedBody: any;
     try {
       parsedBody = JSON.parse(noteBody);
@@ -101,7 +105,7 @@ export function useNoteDownload({
     let ext!: string;
     const filename = `${noteTitle || "note"}`;
 
-    // ── PDF Helper ──────────────────────────────────────────────
+    //  PDF Helper
     const createReadableExportElement = () => {
       const tempDiv = document.createElement("div");
       tempDiv.style.color = "#000000";
@@ -272,7 +276,15 @@ export function useNoteDownload({
           const maxWidth = pageWidth - 2 * margin;
           const lineHeight = 7;
           let yPosition = margin;
-
+          pdf.setFontSize(24);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(0, 0, 0);
+          const titleLines = pdf.splitTextToSize(noteTitle, maxWidth);
+          titleLines.forEach((line: string) => {
+            pdf.text(line, margin, yPosition, { baseline: "top" });
+            yPosition += 10;
+          });
+          yPosition += 6; // spacing after title
           const checkAndAddPage = (requiredSpace = lineHeight) => {
             if (yPosition + requiredSpace > pageHeight - margin) {
               pdf.addPage();
@@ -350,7 +362,11 @@ export function useNoteDownload({
                   );
                   lines.forEach((line: string, idx: number) => {
                     checkAndAddPage();
-                    pdf.text(line, idx === 0 ? margin + 5 : margin + 10, yPosition);
+                    pdf.text(
+                      line,
+                      idx === 0 ? margin + 5 : margin + 10,
+                      yPosition,
+                    );
                     yPosition += lineHeight;
                   });
                 });
@@ -374,7 +390,13 @@ export function useNoteDownload({
                     yPosition = margin;
                   }
                   pdf.setFillColor(248, 249, 250);
-                  pdf.rect(margin - 2, yPosition - 3.5, maxWidth + 4, codeLineHeight, "F");
+                  pdf.rect(
+                    margin - 2,
+                    yPosition - 3.5,
+                    maxWidth + 4,
+                    codeLineHeight,
+                    "F",
+                  );
                   pdf.setTextColor(40, 40, 40);
                   let xPos = margin + 1;
                   const charWidth = 1.4;
@@ -407,13 +429,21 @@ export function useNoteDownload({
                 const quoteStartY = yPosition;
                 pdf.setFontSize(10);
                 pdf.setFont("helvetica", "italic");
-                const quoteLines = pdf.splitTextToSize(quoteText, maxWidth - 15);
+                const quoteLines = pdf.splitTextToSize(
+                  quoteText,
+                  maxWidth - 15,
+                );
                 quoteLines.forEach((line: string) => {
                   checkAndAddPage();
                   pdf.text(line, margin + 10, yPosition);
                   yPosition += lineHeight;
                 });
-                pdf.line(margin + 2, quoteStartY - 2, margin + 2, yPosition - lineHeight + 2);
+                pdf.line(
+                  margin + 2,
+                  quoteStartY - 2,
+                  margin + 2,
+                  yPosition - lineHeight + 2,
+                );
                 yPosition += lineHeight * 0.3;
                 break;
               }
@@ -507,7 +537,7 @@ export function useNoteDownload({
 
   return { handleDownload };
 
-  // ── Parse Tiptap JSON → docx children ──────────────────────────
+  // Parse Tiptap JSON → docx children
   function parseTiptapToDocx(nodes: any[]): (Paragraph | any)[] {
     const children: (Paragraph | any)[] = [];
 
@@ -664,9 +694,7 @@ export function useNoteDownload({
         );
 
         if (itemNode.content?.length > 1) {
-          listItemsParsed.push(
-            ...parseTiptapToDocx(itemNode.content.slice(1)),
-          );
+          listItemsParsed.push(...parseTiptapToDocx(itemNode.content.slice(1)));
         }
       }
     });
