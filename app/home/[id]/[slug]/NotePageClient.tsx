@@ -11,8 +11,16 @@ import type { JSONContent } from "@tiptap/react";
 import { useMutation } from "convex/react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+import { Input } from "@/components/ui/input";
+import z from "zod";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 const noteMemoryCache = new Map<string, unknown>();
+
+const noteTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(55, "Title must be 55 characters or less");
 
 export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const { noteWidth } = useNoteWidth();
@@ -20,6 +28,10 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const [lastNote, setLastNote] = useState<typeof note>(() => {
     return noteMemoryCache.get(noteId as unknown as string) as typeof note;
   });
+
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     setLastNote(
@@ -39,8 +51,6 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, body } = args;
-
-      // Update single note query (for the current note being edited)
       const note = local.getQuery(api.notes.getNoteById, { _id });
       if (note) {
         local.setQuery(
@@ -57,6 +67,7 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   );
 
   const [content, setContent] = useState<JSONContent>();
+  const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
 
   const debouncedUpdateNote = useDebouncedCallback(
     (updatedContent: JSONContent) => {
@@ -66,6 +77,41 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
       });
     },
     500,
+  );
+
+  const debouncedUpdateNoteTitle = useDebouncedCallback(
+    (trimmedTitle: string) => {
+      const currentTitle = stableNote?.title || "";
+      const result = noteTitleSchema.safeParse(trimmedTitle);
+
+      if (!result.success) {
+        setEditedTitle("");
+        return;
+      }
+
+      const slugifiedTitle = trimmedTitle
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
+
+      const segments = pathname.split("/");
+      segments[segments.length - 1] = slugifiedTitle;
+      const newPath = segments.join("/");
+
+      router.replace(`${newPath}?${searchParams.toString()}`);
+
+      if (trimmedTitle !== currentTitle) {
+        try {
+          updateNote({ _id: noteId, title: trimmedTitle });
+        } catch (error) {
+          console.error("Error updating note title:", error);
+          setEditedTitle(currentTitle);
+        }
+      }
+    },
+    100,
   );
 
   const serverContent = useMemo(() => {
@@ -85,17 +131,12 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   useEffect(() => {
     if (!stableNote?.title) return;
 
-    // Store original values
     const originalTitle = document.title;
-
-    // Update document title
     document.title = `${stableNote.title} - Notevo`;
 
-    // Update meta description
     let metaDescription = document.querySelector('meta[name="description"]');
     const originalContent = metaDescription?.getAttribute("content");
 
-    // Create better description from note content or title
     const descriptionText = stableNote.body
       ? `${stableNote.title}: ${stableNote.body.substring(0, 150)}...`
       : `View and edit "${stableNote.title}" on Notevo`;
@@ -113,7 +154,6 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
       metaDescription = newMeta;
     }
 
-    // Cleanup function
     return () => {
       document.title = originalTitle;
       if (createdMeta && metaDescription) {
@@ -124,7 +164,6 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
     };
   }, [stableNote?.title, stableNote?.body]);
 
-  // Show loading only when we have no cached value to show.
   if (stableNote === undefined) {
     return <NoteLoadingSkeletonUI />;
   }
@@ -132,10 +171,25 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   return (
     <div
       className={cn(
-        noteWidth === "false" ? " Desktop:w-[900px] w-full px-4" : "px-6",
-        " pb-28 mx-auto",
+        noteWidth === "false" ? "Desktop:w-[900px] w-full px-4" : "px-6",
+        "pb-28 mx-auto",
       )}
     >
+      <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
+        <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
+          <Input
+            value={editedTitle}
+            onChange={(e: any) => {
+              setEditedTitle(e.target.value);
+              debouncedUpdateNoteTitle(e.target.value.trim());
+            }}
+            aria-label="note title"
+            placeholder="Untitled Note"
+            autoFocus={true}
+            className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
+      </div>
       <TailwindAdvancedEditor
         editorBubblePlacement={false}
         initialContent={content ?? serverContent}
