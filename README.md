@@ -32,7 +32,6 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  - 📂 **Cloud storage support with Convex**
  - 🔐 **Authentication with Convex**
  - 🚀 **Optimized performance** with Convex
- - 🌍 **Deployed on Vercel** for seamless access
  
  ## Tech Stack
  
