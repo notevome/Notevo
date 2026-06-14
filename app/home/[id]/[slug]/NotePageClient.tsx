@@ -198,10 +198,9 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
             }}
             aria-label="note title"
             placeholder="Untitled Note"
-            autoFocus={true}
             rows={1}
             style={{ resize: "none", overflow: "hidden" }}
-            className="px-0.5 py-6 my-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="px-0 pt-6 pb-2 my-0 mx-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       </div>
