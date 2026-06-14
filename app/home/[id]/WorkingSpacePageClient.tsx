@@ -679,13 +679,22 @@ export default function WorkingSpacePageClient({
       const result = workspaceNameSchema.safeParse(workspaceName);
 
       if (!result.success) {
-        setEditedName("");
-        toast({
-          title: "Naming failed",
-          description:
-            "Name must be 30 characters or less and it can't be empty.",
-          variant: "destructive",
-        });
+        const issue = result.error.issues[0];
+        if (issue.code === "too_small") {
+          setEditedName("");
+          toast({
+            title: "Naming failed",
+            description: "Name must not be empty.",
+            variant: "destructive",
+          });
+        } else if (issue.code === "too_big") {
+          setEditedName(workspace?.name);
+          toast({
+            title: "Naming failed",
+            description: "Name must be 30 characters or less ",
+            variant: "destructive",
+          });
+        }
         return;
       }
 

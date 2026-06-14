@@ -87,13 +87,23 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
       const result = noteTitleSchema.safeParse(trimmedTitle);
 
       if (!result.success) {
-        setEditedTitle("");
-        toast({
-          title: "Naming failed",
-          description:
-            "Title must be 60 characters or less and it can't be empty.",
-          variant: "destructive",
-        });
+        const issue = result.error.issues[0];
+        if (issue.code === "too_small") {
+          setEditedTitle("");
+          toast({
+            title: "Naming failed",
+            description: "Title must not be empty.",
+            variant: "destructive",
+          });
+        } else if (issue.code === "too_big") {
+          setEditedTitle(stableNote?.title || "");
+          toast({
+            title: "Naming failed",
+            description: "Title must be 60 characters or less",
+            variant: "destructive",
+          });
+        }
+
         return;
       }
       const currentUrl = new URL(window.location.href);
