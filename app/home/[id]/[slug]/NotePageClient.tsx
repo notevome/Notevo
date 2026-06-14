@@ -11,16 +11,17 @@ import type { JSONContent } from "@tiptap/react";
 import { useMutation } from "convex/react";
 import { useEffect, useMemo, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
-import { Input } from "@/components/ui/input";
 import z from "zod";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-
+import { generateSlug } from "@/lib/generateSlug";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 const noteMemoryCache = new Map<string, unknown>();
 
 const noteTitleSchema = z
   .string()
   .min(1, "Title cannot be empty")
-  .max(55, "Title must be 55 characters or less");
+  .max(60, "Title must be 60 characters or less");
 
 export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const { noteWidth } = useNoteWidth();
@@ -32,6 +33,7 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     setLastNote(
@@ -86,21 +88,23 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
 
       if (!result.success) {
         setEditedTitle("");
+        toast({
+          title: "Naming failed",
+          description:
+            "Title must be 60 characters or less and it can't be empty.",
+          variant: "destructive",
+        });
         return;
       }
+      const currentUrl = new URL(window.location.href);
 
-      const slugifiedTitle = trimmedTitle
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
+      const segments = currentUrl.pathname.split("/");
 
-      const segments = pathname.split("/");
-      segments[segments.length - 1] = slugifiedTitle;
-      const newPath = segments.join("/");
+      segments[3] = generateSlug(trimmedTitle);
 
-      router.replace(`${newPath}?${searchParams.toString()}`);
+      currentUrl.pathname = segments.join("/");
+
+      window.history.replaceState({}, "", currentUrl.href);
 
       if (trimmedTitle !== currentTitle) {
         try {
@@ -177,7 +181,7 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
     >
       <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
         <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
-          <Input
+          <Textarea
             value={editedTitle}
             onChange={(e: any) => {
               setEditedTitle(e.target.value);
@@ -195,7 +199,9 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
             aria-label="note title"
             placeholder="Untitled Note"
             autoFocus={true}
-            className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            rows={1}
+            style={{ resize: "none", overflow: "hidden" }}
+            className="px-0.5 py-6 my-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       </div>

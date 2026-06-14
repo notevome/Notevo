@@ -30,7 +30,7 @@ import NoteDownloadDropdown from "@/components/home-components/NoteDownloadDropd
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { useMediaQuery } from "react-responsive";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -222,15 +222,26 @@ export default function PublicNotePage() {
       >
         <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
           <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
-            <Input
+            <Textarea
               value={editedTitle}
               onChange={(e: any) => {
                 setEditedTitle(e.target.value);
               }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const editor = document.querySelector<HTMLElement>(
+                    ".tiptap.ProseMirror.py-6",
+                  );
+                  editor?.focus();
+                }
+              }}
               aria-label="note title"
               placeholder="Untitled Note"
               autoFocus={true}
-              className="px-0 py-0 my-0 !h-auto text-2xl md:!text-5xl placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              rows={1}
+              style={{ resize: "none", overflow: "hidden" }}
+              className="px-0.5 py-6 my-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>
