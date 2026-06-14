@@ -181,7 +181,7 @@ export default function PublicNotePage() {
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-8 h-8 pt-0.5 !rounded-none"
+                  className={`w-8 h-8 pt-0.5 ${isMobile ? "" : "!rounded-none"} `}
                   size="icon"
                   onClick={cycleTheme}
                   {...themeTooltip.triggerProps}
