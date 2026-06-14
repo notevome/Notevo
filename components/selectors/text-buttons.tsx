@@ -44,7 +44,7 @@ function ToolbarTooltipButton({
       </TooltipTrigger>
       <TooltipContent
         side="top"
-        className=" flex justify-center items-center px-1.5"
+        className=" flex justify-center items-center px-1.5 py-0.5"
         sideOffset={6}
       >
         <span>{label}</span>

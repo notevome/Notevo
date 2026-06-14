@@ -621,7 +621,7 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-
+  const [isMouseDown, setIsMouseDown] = useState(false);
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
@@ -653,15 +653,18 @@ export default function WorkingSpacePageClient({
     setEditedName(workspace.name || "Untitled");
     setIsEditingName(true);
     requestAnimationFrame(() => {
-      nameInputRef.current?.focus();
-      nameInputRef.current?.select();
+      const inputRef = nameInputRef.current;
+      if (!inputRef) return;
+      inputRef.focus();
+      inputRef.select();
+      inputRef.scrollLeft = 0;
     });
   }, [workspace]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        nameInputRef.current?.blur();
+        setIsEditingName(false);
       } else if (e.key === "Escape") {
         setIsEditingName(false);
         setEditedName(workspace?.name || "Untitled");
@@ -669,31 +672,28 @@ export default function WorkingSpacePageClient({
     },
     [workspace?.name],
   );
+
   const debouncedUpdateWorkSpaceName = useDebouncedCallback(
     (workspaceName: string) => {
       const currentTitle = workspace?.name || "";
       const result = workspaceNameSchema.safeParse(workspaceName);
 
       if (!result.success) {
-        setEditedName(workspace?.name || "Untitled");
+        setEditedName("");
         toast({
           title: "Naming failed",
           description:
             "Name must be 30 characters or less and it can't be empty.",
           variant: "destructive",
         });
-        setIsEditingName(false);
         return;
       }
 
       if (workspaceName !== currentTitle) {
         try {
           updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
-          nameInputRef.current?.blur();
         } catch (error) {
           console.error("Error updating workspace name:", error);
-        } finally {
-          setIsEditingName(false);
         }
       }
     },
@@ -796,7 +796,8 @@ export default function WorkingSpacePageClient({
                     debouncedUpdateWorkSpaceName(e.target.value.trim());
                   }}
                   onKeyDown={handleNameKeyDown}
-                  className="min-w-fit max-w-2xl border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  placeholder="Untitled WorkSpace"
+                  className="min-w-fit max-w-2xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
