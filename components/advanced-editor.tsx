@@ -276,7 +276,6 @@ const TailwindAdvancedEditor = ({
           )}
           <EditorContent
             initialContent={initialContent}
-            autofocus={true}
             extensions={extensions}
             className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder"
             editorProps={{

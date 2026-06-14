@@ -28,6 +28,7 @@ import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -66,6 +67,7 @@ import {
 } from "@/lib/parse-tiptap-content";
 import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { useDebouncedCallback } from "use-debounce";
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -85,7 +87,7 @@ const workspaceNameSchema = z
 const noteTitleSchema = z
   .string()
   .min(1, "Title cannot be empty")
-  .max(55, "Title must be 55 characters or less");
+  .max(60, "Title must be 60 characters or less");
 
 const tableNameSchema = z
   .string()
@@ -429,7 +431,7 @@ function TableTab({ table }: { table: any }) {
             >
               Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
+          </AlertDialogFooter>{" "}
         </AlertDialogContent>
       </AlertDialog>
     </>
@@ -603,7 +605,7 @@ export default function WorkingSpacePageClient({
     workspace && (workspace.slug as string);
 
   const tables = tablesQuery !== undefined ? tablesQuery : cached?.tables;
-
+  const { toast } = useToast();
   useEffect(() => {
     const key = workingSpaceId as unknown as string;
     const prev = workspacePageMemoryCache.get(key) ?? {};
@@ -656,24 +658,6 @@ export default function WorkingSpacePageClient({
     });
   }, [workspace]);
 
-  const handleNameBlur = useCallback(async () => {
-    const result = workspaceNameSchema.safeParse(editedName.trim());
-    if (!result.success) {
-      setIsEditingName(false);
-      setEditedName(workspace?.name || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (workspace?.name || "Untitled")) {
-      try {
-        await updateWorkingSpace({ _id: workingSpaceId, name: trimmed });
-      } catch (error) {
-        console.error("Error updating workspace name:", error);
-      }
-    }
-    setIsEditingName(false);
-  }, [editedName, workspace?.name, workingSpaceId, updateWorkingSpace]);
-
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
@@ -684,6 +668,35 @@ export default function WorkingSpacePageClient({
       }
     },
     [workspace?.name],
+  );
+  const debouncedUpdateWorkSpaceName = useDebouncedCallback(
+    (workspaceName: string) => {
+      const currentTitle = workspace?.name || "";
+      const result = workspaceNameSchema.safeParse(workspaceName);
+
+      if (!result.success) {
+        setEditedName(workspace?.name || "Untitled");
+        toast({
+          title: "Naming failed",
+          description:
+            "Name must be 30 characters or less and it can't be empty.",
+          variant: "destructive",
+        });
+        setIsEditingName(false);
+        return;
+      }
+
+      if (workspaceName !== currentTitle) {
+        try {
+          updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
+          nameInputRef.current?.blur();
+          setIsEditingName(false);
+        } catch (error) {
+          console.error("Error updating workspace name:", error);
+        }
+      }
+    },
+    100,
   );
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -777,8 +790,10 @@ export default function WorkingSpacePageClient({
                 <Input
                   ref={nameInputRef as any}
                   value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  onBlur={handleNameBlur}
+                  onChange={(e: any) => {
+                    setEditedName(e.target.value);
+                    debouncedUpdateWorkSpaceName(e.target.value.trim());
+                  }}
                   onKeyDown={handleNameKeyDown}
                   className="min-w-fit max-w-2xl border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />

@@ -101,7 +101,7 @@ const workspaceNameSchema = z
 const noteTitleSchema = z
   .string()
   .min(1, "Title cannot be empty")
-  .max(55, "Title must be 55 characters or less");
+  .max(60, "Title must be 60 characters or less");
 
 const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "notevo_create_note_workspace_id";
 const PINNED_NOTES_EXPANDED_STORAGE_KEY =
