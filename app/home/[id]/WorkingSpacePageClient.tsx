@@ -690,9 +690,10 @@ export default function WorkingSpacePageClient({
         try {
           updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
           nameInputRef.current?.blur();
-          setIsEditingName(false);
         } catch (error) {
           console.error("Error updating workspace name:", error);
+        } finally {
+          setIsEditingName(false);
         }
       }
     },
