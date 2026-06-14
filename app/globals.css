@@ -438,7 +438,7 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
 hr {
   border: none !important;
   border-top: 2px solid hsl(var(--border)) !important;
-  margin: 2rem 0 !important;
+  margin: 1rem 0 !important;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before,
