@@ -1,5 +1,5 @@
 "use client";
-import { Slash } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import {
@@ -41,7 +41,6 @@ export default function BreadcrumbWithCustomSeparator() {
         )
       : null;
 
-  // Function to truncate display name based on device
   const getTruncatedName = (name: string) => {
     if (isMobile) {
       return name.length > 10 ? `${name.slice(0, 12)}...` : name;
@@ -50,20 +49,19 @@ export default function BreadcrumbWithCustomSeparator() {
     } else if (isTabletPro_horizontal) {
       return name.length > 20 ? `${name.slice(0, 35)}...` : name;
     }
-    return name.length > 30 ? `${name.slice(0, 45)}...` : name;
+    return name.length > 35 ? `${name.slice(0, 45)}...` : name;
   };
 
   return (
     <div className="py-2">
       <Breadcrumb>
-        <BreadcrumbList className="flex flex-nowrap overflow-x-auto whitespace-nowrap text-primary [&::-webkit-scrollbar]:w-1.5">
+        <BreadcrumbList className="flex flex-nowrap overflow-x-auto whitespace-nowrap text-primary !gap-0.5 [&::-webkit-scrollbar]:w-1.5">
           {pathSegments.map((segment, index) => {
             // Build the path up to this segment
             const pathToSegment =
               "/" + pathSegments.slice(0, index + 1).join("/");
             const isLast = index === pathSegments.length - 1;
 
-            // Determine display name based on segment type
             let displayName;
 
             // If this is the workspace ID segment and we have workspace data
@@ -105,7 +103,7 @@ export default function BreadcrumbWithCustomSeparator() {
                   )}
                 </BreadcrumbItem>
                 {!isLast && (
-                  <Slash className="w-3 h-3 mx-1 text-muted-foreground flex-shrink-0" />
+                  <ChevronRight className="w-3.5 h-3.5 mx-1 mt-px text-muted-foreground flex-shrink-0" />
                 )}
               </div>
             );
