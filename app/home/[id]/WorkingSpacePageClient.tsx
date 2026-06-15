@@ -805,6 +805,10 @@ export default function WorkingSpacePageClient({
                     debouncedUpdateWorkSpaceName(e.target.value.trim());
                   }}
                   onKeyDown={handleNameKeyDown}
+                  onBlur={() => {
+                    setEditedName(editedName);
+                    setIsEditingName(false);
+                  }}
                   placeholder="Untitled WorkSpace"
                   className="min-w-fit max-w-2xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
