@@ -275,6 +275,21 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+@-moz-document url-prefix() {
+  textarea {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+  }
+
+  textarea.field-sizing-content {
+    height: auto !important;
+    overflow: hidden !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
 div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   background: hsl(var(--muted)) !important;
   z-index: 90000 !important;
