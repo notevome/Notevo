@@ -71,7 +71,7 @@ export const CodeBlockComponent = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="max-h-64 min-w-32 overflow-y-auto scroll-smooth [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent"
+            className="max-h-64 min-w-32 overflow-y-auto scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
             align="start"
           >
             {languages.map((lang) => (

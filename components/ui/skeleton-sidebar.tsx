@@ -50,7 +50,7 @@ export default function SkeletonSidebar({
           )}
         </div>
       </SidebarHeader>
-      <SidebarContent className="text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent group-hover:scrollbar-thumb-border">
+      <SidebarContent className="text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border">
         <SidebarGroup>
           <SidebarGroupLabel className="text-border">
             <SkeletonTextAnimation className="w-24 h-3" />

@@ -229,27 +229,21 @@ html {
   scroll-behavior: smooth;
 }
 
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
-}
-
 ::-webkit-scrollbar {
   width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: hsl(0 0% 97.6471%);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground)/0.5);
+  background: hsla(17, 22%, 32%, 0.854);
   border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+  background: hsl(16.6667 21.9512% 32.1569%);
 }
 
 ::selection {

@@ -261,7 +261,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const fullMenu = menu.show && (
     <div
       ref={menuRef}
-      className="fixed bg-muted border border-border rounded-tl-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent"
+      className="fixed bg-muted border border-border rounded-tl-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent scrollbar-gutter-stable"
       style={{ left: menu.x, top: menu.y }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
