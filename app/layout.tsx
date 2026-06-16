@@ -13,9 +13,12 @@ import {
   generateStructuredData,
 } from "@/lib/seo";
 import Script from "next/script";
+
 const lato = Lato({
-  weight: ["400"],
+  weight: ["400", "700"],
   subsets: ["latin"],
+  display: "swap",
+  variable: "--font-lato",
 });
 
 export const metadata: Metadata = {
@@ -46,7 +49,7 @@ export default function RootLayout({
       <body
         className={cn(
           "bg-background text-foreground flex flex-col min-h-screen",
-          lato.className,
+          lato.variable, // Changed to variable for better control
         )}
       >
         <Script
@@ -62,8 +65,6 @@ export default function RootLayout({
             <ConvexAuthNextjsServerProvider>
               <ConvexClientProvider>
                 <ConvexQueryCacheProvider
-                  // Keep a small number of recently-used query subscriptions alive briefly to reduce
-                  // navigation flicker, but avoid runaway idle subscriptions (bandwidth).
                   expiration={5 * 60_000}
                   maxIdleEntries={50}
                 >
