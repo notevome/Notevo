@@ -9,7 +9,7 @@ import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { cn } from "@/lib/utils";
 import type { JSONContent } from "@tiptap/react";
 import { useMutation } from "convex/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -70,6 +70,18 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
 
   const [content, setContent] = useState<JSONContent>();
   const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  // Firefox doesn't support field-sizing:content, so we manually sync height.
+  const syncTitleHeight = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  // Sync on mount (for existing content) and whenever noteId changes
+  useEffect(() => {
+    if (titleRef.current) syncTitleHeight(titleRef.current);
+  }, [noteId, stableNote?.title]);
 
   const debouncedUpdateNote = useDebouncedCallback(
     (updatedContent: JSONContent) => {
@@ -192,8 +204,10 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
       <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
         <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
           <Textarea
+            ref={titleRef}
             value={editedTitle}
-            onChange={(e: any) => {
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+              syncTitleHeight(e.target);
               setEditedTitle(e.target.value);
               debouncedUpdateNoteTitle(e.target.value.trim());
             }}
