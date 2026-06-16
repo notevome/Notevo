@@ -6,6 +6,7 @@
   or use the "Copy code" button at https://ui.shadcn.com/themes */
 @layer base {
   :root {
+    --font-lato: var(--font-lato), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --placeholder: 0 0% 93.7255%;
     --selection-background: #94c4e270;
     --selection-color: #000000;
@@ -361,6 +362,11 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
 
 @layer base {
   body {
+    font-family: var(--font-lato);
+    font-feature-settings: "kern" 1, "liga" 1, "tnum" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     @apply bg-background text-foreground;
   }
 }
