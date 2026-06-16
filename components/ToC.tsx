@@ -399,7 +399,7 @@ export const ToC = ({ items = [], editor, onActiveIdChange }: ToCProps) => {
     <div
       className={`max-h-[40rem] ${
         isExpanded
-          ? "overflow-y-auto [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent"
+          ? "overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
           : "overflow-hidden"
       }`}
       onMouseEnter={() => setIsExpanded(true)}

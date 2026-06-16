@@ -571,7 +571,7 @@ export default function SearchDialog({
         <div
           ref={resultsScrollRef}
           onScroll={handleResultsScroll}
-          className="min-h-[40vh] max-h-[40vh] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent p-3"
+          className="min-h-[40vh] max-h-[40vh] overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
         >
           {canScroll && scrollTop > 8 && (
             <div

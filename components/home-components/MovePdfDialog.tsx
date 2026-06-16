@@ -245,7 +245,7 @@ export default function MovePdfDialog({
           </Button>
         </div>
 
-        <div className="min-h-[320px] max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent p-3 bg-card">
+        <div className="min-h-[320px] max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3 bg-card">
           {moveTargets === undefined ? (
             <div className="space-y-2 p-2">
               {Array.from({ length: 6 }).map((_, index) => (

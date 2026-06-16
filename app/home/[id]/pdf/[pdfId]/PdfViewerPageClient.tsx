@@ -229,7 +229,7 @@ function SearchPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 transition-all scroll-smooth [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="scrollbar-gutter-stable flex-1 overflow-y-auto p-2 transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
         {!query.trim() ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <FileSearch className="h-8 w-8 text-muted-foreground" />
@@ -301,7 +301,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div
         ref={panelRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent"
+        className="scrollbar-gutter-stable flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
       >
         <div className="flex flex-col items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => {
@@ -591,7 +591,7 @@ function PdfViewerContent({
         ) : null}
 
         <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
-          <Pages className="h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:w-1.5 scrollbar-thumb-border scrollbar-track-transparent">
+          <Pages className="scrollbar-gutter-stable [&::-webkit-scrollbar-track]:bg-transparent h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border">
             <Page>
               <CanvasLayer />
               <TextLayer />
