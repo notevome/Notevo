@@ -9,7 +9,7 @@ import { useNoteWidth } from "@/hooks/useNoteWidth";
 import { cn } from "@/lib/utils";
 import type { JSONContent } from "@tiptap/react";
 import { useMutation } from "convex/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -70,18 +70,31 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
 
   const [content, setContent] = useState<JSONContent>();
   const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
-  const titleRef = useRef<HTMLTextAreaElement>(null);
 
-  // Firefox doesn't support field-sizing:content, so we manually sync height.
-  const syncTitleHeight = (el: HTMLTextAreaElement) => {
-    el.style.height = "auto";
+  // stableNote loads async — if editedTitle is still empty when data arrives, sync it
+  useEffect(() => {
+    if (stableNote?.title && !editedTitle) {
+      setEditedTitle(stableNote.title);
+    }
+  }, [stableNote?.title]);
+
+  useEffect(() => {
+    if (titleElRef.current) syncHeight(titleElRef.current);
+  }, [noteId, editedTitle]);
+
+  const syncHeight = (el: HTMLTextAreaElement) => {
+    el.style.minHeight = "0";
+    el.style.height = "0";
     el.style.height = `${el.scrollHeight}px`;
   };
 
-  // Sync on mount (for existing content) and whenever noteId changes
-  useEffect(() => {
-    if (titleRef.current) syncTitleHeight(titleRef.current);
-  }, [noteId, stableNote?.title]);
+  const titleElRef = useRef<HTMLTextAreaElement | null>(null);
+  const setTitleRef = useCallback((el: HTMLTextAreaElement | null) => {
+    titleElRef.current = el;
+    if (!el) return;
+    syncHeight(el);
+    el.addEventListener("input", () => syncHeight(el));
+  }, []);
 
   const debouncedUpdateNote = useDebouncedCallback(
     (updatedContent: JSONContent) => {
@@ -201,13 +214,12 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
         "pb-28 mx-auto",
       )}
     >
-      <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder">
+      <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder overflow-hidden">
         <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
           <Textarea
-            ref={titleRef}
+            ref={setTitleRef}
             value={editedTitle}
             onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-              syncTitleHeight(e.target);
               setEditedTitle(e.target.value);
               debouncedUpdateNoteTitle(e.target.value.trim());
             }}
@@ -223,8 +235,8 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
             aria-label="note title"
             placeholder="Untitled Note"
             rows={1}
-            style={{ resize: "none", overflow: "hidden" }}
-            className="px-0 py-2 my-0 mx-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            style={{ resize: "none", overflow: "hidden", width: "100%" }}
+            className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       </div>
