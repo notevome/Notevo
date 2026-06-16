@@ -283,8 +283,6 @@ input[type=number] {
   }
 
   textarea.field-sizing-content {
-    height: auto !important;
-    overflow: hidden !important;
     white-space: pre-wrap !important;
     overflow-wrap: anywhere !important;
   }
@@ -375,9 +373,7 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
 
 @layer utilities {
   .field-sizing-content {
-    /* field-sizing is Chrome-only; Firefox fallback via JS resize observer or overflow: hidden on textarea */
     field-sizing: content;
-    /* Firefox: textareas need explicit min-height and overflow:hidden + JS to auto-grow */
     min-height: 0;
   }
 
