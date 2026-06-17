@@ -129,7 +129,7 @@ export default function PublicNote({
             </Button>
           </TooltipTrigger>
         </DropdownMenuTrigger>
-        <TooltipContent side="bottom" alignOffset={1} align="end">
+        <TooltipContent side="bottom" alignOffset={0} align="end">
           {getNote?.published
             ? "Take a look at your published note"
             : "Publish your note to the web"}
@@ -138,7 +138,7 @@ export default function PublicNote({
 
       <DropdownMenuContent
         side="bottom"
-        alignOffset={1}
+        alignOffset={0}
         align="end"
         className=" min-w-[18.5rem] px-3 pb-3 pt-2 space-y-4 text-muted-foreground z-[10000]"
       >
