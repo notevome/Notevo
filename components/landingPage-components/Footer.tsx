@@ -128,7 +128,7 @@ export default function Footer() {
                     target="_blank"
                     className="hover:underline"
                   >
-                    Version {process.env.NEXT_PUBLIC_APP_VERSION}
+                    {process.env.NEXT_PUBLIC_APP_VERSION}
                   </Link>
                 </li>
                 <li>

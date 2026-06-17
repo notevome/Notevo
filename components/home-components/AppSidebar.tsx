@@ -1341,7 +1341,7 @@ const UserAccountSection = memo(function UserAccountSection({
                     target="_blank"
                     className="hover:underline"
                   >
-                    Version {process.env.NEXT_PUBLIC_APP_VERSION}
+                    {process.env.NEXT_PUBLIC_APP_VERSION}
                   </Link>
                   <Link
                     href="https://www.mohammedh.dev/"
