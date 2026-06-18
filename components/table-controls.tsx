@@ -13,7 +13,12 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "./ui/button";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface TableControlsProps {
   editor: Editor;
 }
@@ -49,7 +54,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
-
+  const tooltip = useHoverTooltip();
   const focusCell = useCallback(
     (cell: HTMLElement) => {
       try {
@@ -231,30 +236,52 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const pill = (
     <div
       ref={pillRef}
-      className="fixed flex items-center gap-0.5 bg-muted border border-border rounded-tl-md shadow-md px-0.5 py-0.5 z-[9998]"
+      className="fixed flex items-center gap-0.5 bg-muted border border-border rounded-tl-lg shadow-md px-0.5 py-0.5 z-[9998]"
       style={{ left: pillX, top: pillY }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Button
-        variant="ghost"
-        title="Add row below"
-        aria-label="Add row below"
-        onClick={quickAdd}
-        className=" w-6 h-6 "
-        size="icon"
-      >
-        <Plus className="w-3.5 h-3.5 " />
-      </Button>
-      <Button
-        variant="ghost"
-        title="Cell options"
-        aria-label="Cell options"
-        onClick={openMenu}
-        className=" w-6 h-6"
-        size="icon"
-      >
-        <ChevronDown className="w-3.5 h-3.5" />
-      </Button>
+      <Tooltip disableHoverableContent delayDuration={100}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            aria-label="Add row below"
+            onClick={quickAdd}
+            className=" w-6 h-6 "
+            size="icon"
+          >
+            <Plus className="w-3.5 h-3.5 " />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          alignOffset={0}
+          align="end"
+          className=" text-xs py-0.5 px-1.5"
+        >
+          Add row below
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip disableHoverableContent delayDuration={100}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            aria-label="Cell options"
+            onClick={openMenu}
+            className=" w-6 h-6 !rounded-none"
+            size="icon"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          alignOffset={0}
+          align="end"
+          className=" text-xs py-0.5 px-1.5"
+        >
+          Cell options
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 
