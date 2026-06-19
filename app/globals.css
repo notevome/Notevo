@@ -858,6 +858,12 @@ hr {
 
 }
 
+.prosemirror-dropcursor-block {
+  background-color: hsl(var(--border)) !important;
+  height: 3px !important;
+  border-radius: 2px !important;
+}
+
 .ProseMirror ul:not([data-type="taskList"]) li,
 .ProseMirror ol li {
   padding-left: 0.375rem;
