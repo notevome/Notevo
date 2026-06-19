@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import SignUpToday from "./SignUpToday";
 export default function Footer() {
   return (
     <div className="relative w-full overflow-hidden bg-transparent">
@@ -34,6 +35,7 @@ export default function Footer() {
         </svg>
       </div>
       <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 pb-10 bg-[#EFEFEF]">
+        <SignUpToday />
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>

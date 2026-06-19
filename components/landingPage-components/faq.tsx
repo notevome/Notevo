@@ -15,7 +15,7 @@ export default function FAQ() {
     >
       <MaxWContainer>
         <SectionHeading
-          SectionTitle="FAQ"
+          SectionTitle="Frequently Asked Questions"
           SectionSubTitle="if your interested"
         />
 
@@ -23,7 +23,7 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-lg mx-auto min-h-[238px]"
+          className="max-w-lg mx-auto min-h-[300px]"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem key={index} value={item.itmevalue}>

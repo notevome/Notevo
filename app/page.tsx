@@ -28,7 +28,6 @@ export default async function HomePage() {
           <MoreAboutMe />
           <FAQ />
           {/* <PricingSection /> */}
-          <SignUpToday />
         </div>
         <Footer />
       </div>
