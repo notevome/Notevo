@@ -148,20 +148,29 @@ function SignUpPreview() {
 
   return (
     <div className="flex flex-col gap-2.5 p-5 w-full">
-      <div className="bg-background app-radius-lg px-3.5 py-2.5 border border-border">
-        <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">
+      <div>
+        <p className="text-[10px] mx-1 text-muted-foreground uppercase tracking-widest mb-1">
           Email
         </p>
-        <p className="text-xs text-foreground min-h-[16px] flex items-center gap-0.5">
-          {displayed.length > 0 ? (
-            displayed
-          ) : (
-            <span className="text-muted-foreground">name@email.com</span>
-          )}
-          {!done && (
-            <span className="inline-block w-0.5 h-3 bg-primary app-radius-sm cursor-blink" />
-          )}
-        </p>
+        <div className="bg-background app-radius-lg px-3.5 py-2.5 border border-border">
+          <p className="text-xs text-foreground min-h-[16px] flex items-center gap-0.5">
+            {displayed.length > 0 ? (
+              <>
+                {displayed}
+                {!done && (
+                  <span className="inline-block w-0.5 h-3 bg-primary app-radius-sm cursor-blink" />
+                )}
+              </>
+            ) : (
+              <>
+                {!done && (
+                  <span className="inline-block w-0.5 h-3 bg-primary app-radius-sm cursor-blink" />
+                )}
+                <span className="text-muted-foreground">name@email.com</span>
+              </>
+            )}
+          </p>
+        </div>
       </div>
       <motion.div
         className={`bg-primary text-primary-foreground text-center text-sm app-radius-lg px-4 py-2 text-[11px] mt-1 transition-all duration-300 border-r border-b border-muted/50 translate-x-[0px] translate-y-[0px]${done ? " border-muted/50 translate-x-[-3px] translate-y-[-3px] app-radius-lg shadow-[3px_3px_0px] shadow-primary " : ""}`}
@@ -177,10 +186,10 @@ function SignUpPreview() {
         <div className="flex-1 h-px bg-border" />
       </div>
       <div className="flex gap-2">
-        {["GitHub", "Google"].map((label) => (
+        {["GitHub", "Google"].map((label, i) => (
           <div
             key={label}
-            className="flex-1 bg-background border border-border app-radius-lg py-2 text-center text-[11px] text-foreground font-medium"
+            className={`flex-1 bg-background border border-border ${i === 0 ? "app-radius-lg" : "rounded-none"} py-2 text-center text-[11px] text-foreground font-medium`}
           >
             {label}
           </div>
@@ -424,8 +433,6 @@ function WritingPreview() {
 
 const stepPreviews = [SignUpPreview, WorkspacePreview, WritingPreview];
 
-/*  Main Section  */
-
 export default function HowToStartSection() {
   const containerRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -447,7 +454,6 @@ export default function HowToStartSection() {
         />
 
         <div ref={containerRef} className="relative max-w-7xl mx-auto">
-          {/* Step connector dots row */}
           <div className="flex items-center max-w-3xl mx-auto mb-8 px-6 md:px-12">
             {HowToStartSteps.map((_: Step, i: number) => (
               <div key={i} className="flex items-center flex-1 last:flex-none">
@@ -463,7 +469,6 @@ export default function HowToStartSection() {
             ))}
           </div>
 
-          {/* Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 Desktop:grid-cols-3 gap-6">
             {HowToStartSteps.map((step: Step, index: number) => {
               const Icon = stepIcons[index];
@@ -477,12 +482,10 @@ export default function HowToStartSection() {
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="group relative bg-card app-radius-xl border border-border overflow-hidden flex flex-col"
                 >
-                  {/* Preview area */}
                   <div className="bg-muted border-b border-border h-72 overflow-hidden flex items-center justify-center">
                     <Preview />
                   </div>
 
-                  {/* Card content */}
                   <div className="p-5 flex flex-col flex-1">
                     <span className="absolute top-2 left-2 inline-flex items-center bg-secondary text-secondary-foreground app-radius-lg border border-primary/20 p-1.5 text-[11px] font-bold mb-3">
                       <Icon className="w-4 h-4 text-primary" />
@@ -503,7 +506,6 @@ export default function HowToStartSection() {
             })}
           </div>
 
-          {/* Animated beams — rendered after mount so refs are populated */}
           {isMounted &&
             HowToStartSteps.map((_: Step, index: number) => {
               if (index < HowToStartSteps.length - 1) {
@@ -525,18 +527,6 @@ export default function HowToStartSection() {
               }
               return null;
             })}
-        </div>
-
-        {/* CTA */}
-        <div className="mt-5 flex flex-col items-center gap-3">
-          <Button className="px-10 text-base">
-            <Link prefetch={true} href="/signup">
-              Get Started Free
-            </Link>
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            No credit card required
-          </p>
         </div>
       </div>
     </section>
