@@ -36,7 +36,6 @@ function SignInWithMagicLink({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Zod schema for email
   const emailSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address." }),
   });
@@ -105,7 +104,6 @@ export default function SignInPage() {
   const [step, setStep] = useState<"signIn" | "linkSent">("signIn");
   return (
     <div className=" force-light relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
       <div
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0"

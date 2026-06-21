@@ -55,7 +55,6 @@ function NotesGridSkeleton({ count }: { count: number }) {
 export default function Loading() {
   return (
     <MaxWContainer className="my-5">
-      {/* Header (match WorkingSpacePageClient layout) */}
       <header className="pb-5">
         <div className="relative overflow-hidden app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8">
           <div className="relative flex flex-col gap-4">
@@ -74,12 +73,10 @@ export default function Loading() {
         </div>
       </header>
 
-      {/* Tabs */}
       <div className="mt-6 mb-6">
         <TabsSkeleton count={5} />
       </div>
 
-      {/* Control Bar */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-3 flex-1 w-full sm:w-auto">
@@ -98,10 +95,8 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Notes grid */}
         <NotesGridSkeleton count={6} />
 
-        {/* Show more */}
         <div className="flex justify-center pt-2">
           <Skeleton className="h-10 w-28 app-radius-lg" />
         </div>

@@ -19,9 +19,7 @@ import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface NoteDownloadDropdownProps {
   noteBody: string | undefined | null;
   noteTitle: string;
-  /** Alignment of the dropdown menu relative to its trigger. Defaults to "end". */
   align?: "end" | "start" | "center";
-  /** Extra class names for the trigger button. */
   className?: string;
 }
 
