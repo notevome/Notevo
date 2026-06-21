@@ -71,7 +71,6 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
   const [content, setContent] = useState<JSONContent>();
   const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
 
-  // stableNote loads async — if editedTitle is still empty when data arrives, sync it
   useEffect(() => {
     if (stableNote?.title && !editedTitle) {
       setEditedTitle(stableNote.title);

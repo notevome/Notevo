@@ -15,7 +15,6 @@ export default async function HomePage() {
   }
 
   return (
-    // Force light mode for the entire landing page regardless of user theme
     <div className="force-light">
       <div className="relative flex flex-col min-h-screen bg-background text-foreground">
         <div className="absolute inset-0">

@@ -18,7 +18,6 @@ import {
 import { GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
 import "pdfjs-dist/web/pdf_viewer.css";
 import {
-  ArrowUpRight,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -26,13 +25,10 @@ import {
   FileText,
   Search,
   X,
-  Plus,
-  Minus,
 } from "lucide-react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import MaxWContainer from "@/components/ui/MaxWContainer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -42,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -51,8 +46,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
-import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
+import { useSidebar } from "@/components/ui/sidebar";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
