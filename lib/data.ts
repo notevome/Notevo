@@ -62,7 +62,7 @@ export const AccordionData = [
     itmevalue: "OSS",
     trigger: "why is it open source?",
     content:
-      "I want to create a product that is truly for the users, and I believe that being open source is the best way to achieve that. It allows anyone to contribute, suggest features, and even fork the project if they want to take it in a different direction. Plus, it just feels good to share your work with the world and see how others can build on it.",
+      "I want to create a product that is truly for the users,  Plus, it just feels good to share your work with the world and see how others can build on it.",
   },
 ] as const;
 
