@@ -28,6 +28,16 @@ export default function Error({
   return (
     <section className="relative flex min-h-svh flex-col items-center justify-center bg-background p-6 overflow-hidden">
       <MaxWContainer className="flex flex-col items-center justify-center gap-3 *:text-center relative px-4 sm:px-6 lg:px-8">
+        <div className=" gap-2 flex justify-center items-center ">
+          <Image
+            src={imgsrc}
+            alt="Notevo Logo"
+            priority
+            width={20}
+            height={20}
+          />
+          <p className="text-sm text-foreground">Notevo.me</p>
+        </div>
         <Card className="overflow-hidden bg-card border-border ">
           <CardContent className="relative pt-4 pb-16">
             <div className="flex flex-col justify-center">
@@ -46,15 +56,17 @@ export default function Error({
           </CardContent>
         </Card>
         <div className=" w-full flex justify-center items-center ">
-          <Image
-            src={imgsrc}
-            alt="Notevo Logo"
-            priority
-            width={16}
-            height={16}
-          />
-          <p className="text-muted-foreground text-xs font-medium px-2 ">
-            {`! Hi this is Notevo team we're sorry | hit the try again button `}
+          <p className="text-muted-foreground text-xs font-medium px-2 max-w-xl ">
+            ! Hi this is Notevo's team we're sorry ,our team is automatically
+            notified whenever a server error like this happens, so we're already
+            on it. If the problem keeps happening, email us at{" "}
+            <Link
+              href="mailto:support@notevo.me"
+              className=" font-bold text-foreground hover:underline"
+            >
+              support@notevo.me
+            </Link>{" "}
+            and we'll help you out. hit the try again button for now
           </p>
         </div>
       </MaxWContainer>
