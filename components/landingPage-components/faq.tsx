@@ -27,7 +27,10 @@ export default function FAQ() {
         >
           {AccordionData.map((item, index) => (
             <AccordionItem key={index} value={item.itmevalue}>
-              <AccordionTrigger>{item.trigger}</AccordionTrigger>
+              <AccordionTrigger className="animated-highlight-container">
+                {" "}
+                <span className="animated-highlight">{item.trigger}</span>{" "}
+              </AccordionTrigger>
               <AccordionContent>{item.content}</AccordionContent>
             </AccordionItem>
           ))}

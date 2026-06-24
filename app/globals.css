@@ -265,6 +265,46 @@ input::-webkit-inner-spin-button {
   margin: 0;
 }
 
+.animated-highlight {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+  padding: 0 0.3rem;
+}
+
+.animated-highlight::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 100%;
+  background-color: hsl(var(--secondary));
+  border-radius: 0.5rem;
+  z-index: -1;
+
+}
+
+@keyframes sweep-highlight {
+  0% {
+    width: 0;
+  }
+
+  100% {
+    width: 100%;
+  }
+}
+
+.animated-highlight-container:hover>.animated-highlight::after {
+  color: hsl(var(--secondary-foreground));
+  animation: sweep-highlight 0.5s ease-out forwards;
+}
+
+.animated-highlight-container:hover>span.animated-highlight {
+  color: hsl(var(--secondary-foreground));
+}
+
+
 /* For Firefox */
 input[type=number] {
   -moz-appearance: textfield;
