@@ -296,7 +296,12 @@ export default function GlobalFolderDropUpload() {
     const hasFiles = (event: DragEvent) =>
       Array.from(event.dataTransfer?.types ?? []).includes("Files");
 
+    const isAvatarPhotoEditorEvent = (event: DragEvent) =>
+      event.target instanceof Element &&
+      Boolean(event.target.closest("[data-avatar-photo-editor]"));
+
     const handleDragEnter = (event: DragEvent) => {
+      if (isAvatarPhotoEditorEvent(event)) return;
       if (!hasFiles(event)) return;
       event.preventDefault();
       dragDepthRef.current += 1;
@@ -304,6 +309,7 @@ export default function GlobalFolderDropUpload() {
     };
 
     const handleDragOver = (event: DragEvent) => {
+      if (isAvatarPhotoEditorEvent(event)) return;
       if (!hasFiles(event)) return;
       event.preventDefault();
       if (event.dataTransfer) {
@@ -313,6 +319,7 @@ export default function GlobalFolderDropUpload() {
     };
 
     const handleDragLeave = (event: DragEvent) => {
+      if (isAvatarPhotoEditorEvent(event)) return;
       if (!hasFiles(event)) return;
       event.preventDefault();
       dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
@@ -322,6 +329,7 @@ export default function GlobalFolderDropUpload() {
     };
 
     const handleDrop = async (event: DragEvent) => {
+      if (isAvatarPhotoEditorEvent(event)) return;
       if (!hasFiles(event)) return;
       event.preventDefault();
       dragDepthRef.current = 0;

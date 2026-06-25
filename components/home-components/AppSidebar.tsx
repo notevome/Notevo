@@ -73,6 +73,7 @@ import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
 import Feedback from "./Feedback";
+import AccountSettingsDialog from "./AccountSettingsDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -1237,9 +1238,15 @@ const UserAccountSection = memo(function UserAccountSection({
 }: UserAccountSectionProps) {
   const settingsHref = "/home/settings/profile";
   const isSettingsActive = pathname === settingsHref;
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
   return (
     <SidebarFooter className=" z-50 text-foreground">
+      <AccountSettingsDialog
+        open={isAccountSettingsOpen}
+        onOpenChange={setIsAccountSettingsOpen}
+        user={User}
+      />
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -1291,8 +1298,10 @@ const UserAccountSection = memo(function UserAccountSection({
               className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width] z-[90000]"
             >
               <DropdownMenuItem
-                className=" cursor-default hover:bg-transparent"
-                onClick={(e) => e.preventDefault()}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setIsAccountSettingsOpen(true);
+                }}
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
