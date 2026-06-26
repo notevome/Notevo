@@ -498,9 +498,9 @@ export default function AccountSettingsDialog({
             <div className="grid gap-5 sm:grid-cols-[auto_1fr] sm:items-end">
               <div className="space-y-2">
                 <div className="relative h-20 w-20">
-                  <button
-                    type="button"
-                    className="group relative block h-20 w-20 overflow-hidden app-radius-lg border border-border bg-muted"
+                  <Button
+                    variant="outline"
+                    className="group relative block !p-0 h-20 w-20 overflow-hidden app-radius-lg bg-muted"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploadingAvatar || isDeletingAvatar}
                     aria-label={
@@ -520,7 +520,7 @@ export default function AccountSettingsDialog({
                     <span className="absolute inset-0 flex items-center justify-center bg-background/70 opacity-0 transition-opacity group-hover:opacity-100">
                       <Camera className="h-5 w-5" />
                     </span>
-                  </button>
+                  </Button>
                   {hasAvatarImage ? (
                     <Tooltip open={removeAvatarTooltip.open}>
                       <TooltipTrigger asChild>
@@ -586,7 +586,6 @@ export default function AccountSettingsDialog({
           <Separator />
           <section className="space-y-4">
             <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-muted-foreground" />
               <h2 className="text-base font-semibold">Billing</h2>
             </div>
             <div className="border border-border bg-muted/20 p-4 app-radius-lg">
@@ -602,7 +601,6 @@ export default function AccountSettingsDialog({
 
           <section className="space-y-4">
             <div className="flex items-center gap-2 text-destructive">
-              <Trash2 className="h-5 w-5" />
               <h2 className="text-base font-semibold">Danger zone</h2>
             </div>
             <div className="border border-destructive/40 bg-destructive/5 p-4 app-radius-lg">
@@ -612,7 +610,7 @@ export default function AccountSettingsDialog({
                 workspaces, notes, uploads, and account data.
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
-                Signed in as {formatUserEmail(user?.email)}
+                You are signed in as {user?.email}
               </p>
               <Button
                 variant="outline"
