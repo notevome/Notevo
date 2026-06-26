@@ -16,6 +16,8 @@ import {
   Pickaxe,
   Scale,
   Gavel,
+  FolderPlus,
+  SquarePen,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -248,10 +250,10 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
       {getWorkingSpaces?.length === 0 && (
         <Button
           variant="outline"
-          className="font-medium w-full h-9 flex justify-start items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
+          className="font-medium w-full h-9 flex justify-start items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/80"
           onClick={handleCreateWorkingSpace}
         >
-          <Plus size={16} /> Create Workspace
+          <FolderPlus size={16} /> Create Workspace
         </Button>
       )}
       {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
@@ -259,22 +261,34 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             <Button
               key={workingSpace._id}
               variant="outline"
-              className="font-medium w-full h-9 flex justify-start items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/80"
+              className="font-medium w-full h-9 flex justify-start items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/80"
               disabled={loading}
               onMouseDown={() => void createNoteInWorkspace(workingSpace)}
             >
-              {loading ? <>redirecting...</> : <> Create Note</>}
+              {loading ? (
+                <>redirecting...</>
+              ) : (
+                <>
+                  <SquarePen size={16} /> Create Note
+                </>
+              )}
             </Button>
           ))
         : createNoteWorkspace && (
             <div className="flex h-9 w-full items-center overflow-hidden app-radius-lg">
               <Button
                 variant="outline"
-                className="font-medium h-9 flex-1 justify-start gap-2 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
+                className="font-medium h-9 flex-1 justify-start gap-1.5 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
                 disabled={loading}
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
-                {loading ? <>redirecting...</> : <>Create Note</>}
+                {loading ? (
+                  <>redirecting...</>
+                ) : (
+                  <>
+                    <SquarePen size={16} /> Create Note
+                  </>
+                )}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
