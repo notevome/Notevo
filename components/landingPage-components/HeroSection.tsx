@@ -249,7 +249,7 @@ export default function HeroSection() {
                             alt={user.name || "User"}
                             className="rounded-full"
                           />
-                          <AvatarFallback className="bg-primary/20 rounded-full">
+                          <AvatarFallback className="bg-primary/20 !rounded-full">
                             {user.name ? user.name.charAt(0) : "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -262,7 +262,7 @@ export default function HeroSection() {
                       transition={{ delay: 1.0 }}
                     >
                       <Avatar className="w-10 h-10">
-                        <AvatarFallback className="text-sm font-medium rounded-full">
+                        <AvatarFallback className="text-sm font-medium !rounded-full">
                           + 75
                         </AvatarFallback>
                       </Avatar>
