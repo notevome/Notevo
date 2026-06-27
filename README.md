@@ -51,7 +51,7 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  
  ### Installation
  ```bash
- git clone https://github.com/imohammedh/Notevo.git
+ git clone https://github.com/YOUR_USERNAME/Notevo.git
  cd Notevo
  pnpm install  # or npm install
  ```
