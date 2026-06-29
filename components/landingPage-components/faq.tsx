@@ -11,7 +11,7 @@ export default function FAQ() {
   return (
     <section
       id="faq"
-      className="relative px-4 sm:px-6 md:px-8 pt-12 sm:pt-16 md:pt-20 Desktop:pt-24 "
+      className="relative pt-12 sm:pt-16 md:pt-20 Desktop:pt-24 "
     >
       <MaxWContainer>
         <SectionHeading
@@ -23,15 +23,17 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-lg mx-auto min-h-[300px]"
+          className="max-w-2xl mx-auto min-h-[400px]"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem key={index} value={item.itmevalue}>
-              <AccordionTrigger className="animated-highlight-container">
+              <AccordionTrigger className="animated-highlight-container text-2xl font-medium">
                 {" "}
                 <span className="animated-highlight">{item.trigger}</span>{" "}
               </AccordionTrigger>
-              <AccordionContent>{item.content}</AccordionContent>
+              <AccordionContent className=" px-2 text-lg">
+                {item.content}
+              </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
