@@ -72,7 +72,7 @@ const TailwindAdvancedEditor = ({
   const [plusSearchQuery, setPlusSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const { resolvedTheme } = useTheme();
-  const isMobile = useMediaQuery({ maxWidth: 640 });
+  const isMobile = useMediaQuery({ maxWidth: 1040 });
 
   useEffect(() => {
     if (resolvedTheme !== "dark") {
@@ -204,7 +204,7 @@ const TailwindAdvancedEditor = ({
               <LinkHoverCard editor={editorInstance} disabled={openLink} />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
-                <div className="flex items-center justify-center ">
+                <div className="lg:flex items-center justify-center hidden ">
                   <Tooltip delayDuration={150} disableHoverableContent>
                     <TooltipTrigger asChild>
                       <button
