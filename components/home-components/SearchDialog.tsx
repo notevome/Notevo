@@ -545,7 +545,7 @@ export default function SearchDialog({
         </DialogTrigger>
       )}
 
-      <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
+      <DialogContent className="p-0 overflow-hidden bg-card border-border md:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
         <DialogTitle className="sr-only">Search Notes</DialogTitle>
         <DialogDescription className="sr-only">
           Search across workspaces, tables, and notes, then open the selected
@@ -571,7 +571,7 @@ export default function SearchDialog({
         <div
           ref={resultsScrollRef}
           onScroll={handleResultsScroll}
-          className=" md:min-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
+          className=" md:min-h-[50vh] md:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
         >
           {canScroll && scrollTop > 8 && (
             <div
