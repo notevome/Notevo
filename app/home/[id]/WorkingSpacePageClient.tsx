@@ -361,9 +361,12 @@ function TableTab({ table }: { table: any }) {
                     type="button"
                     variant="ghost"
                     onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDeleteAlertOpen(true);
+                      if (e.button === 0 && e.shiftKey) {
+                        e.preventDefault();
+                        handleDelete();
+                      } else {
+                        setIsDeleteAlertOpen(true);
+                      }
                     }}
                     className=" px-1.5 h-7 text-foreground hover:text-destructive"
                     aria-label="delete-table"
@@ -421,6 +424,13 @@ function TableTab({ table }: { table: any }) {
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

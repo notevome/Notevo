@@ -71,8 +71,13 @@ export default function WorkingSpaceSettingsSidbar({
     if (workspace) return;
   });
 
-  const initiateDelete = () => {
-    setIsAlertOpen(true);
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -109,11 +114,11 @@ export default function WorkingSpaceSettingsSidbar({
         <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
             <Button
-              onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
               className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-workspace"
               {...deleteTooltip.triggerProps}
+              onMouseDown={initiateDelete}
             >
               <X size={16} />
             </Button>
@@ -152,6 +157,13 @@ export default function WorkingSpaceSettingsSidbar({
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

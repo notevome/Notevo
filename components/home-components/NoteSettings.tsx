@@ -178,9 +178,14 @@ export default function NoteSettings({
     setInputValue(trimmedValue);
   };
 
-  const initiateDelete = () => {
-    setOpen(false);
-    setIsAlertOpen(true);
+  const initiateDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.button === 0 && e.shiftKey) {
+      e.preventDefault();
+      handleDelete(e as React.MouseEvent<HTMLButtonElement>);
+    } else {
+      setOpen(false);
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -213,7 +218,6 @@ export default function NoteSettings({
     setOpen(false);
     setIsMoveDialogOpen(true);
   };
-
   return (
     <>
       <DropdownMenu
@@ -388,6 +392,14 @@ export default function NoteSettings({
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
+
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel
