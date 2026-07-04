@@ -204,6 +204,23 @@ export default function WorkingspaceNewDropdownBtn({
     fileInputRef.current?.click();
   }, [persistPreferredAction]);
 
+  useEffect(() => {
+    const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.metaKey || e.shiftKey) &&
+        e.key.toLowerCase() === "o"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCreateNote();
+      }
+    };
+    window.addEventListener("keydown", handlerCreateNoteShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerCreateNoteShortcut);
+  }, []);
+
   return (
     <>
       <input
@@ -242,10 +259,18 @@ export default function WorkingspaceNewDropdownBtn({
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuContent align="end" className="w-fit">
             <DropdownMenuItem onClick={() => void handleSelectNote()}>
               <FileText className="h-4 w-4 text-muted-foreground" />
               New note
+              <span className="inline-flex gap-0.5">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs">Ctrl + Shift</span>
+                </kbd>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs">O</span>
+                </kbd>
+              </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSelectUpload}>
               <FileUp className="h-4 w-4 text-muted-foreground" />

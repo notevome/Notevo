@@ -167,9 +167,14 @@ export default function TableSettings({
     setOpen(false);
   };
 
-  const initiateDelete = () => {
-    setOpen(false); // Close the dropdown
-    setIsAlertOpen(true); // Open the alert dialog
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setOpen(false);
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -254,6 +259,13 @@ export default function TableSettings({
               undone."
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel
