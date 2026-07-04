@@ -232,7 +232,7 @@ export default function HeroSection() {
                 Array.from({ length: 5 }).map((_, index) => (
                   <div key={index}>
                     <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-primary/20 rounded-full animate-pulse" />
+                      <AvatarFallback className="bg-primary/20 !rounded-full animate-pulse" />
                     </Avatar>
                   </div>
                 ))
