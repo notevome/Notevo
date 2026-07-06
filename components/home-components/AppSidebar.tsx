@@ -269,7 +269,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <>redirecting...</>
               ) : (
                 <>
-                  <SquarePen size={16} /> Create Note
+                  <SquarePen size={16} className=" mt-px" /> New Note
                 </>
               )}
             </Button>
@@ -286,7 +286,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                   <>redirecting...</>
                 ) : (
                   <>
-                    <SquarePen size={16} /> Create Note
+                    <SquarePen size={16} className=" mt-px" /> New Note
                   </>
                 )}
               </Button>
