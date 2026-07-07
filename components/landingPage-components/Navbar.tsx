@@ -16,7 +16,7 @@ export default function Navbar() {
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 150) {
+    if (latest > 100) {
       setInView(true);
     } else {
       setInView(false);
@@ -41,7 +41,7 @@ export default function Navbar() {
         }}
       >
         {inView && (
-          <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-50% to-100% to-transparent -z-50 left-0 pointer-events-none" />
+          <div className=" fixed top-0 w-full min-h-[5rem] bg-gradient-to-b from-background from-10% to-100% to-transparent -z-50 left-0 pointer-events-none" />
         )}
 
         <div className="flex justify-start items-center gap-20">
