@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateHighlightRects,
   CanvasLayer,
@@ -26,6 +26,7 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -47,11 +48,18 @@ import {
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useDebouncedCallback } from "use-debounce";
+import { useToast } from "@/hooks/use-toast";
+import z from "zod";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
   import.meta.url,
 ).toString();
+const pdfTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(60, "Title must be 60 characters or less");
 
 type LectorSearchResult = {
   pageNumber: number;
@@ -481,6 +489,72 @@ function PdfViewerContent({
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const searchTooltip = useHoverTooltip(100);
   const thumbnailsTooltip = useHoverTooltip(100);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(pdftitle || "");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const updatePdf = useMutation(api.pdfs.updatePdf);
+
+  const handleNameDoubleClick = useCallback(() => {
+    setEditedName(pdftitle || "");
+    setIsEditingName(true);
+  }, [pdftitle]);
+
+  useEffect(() => {
+    if (isEditingName) {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [isEditingName]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        setIsEditingName(false);
+      } else if (e.key === "Escape") {
+        setIsEditingName(false);
+        setEditedName(pdftitle || "");
+      }
+    },
+    [pdftitle],
+  );
+
+  const debouncedUpdatePdfTitle = useDebouncedCallback((newTitle: string) => {
+    const currentTitle = pdftitle || "";
+    const result = pdfTitleSchema.safeParse(newTitle);
+
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      if (issue.code === "too_small") {
+        toast({
+          title: "Naming failed",
+          description: "Title cannot be empty.",
+          variant: "destructive",
+        });
+      } else if (issue.code === "too_big") {
+        setEditedName(pdftitle);
+        toast({
+          title: "Naming failed",
+          description: "Title must be 60 characters or less.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    if (newTitle !== currentTitle) {
+      try {
+        void updatePdf({ _id: pdfId, title: newTitle });
+      } catch (error) {
+        console.error("Error updating PDF title:", error);
+        toast({
+          title: "Naming failed",
+          description: "Could not update the PDF title.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, 300);
 
   return (
     <LectorSearch
@@ -493,8 +567,36 @@ function PdfViewerContent({
       <div className=" relative min-w-full min-h-full bg-transparent ">
         <div className=" pointer-events-none absolute inset-x-0 top-1 z-50">
           <div
-            className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 ${open && !isMobile ? ` app-radius-lg` : null} border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
+            className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
           >
+            <div className="flex-1 px-1.5 py-0 border border-border bg-background hover:border-muted-foreground/50 app-radius-md">
+              <h1
+                onDoubleClick={handleNameDoubleClick}
+                title="Double-click to rename"
+                className=" md:text-lg h-8 cursor-text leading-12 app-radius-md w-[16rem] overflow-hidden "
+              >
+                {isEditingName ? (
+                  <Input
+                    ref={nameInputRef as any}
+                    value={editedName}
+                    onChange={(e: any) => {
+                      setEditedName(e.target.value);
+                      debouncedUpdatePdfTitle(e.target.value.trim());
+                    }}
+                    onKeyDown={handleNameKeyDown}
+                    onBlur={() => {
+                      setIsEditingName(false);
+                    }}
+                    placeholder="Untitled PDF"
+                    className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  />
+                ) : (
+                  <span className=" w-full overflow-hidden text-nowrap">
+                    {pdftitle || "Untitled PDF"}
+                  </span>
+                )}
+              </h1>
+            </div>
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
                 <TooltipTrigger asChild>
@@ -502,7 +604,7 @@ function PdfViewerContent({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 border border-border"
+                    className="h-8 w-8 border border-border !rounded-none"
                     onClick={() =>
                       setPanelMode((current) =>
                         current === "search" ? null : "search",
