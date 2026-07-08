@@ -206,7 +206,9 @@ export function useNoteDownload({
 
     switch (format) {
       case "json":
-        content = JSON.stringify(parsedBody, null, 2);
+        // Include the note title alongside the parsed body so the
+        // exported JSON is self-describing, just like the PDF/DOCX/MD exports.
+        content = JSON.stringify({ title: noteTitle, ...parsedBody }, null, 2);
         type = "application/json";
         ext = "json";
         break;
@@ -228,12 +230,14 @@ export function useNoteDownload({
               filter: ["mark"],
               replacement: (c: any) => `==${c}==`,
             });
-          content = turndown.turndown(html);
+          // Prepend the title as an H1 so it shows up in the exported content,
+          // not just the filename.
+          content = `# ${noteTitle}\n\n${turndown.turndown(html)}`;
           type = "text/markdown";
           ext = "md";
         } catch (err) {
           console.warn("Markdown failed:", err);
-          content = generateText(parsedBody, extensions);
+          content = `${noteTitle}\n\n${generateText(parsedBody, extensions)}`;
           ext = "txt";
         }
         break;
@@ -244,7 +248,14 @@ export function useNoteDownload({
             sections: [
               {
                 properties: {},
-                children: parseTiptapToDocx(parsedBody.content || []),
+                children: [
+                  // Title paragraph, mirroring the title heading rendered in the PDF export.
+                  new Paragraph({
+                    text: noteTitle,
+                    heading: HeadingLevel.TITLE,
+                  }),
+                  ...parseTiptapToDocx(parsedBody.content || []),
+                ],
               },
             ],
           });
@@ -254,7 +265,7 @@ export function useNoteDownload({
         } catch (err) {
           console.error("DOCX generation failed:", err);
           alert("DOCX export failed falling back to text.");
-          content = generateText(parsedBody, extensions);
+          content = `${noteTitle}\n\n${generateText(parsedBody, extensions)}`;
           type = "text/plain";
           ext = "txt";
         }
