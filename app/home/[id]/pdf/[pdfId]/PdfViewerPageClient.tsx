@@ -47,7 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
-import { useSidebar } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import z from "zod";
@@ -555,7 +555,6 @@ function PdfViewerContent({
       }
     }
   }, 300);
-
   return (
     <LectorSearch
       loading={
@@ -569,11 +568,23 @@ function PdfViewerContent({
           <div
             className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
           >
-            <div className="flex-1 px-1.5 py-0 border border-border bg-background hover:border-muted-foreground/50 app-radius-md">
+            {(!open || isMobile) && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 border border-border"
+                aria-label="show-search-panel"
+              >
+                <SidebarTrigger />
+              </Button>
+            )}
+            <div
+              className={` px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
+            >
               <h1
                 onDoubleClick={handleNameDoubleClick}
                 title="Double-click to rename"
-                className=" md:text-lg h-8 cursor-text leading-12 app-radius-md w-[16rem] overflow-hidden "
+                className=" md:text-lg cursor-text flex justify-start items-center min-w-[16rem] overflow-hidden "
               >
                 {isEditingName ? (
                   <Input
@@ -588,7 +599,7 @@ function PdfViewerContent({
                       setIsEditingName(false);
                     }}
                     placeholder="Untitled PDF"
-                    className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                    className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                   />
                 ) : (
                   <span className=" w-full overflow-hidden text-nowrap">
