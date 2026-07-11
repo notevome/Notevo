@@ -233,7 +233,7 @@ export default function WorkingspaceNewDropdownBtn({
 
       <div
         className={cn(
-          "flex h-9 items-center overflow-hidden app-radius-lg",
+          "flex h-9 items-center overflow-hidden !rounded-none",
           className,
         )}
       >
@@ -242,7 +242,7 @@ export default function WorkingspaceNewDropdownBtn({
           variant="outline"
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className="h-9 "
+          className="h-9 !rounded-none"
         >
           {isUploading ? "Uploading..." : "New"}
         </Button>
