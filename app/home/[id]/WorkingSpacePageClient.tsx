@@ -8,6 +8,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
@@ -43,6 +44,7 @@ import {
   Popover,
   PopoverAnchor,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -101,7 +103,8 @@ const workspacePageMemoryCache = new Map<
 
 const tableNotesMemoryCache = new Map<string, any[]>();
 
-type ViewMode = "grid" | "list";
+type ViewMode = "grid" | "list" | "calendar";
+type CalendarZoom = "week" | "month" | "quarter" | "year";
 
 interface Note {
   _id: Id<"notes">;
@@ -173,6 +176,65 @@ interface EmptyTableStateProps {
 const STORAGE_KEYS = {
   VIEW_MODE: "notevo_view_mode",
   ACTIVE_TABLE: "notevo_active_table",
+  CALENDAR_ZOOM: "notevo_calendar_zoom",
+};
+
+const DAY_MS = 86400000;
+const MONTH_LABELS = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
+
+function startOfDay(value: Date | number) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.round(
+    (startOfDay(b).getTime() - startOfDay(a).getTime()) / DAY_MS,
+  );
+}
+
+const CALENDAR_ZOOM_CONFIG: Record<
+  CalendarZoom,
+  { pxPerDay: number; tickStepDays: number; label: string; shortcut: string }
+> = {
+  week: { pxPerDay: 120, tickStepDays: 1, label: "Week", shortcut: "W" },
+  month: { pxPerDay: 40, tickStepDays: 2, label: "Month", shortcut: "M" },
+  quarter: { pxPerDay: 16, tickStepDays: 7, label: "Quarter", shortcut: "Q" },
+  year: { pxPerDay: 6, tickStepDays: 14, label: "Year", shortcut: "Y" },
+};
+
+const CALENDAR_ZOOM_ORDER: CalendarZoom[] = [
+  "year",
+  "quarter",
+  "month",
+  "week",
+];
+
+const CALENDAR_ZOOM_PADDING_DAYS: Record<CalendarZoom, number> = {
+  week: 10,
+  month: 20,
+  quarter: 45,
+  year: 150,
 };
 
 function TableTab({ table }: { table: any }) {
@@ -722,7 +784,9 @@ export default function WorkingSpacePageClient({
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
-      return stored === "list" || stored === "grid" ? stored : "grid";
+      return stored === "list" || stored === "grid" || stored === "calendar"
+        ? stored
+        : "grid";
     }
     return "grid";
   });
@@ -799,7 +863,7 @@ export default function WorkingSpacePageClient({
   }, [workspace?.name, tables?.length]);
 
   return (
-    <MaxWContainer className="my-5">
+    <MaxWContainer className="my-5 grid grid-cols-1">
       <header>
         <div className=" relative flex justify-between items-end w-full">
           <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">
@@ -963,10 +1027,10 @@ export function NotesDroppableContainer({
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative flex-1 md:max-w-md">
+    <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
             <Input
               type="text"
@@ -1007,6 +1071,20 @@ export function NotesDroppableContainer({
                 className={`h-3.5 w-3.5 ${viewMode === "list" && !isMobile && "text-foreground"}`}
               />
             </Button>
+            <Button
+              variant="SidebarMenuButton"
+              size="sm"
+              className={cn(
+                "!rounded-none hover:bg-muted",
+                viewMode === "calendar" && "bg-muted",
+              )}
+              onClick={() => setViewMode("calendar")}
+              aria-label="calendar-view"
+            >
+              <Calendar
+                className={`h-3.5 w-3.5 ${viewMode === "calendar" && !isMobile && "text-foreground"}`}
+              />
+            </Button>
           </div>
           <CreateNoteBtn
             workingSpaceId={workspaceId}
@@ -1035,43 +1113,54 @@ export function NotesDroppableContainer({
         />
       ) : (
         <>
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-                : "flex flex-col gap-3"
-            }
-          >
-            {filteredItems.map((item) => (
-              <div key={item._id}>
-                {item.kind === "pdf" ? (
-                  viewMode === "grid" || isMobile ? (
-                    <PdfGridCard
-                      pdf={item}
-                      onDelete={(pdfId) => handleItemDelete(pdfId)}
+          {viewMode === "calendar" && !isMobile ? (
+            <CalendarTimelineView
+              items={filteredItems}
+              workspaceId={workspaceId}
+            />
+          ) : (
+            <div
+              className={
+                viewMode === "grid" || isMobile
+                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+                  : "flex flex-col gap-3"
+              }
+            >
+              {filteredItems.map((item) => (
+                <div key={item._id}>
+                  {item.kind === "pdf" ? (
+                    viewMode === "grid" || isMobile ? (
+                      <PdfGridCard
+                        pdf={item}
+                        onDelete={(pdfId) => handleItemDelete(pdfId)}
+                      />
+                    ) : (
+                      <PdfListCard
+                        pdf={item}
+                        onDelete={(pdfId) => handleItemDelete(pdfId)}
+                      />
+                    )
+                  ) : viewMode === "grid" || isMobile ? (
+                    <GridNoteCard
+                      note={item}
+                      workspaceId={workspaceId}
+                      onDelete={
+                        handleItemDelete as (noteId: Id<"notes">) => void
+                      }
                     />
                   ) : (
-                    <PdfListCard
-                      pdf={item}
-                      onDelete={(pdfId) => handleItemDelete(pdfId)}
+                    <ListNoteCard
+                      note={item}
+                      workspaceId={workspaceId}
+                      onDelete={
+                        handleItemDelete as (noteId: Id<"notes">) => void
+                      }
                     />
-                  )
-                ) : viewMode === "grid" || isMobile ? (
-                  <GridNoteCard
-                    note={item}
-                    workspaceId={workspaceId}
-                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
-                  />
-                ) : (
-                  <ListNoteCard
-                    note={item}
-                    workspaceId={workspaceId}
-                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {status === "CanLoadMore" && (
             <div className="flex justify-center mt-6">
@@ -1097,6 +1186,395 @@ export function NotesDroppableContainer({
         </>
       )}
     </div>
+  );
+}
+
+const CALENDAR_CARD_WIDTH = 168;
+const CALENDAR_CLUSTER_GAP = 14;
+
+function CalendarTimelineView({
+  items,
+  workspaceId,
+}: {
+  items: WorkspaceEntry[];
+  workspaceId?: Id<"workingSpaces">;
+}) {
+  const [zoom, setZoom] = useState<CalendarZoom>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(STORAGE_KEYS.CALENDAR_ZOOM);
+      if (
+        stored === "week" ||
+        stored === "month" ||
+        stored === "quarter" ||
+        stored === "year"
+      ) {
+        return stored;
+      }
+    }
+    return "year";
+  });
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hasScrolledOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.CALENDAR_ZOOM, zoom);
+    }
+  }, [zoom]);
+
+  const config = CALENDAR_ZOOM_CONFIG[zoom];
+  const today = useMemo(() => startOfDay(Date.now()), []);
+
+  const { startDate, endDate } = useMemo(() => {
+    const pad = CALENDAR_ZOOM_PADDING_DAYS[zoom];
+    let earliest = today;
+    let latest = today;
+    for (const item of items) {
+      const d = startOfDay(item.createdAt);
+      if (d.getTime() < earliest.getTime()) earliest = d;
+      if (d.getTime() > latest.getTime()) latest = d;
+    }
+    const rangeStart = addDays(
+      earliest.getTime() < today.getTime() ? earliest : today,
+      -pad,
+    );
+    const rangeEnd = addDays(
+      latest.getTime() > today.getTime() ? latest : today,
+      pad,
+    );
+    return { startDate: rangeStart, endDate: rangeEnd };
+  }, [items, today, zoom]);
+
+  const totalDays = Math.max(1, daysBetween(startDate, endDate));
+  const totalWidth = totalDays * config.pxPerDay;
+  const todayOffset = daysBetween(startDate, today) * config.pxPerDay;
+
+  const dateTicks = useMemo(() => {
+    const ticks: { date: Date; x: number; isToday: boolean }[] = [];
+    for (let i = 0; i <= totalDays; i += config.tickStepDays) {
+      const d = addDays(startDate, i);
+      ticks.push({
+        date: d,
+        x: i * config.pxPerDay,
+        isToday: daysBetween(d, today) === 0,
+      });
+    }
+    return ticks;
+  }, [startDate, totalDays, config, today]);
+
+  const monthMarkers = useMemo(() => {
+    const markers: { label: string; x: number }[] = [];
+    let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (cursor.getTime() <= endDate.getTime()) {
+      const x = Math.max(0, daysBetween(startDate, cursor)) * config.pxPerDay;
+      const label =
+        cursor.getMonth() === 0
+          ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getFullYear()}`
+          : MONTH_LABELS[cursor.getMonth()];
+      markers.push({ label, x });
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+    return markers;
+  }, [startDate, endDate, config]);
+
+  const clusters = useMemo(() => {
+    const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt);
+    const thresholdDays =
+      (CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP) / config.pxPerDay;
+    const result: {
+      id: string;
+      x: number;
+      dayOffset: number;
+      entries: WorkspaceEntry[];
+    }[] = [];
+    for (const item of sorted) {
+      const dayOffset = daysBetween(startDate, startOfDay(item.createdAt));
+      const last = result[result.length - 1];
+      if (last && dayOffset - last.dayOffset <= thresholdDays) {
+        last.entries.push(item);
+      } else {
+        result.push({
+          id: String(item._id),
+          x: dayOffset * config.pxPerDay,
+          dayOffset,
+          entries: [item],
+        });
+      }
+    }
+    return result;
+  }, [items, startDate, config]);
+
+  const scrollToToday = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const target = Math.max(0, todayOffset - el.clientWidth * 0.35);
+      el.scrollTo({ left: target, behavior });
+    },
+    [todayOffset],
+  );
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      scrollToToday(hasScrolledOnceRef.current ? "smooth" : "auto");
+      hasScrolledOnceRef.current = true;
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, totalWidth]);
+
+  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      const el = scrollRef.current;
+      if (el) {
+        el.scrollLeft += e.deltaY;
+        e.preventDefault();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = e.key.toLowerCase();
+      if (key === "y") setZoom("year");
+      else if (key === "q") setZoom("quarter");
+      else if (key === "m") setZoom("month");
+      else if (key === "w") setZoom("week");
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  return (
+    <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => scrollToToday()}
+          className="h-8 border-border text-xs"
+          aria-label="scroll-to-today"
+        >
+          Today
+        </Button>
+        <Popover open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 border-border text-xs gap-1 !rounded-none"
+              aria-label="calendar-zoom-level"
+            >
+              {config.label}
+              <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            side="bottom"
+            sideOffset={4}
+            className="w-36 p-1 border-border"
+          >
+            {CALENDAR_ZOOM_ORDER.map((z) => (
+              <button
+                key={z}
+                type="button"
+                onClick={() => {
+                  setZoom(z);
+                  setIsZoomOpen(false);
+                }}
+                className="w-full flex items-center justify-between px-2 py-1.5 text-sm app-radius-md hover:bg-muted"
+              >
+                <span className="flex items-center gap-1.5">
+                  {zoom === z ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <span className="w-3.5" />
+                  )}
+                  {CALENDAR_ZOOM_CONFIG[z].label}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {CALENDAR_ZOOM_CONFIG[z].shortcut}
+                </span>
+              </button>
+            ))}
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div
+        className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
+        ref={scrollRef}
+        onWheel={handleWheel}
+      >
+        <div className="relative" style={{ width: totalWidth, height: 190 }}>
+          <div className="relative h-7 border-b border-border">
+            {monthMarkers.map((m, i) => (
+              <div
+                key={i}
+                className="absolute top-0 h-7 flex items-center text-[11px] font-semibold tracking-wide text-muted-foreground"
+                style={{ left: m.x + 8 }}
+              >
+                {m.label}
+              </div>
+            ))}
+          </div>
+
+          <div className="relative h-8 border-b border-border">
+            {dateTicks.map((t, i) => (
+              <div
+                key={i}
+                className="absolute top-0 h-full"
+                style={{ left: t.x }}
+              >
+                <span
+                  className={cn(
+                    "absolute top-1 left-1.5 text-[11px] whitespace-nowrap",
+                    t.isToday
+                      ? "text-primary-foreground bg-primary px-1.5 py-0.5 app-radius-md"
+                      : "text-muted-foreground",
+                  )}
+                >
+                  {t.date.getDate()}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {dateTicks.map((t, i) => (
+            <div
+              key={`line-${i}`}
+              className="absolute w-px bg-border/40"
+              style={{ left: t.x, top: 60, bottom: 0 }}
+            />
+          ))}
+
+          <div
+            className="absolute inset-0 w-px bg-primary z-20"
+            style={{ left: todayOffset }}
+          >
+            <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
+              Today
+            </div>
+          </div>
+
+          <div className="absolute left-0 right-0" style={{ top: 64 }}>
+            {clusters.map((cluster) => (
+              <div
+                key={cluster.id}
+                className="absolute"
+                style={{ left: cluster.x, transform: "translateX(-50%)" }}
+              >
+                <div className="flex flex-col items-center">
+                  <div
+                    className={cn(
+                      "h-2.5 w-2.5 rounded-full border-2 border-card",
+                      cluster.entries.length > 1
+                        ? "bg-primary"
+                        : "bg-muted-foreground/60",
+                    )}
+                  />
+                  <div className="w-px h-3 bg-border" />
+                  {cluster.entries.length === 1 ? (
+                    <TimelineMiniCard
+                      item={cluster.entries[0]}
+                      workspaceId={workspaceId}
+                    />
+                  ) : (
+                    <Popover
+                      open={openClusterId === cluster.id}
+                      onOpenChange={(open) =>
+                        setOpenClusterId(open ? cluster.id : null)
+                      }
+                    >
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          className="h-9 px-3 flex items-center gap-1.5 app-radius-lg border border-border bg-muted hover:bg-muted/70 text-xs font-medium text-foreground whitespace-nowrap"
+                          aria-label="expand-clustered-items"
+                        >
+                          {cluster.entries.length} items
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="center"
+                        side="bottom"
+                        sideOffset={6}
+                        className="w-64 p-1 border-border max-h-72 space-y-1"
+                      >
+                        {cluster.entries.map((entry) => (
+                          <TimelineMiniCard
+                            key={entry._id}
+                            item={entry}
+                            workspaceId={workspaceId}
+                            inPopover
+                          />
+                        ))}
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineMiniCard({
+  item,
+  workspaceId,
+  inPopover,
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  inPopover?: boolean;
+}) {
+  const isPdf = item.kind === "pdf";
+  const href = isPdf
+    ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
+        (item as PdfItem).title || "untitled-pdf",
+      )}?pdfId=${item._id}`
+    : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+
+  const createdDate = new Date(item.createdAt);
+  const isDifferentYear =
+    createdDate.getFullYear() !== new Date().getFullYear();
+
+  return (
+    <IntentPrefetchLink
+      href={href}
+      className={cn(
+        "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] transition-all app-radius-md px-2.5 py-2",
+        inPopover ? "w-full" : "w-[168px]",
+      )}
+    >
+      <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
+          {item.title || "Untitled"}
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {createdDate.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: isDifferentYear ? "numeric" : undefined,
+          })}
+        </p>
+      </div>
+    </IntentPrefetchLink>
   );
 }
 
@@ -1691,6 +2169,22 @@ function EmptyTableState({
 }
 
 function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
+  if (viewMode === "calendar") {
+    return (
+      <div className="border border-border app-radius-lg bg-card p-4 space-y-6">
+        <div className="h-4 w-32 bg-border rounded animate-pulse" />
+        <div className="flex items-end gap-10 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="flex flex-col items-center gap-2">
+              <div className="h-2.5 w-2.5 rounded-full bg-border animate-pulse" />
+              <div className="h-16 w-32 bg-border rounded animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (viewMode === "grid") {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
