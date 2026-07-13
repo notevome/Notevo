@@ -670,7 +670,7 @@ export default function AccountSettingsDialog({
             setDeleteConfirmationEmail("");
           }}
         >
-          <AlertDialogContent className="z-[900002]">
+          <AlertDialogContent className="z-[900002] !border-border">
             <AlertDialogHeader>
               <AlertDialogTitle>Delete your account?</AlertDialogTitle>
               <AlertDialogDescription>
