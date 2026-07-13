@@ -81,6 +81,23 @@ export const updateProfile = mutation({
   },
 });
 
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("Not signed in");
+    }
+
+    const user = await ctx.db.get(userId);
+    if (user === null) {
+      throw new Error("User was deleted");
+    }
+
+    await ctx.db.delete(userId);
+  },
+});
+
 export const users = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
