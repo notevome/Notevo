@@ -12,6 +12,16 @@ import { useMutation } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Doc, Id } from "@/convex/_generated/dataModel";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -146,6 +156,7 @@ export default function AccountSettingsDialog({
     api.users.generateAvatarUploadUrl,
   );
   const updateProfile = useMutation(api.users.updateProfile);
+  const deleteAccount = useMutation(api.users.deleteAccount);
   const nameParts = useMemo(() => splitName(user?.name), [user?.name]);
   const [firstName, setFirstName] = useState(nameParts.firstName);
   const [lastName, setLastName] = useState(nameParts.lastName);
@@ -160,6 +171,10 @@ export default function AccountSettingsDialog({
   const [isSavingName, setIsSavingName] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+  const [isDeleteAccountDialogOpen, setIsDeleteAccountDialogOpen] =
+    useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState("");
   const removeAvatarTooltip = useHoverTooltip(150);
 
   useEffect(() => {
@@ -467,6 +482,30 @@ export default function AccountSettingsDialog({
     }
   }, [fullName, hasNameChanges, updateProfile]);
 
+  const isDeleteConfirmationValid =
+    Boolean(user?.email) && deleteConfirmationEmail === user?.email;
+
+  const handleDeleteAccount = useCallback(async () => {
+    if (isDeletingAccount || !isDeleteConfirmationValid) return;
+
+    setIsDeletingAccount(true);
+    try {
+      await deleteAccount({});
+      setIsDeleteAccountDialogOpen(false);
+      onOpenChange(false);
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      toast.error("Could not delete your account. Please try again.");
+      setIsDeletingAccount(false);
+    }
+  }, [
+    deleteAccount,
+    isDeletingAccount,
+    isDeleteConfirmationValid,
+    onOpenChange,
+  ]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className=" md:min-w-[850px] max-w-3xl overflow-hidden p-0 text-foreground z-[900001] ">
@@ -615,13 +654,68 @@ export default function AccountSettingsDialog({
               <Button
                 variant="outline"
                 className="mt-4 border-destructive/40 text-destructive hover:bg-destructive/10"
-                disabled
+                onClick={() => setIsDeleteAccountDialogOpen(true)}
               >
                 Delete your account
               </Button>
             </div>
           </section>
         </div>
+
+        <AlertDialog
+          open={isDeleteAccountDialogOpen}
+          onOpenChange={(nextOpen) => {
+            if (isDeletingAccount) return;
+            setIsDeleteAccountDialogOpen(nextOpen);
+            setDeleteConfirmationEmail("");
+          }}
+        >
+          <AlertDialogContent className="z-[900002]">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete your account and remove access to
+                your workspaces, notes, uploads, and account data. This action
+                cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-1.5">
+              <Label htmlFor="delete-account-email-confirm">
+                Type <span className="font-medium">{user?.email}</span> to
+                confirm
+              </Label>
+              <Input
+                id="delete-account-email-confirm"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                placeholder={user ? user.email : "write your exact email"}
+                spellCheck={false}
+                value={deleteConfirmationEmail}
+                onChange={(event) =>
+                  setDeleteConfirmationEmail(event.target.value)
+                }
+                disabled={isDeletingAccount}
+                className="h-9"
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingAccount}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:pointer-events-none disabled:opacity-50"
+                disabled={isDeletingAccount || !isDeleteConfirmationValid}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleDeleteAccount();
+                }}
+              >
+                {isDeletingAccount ? "Deleting..." : "Delete account"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {isPhotoEditorOpen && selectedPhotoUrl ? (
           <div
