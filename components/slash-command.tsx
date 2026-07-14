@@ -13,6 +13,7 @@ import {
   TextQuote,
   Youtube,
   Table,
+  ToggleLeft,
 } from "lucide-react";
 import { createSuggestionItems } from "novel";
 import { Command, renderItems } from "novel";
@@ -245,6 +246,31 @@ export const suggestionItems = createSuggestionItems([
         }
       };
       input.click();
+    },
+  },
+  {
+    title: "Toggle Action",
+    description: "Create a collapsible action block.",
+    searchTerms: ["toggle", "collapse", "accordion", "action", "atomic"],
+    icon: <ToggleLeft size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: "toggleAction",
+          attrs: {
+            title: "toggle action",
+            open: true,
+          },
+          content: [
+            {
+              type: "paragraph",
+            },
+          ],
+        })
+        .run();
     },
   },
   {
