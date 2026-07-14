@@ -33,6 +33,7 @@ import Heading from "@tiptap/extension-heading";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { CodeBlockComponent } from "./code-block-component";
 import TextAlign from "@tiptap/extension-text-align";
+import { ToggleAction } from "./toggle-action-node";
 
 const aiHighlight = AIHighlight;
 
@@ -259,4 +260,5 @@ export const defaultExtensions = [
   TipTapExtensionTableCell,
   TipTapExtensionTableHeader,
   textAlign,
+  ToggleAction,
 ];
