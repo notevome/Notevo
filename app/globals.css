@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+*:focus,
+*:focus-visible {
+  outline: none !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  box-shadow: none !important;
+}
+
 /* To change the theme colors, change the values below
   or use the "Copy code" button at https://ui.shadcn.com/themes */
 @layer base {
