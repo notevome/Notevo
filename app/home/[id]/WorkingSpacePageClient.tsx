@@ -1117,6 +1117,8 @@ export function NotesDroppableContainer({
             <CalendarTimelineView
               items={filteredItems}
               workspaceId={workspaceId}
+              paginationStatus={status}
+              onLoadMore={() => loadMore(15)}
             />
           ) : (
             <div
@@ -1162,7 +1164,7 @@ export function NotesDroppableContainer({
             </div>
           )}
 
-          {status === "CanLoadMore" && (
+          {viewMode !== "calendar" && status === "CanLoadMore" && (
             <div className="flex justify-center mt-6">
               <Button
                 variant="outline"
@@ -1175,7 +1177,7 @@ export function NotesDroppableContainer({
             </div>
           )}
 
-          {status === "LoadingMore" && (
+          {viewMode !== "calendar" && status === "LoadingMore" && (
             <div className="flex justify-center mt-6">
               <Button variant="outline" disabled className="border-border">
                 <LoadingAnimation className="h-4 w-4 mr-2" />
@@ -1196,9 +1198,13 @@ const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
 function CalendarTimelineView({
   items,
   workspaceId,
+  paginationStatus,
+  onLoadMore,
 }: {
   items: WorkspaceEntry[];
   workspaceId?: Id<"workingSpaces">;
+  paginationStatus: string;
+  onLoadMore: () => void;
 }) {
   const [zoom, setZoom] = useState<CalendarZoom>(() => {
     if (typeof window !== "undefined") {
@@ -1495,12 +1501,35 @@ function CalendarTimelineView({
   return (
     <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
       <div className="relative min-w-0 w-full max-w-full">
-        <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-2">
+        <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
+          {paginationStatus === "CanLoadMore" && (
+            <Button
+              variant="Trigger"
+              size="sm"
+              onClick={onLoadMore}
+              className="h-8 border-border text-xs px-1.5"
+              aria-label="load-more-notes"
+            >
+              Show More
+            </Button>
+          )}
+          {paginationStatus === "LoadingMore" && (
+            <Button
+              variant="Trigger"
+              size="sm"
+              disabled
+              className="h-8 border-border text-xs px-1.5"
+              aria-label="loading-more-notes"
+            >
+              <LoadingAnimation className="h-3.5 w-3.5 mr-1.5" />
+              Loading
+            </Button>
+          )}
           <Button
             variant="Trigger"
             size="sm"
             onClick={() => scrollToToday()}
-            className="h-8 border-border text-xs"
+            className="h-8 border-border text-xs px-1.5"
             aria-label="scroll-to-today"
           >
             Today
@@ -1510,7 +1539,7 @@ function CalendarTimelineView({
               <Button
                 variant="Trigger"
                 size="sm"
-                className="h-8 border-border text-xs gap-1 !rounded-none"
+                className="h-8 border-border text-xs px-1.5 gap-1 !rounded-none"
                 aria-label="calendar-zoom-level"
               >
                 {config.label}
@@ -1596,7 +1625,6 @@ function CalendarTimelineView({
         <div
           className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
           ref={scrollRef}
-          onWheel={handleWheel}
         >
           <div className="relative" style={{ width: totalWidth, height: 300 }}>
             <div className="relative h-7 border-b border-border">
@@ -1687,19 +1715,20 @@ function CalendarTimelineView({
                         }
                       >
                         <PopoverTrigger asChild>
-                          <button
+                          <Button
+                            variant="outline"
                             type="button"
-                            className="h-9 px-3 flex items-center gap-1.5 app-radius-lg border border-border bg-muted hover:bg-muted/70 text-xs font-medium text-foreground whitespace-nowrap"
+                            className="h-8 px-3 flex items-center gap-1.5  text-xs text-foreground"
                             aria-label="expand-clustered-items"
                           >
                             {cluster.entries.length} items
-                          </button>
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent
                           align="center"
                           side="bottom"
                           sideOffset={6}
-                          className="w-64 p-1 border-border max-h-72 space-y-1"
+                          className="w-64 p-0.5 border-border max-h-72 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-card"
                         >
                           {cluster.entries.map((entry) => (
                             <TimelineMiniCard
@@ -1751,7 +1780,7 @@ function CalendarGapMarker({
           size="sm"
           onClick={onToggle}
           className={cn(
-            "absolute z-10 min-h-16 w-8 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm hover:border-primary/50",
+            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-1 text-[10px] font-semibold shadow-sm !rounded-none",
             gap.expanded ? "top-20" : "top-16",
           )}
           style={{ left: gap.x }}
@@ -1768,7 +1797,7 @@ function CalendarGapMarker({
           </span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent side="top" sideOffset={6} className="text-xs">
+      <TooltipContent side="top" sideOffset={6} className="text-xs px-1.5 py-1">
         <div className="grid gap-0.5">
           <span>{hiddenDaysLabel}</span>
           <span className="text-muted-foreground">{dateRangeLabel}</span>
@@ -1802,7 +1831,7 @@ function TimelineMiniCard({
     <IntentPrefetchLink
       href={href}
       className={cn(
-        "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] transition-all app-radius-md px-2.5 py-2",
+        "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] shadow-primary transition-all app-radius-md px-2.5 py-2",
         inPopover ? "w-full" : "w-[168px]",
       )}
     >
