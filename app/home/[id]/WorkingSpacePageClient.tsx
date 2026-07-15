@@ -1191,6 +1191,7 @@ export function NotesDroppableContainer({
 
 const CALENDAR_CARD_WIDTH = 168;
 const CALENDAR_CLUSTER_GAP = 14;
+const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
 
 function CalendarTimelineView({
   items,
@@ -1215,6 +1216,11 @@ function CalendarTimelineView({
   });
   const [isZoomOpen, setIsZoomOpen] = useState(false);
   const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const [expandedGapIds, setExpandedGapIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const hasScrolledOnceRef = useRef(false);
 
@@ -1248,27 +1254,108 @@ function CalendarTimelineView({
   }, [items, today, zoom]);
 
   const totalDays = Math.max(1, daysBetween(startDate, endDate));
-  const totalWidth = totalDays * config.pxPerDay;
-  const todayOffset = daysBetween(startDate, today) * config.pxPerDay;
+  const timelineScale = useMemo(() => {
+    const itemDayOffsets = Array.from(
+      new Set(
+        items
+          .map((item) => daysBetween(startDate, startOfDay(item.createdAt)))
+          .filter((offset) => offset >= 0 && offset <= totalDays),
+      ),
+    ).sort((a, b) => a - b);
+
+    const largeGaps = itemDayOffsets.flatMap((startDay, index) => {
+      const endDay = itemDayOffsets[index + 1];
+      if (endDay === undefined) return [];
+      const emptyDays = endDay - startDay - 1;
+      if (emptyDays < CALENDAR_COLLAPSE_EMPTY_DAYS) return [];
+      const id = `${startDay}-${endDay}`;
+      return [
+        {
+          id,
+          startDay,
+          endDay,
+          emptyDays,
+          startDate: addDays(startDate, startDay + 1),
+          endDate: addDays(startDate, endDay - 1),
+          expanded: expandedGapIds.has(id),
+        },
+      ];
+    });
+
+    const collapsedGapsByStart = new Map(
+      largeGaps
+        .filter((gap) => !gap.expanded)
+        .map((gap) => [gap.startDay, gap]),
+    );
+    const collapsedGapWidth = Math.max(
+      CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP,
+      config.pxPerDay * 2,
+    );
+    const dayX = new Map<number, number>();
+    let x = 0;
+    let day = 0;
+    while (day <= totalDays) {
+      dayX.set(day, x);
+      const collapsedGap = collapsedGapsByStart.get(day);
+      if (collapsedGap) {
+        x += collapsedGapWidth;
+        day = collapsedGap.endDay;
+        dayX.set(day, x);
+        continue;
+      }
+      if (day < totalDays) x += config.pxPerDay;
+      day += 1;
+    }
+
+    const xForDay = (dayOffset: number) => {
+      const rounded = Math.max(0, Math.min(totalDays, Math.round(dayOffset)));
+      return dayX.get(rounded) ?? null;
+    };
+
+    const gapMarkers = largeGaps.map((gap) => {
+      const startX = xForDay(gap.startDay) ?? 0;
+      const endX = xForDay(gap.endDay) ?? startX;
+      return {
+        ...gap,
+        x: startX + (endX - startX) / 2,
+      };
+    });
+
+    return {
+      totalWidth: Math.max(x, 640),
+      xForDay,
+      gapMarkers,
+    };
+  }, [config.pxPerDay, expandedGapIds, items, startDate, totalDays]);
+  const totalWidth = timelineScale.totalWidth;
+  const todayOffset = timelineScale.xForDay(daysBetween(startDate, today)) ?? 0;
 
   const dateTicks = useMemo(() => {
     const ticks: { date: Date; x: number; isToday: boolean }[] = [];
     for (let i = 0; i <= totalDays; i += config.tickStepDays) {
+      const x = timelineScale.xForDay(i);
+      if (x === null) continue;
       const d = addDays(startDate, i);
       ticks.push({
         date: d,
-        x: i * config.pxPerDay,
+        x,
         isToday: daysBetween(d, today) === 0,
       });
     }
     return ticks;
-  }, [startDate, totalDays, config, today]);
+  }, [startDate, totalDays, config, today, timelineScale]);
 
   const monthMarkers = useMemo(() => {
     const markers: { label: string; x: number }[] = [];
     let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
     while (cursor.getTime() <= endDate.getTime()) {
-      const x = Math.max(0, daysBetween(startDate, cursor)) * config.pxPerDay;
+      const x = timelineScale.xForDay(
+        Math.max(0, daysBetween(startDate, cursor)),
+      );
+      if (x === null) {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        continue;
+      }
       const label =
         cursor.getMonth() === 0
           ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getFullYear()}`
@@ -1277,7 +1364,7 @@ function CalendarTimelineView({
       cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
     }
     return markers;
-  }, [startDate, endDate, config]);
+  }, [startDate, endDate, timelineScale]);
 
   const clusters = useMemo(() => {
     const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt);
@@ -1292,19 +1379,25 @@ function CalendarTimelineView({
     for (const item of sorted) {
       const dayOffset = daysBetween(startDate, startOfDay(item.createdAt));
       const last = result[result.length - 1];
-      if (last && dayOffset - last.dayOffset <= thresholdDays) {
+      const emptyDaysSinceLast = last ? dayOffset - last.dayOffset - 1 : 0;
+      if (
+        last &&
+        emptyDaysSinceLast < CALENDAR_COLLAPSE_EMPTY_DAYS &&
+        dayOffset - last.dayOffset <= thresholdDays
+      ) {
         last.entries.push(item);
       } else {
+        const x = timelineScale.xForDay(dayOffset);
         result.push({
           id: String(item._id),
-          x: dayOffset * config.pxPerDay,
+          x: x ?? 0,
           dayOffset,
           entries: [item],
         });
       }
     }
     return result;
-  }, [items, startDate, config]);
+  }, [items, startDate, config, timelineScale]);
 
   const scrollToToday = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -1316,10 +1409,49 @@ function CalendarTimelineView({
     [todayOffset],
   );
 
+  const checkTimelineScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkTimelineScroll();
+    el.addEventListener("scroll", checkTimelineScroll, { passive: true });
+    const ro = new ResizeObserver(checkTimelineScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", checkTimelineScroll);
+      ro.disconnect();
+    };
+  }, [checkTimelineScroll, totalWidth]);
+
+  const scrollTimeline = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: el.clientWidth * (direction === "left" ? -0.65 : 0.65),
+      behavior: "smooth",
+    });
+  }, []);
+
+  const toggleGap = useCallback((gapId: string) => {
+    setExpandedGapIds((current) => {
+      const next = new Set(current);
+      if (next.has(gapId)) next.delete(gapId);
+      else next.add(gapId);
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     const raf = requestAnimationFrame(() => {
       scrollToToday(hasScrolledOnceRef.current ? "smooth" : "auto");
       hasScrolledOnceRef.current = true;
+      checkTimelineScroll();
     });
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1358,174 +1490,244 @@ function CalendarTimelineView({
 
   return (
     <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => scrollToToday()}
-          className="h-8 border-border text-xs"
-          aria-label="scroll-to-today"
-        >
-          Today
-        </Button>
-        <Popover open={isZoomOpen} onOpenChange={setIsZoomOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 border-border text-xs gap-1 !rounded-none"
-              aria-label="calendar-zoom-level"
-            >
-              {config.label}
-              <ChevronDown className="h-3.5 w-3.5" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            side="bottom"
-            sideOffset={4}
-            className="w-36 p-1 border-border"
+      <div className="relative min-w-0 w-full max-w-full">
+        <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-2">
+          <Button
+            variant="Trigger"
+            size="sm"
+            onClick={() => scrollToToday()}
+            className="h-8 border-border text-xs"
+            aria-label="scroll-to-today"
           >
-            {CALENDAR_ZOOM_ORDER.map((z) => (
-              <button
-                key={z}
-                type="button"
-                onClick={() => {
-                  setZoom(z);
-                  setIsZoomOpen(false);
-                }}
-                className="w-full flex items-center justify-between px-2 py-1.5 text-sm app-radius-md hover:bg-muted"
+            Today
+          </Button>
+          <Popover open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="Trigger"
+                size="sm"
+                className="h-8 border-border text-xs gap-1 !rounded-none"
+                aria-label="calendar-zoom-level"
               >
-                <span className="flex items-center gap-1.5">
-                  {zoom === z ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <span className="w-3.5" />
-                  )}
-                  {CALENDAR_ZOOM_CONFIG[z].label}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {CALENDAR_ZOOM_CONFIG[z].shortcut}
+                {config.label}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="bottom"
+              sideOffset={4}
+              className="w-36 p-1 border-border"
+            >
+              {CALENDAR_ZOOM_ORDER.map((z) => (
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => {
+                    setZoom(z);
+                    setIsZoomOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1.5 text-sm app-radius-md hover:bg-muted"
+                >
+                  <span className="flex items-center gap-1.5">
+                    {zoom === z ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <span className="w-3.5" />
+                    )}
+                    {CALENDAR_ZOOM_CONFIG[z].label}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {CALENDAR_ZOOM_CONFIG[z].shortcut}
+                  </span>
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => scrollTimeline("left")}
+          aria-label="scroll-calendar-left"
+          className={cn(
+            "absolute left-2 top-32 z-30 h-8 w-8 !rounded-sm border border-border bg-card/90 shadow-sm transition-all duration-200",
+            canScrollLeft
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
+          )}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => scrollTimeline("right")}
+          aria-label="scroll-calendar-right"
+          className={cn(
+            "absolute right-2 top-32 z-30 h-8 w-8 !rounded-sm border border-border bg-card/90 shadow-sm transition-all duration-200",
+            canScrollRight
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
+          )}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <div
+          className="absolute left-0 top-0 bottom-2 z-20 w-28 pointer-events-none transition-opacity duration-200"
+          style={{
+            opacity: canScrollLeft ? 1 : 0,
+            background:
+              "linear-gradient(to right, hsl(var(--background)) 10%, transparent)",
+          }}
+        />
+        <div
+          className="absolute right-0 top-0 bottom-2 z-20 w-28 pointer-events-none transition-opacity duration-200"
+          style={{
+            opacity: canScrollRight ? 1 : 0,
+            background:
+              "linear-gradient(to left, hsl(var(--background)) 10%, transparent)",
+          }}
+        />
+        <div
+          className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
+          ref={scrollRef}
+          onWheel={handleWheel}
+        >
+          <div className="relative" style={{ width: totalWidth, height: 300 }}>
+            <div className="relative h-7 border-b border-border">
+              {monthMarkers.map((m, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-7 flex items-center text-[11px] font-semibold tracking-wide text-muted-foreground"
+                  style={{ left: m.x + 8 }}
+                >
+                  {m.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="relative h-8 border-b border-border">
+              {dateTicks.map((t, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-full"
+                  style={{ left: t.x }}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-1 left-1.5 text-[11px] whitespace-nowrap",
+                      t.isToday
+                        ? "text-primary-foreground bg-primary px-1.5 py-0.5 app-radius-md"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {t.date.getDate()}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {dateTicks.map((t, i) => (
+              <div
+                key={`line-${i}`}
+                className="absolute w-px bg-border/40"
+                style={{ left: t.x, top: 60, bottom: 0 }}
+              />
+            ))}
+
+            <div
+              className="absolute inset-0 w-px bg-primary z-20"
+              style={{ left: todayOffset }}
+            >
+              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
+                Today
+              </div>
+            </div>
+
+            {timelineScale.gapMarkers.map((gap) => (
+              <button
+                key={gap.id}
+                type="button"
+                onClick={() => toggleGap(gap.id)}
+                className={cn(
+                  "absolute z-10 flex min-h-16 w-8 -translate-x-1/2 flex-col items-center justify-center gap-1 border border-border bg-card px-1 py-2 text-[10px] font-semibold text-muted-foreground shadow-sm transition-colors hover:border-primary/50 hover:text-foreground",
+                  gap.expanded ? "top-20" : "top-16",
+                )}
+                style={{ left: gap.x }}
+                title={`${gap.emptyDays} hidden day${gap.emptyDays === 1 ? "" : "s"} from ${gap.startDate.toLocaleDateString()} to ${gap.endDate.toLocaleDateString()}`}
+                aria-label={
+                  gap.expanded ? "collapse-calendar-gap" : "expand-calendar-gap"
+                }
+              >
+                <span className="leading-none">.</span>
+                <span className="leading-none">.</span>
+                <span className="leading-none">.</span>
+                <span className="[writing-mode:vertical-rl]">
+                  {gap.expanded ? "hide" : `${gap.emptyDays}d`}
                 </span>
               </button>
             ))}
-          </PopoverContent>
-        </Popover>
-      </div>
-      <div
-        className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
-        ref={scrollRef}
-        onWheel={handleWheel}
-      >
-        <div className="relative" style={{ width: totalWidth, height: 190 }}>
-          <div className="relative h-7 border-b border-border">
-            {monthMarkers.map((m, i) => (
-              <div
-                key={i}
-                className="absolute top-0 h-7 flex items-center text-[11px] font-semibold tracking-wide text-muted-foreground"
-                style={{ left: m.x + 8 }}
-              >
-                {m.label}
-              </div>
-            ))}
-          </div>
 
-          <div className="relative h-8 border-b border-border">
-            {dateTicks.map((t, i) => (
-              <div
-                key={i}
-                className="absolute top-0 h-full"
-                style={{ left: t.x }}
-              >
-                <span
-                  className={cn(
-                    "absolute top-1 left-1.5 text-[11px] whitespace-nowrap",
-                    t.isToday
-                      ? "text-primary-foreground bg-primary px-1.5 py-0.5 app-radius-md"
-                      : "text-muted-foreground",
-                  )}
+            <div className="absolute left-0 right-0" style={{ top: 64 }}>
+              {clusters.map((cluster) => (
+                <div
+                  key={cluster.id}
+                  className="absolute"
+                  style={{ left: cluster.x, transform: "translateX(-50%)" }}
                 >
-                  {t.date.getDate()}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {dateTicks.map((t, i) => (
-            <div
-              key={`line-${i}`}
-              className="absolute w-px bg-border/40"
-              style={{ left: t.x, top: 60, bottom: 0 }}
-            />
-          ))}
-
-          <div
-            className="absolute inset-0 w-px bg-primary z-20"
-            style={{ left: todayOffset }}
-          >
-            <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
-              Today
-            </div>
-          </div>
-
-          <div className="absolute left-0 right-0" style={{ top: 64 }}>
-            {clusters.map((cluster) => (
-              <div
-                key={cluster.id}
-                className="absolute"
-                style={{ left: cluster.x, transform: "translateX(-50%)" }}
-              >
-                <div className="flex flex-col items-center">
-                  <div
-                    className={cn(
-                      "h-2.5 w-2.5 rounded-full border-2 border-card",
-                      cluster.entries.length > 1
-                        ? "bg-primary"
-                        : "bg-muted-foreground/60",
-                    )}
-                  />
-                  <div className="w-px h-3 bg-border" />
-                  {cluster.entries.length === 1 ? (
-                    <TimelineMiniCard
-                      item={cluster.entries[0]}
-                      workspaceId={workspaceId}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        "h-2.5 w-2.5 rounded-full border-2 border-card",
+                        cluster.entries.length > 1
+                          ? "bg-primary"
+                          : "bg-muted-foreground/60",
+                      )}
                     />
-                  ) : (
-                    <Popover
-                      open={openClusterId === cluster.id}
-                      onOpenChange={(open) =>
-                        setOpenClusterId(open ? cluster.id : null)
-                      }
-                    >
-                      <PopoverTrigger asChild>
-                        <button
-                          type="button"
-                          className="h-9 px-3 flex items-center gap-1.5 app-radius-lg border border-border bg-muted hover:bg-muted/70 text-xs font-medium text-foreground whitespace-nowrap"
-                          aria-label="expand-clustered-items"
-                        >
-                          {cluster.entries.length} items
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="center"
-                        side="bottom"
-                        sideOffset={6}
-                        className="w-64 p-1 border-border max-h-72 space-y-1"
+                    <div className="w-px h-3 bg-border" />
+                    {cluster.entries.length === 1 ? (
+                      <TimelineMiniCard
+                        item={cluster.entries[0]}
+                        workspaceId={workspaceId}
+                      />
+                    ) : (
+                      <Popover
+                        open={openClusterId === cluster.id}
+                        onOpenChange={(open) =>
+                          setOpenClusterId(open ? cluster.id : null)
+                        }
                       >
-                        {cluster.entries.map((entry) => (
-                          <TimelineMiniCard
-                            key={entry._id}
-                            item={entry}
-                            workspaceId={workspaceId}
-                            inPopover
-                          />
-                        ))}
-                      </PopoverContent>
-                    </Popover>
-                  )}
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className="h-9 px-3 flex items-center gap-1.5 app-radius-lg border border-border bg-muted hover:bg-muted/70 text-xs font-medium text-foreground whitespace-nowrap"
+                            aria-label="expand-clustered-items"
+                          >
+                            {cluster.entries.length} items
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="center"
+                          side="bottom"
+                          sideOffset={6}
+                          className="w-64 p-1 border-border max-h-72 space-y-1"
+                        >
+                          {cluster.entries.map((entry) => (
+                            <TimelineMiniCard
+                              key={entry._id}
+                              item={entry}
+                              workspaceId={workspaceId}
+                              inPopover
+                            />
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
