@@ -1255,11 +1255,15 @@ function CalendarTimelineView({
 
   const totalDays = Math.max(1, daysBetween(startDate, endDate));
   const timelineScale = useMemo(() => {
+    const todayDayOffset = daysBetween(startDate, today);
     const itemDayOffsets = Array.from(
       new Set(
-        items
-          .map((item) => daysBetween(startDate, startOfDay(item.createdAt)))
-          .filter((offset) => offset >= 0 && offset <= totalDays),
+        [
+          ...items.map((item) =>
+            daysBetween(startDate, startOfDay(item.createdAt)),
+          ),
+          todayDayOffset,
+        ].filter((offset) => offset >= 0 && offset <= totalDays),
       ),
     ).sort((a, b) => a - b);
 
@@ -1326,7 +1330,7 @@ function CalendarTimelineView({
       xForDay,
       gapMarkers,
     };
-  }, [config.pxPerDay, expandedGapIds, items, startDate, totalDays]);
+  }, [config.pxPerDay, expandedGapIds, items, startDate, today, totalDays]);
   const totalWidth = timelineScale.totalWidth;
   const todayOffset = timelineScale.xForDay(daysBetween(startDate, today)) ?? 0;
 
@@ -1646,27 +1650,11 @@ function CalendarTimelineView({
             </div>
 
             {timelineScale.gapMarkers.map((gap) => (
-              <button
+              <CalendarGapMarker
                 key={gap.id}
-                type="button"
-                onClick={() => toggleGap(gap.id)}
-                className={cn(
-                  "absolute z-10 flex min-h-16 w-8 -translate-x-1/2 flex-col items-center justify-center gap-1 border border-border bg-card px-1 py-2 text-[10px] font-semibold text-muted-foreground shadow-sm transition-colors hover:border-primary/50 hover:text-foreground",
-                  gap.expanded ? "top-20" : "top-16",
-                )}
-                style={{ left: gap.x }}
-                title={`${gap.emptyDays} hidden day${gap.emptyDays === 1 ? "" : "s"} from ${gap.startDate.toLocaleDateString()} to ${gap.endDate.toLocaleDateString()}`}
-                aria-label={
-                  gap.expanded ? "collapse-calendar-gap" : "expand-calendar-gap"
-                }
-              >
-                <span className="leading-none">.</span>
-                <span className="leading-none">.</span>
-                <span className="leading-none">.</span>
-                <span className="[writing-mode:vertical-rl]">
-                  {gap.expanded ? "hide" : `${gap.emptyDays}d`}
-                </span>
-              </button>
+                gap={gap}
+                onToggle={() => toggleGap(gap.id)}
+              />
             ))}
 
             <div className="absolute left-0 right-0" style={{ top: 64 }}>
@@ -1732,6 +1720,61 @@ function CalendarTimelineView({
         </div>
       </div>
     </div>
+  );
+}
+
+function CalendarGapMarker({
+  gap,
+  onToggle,
+}: {
+  gap: {
+    emptyDays: number;
+    expanded: boolean;
+    startDate: Date;
+    endDate: Date;
+    x: number;
+  };
+  onToggle: () => void;
+}) {
+  const gapTooltip = useHoverTooltip(100);
+  const hiddenDaysLabel = `${gap.emptyDays} hidden day${
+    gap.emptyDays === 1 ? "" : "s"
+  }`;
+  const dateRangeLabel = `${gap.startDate.toLocaleDateString()} - ${gap.endDate.toLocaleDateString()}`;
+
+  return (
+    <Tooltip open={gapTooltip.open}>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onToggle}
+          className={cn(
+            "absolute z-10 min-h-16 w-8 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm hover:border-primary/50",
+            gap.expanded ? "top-20" : "top-16",
+          )}
+          style={{ left: gap.x }}
+          aria-label={
+            gap.expanded ? "collapse-calendar-gap" : "expand-calendar-gap"
+          }
+          {...gapTooltip.triggerProps}
+        >
+          <span className="leading-none">.</span>
+          <span className="leading-none">.</span>
+          <span className="leading-none">.</span>
+          <span className="[writing-mode:vertical-rl]">
+            {gap.expanded ? "hide" : `${gap.emptyDays}d`}
+          </span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} className="text-xs">
+        <div className="grid gap-0.5">
+          <span>{hiddenDaysLabel}</span>
+          <span className="text-muted-foreground">{dateRangeLabel}</span>
+        </div>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
