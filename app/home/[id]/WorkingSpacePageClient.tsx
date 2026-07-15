@@ -1467,16 +1467,6 @@ function CalendarTimelineView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoom, totalWidth]);
 
-  const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-      const el = scrollRef.current;
-      if (el) {
-        el.scrollLeft += e.deltaY;
-        e.preventDefault();
-      }
-    }
-  }, []);
-
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -1780,7 +1770,7 @@ function CalendarGapMarker({
           size="sm"
           onClick={onToggle}
           className={cn(
-            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-1 text-[10px] font-semibold shadow-sm !rounded-none",
+            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !rounded-none",
             gap.expanded ? "top-20" : "top-16",
           )}
           style={{ left: gap.x }}
