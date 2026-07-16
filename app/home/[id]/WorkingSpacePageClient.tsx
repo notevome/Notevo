@@ -70,6 +70,7 @@ import {
 import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useDebouncedCallback } from "use-debounce";
+import { Separator } from "@/components/ui/separator";
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -1062,7 +1063,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
+                "!rounded-none hover:bg-muted border border-l-border border-r-border ",
                 viewMode === "list" && "bg-muted",
               )}
               onClick={() => setViewMode("list")}
@@ -1195,6 +1196,7 @@ const CALENDAR_CARD_WIDTH = 168;
 const CALENDAR_CLUSTER_GAP = 14;
 const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
 const CALENDAR_GAP_MARKER_WIDTH = 28; // matches the w-7 marker button
+const CALENDAR_GAP_MIN_SAVINGS = 80; // px a gap must save to be worth collapsing
 
 function CalendarTimelineView({
   items,
@@ -1274,11 +1276,28 @@ function CalendarTimelineView({
       ),
     ).sort((a, b) => a - b);
 
+    // Minimum width a collapsed gap segment needs so its marker and the
+    // cards on either side of it never overlap.
+    const collapsedGapWidth = Math.max(
+      CALENDAR_CARD_WIDTH +
+        CALENDAR_CLUSTER_GAP * 2 +
+        CALENDAR_GAP_MARKER_WIDTH,
+      config.pxPerDay * 2,
+    );
+
     const largeGaps = itemDayOffsets.flatMap((startDay, index) => {
       const endDay = itemDayOffsets[index + 1];
       if (endDay === undefined) return [];
       const emptyDays = endDay - startDay - 1;
       if (emptyDays < CALENDAR_COLLAPSE_EMPTY_DAYS) return [];
+      // Only worth collapsing if it actually saves visible space — at
+      // coarse zoom levels a handful of days may already render smaller
+      // than the collapsed placeholder, so collapsing them would do
+      // nothing (or even grow them) once expanded.
+      const naturalWidth = emptyDays * config.pxPerDay;
+      if (naturalWidth <= collapsedGapWidth + CALENDAR_GAP_MIN_SAVINGS) {
+        return [];
+      }
       const id = `${startDay}-${endDay}`;
       return [
         {
@@ -1297,12 +1316,6 @@ function CalendarTimelineView({
       largeGaps
         .filter((gap) => !gap.expanded)
         .map((gap) => [gap.startDay, gap]),
-    );
-    const collapsedGapWidth = Math.max(
-      CALENDAR_CARD_WIDTH +
-        CALENDAR_CLUSTER_GAP * 2 +
-        CALENDAR_GAP_MARKER_WIDTH,
-      config.pxPerDay * 2,
     );
     const dayX = new Map<number, number>();
     let x = 0;
@@ -1537,7 +1550,7 @@ function CalendarTimelineView({
               align="end"
               side="bottom"
               sideOffset={4}
-              className="w-36 p-1 border-border"
+              className="w-32 p-1 border-border"
             >
               {CALENDAR_ZOOM_ORDER.map((z) => (
                 <button
@@ -1549,13 +1562,13 @@ function CalendarTimelineView({
                   }}
                   className="w-full flex items-center justify-between px-2 py-1.5 text-sm app-radius-md hover:bg-muted"
                 >
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-2">
+                    {CALENDAR_ZOOM_CONFIG[z].label}
                     {zoom === z ? (
                       <Check className="h-3.5 w-3.5" />
                     ) : (
                       <span className="w-3.5" />
                     )}
-                    {CALENDAR_ZOOM_CONFIG[z].label}
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {CALENDAR_ZOOM_CONFIG[z].shortcut}
