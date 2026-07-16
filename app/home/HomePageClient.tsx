@@ -8,6 +8,7 @@ import {
   FolderClosed,
   Star,
   Pin,
+  FolderPlus,
 } from "lucide-react";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
@@ -180,7 +181,7 @@ export default function HomePageClient() {
             onClick={handleCreateWorkingSpace}
             disabled={recentWorkspaces === undefined}
           >
-            <Plus className="h-4 w-4 sm:mr-2 mr-0" />
+            <FolderPlus size={16} className="h-4 w-4 sm:mr-2 mr-0" />
             <span className="hidden sm:block">New Workspace</span>
           </Button>
         </div>
