@@ -1194,6 +1194,7 @@ export function NotesDroppableContainer({
 const CALENDAR_CARD_WIDTH = 168;
 const CALENDAR_CLUSTER_GAP = 14;
 const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
+const CALENDAR_GAP_MARKER_WIDTH = 28; // matches the w-7 marker button
 
 function CalendarTimelineView({
   items,
@@ -1298,7 +1299,9 @@ function CalendarTimelineView({
         .map((gap) => [gap.startDay, gap]),
     );
     const collapsedGapWidth = Math.max(
-      CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP,
+      CALENDAR_CARD_WIDTH +
+        CALENDAR_CLUSTER_GAP * 2 +
+        CALENDAR_GAP_MARKER_WIDTH,
       config.pxPerDay * 2,
     );
     const dayX = new Map<number, number>();
@@ -1378,8 +1381,7 @@ function CalendarTimelineView({
 
   const clusters = useMemo(() => {
     const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt);
-    const thresholdDays =
-      (CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP) / config.pxPerDay;
+    const minClusterSpacing = CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP;
     const result: {
       id: string;
       x: number;
@@ -1388,26 +1390,21 @@ function CalendarTimelineView({
     }[] = [];
     for (const item of sorted) {
       const dayOffset = daysBetween(startDate, startOfDay(item.createdAt));
+      const x = timelineScale.xForDay(dayOffset) ?? 0;
       const last = result[result.length - 1];
-      const emptyDaysSinceLast = last ? dayOffset - last.dayOffset - 1 : 0;
-      if (
-        last &&
-        emptyDaysSinceLast < CALENDAR_COLLAPSE_EMPTY_DAYS &&
-        dayOffset - last.dayOffset <= thresholdDays
-      ) {
+      if (last && x - last.x <= minClusterSpacing) {
         last.entries.push(item);
       } else {
-        const x = timelineScale.xForDay(dayOffset);
         result.push({
           id: String(item._id),
-          x: x ?? 0,
+          x,
           dayOffset,
           entries: [item],
         });
       }
     }
     return result;
-  }, [items, startDate, config, timelineScale]);
+  }, [items, startDate, timelineScale]);
 
   const scrollToToday = useCallback(
     (behavior: ScrollBehavior = "smooth") => {
@@ -1569,12 +1566,12 @@ function CalendarTimelineView({
           </Popover>
         </div>
         <Button
-          variant="ghost"
+          variant="Trigger"
           size="icon"
           onClick={() => scrollTimeline("left")}
           aria-label="scroll-calendar-left"
           className={cn(
-            "absolute left-2 top-32 z-30 h-8 w-8 !rounded-sm border border-border bg-card/90 shadow-sm transition-all duration-200",
+            "absolute left-2 top-36 z-30 h-8 w-8 ",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -1583,12 +1580,12 @@ function CalendarTimelineView({
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <Button
-          variant="ghost"
+          variant="Trigger"
           size="icon"
           onClick={() => scrollTimeline("right")}
           aria-label="scroll-calendar-right"
           className={cn(
-            "absolute right-2 top-32 z-30 h-8 w-8 !rounded-sm border border-border bg-card/90 shadow-sm transition-all duration-200",
+            "absolute right-2 top-36 z-30 h-8 w-8 ",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
