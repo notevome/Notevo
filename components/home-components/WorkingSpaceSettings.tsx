@@ -260,7 +260,7 @@ export default function WorkingSpaceSettings({
           <DropdownMenuGroup>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="w-full h-8 px-2 text-sm"
+              className="w-full h-8 px-2 text-sm text-foreground"
               onClick={initiateDelete}
               disabled={isDeleting}
               aria-label="delete-workspace"
@@ -272,7 +272,8 @@ export default function WorkingSpaceSettings({
                 </>
               ) : (
                 <>
-                  <FaRegTrashCan size={14} className=" text-current" /> Delete
+                  <FaRegTrashCan size={14} className=" text-muted-foreground" />{" "}
+                  Delete
                 </>
               )}
             </Button>

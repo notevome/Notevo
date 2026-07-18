@@ -23,7 +23,7 @@ const buttonVariants = cva(
         SidebarMenuButton:
           "flex justify-start items-center gap-2 bg-none w-full text-foreground hover:bg-border",
         SidebarMenuButton_destructive:
-          "flex justify-start items-center gap-2 bg-none w-full text-foreground hover:bg-border hover:text-destructive",
+          "flex justify-start items-center gap-2 bg-none w-full text-muted-foreground hover:bg-border hover:text-destructive",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -1276,8 +1276,6 @@ function CalendarTimelineView({
       ),
     ).sort((a, b) => a - b);
 
-    // Minimum width a collapsed gap segment needs so its marker and the
-    // cards on either side of it never overlap.
     const collapsedGapWidth = Math.max(
       CALENDAR_CARD_WIDTH +
         CALENDAR_CLUSTER_GAP * 2 +
@@ -1290,10 +1288,6 @@ function CalendarTimelineView({
       if (endDay === undefined) return [];
       const emptyDays = endDay - startDay - 1;
       if (emptyDays < CALENDAR_COLLAPSE_EMPTY_DAYS) return [];
-      // Only worth collapsing if it actually saves visible space — at
-      // coarse zoom levels a handful of days may already render smaller
-      // than the collapsed placeholder, so collapsing them would do
-      // nothing (or even grow them) once expanded.
       const naturalWidth = emptyDays * config.pxPerDay;
       if (naturalWidth <= collapsedGapWidth + CALENDAR_GAP_MIN_SAVINGS) {
         return [];
