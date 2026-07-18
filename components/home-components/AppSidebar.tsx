@@ -18,6 +18,7 @@ import {
   Gavel,
   FolderPlus,
   SquarePen,
+  PanelRightOpen,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -85,6 +86,8 @@ import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
 import NoteContextMenu from "./NoteContextMenu";
 import { FaGithub } from "react-icons/fa6";
+import { useHomePane } from "./HomePaneDrawer";
+import { ShortcutBadge } from "../ui/shortcut-badge";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
@@ -111,6 +114,46 @@ const PINNED_NOTES_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_notes_expanded";
 const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_uploads_expanded";
+
+function OpenInPaneButton({
+  label,
+  onOpen,
+}: {
+  label: string;
+  onOpen: () => void;
+}) {
+  const tooltip = useHoverTooltip(100);
+
+  return (
+    <Tooltip open={tooltip.open}>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="SidebarMenuButton"
+          className="px-1.5 h-7 hover:bg-card text-muted-foreground"
+          aria-label={label}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpen();
+            tooltip.hide();
+          }}
+          {...tooltip.triggerProps}
+        >
+          <PanelRightOpen size={16} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="right"
+        sideOffset={5}
+        className="flex justify-center items-center gap-2 !rounded-none"
+      >
+        Open in Pane
+        <ShortcutBadge keys="Alt + Click" />
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function useStoredExpandedState(storageKey: string, defaultValue = true) {
   const [isExpanded, setIsExpanded] = useState(defaultValue);
@@ -389,6 +432,7 @@ interface PinnedNoteItemProps {
 const PinnedNoteItem = memo(
   function PinnedNoteItem({ note, pathname, open }: PinnedNoteItemProps) {
     const titleTooltip = useHoverTooltip(300);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
@@ -488,7 +532,7 @@ const PinnedNoteItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     const content = (
@@ -524,6 +568,17 @@ const PinnedNoteItem = memo(
                     <IntentPrefetchLink
                       href={noteHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "note",
+                            id: note._id,
+                            title: note.title || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <ChevronRight
@@ -554,8 +609,19 @@ const PinnedNoteItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
+          <OpenInPaneButton
+            label="open-note-in-pane"
+            onOpen={() =>
+              openPane({
+                type: "note",
+                id: note._id,
+                title: note.title || "Untitled",
+              })
+            }
+          />
           <NoteSettingsSidbar
             noteId={note._id}
             noteTitle={note.title}
@@ -698,6 +764,7 @@ interface PinnedUploadItemProps {
 const PinnedUploadItem = memo(
   function PinnedUploadItem({ pdf, pathname, open }: PinnedUploadItemProps) {
     const titleTooltip = useHoverTooltip(300);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
@@ -777,9 +844,8 @@ const PinnedUploadItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
-
     return (
       <SidebarGroupContent
         className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -813,6 +879,17 @@ const PinnedUploadItem = memo(
                     <IntentPrefetchLink
                       href={pdfHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "pdf",
+                            id: pdf._id,
+                            title: pdf.title || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <ChevronRight
@@ -843,8 +920,19 @@ const PinnedUploadItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
+          <OpenInPaneButton
+            label="open-upload-in-pane"
+            onOpen={() =>
+              openPane({
+                type: "pdf",
+                id: pdf._id,
+                title: pdf.title || "Untitled",
+              })
+            }
+          />
           <PdfSettingsSidebar pdfId={pdf._id} />
         </div>
       </SidebarGroupContent>
@@ -975,6 +1063,7 @@ interface WorkspaceItemProps {
 const WorkspaceItem = memo(
   function WorkspaceItem({ workingSpace, pathname, open }: WorkspaceItemProps) {
     const titleTooltip = useHoverTooltip(300);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(
@@ -1099,7 +1188,7 @@ const WorkspaceItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     return (
@@ -1135,6 +1224,17 @@ const WorkspaceItem = memo(
                     <IntentPrefetchLink
                       href={workspaceHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "workspace",
+                            id: workingSpace._id,
+                            title: workingSpace.name || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <FolderOpen
@@ -1165,8 +1265,19 @@ const WorkspaceItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
+          <OpenInPaneButton
+            label="open-workspace-in-pane"
+            onOpen={() =>
+              openPane({
+                type: "workspace",
+                id: workingSpace._id,
+                title: workingSpace.name || "Untitled",
+              })
+            }
+          />
           <WorkingSpaceSettingsSidbar
             workingSpaceId={workingSpace._id}
             workingspaceName={workingSpace.name}

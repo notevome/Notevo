@@ -28,6 +28,7 @@ import PublicNote from "../PublicNote";
 import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
 import { useTheme } from "next-themes";
+import { HomePaneProvider } from "@/components/home-components/HomePaneDrawer";
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
   hide: { ease: "easeInOut" as const, duration: 0 },
@@ -143,7 +144,9 @@ HomeContent.displayName = "homeContent";
 const HomeClientLayout = memo(({ children }: { children: ReactNode }) => {
   return (
     <SidebarProvider>
-      <HomeContent>{children}</HomeContent>
+      <HomePaneProvider>
+        <HomeContent>{children}</HomeContent>
+      </HomePaneProvider>
     </SidebarProvider>
   );
 });
