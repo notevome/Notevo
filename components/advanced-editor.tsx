@@ -47,10 +47,12 @@ const TailwindAdvancedEditor = ({
   initialContent,
   onUpdate,
   editorBubblePlacement,
+  renderedInPane = false,
 }: {
   initialContent: any;
   onUpdate: (editor: EditorInstance) => void;
   editorBubblePlacement: Boolean;
+  renderedInPane?: boolean;
 }) => {
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
@@ -128,11 +130,6 @@ const TailwindAdvancedEditor = ({
   };
 
   const openPlusMenu = (editor: EditorInstance, buttonEl: HTMLElement) => {
-    const dragHandleEl =
-      buttonEl.closest("[data-drag-handle]")?.parentElement ??
-      buttonEl.closest(".novel-drag-handle")?.parentElement ??
-      buttonEl.parentElement?.parentElement;
-
     const rect = buttonEl.getBoundingClientRect();
     const editorView = (editor as any).view;
 
@@ -204,34 +201,37 @@ const TailwindAdvancedEditor = ({
               <LinkHoverCard editor={editorInstance} disabled={openLink} />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
-                <div className="lg:flex items-center justify-center hidden ">
-                  <Tooltip delayDuration={150} disableHoverableContent>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label="Insert block below"
-                        className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
-                        onMouseDown={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          openPlusMenu(
-                            editorInstance,
-                            event.currentTarget as HTMLElement,
-                          );
-                        }}
-                      >
-                        <Plus className="h-4 w-4 " />
-                      </button>
-                    </TooltipTrigger>
+                <div className="lg:flex items-center justify-center hidden">
+                  {!renderedInPane && (
+                    <Tooltip delayDuration={150} disableHoverableContent>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label="Insert block below"
+                          className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openPlusMenu(
+                              editorInstance,
+                              event.currentTarget as HTMLElement,
+                            );
+                          }}
+                        >
+                          <Plus className="h-4 w-4 " />
+                        </button>
+                      </TooltipTrigger>
 
-                    <TooltipContent
-                      side="left"
-                      align="center"
-                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none "
-                    >
-                      <p> Click to insert block below </p>
-                    </TooltipContent>
-                  </Tooltip>
+                      <TooltipContent
+                        side="left"
+                        align="center"
+                        className=" text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                      >
+                        <p> Click to insert block below </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+
                   <Tooltip delayDuration={150} disableHoverableContent>
                     <TooltipTrigger asChild>
                       <div className="flex h-5 w-5 items-center justify-center">
@@ -265,7 +265,7 @@ const TailwindAdvancedEditor = ({
                     <TooltipContent
                       side="left"
                       align="center"
-                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none "
+                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none"
                     >
                       <p>Drag</p>
                     </TooltipContent>
@@ -278,7 +278,7 @@ const TailwindAdvancedEditor = ({
             initialContent={initialContent}
             extensions={extensions}
             autofocus={true}
-            className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder"
+            className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder "
             editorProps={{
               handleDOMEvents: {
                 keydown: (_view, event) => handleCommandNavigation(event),

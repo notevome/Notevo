@@ -1188,7 +1188,7 @@ const WorkspaceItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-75% via-transparent via-85% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     return (
@@ -1224,17 +1224,6 @@ const WorkspaceItem = memo(
                     <IntentPrefetchLink
                       href={workspaceHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
-                      onClick={(event) => {
-                        if (event.button === 0 && event.altKey) {
-                          event.preventDefault();
-                          openPane({
-                            type: "workspace",
-                            id: workingSpace._id,
-                            title: workingSpace.name || "Untitled",
-                          });
-                          titleTooltip.hide();
-                        }
-                      }}
                     >
                       {isHovered || isActive ? (
                         <FolderOpen
@@ -1268,16 +1257,6 @@ const WorkspaceItem = memo(
           className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
           onMouseEnter={titleTooltip.hide}
         >
-          <OpenInPaneButton
-            label="open-workspace-in-pane"
-            onOpen={() =>
-              openPane({
-                type: "workspace",
-                id: workingSpace._id,
-                title: workingSpace.name || "Untitled",
-              })
-            }
-          />
           <WorkingSpaceSettingsSidbar
             workingSpaceId={workingSpace._id}
             workingspaceName={workingSpace.name}

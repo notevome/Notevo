@@ -51,6 +51,7 @@ import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
 import z from "zod";
+import { generateSlug } from "@/lib/generateSlug";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
@@ -478,11 +479,13 @@ function PdfViewerContent({
   title,
   pdfId,
   pdftitle,
+  renderedInPane,
 }: {
   fileUrl: string;
   title: string;
   pdfId: Id<"pdfs">;
   pdftitle: string;
+  renderedInPane?: boolean;
 }) {
   const { open, isMobile } = useSidebar();
   const [query, setQuery] = useState("");
@@ -545,6 +548,11 @@ function PdfViewerContent({
     if (newTitle !== currentTitle) {
       try {
         void updatePdf({ _id: pdfId, title: newTitle });
+        if (renderedInPane) {
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set("paneTitle", generateSlug(newTitle));
+          window.history.replaceState({}, "", currentUrl.href);
+        }
       } catch (error) {
         console.error("Error updating PDF title:", error);
         toast({
@@ -566,48 +574,56 @@ function PdfViewerContent({
       <div className=" relative min-w-full min-h-full bg-transparent ">
         <div className=" pointer-events-none absolute inset-x-0 top-1 z-50">
           <div
-            className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 app-radius-lg border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
+            className={cn(
+              "pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl",
+              !renderedInPane && "app-radius-lg",
+            )}
           >
             {(!open || isMobile) && (
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 border border-border"
+                className={cn(
+                  "h-8 w-8 border border-border",
+                  renderedInPane && "!rounded-none",
+                )}
                 aria-label="show-search-panel"
               >
                 <SidebarTrigger />
               </Button>
             )}
-            <div
-              className={` px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
-            >
-              <h1
-                onDoubleClick={handleNameDoubleClick}
-                title="Double-click to rename"
-                className=" md:text-lg cursor-text flex justify-start items-center min-w-[16rem] overflow-hidden "
+            {!renderedInPane && (
+              <div
+                className={` px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
               >
-                {isEditingName ? (
-                  <Input
-                    ref={nameInputRef as any}
-                    value={editedName}
-                    onChange={(e: any) => {
-                      setEditedName(e.target.value);
-                      debouncedUpdatePdfTitle(e.target.value.trim());
-                    }}
-                    onKeyDown={handleNameKeyDown}
-                    onBlur={() => {
-                      setIsEditingName(false);
-                    }}
-                    placeholder="Untitled PDF"
-                    className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
-                  />
-                ) : (
-                  <span className=" w-full overflow-hidden text-nowrap">
-                    {pdftitle || "Untitled PDF"}
-                  </span>
-                )}
-              </h1>
-            </div>
+                <h1
+                  onDoubleClick={handleNameDoubleClick}
+                  title="Double-click to rename"
+                  className=" md:text-lg cursor-text flex justify-start items-center min-w-[16rem] overflow-hidden "
+                >
+                  {isEditingName ? (
+                    <Input
+                      ref={nameInputRef as any}
+                      value={editedName}
+                      onChange={(e: any) => {
+                        setEditedName(e.target.value);
+                        debouncedUpdatePdfTitle(e.target.value.trim());
+                      }}
+                      onKeyDown={handleNameKeyDown}
+                      onBlur={() => {
+                        setIsEditingName(false);
+                      }}
+                      placeholder="Untitled PDF"
+                      className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                    />
+                  ) : (
+                    <span className=" w-full overflow-hidden text-nowrap">
+                      {pdftitle || "Untitled PDF"}
+                    </span>
+                  )}
+                </h1>
+              </div>
+            )}
             <div className="flex items-center gap-0">
               <Tooltip open={searchTooltip.open}>
                 <TooltipTrigger asChild>
@@ -668,15 +684,17 @@ function PdfViewerContent({
               <ZoomDropdown />
             </div>
             <PageNavigator />
-            <PdfSettings
-              pdfId={pdfId}
-              pdfTitle={pdftitle}
-              iconVariant="horizontal_icon"
-              dropdownMenuContentAlign="end"
-              tooltipContentAlign="end"
-              btnVariant="outline"
-              btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
-            />
+            {!renderedInPane && (
+              <PdfSettings
+                pdfId={pdfId}
+                pdfTitle={pdftitle}
+                iconVariant="horizontal_icon"
+                dropdownMenuContentAlign="end"
+                tooltipContentAlign="end"
+                btnVariant="outline"
+                btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
+              />
+            )}
           </div>
         </div>
 
@@ -716,11 +734,13 @@ function PdfViewerShell({
   title,
   pdfId,
   pdftitle,
+  renderedInPane,
 }: {
   fileUrl: string;
   title: string;
   pdfId: Id<"pdfs">;
   pdftitle: string;
+  renderedInPane?: boolean;
 }) {
   const { open, isMobile } = useSidebar();
 
@@ -728,7 +748,10 @@ function PdfViewerShell({
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className={`${open && !isMobile ? `app-radius-lg` : null} pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch`}
+      className={cn(
+        "pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch",
+        open && !isMobile && !renderedInPane && "app-radius-lg",
+      )}
       loader={
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...
@@ -744,12 +767,19 @@ function PdfViewerShell({
         title={title}
         pdfId={pdfId}
         pdftitle={pdftitle}
+        renderedInPane={renderedInPane}
       />
     </Root>
   );
 }
 
-export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
+export default function PdfViewerPageClient({
+  pdfId,
+  renderedInPane = false,
+}: {
+  pdfId: Id<"pdfs">;
+  renderedInPane?: boolean;
+}) {
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
@@ -840,6 +870,7 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
           title={pdf.title || "Untitled PDF"}
           pdfId={pdf._id}
           pdftitle={pdf.title || "Untitled PDF"}
+          renderedInPane={renderedInPane}
         />
       ) : (
         <div className="flex-1 bg-card animate-pulse" />

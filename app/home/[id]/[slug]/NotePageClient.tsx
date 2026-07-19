@@ -23,7 +23,13 @@ const noteTitleSchema = z
   .min(1, "Title cannot be empty")
   .max(60, "Title must be 60 characters or less");
 
-export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
+export default function NotePageClient({
+  noteId,
+  renderedInPane = false,
+}: {
+  noteId: Id<"notes">;
+  renderedInPane?: boolean;
+}) {
   const { noteWidth } = useNoteWidth();
   const note = useQuery(api.notes.getNoteById, { _id: noteId });
   const [lastNote, setLastNote] = useState<typeof note>(() => {
@@ -131,12 +137,15 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
         return;
       }
       const currentUrl = new URL(window.location.href);
+      const nextSlug = generateSlug(trimmedTitle);
 
-      const segments = currentUrl.pathname.split("/");
-
-      segments[3] = generateSlug(trimmedTitle);
-
-      currentUrl.pathname = segments.join("/");
+      if (renderedInPane) {
+        currentUrl.searchParams.set("paneTitle", nextSlug);
+      } else {
+        const segments = currentUrl.pathname.split("/");
+        segments[3] = nextSlug;
+        currentUrl.pathname = segments.join("/");
+      }
 
       window.history.replaceState({}, "", currentUrl.href);
 
@@ -240,6 +249,7 @@ export default function NotePageClient({ noteId }: { noteId: Id<"notes"> }) {
         </div>
       </div>
       <TailwindAdvancedEditor
+        renderedInPane
         editorBubblePlacement={false}
         initialContent={content ?? serverContent}
         onUpdate={(editor) => {
