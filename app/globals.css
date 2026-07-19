@@ -580,6 +580,7 @@ hr {
   height: 1.5rem;
   justify-content: center;
   width: 1.5rem;
+  z-index: 10 !important;
 
   svg {
     width: 1.25rem;
@@ -591,7 +592,7 @@ hr {
 [data-drag-handle] {
   position: absolute !important;
   pointer-events: auto !important;
-  z-index: 25 !important;
+  z-index: 20 !important;
   opacity: 0 !important;
 }
 

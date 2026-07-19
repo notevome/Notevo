@@ -660,8 +660,10 @@ function SliderTabsList({
 
 export default function WorkingSpacePageClient({
   workingSpaceId,
+  renderedInPane = false,
 }: {
   workingSpaceId: Id<"workingSpaces">;
+  renderedInPane?: boolean;
 }) {
   const cached = workspacePageMemoryCache.get(
     workingSpaceId as unknown as string,
@@ -774,6 +776,14 @@ export default function WorkingSpacePageClient({
       if (workspaceName !== currentTitle) {
         try {
           updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
+          if (renderedInPane) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set(
+              "paneTitle",
+              generateSlug(workspaceName),
+            );
+            window.history.replaceState({}, "", currentUrl.href);
+          }
         } catch (error) {
           console.error("Error updating workspace name:", error);
         }

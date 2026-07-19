@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { PanelRightClose, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import NotePageClient from "@/app/home/[id]/[slug]/NotePageClient";
 import PdfViewerPageClient from "@/app/home/[id]/pdf/[pdfId]/PdfViewerPageClient";
 import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
@@ -29,6 +30,8 @@ import {
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { cn } from "@/lib/utils";
+import { generateSlug } from "@/lib/generateSlug";
+import { parseSlug } from "@/lib/parseSlug";
 import type { Id } from "@/convex/_generated/dataModel";
 
 type HomePaneItem =
@@ -57,6 +60,9 @@ type HomePaneContextValue = {
 const HomePaneContext = createContext<HomePaneContextValue | null>(null);
 
 const PANE_WIDTH_STORAGE_KEY = "notevo_home_pane_width";
+const PANE_TYPE_PARAM = "pane";
+const PANE_ID_PARAM = "paneId";
+const PANE_TITLE_PARAM = "paneTitle";
 const MIN_PANE_WIDTH = 360;
 const MAX_PANE_WIDTH = 960;
 const DEFAULT_PANE_WIDTH = 560;
@@ -72,7 +78,7 @@ function clampPaneWidth(width: number) {
 
 function getPaneTitle(item: HomePaneItem | null) {
   if (!item) return "Pane";
-  if (item.title) return item.title;
+  if (item.title) return parseSlug(item.title);
   if (item.type === "pdf") return "Upload";
   if (item.type === "workspace") return "Workspace";
   return "Note";
@@ -80,14 +86,14 @@ function getPaneTitle(item: HomePaneItem | null) {
 
 function HomePaneContent({ item }: { item: HomePaneItem }) {
   if (item.type === "note") {
-    return <NotePageClient noteId={item.id} />;
+    return <NotePageClient noteId={item.id} renderedInPane />;
   }
 
   if (item.type === "pdf") {
-    return <PdfViewerPageClient pdfId={item.id} />;
+    return <PdfViewerPageClient pdfId={item.id} renderedInPane />;
   }
 
-  return <WorkingSpacePageClient workingSpaceId={item.id} />;
+  return <WorkingSpacePageClient workingSpaceId={item.id} renderedInPane />;
 }
 
 function HomePaneDrawer({
@@ -193,7 +199,7 @@ function HomePaneDrawer({
         <div
           ref={paneRef}
           className={cn(
-            "fixed inset-y-0 right-0 z-[70000] hidden min-h-0 flex-col border-l border-border bg-background text-foreground shadow-2xl md:flex",
+            "fixed inset-y-0 right-0 z-40 hidden min-h-0 flex-col border-l border-border bg-background text-foreground shadow-2xl md:flex",
             activeItem ? "translate-x-0" : "translate-x-full",
           )}
           style={{ width: paneWidth }}
@@ -212,24 +218,17 @@ function HomePaneDrawer({
                 {getPaneTitle(activeItem)}
               </DrawerTitle>
             </div>
-            <Tooltip open={closeTooltip.open}>
-              <TooltipTrigger asChild>
-                <DrawerClose asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    aria-label="close-pane"
-                    {...closeTooltip.triggerProps}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </DrawerClose>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="text-xs px-1.5 py-1">
-                Close Pane
-              </TooltipContent>
-            </Tooltip>
+            <DrawerClose asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                aria-label="close-pane"
+                {...closeTooltip.triggerProps}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
           </div>
           <div
             className={cn(
@@ -252,15 +251,75 @@ export const HomePaneProvider = memo(function HomePaneProvider({
 }: {
   children: ReactNode;
 }) {
-  const [activeItem, setActiveItem] = useState<HomePaneItem | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const openPane = useCallback((item: HomePaneItem) => {
-    setActiveItem(item);
-  }, []);
+  const activeItem = useMemo<HomePaneItem | null>(() => {
+    const paneType = searchParams.get(PANE_TYPE_PARAM);
+    const paneId = searchParams.get(PANE_ID_PARAM);
+    const paneTitle = searchParams.get(PANE_TITLE_PARAM) ?? undefined;
+
+    if (!paneId) return null;
+
+    if (paneType === "note") {
+      return {
+        type: "note",
+        id: paneId as Id<"notes">,
+        title: paneTitle,
+      };
+    }
+
+    if (paneType === "pdf") {
+      return {
+        type: "pdf",
+        id: paneId as Id<"pdfs">,
+        title: paneTitle,
+      };
+    }
+
+    if (paneType === "workspace") {
+      return {
+        type: "workspace",
+        id: paneId as Id<"workingSpaces">,
+        title: paneTitle,
+      };
+    }
+
+    return null;
+  }, [searchParams]);
+
+  const buildPaneHref = useCallback(
+    (nextParams: URLSearchParams) => {
+      const queryString = nextParams.toString();
+      return queryString ? `${pathname}?${queryString}` : pathname;
+    },
+    [pathname],
+  );
+
+  const openPane = useCallback(
+    (item: HomePaneItem) => {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.set(PANE_TYPE_PARAM, item.type);
+      nextParams.set(PANE_ID_PARAM, item.id);
+      nextParams.set(
+        PANE_TITLE_PARAM,
+        generateSlug(item.title || getPaneTitle(item).toLowerCase()),
+      );
+
+      router.push(buildPaneHref(nextParams), { scroll: false });
+    },
+    [buildPaneHref, router, searchParams],
+  );
 
   const closePane = useCallback(() => {
-    setActiveItem(null);
-  }, []);
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete(PANE_TYPE_PARAM);
+    nextParams.delete(PANE_ID_PARAM);
+    nextParams.delete(PANE_TITLE_PARAM);
+
+    router.push(buildPaneHref(nextParams), { scroll: false });
+  }, [buildPaneHref, router, searchParams]);
 
   const value = useMemo(
     () => ({

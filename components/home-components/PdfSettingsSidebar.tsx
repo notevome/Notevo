@@ -83,7 +83,7 @@ export default function PdfSettingsSidebar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card"
+              className="px-1.5 h-7 hover:bg-card !rounded-none"
               aria-label="pin-upload"
               {...pinTooltip.triggerProps}
             >
