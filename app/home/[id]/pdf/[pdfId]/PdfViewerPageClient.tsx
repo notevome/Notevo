@@ -572,7 +572,7 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className=" pointer-events-none absolute inset-x-0 top-1 z-50">
+        <div className=" pointer-events-none absolute inset-x-0 top-1 z-20">
           <div
             className={cn(
               "pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl",
@@ -715,7 +715,7 @@ function PdfViewerContent({
           </div>
         ) : null}
 
-        <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
+        <div className=" absolute inset-y-0 right-0 z-10 flex h-screen w-full items-center justify-center border-b border-border bg-background">
           <Pages className="scrollbar-gutter-stable [&::-webkit-scrollbar-track]:bg-transparent h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border">
             <Page>
               <CanvasLayer />
