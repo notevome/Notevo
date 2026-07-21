@@ -249,7 +249,7 @@ export default function NotePageClient({
         </div>
       </div>
       <TailwindAdvancedEditor
-        renderedInPane
+        renderedInPane={renderedInPane}
         editorBubblePlacement={false}
         initialContent={content ?? serverContent}
         onUpdate={(editor) => {

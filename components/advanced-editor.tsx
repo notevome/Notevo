@@ -47,7 +47,7 @@ const TailwindAdvancedEditor = ({
   initialContent,
   onUpdate,
   editorBubblePlacement,
-  renderedInPane = false,
+  renderedInPane,
 }: {
   initialContent: any;
   onUpdate: (editor: EditorInstance) => void;
