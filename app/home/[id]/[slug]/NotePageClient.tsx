@@ -12,7 +12,6 @@ import { useMutation } from "convex/react";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { generateSlug } from "@/lib/generateSlug";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -36,11 +35,7 @@ export default function NotePageClient({
     return noteMemoryCache.get(noteId as unknown as string) as typeof note;
   });
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
-
   useEffect(() => {
     setLastNote(
       noteMemoryCache.get(noteId as unknown as string) as typeof note,
@@ -78,10 +73,8 @@ export default function NotePageClient({
   const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
 
   useEffect(() => {
-    if (stableNote?.title && !editedTitle) {
-      setEditedTitle(stableNote.title);
-    }
-  }, [stableNote?.title]);
+    setEditedTitle(stableNote?.title || "");
+  }, [noteId, stableNote?.title]);
 
   useEffect(() => {
     if (titleElRef.current) syncHeight(titleElRef.current);
