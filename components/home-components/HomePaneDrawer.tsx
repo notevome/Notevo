@@ -12,7 +12,6 @@ import {
   useState,
 } from "react";
 import { PanelRightClose, X } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import NotePageClient from "@/app/home/[id]/[slug]/NotePageClient";
 import PdfViewerPageClient from "@/app/home/[id]/pdf/[pdfId]/PdfViewerPageClient";
 import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
@@ -23,14 +22,8 @@ import {
   DrawerPortal,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { cn } from "@/lib/utils";
-import { generateSlug } from "@/lib/generateSlug";
 import { parseSlug } from "@/lib/parseSlug";
 import type { Id } from "@/convex/_generated/dataModel";
 
@@ -60,9 +53,6 @@ type HomePaneContextValue = {
 const HomePaneContext = createContext<HomePaneContextValue | null>(null);
 
 const PANE_WIDTH_STORAGE_KEY = "notevo_home_pane_width";
-const PANE_TYPE_PARAM = "pane";
-const PANE_ID_PARAM = "paneId";
-const PANE_TITLE_PARAM = "paneTitle";
 const MIN_PANE_WIDTH = 360;
 const MAX_PANE_WIDTH = 960;
 const DEFAULT_PANE_WIDTH = 560;
@@ -86,14 +76,20 @@ function getPaneTitle(item: HomePaneItem | null) {
 
 function HomePaneContent({ item }: { item: HomePaneItem }) {
   if (item.type === "note") {
-    return <NotePageClient noteId={item.id} renderedInPane />;
+    return <NotePageClient key={item.id} noteId={item.id} renderedInPane />;
   }
 
   if (item.type === "pdf") {
-    return <PdfViewerPageClient pdfId={item.id} renderedInPane />;
+    return <PdfViewerPageClient key={item.id} pdfId={item.id} renderedInPane />;
   }
 
-  return <WorkingSpacePageClient workingSpaceId={item.id} renderedInPane />;
+  return (
+    <WorkingSpacePageClient
+      key={item.id}
+      workingSpaceId={item.id}
+      renderedInPane
+    />
+  );
 }
 
 function HomePaneDrawer({
@@ -251,75 +247,15 @@ export const HomePaneProvider = memo(function HomePaneProvider({
 }: {
   children: ReactNode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const [activeItem, setActiveItem] = useState<HomePaneItem | null>(null);
 
-  const activeItem = useMemo<HomePaneItem | null>(() => {
-    const paneType = searchParams.get(PANE_TYPE_PARAM);
-    const paneId = searchParams.get(PANE_ID_PARAM);
-    const paneTitle = searchParams.get(PANE_TITLE_PARAM) ?? undefined;
-
-    if (!paneId) return null;
-
-    if (paneType === "note") {
-      return {
-        type: "note",
-        id: paneId as Id<"notes">,
-        title: paneTitle,
-      };
-    }
-
-    if (paneType === "pdf") {
-      return {
-        type: "pdf",
-        id: paneId as Id<"pdfs">,
-        title: paneTitle,
-      };
-    }
-
-    if (paneType === "workspace") {
-      return {
-        type: "workspace",
-        id: paneId as Id<"workingSpaces">,
-        title: paneTitle,
-      };
-    }
-
-    return null;
-  }, [searchParams]);
-
-  const buildPaneHref = useCallback(
-    (nextParams: URLSearchParams) => {
-      const queryString = nextParams.toString();
-      return queryString ? `${pathname}?${queryString}` : pathname;
-    },
-    [pathname],
-  );
-
-  const openPane = useCallback(
-    (item: HomePaneItem) => {
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.set(PANE_TYPE_PARAM, item.type);
-      nextParams.set(PANE_ID_PARAM, item.id);
-      nextParams.set(
-        PANE_TITLE_PARAM,
-        generateSlug(item.title || getPaneTitle(item).toLowerCase()),
-      );
-
-      router.push(buildPaneHref(nextParams), { scroll: false });
-    },
-    [buildPaneHref, router, searchParams],
-  );
+  const openPane = useCallback((item: HomePaneItem) => {
+    setActiveItem(item);
+  }, []);
 
   const closePane = useCallback(() => {
-    const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.delete(PANE_TYPE_PARAM);
-    nextParams.delete(PANE_ID_PARAM);
-    nextParams.delete(PANE_TITLE_PARAM);
-
-    router.push(buildPaneHref(nextParams), { scroll: false });
-  }, [buildPaneHref, router, searchParams]);
+    setActiveItem(null);
+  }, []);
 
   const value = useMemo(
     () => ({
