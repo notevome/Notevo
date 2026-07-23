@@ -1673,7 +1673,7 @@ function CalendarTimelineView({
             ))}
 
             <div
-              className="absolute inset-0 w-px bg-primary z-20"
+              className="absolute inset-0 w-px bg-primary z-10"
               style={{ left: todayOffset }}
             >
               <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
