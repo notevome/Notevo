@@ -2449,15 +2449,66 @@ function EmptyTableState({
 function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
   if (viewMode === "calendar") {
     return (
-      <div className="border border-border app-radius-lg bg-card p-4 space-y-6">
-        <div className="h-4 w-32 bg-border rounded animate-pulse" />
-        <div className="flex items-end gap-10 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="flex flex-col items-center gap-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-border animate-pulse" />
-              <div className="h-16 w-32 bg-border rounded animate-pulse" />
+      <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
+        <div className="relative min-w-0 w-full max-w-full">
+          <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
+            <div className="h-8 w-16 bg-border rounded animate-pulse" />
+            <div className="h-8 w-20 bg-border rounded animate-pulse" />
+          </div>
+          <div className="min-w-0 w-full max-w-full overflow-hidden">
+            <div className="relative w-full" style={{ height: 300 }}>
+              <div className="relative h-7 border-b border-border">
+                {[2, 34, 66].map((left, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-0 h-7 flex items-center"
+                    style={{ left: `${left}%` }}
+                  >
+                    <div className="h-2.5 w-14 bg-border rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative h-8 border-b border-border">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-1"
+                    style={{ left: `${i * 12.5 + 1}%` }}
+                  >
+                    <div className="h-2.5 w-4 bg-border rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={`line-${i}`}
+                  className="absolute w-px bg-border/40"
+                  style={{ left: `${i * 12.5 + 1}%`, top: 60, bottom: 0 }}
+                />
+              ))}
+
+              <div className="absolute left-0 right-0" style={{ top: 64 }}>
+                {[8, 24, 42, 58, 74, 90].map((left, index) => (
+                  <div
+                    key={index}
+                    className="absolute"
+                    style={{ left: `${left}%`, transform: "translateX(-50%)" }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="h-2.5 w-2.5 rounded-full bg-border animate-pulse" />
+                      <div className="w-px h-3 bg-border" />
+                      <div className="w-[168px] border border-border bg-card app-radius-md px-2.5 py-2 space-y-1.5">
+                        <div className="h-3 w-3/4 bg-border rounded animate-pulse" />
+                        <div className="h-2.5 w-1/2 bg-border rounded animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     );
@@ -2520,23 +2571,70 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
 
 function TablesSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {Array.from({ length: 8 }).map((_, index) => (
-        <Card key={index} className="bg-card/50 backdrop-blur-sm border-border">
-          <CardHeader className="pb-3">
-            <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="space-y-2">
-              <div className="h-4 w-full bg-border rounded animate-pulse" />
-              <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
+    <div>
+      {/* Tab bar: simple flow layout sized to match the real ~44px tab strip */}
+      <div className="sticky top-0 left-0 mb-6 z-40">
+        <div className="flex items-center gap-1 px-1 pt-2 bg-muted border border-border border-b-0">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className={`px-4 py-2.5 min-w-[110px] rounded-t-lg border-2 border-b-0 ${
+                i === 0 ? "border-border bg-card" : "border-transparent"
+              }`}
+            >
+              <div className="h-4 w-16 bg-border rounded animate-pulse" />
             </div>
-          </CardContent>
-          <CardFooter className="pt-3 border-t border-border">
-            <div className="h-4 w-24 bg-border rounded animate-pulse" />
-          </CardFooter>
-        </Card>
-      ))}
+          ))}
+        </div>
+        <div className="h-[2px] bg-border" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+        <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="relative flex-1 min-w-0 md:max-w-md">
+              <div className="h-9 w-full bg-border rounded animate-pulse" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-auto justify-end">
+            <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+              <div className="h-9 w-10 bg-border animate-pulse" />
+              <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
+              <div className="h-9 w-10 bg-border animate-pulse" />
+            </div>
+            <div className="h-9 w-28 bg-border rounded-lg animate-pulse" />
+            <div className="h-9 w-9 bg-border rounded-lg animate-pulse" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card
+              key={index}
+              className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px]"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
+                  <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow flex-1">
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-border rounded animate-pulse" />
+                  <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
+                  <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                </div>
+              </CardContent>
+              <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+                <div className="h-4 w-24 bg-border rounded animate-pulse" />
+                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
