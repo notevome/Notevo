@@ -36,7 +36,7 @@ import {
 import { CompactFloatingToC } from "./ToC";
 import { useMediaQuery } from "react-responsive";
 import { Dialog, DialogContent } from "./ui/dialog";
-import { Plus } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import { LinkHoverCard } from "./link-hover-card";
 import {
   Tooltip,
@@ -192,6 +192,25 @@ const TailwindAdvancedEditor = ({
     ...defaultExtensions,
     slashCommand,
   ];
+  const deleteCurrentNode = (editor: EditorInstance) => {
+    const { selection } = editor.state;
+    const $from = selection.$from;
+
+    const depth = $from.depth >= 1 ? 1 : $from.depth;
+    const nodeStart = $from.before(depth);
+    const node = editor.state.doc.nodeAt(nodeStart);
+
+    if (!node) return;
+
+    editor
+      .chain()
+      .focus()
+      .deleteRange({
+        from: nodeStart,
+        to: nodeStart + node.nodeSize,
+      })
+      .run();
+  };
   return (
     <>
       <EditorRoot>
@@ -201,7 +220,7 @@ const TailwindAdvancedEditor = ({
               <LinkHoverCard editor={editorInstance} disabled={openLink} />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
-                <div className="lg:flex items-center justify-center hidden">
+                <div className="lg:flex items-center justify-center hidden mr-5">
                   {!renderedInPane && (
                     <Tooltip delayDuration={150} disableHoverableContent>
                       <TooltipTrigger asChild>
@@ -218,10 +237,37 @@ const TailwindAdvancedEditor = ({
                             );
                           }}
                         >
-                          <Plus className="h-4 w-4 " />
+                          <Plus strokeWidth={3.5} className="h-4 w-4 " />
                         </button>
                       </TooltipTrigger>
+                      {/* Delete Block */}
+                      <Tooltip delayDuration={150} disableHoverableContent>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label="Delete block"
+                            className=" group flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              deleteCurrentNode(editorInstance);
+                            }}
+                          >
+                            <X
+                              strokeWidth={3.5}
+                              className="h-3.5 w-3.5 group-hover:text-destructive"
+                            />
+                          </button>
+                        </TooltipTrigger>
 
+                        <TooltipContent
+                          side="left"
+                          align="center"
+                          className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                        >
+                          <p>Delete block</p>
+                        </TooltipContent>
+                      </Tooltip>
                       <TooltipContent
                         side="left"
                         align="center"
