@@ -192,12 +192,20 @@ const TailwindAdvancedEditor = ({
     ...defaultExtensions,
     slashCommand,
   ];
-  const deleteCurrentNode = (editor: EditorInstance) => {
-    const { selection } = editor.state;
-    const $from = selection.$from;
+  const deleteTargetNode = (editor: EditorInstance, buttonEl: HTMLElement) => {
+    const editorView = (editor as any).view;
+    const rect = buttonEl.getBoundingClientRect();
+    const posAtCoords = editorView.posAtCoords({
+      left: rect.right + 40,
+      top: rect.top + rect.height / 2,
+    });
 
-    const depth = $from.depth >= 1 ? 1 : $from.depth;
-    const nodeStart = $from.before(depth);
+    if (!posAtCoords) return;
+    const $pos = editor.state.doc.resolve(posAtCoords.pos);
+    const depth = $pos.depth > 0 ? $pos.depth : 1;
+    if (depth === 0 || $pos.node(depth) === editor.state.doc) return;
+
+    const nodeStart = $pos.before(depth);
     const node = editor.state.doc.nodeAt(nodeStart);
 
     if (!node) return;
@@ -211,6 +219,7 @@ const TailwindAdvancedEditor = ({
       })
       .run();
   };
+
   return (
     <>
       <EditorRoot>
@@ -229,11 +238,11 @@ const TailwindAdvancedEditor = ({
                       <button
                         type="button"
                         aria-label="Delete block"
-                        className=" group flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
+                        className="group flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          deleteCurrentNode(editorInstance);
+                          deleteTargetNode(editorInstance, event.currentTarget);
                         }}
                       >
                         <X
@@ -251,6 +260,7 @@ const TailwindAdvancedEditor = ({
                       <p>Delete block</p>
                     </TooltipContent>
                   </Tooltip>
+
                   {!renderedInPane && (
                     <Tooltip delayDuration={150} disableHoverableContent>
                       <TooltipTrigger asChild>

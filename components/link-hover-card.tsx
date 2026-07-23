@@ -23,7 +23,7 @@ type HoveredLinkState = {
   left: number;
 };
 
-const HIDE_DELAY_MS = 120;
+const HIDE_DELAY_MS = 16;
 const COPY_FEEDBACK_MS = 1600;
 const CARD_WIDTH_PX = 320;
 
