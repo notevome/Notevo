@@ -91,7 +91,7 @@ export default function HeroSection() {
       <div className="absolute -top-6 -left-14 z-[2] pointer-events-none select-none">
         <PaperPieceIcon className="w-52 h-48 lg:w-60 lg:h-60" />
       </div>
-      <div className="absolute -top-2 -right-44 md:-right-[9.5rem] z-[2] pointer-events-none select-none">
+      <div className="absolute -top-9 -right-44 md:-right-[9.9rem] z-[2] pointer-events-none select-none">
         <svg
           className="w-96 h-[28rem] md:h-[35rem]"
           width="56"
