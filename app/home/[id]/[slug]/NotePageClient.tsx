@@ -73,7 +73,9 @@ export default function NotePageClient({
   const [editedTitle, setEditedTitle] = useState(stableNote?.title || "");
 
   useEffect(() => {
-    setEditedTitle(stableNote?.title || "");
+    if (stableNote?.title && !editedTitle) {
+      setEditedTitle(stableNote.title);
+    }
   }, [noteId, stableNote?.title]);
 
   useEffect(() => {
