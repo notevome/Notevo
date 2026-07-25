@@ -28,6 +28,8 @@ import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
+import { useHomePane } from "./HomePaneDrawer";
+import { ShortcutBadge } from "../ui/shortcut-badge";
 
 interface SearchDialogProps {
   variant?: "default" | "SidebarMenuButton";
@@ -125,18 +127,17 @@ function NoteItem({
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
-        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
-        <FileText size={14} />
-      </div>
-      <div className="flex-1 overflow-hidden">
+      <FileText size={14} />
+      <div className="flex-1 overflow-hidden flex justify-start items-center gap-2">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={note.title || "Untitled"} query={query} />
         </p>
+        <ShortcutBadge keys="In Pane `Alt + Click`" />
       </div>
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
@@ -175,18 +176,17 @@ function PdfItem({
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
-        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
-        <File size={14} />
-      </div>
-      <div className="flex-1 overflow-hidden">
+      <File size={14} />
+      <div className="flex-1 overflow-hidden flex justify-start items-center gap-2">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={pdf.title || "Untitled"} query={query} />
         </p>
+        <ShortcutBadge keys="In Pane `Alt + Click`" />
       </div>
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
@@ -252,7 +252,7 @@ function TableSection({
                   workingSpaceName: workspace.name,
                   tableName: table.name,
                 }}
-                onClick={() => onNoteClick(item)}
+                onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
                 onIntentPrefetch={onIntentPrefetch}
@@ -266,7 +266,7 @@ function TableSection({
                   workingSpaceName: workspace.name,
                   tableName: table.name,
                 }}
-                onClick={() => onNoteClick(item)}
+                onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
                 onIntentPrefetch={onIntentPrefetch}
@@ -292,7 +292,7 @@ function WorkspaceTree({
   searchTargets: any[];
   expandedWorkspaceIds: string[];
   toggleWorkspace: (id: string) => void;
-  onNoteClick: (note: any) => void;
+  onNoteClick: (note: any, e: any) => void;
   selectedNoteId?: string;
   query: string;
   onIntentPrefetch: (href: string) => void;
@@ -490,16 +490,34 @@ export default function SearchDialog({
         : [...prev, workspaceId],
     );
   };
-
-  const handleNoteClick = (note: any) => {
+  const { openPane } = useHomePane();
+  const handleNoteClick = (note: any, event: any) => {
     setOpen(false);
     if (note.kind === "pdf") {
-      router.push(
-        `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`,
-      );
+      if (event.button === 0 && event.altKey) {
+        event.preventDefault();
+        openPane({
+          type: "pdf",
+          id: note._id,
+          title: note.title || "Untitled",
+        });
+      } else {
+        router.push(
+          `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`,
+        );
+      }
       return;
     }
-    router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    if (event.button === 0 && event.altKey) {
+      event.preventDefault();
+      openPane({
+        type: "note",
+        id: note._id,
+        title: note.title || "Untitled",
+      });
+    } else {
+      router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -511,7 +529,7 @@ export default function SearchDialog({
       setSelectedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === "Enter" && allNotes[selectedIndex]) {
       e.preventDefault();
-      handleNoteClick(allNotes[selectedIndex]);
+      handleNoteClick(allNotes[selectedIndex], e);
     }
   };
 
