@@ -292,8 +292,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
       </div>
       {getWorkingSpaces?.length === 0 && (
         <Button
-          variant="outline"
-          className="font-medium w-full h-9 flex justify-start items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/80"
+          className="font-medium w-full h-9 flex justify-start items-center gap-1.5"
           onClick={handleCreateWorkingSpace}
         >
           <FolderPlus size={16} /> Create Workspace
@@ -303,8 +302,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
         ? getWorkingSpaces.map((workingSpace) => (
             <Button
               key={workingSpace._id}
-              variant="outline"
-              className="font-medium w-full h-9 flex justify-start items-center gap-1.5 bg-primary text-primary-foreground hover:bg-primary/80"
+              className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
               disabled={loading}
               onMouseDown={() => void createNoteInWorkspace(workingSpace)}
             >
@@ -318,10 +316,10 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             </Button>
           ))
         : createNoteWorkspace && (
-            <div className="flex h-9 w-full items-center overflow-hidden app-radius-lg">
+            <div className="flex h-[42px] p-[3px] bg-gradient-to-br from-primary/60 via-border to-muted-foreground/70 w-full items-center rounded-tl-[0.6rem] overflow-hidden ">
               <Button
-                variant="outline"
-                className="font-medium h-9 flex-1 justify-start gap-1.5 !rounded-r-none bg-primary text-primary-foreground hover:bg-primary/90"
+                variant="aniDefault"
+                className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !rounded-r-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 disabled={loading}
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
@@ -336,8 +334,8 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="outline"
-                    className=" font-medium h-9 px-2 !rounded-l-none border-l-0 bg-primary text-primary-foreground hover:bg-primary/90"
+                    variant="aniDefault"
+                    className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !rounded-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                     disabled={loading}
                     aria-label="select-create-note-workspace"
                   >

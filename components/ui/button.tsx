@@ -10,7 +10,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground transform-gpu backface-hidden will-change-transform transition-all duration-300 border-r border-b border-transparent hover:border-muted/50 hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-tl-lg hover:shadow-[2px_2px_0px] hover:shadow-primary active:translate-x-[0px] active:translate-y-[0px]",
+          "relative bg-primary/80 hover:bg-primary transition-all duration-200 text-primary-foreground disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80 before:content-[''] before:backdrop-blur before:absolute before:-z-10 before:inset-[-3px] before:rounded-tl-[0.6rem] before:bg-gradient-to-br before:from-primary/60 before:via-border before:to-muted-foreground/70 disabled:before:opacity-40",
+        aniDefault: "bg-primary/80 text-primary-foreground hover:bg-primary",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:

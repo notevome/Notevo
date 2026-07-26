@@ -78,7 +78,6 @@ export default function Navbar() {
             ))}
           </nav>
         </div>
-
         <Button asChild className="hidden lg:block relative group h-9">
           <Link prefetch={true} href="/signup" className="text-sm font-medium">
             Login Or Create An Account
