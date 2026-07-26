@@ -68,7 +68,7 @@ function YoutubeDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className=" pb-2.5 px-4">
+      <DialogContent className=" px-4 pt-4 pb-2.5">
         <DialogHeader>
           <DialogTitle>Embed YouTube Video</DialogTitle>
           <DialogDescription>
@@ -86,20 +86,21 @@ function YoutubeDialog({
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
-            className={
-              error ? "border-destructive focus-visible:ring-destructive" : ""
-            }
+            className={` h-8
+             ${error ? "border-destructive focus-visible:ring-destructive" : ""} 
+            `}
             autoFocus
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="h-8">
             Cancel
           </Button>
           <Button
             disabled={!youtubeUrlSchema.safeParse(url).success}
             onClick={handleSubmit}
+            className=" h-8 !rounded-none"
           >
             Embed
           </Button>
