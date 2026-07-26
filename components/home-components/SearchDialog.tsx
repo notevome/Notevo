@@ -133,11 +133,10 @@ function NoteItem({
       )}
     >
       <FileText size={14} />
-      <div className="flex-1 overflow-hidden flex justify-start items-center gap-2">
+      <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={note.title || "Untitled"} query={query} />
         </p>
-        <ShortcutBadge keys="In Pane `Alt + Click`" />
       </div>
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
@@ -182,11 +181,10 @@ function PdfItem({
       )}
     >
       <File size={14} />
-      <div className="flex-1 overflow-hidden flex justify-start items-center gap-2">
+      <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={pdf.title || "Untitled"} query={query} />
         </p>
-        <ShortcutBadge keys="In Pane `Alt + Click`" />
       </div>
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
@@ -658,14 +656,20 @@ export default function SearchDialog({
                 <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <Undo2 size={14} />
                 </kbd>
-                <p className="text-foreground font-mono text-xs">Open</p>
+                <p className="text-foreground text-xs">Open</p>
+              </span>
+              <span className="flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                  Alt + click
+                </kbd>
+                <p className="text-foreground text-xs">Open in pane</p>
               </span>
             </span>
             <span className="flex justify-center items-center gap-2">
               <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                 ESC
               </kbd>
-              <p className="text-foreground font-mono text-xs">Close</p>
+              <p className="text-foreground  text-xs">Close</p>
             </span>
           </div>
         </DialogFooter>
