@@ -261,27 +261,6 @@ export default function HeroSection() {
               Active users
             </p>
           </motion.div>
-          <div className="flex gap-2 justify-start items-center">
-            <Button
-              asChild
-              size="lg"
-              className="relative group overflow-hidden h-9"
-            >
-              <Link prefetch={true} href="/signup">
-                Get Started for Free
-              </Link>
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              asChild
-              className="relative group h-9 !rounded-none"
-            >
-              <Link prefetch={true} href="#features">
-                Learn More
-              </Link>
-            </Button>
-          </div>
         </motion.div>
 
         <motion.div

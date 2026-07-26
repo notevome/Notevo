@@ -876,9 +876,9 @@ export default function WorkingSpacePageClient({
   return (
     <MaxWContainer className="my-5 grid grid-cols-1">
       <header>
-        <div className=" relative flex justify-between items-end w-full">
-          <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">
-            <h1 className="text-3xl md:text-5xl font-bol my-4 h-[3rem]">
+        <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
+          <div className="flex-1 px-1.5">
+            <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -912,7 +912,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" z-10 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
+              className=" h-9 rounded-tr-none rounded-b-none "
               aria-label="create-table"
             />
           )}
@@ -1977,7 +1977,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
       </CardContent>
 
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground ">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-visible ">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
             <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
@@ -1988,7 +1988,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
         <Button
           size="sm"
           asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className="absolute bottom-0 right-0 h-10 px-4 text-xs"
           aria-label="open-note"
         >
           <IntentPrefetchLink
@@ -2134,7 +2134,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             <Button
               size="sm"
               asChild
-              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
             >
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
@@ -2259,7 +2259,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
         <Button
           size="sm"
           asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className="absolute bottom-0 right-0 h-10 px-4 text-xs"
           aria-label="open-upload"
         >
           <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
@@ -2373,7 +2373,7 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
             <Button
               size="sm"
               asChild
-              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
             >
               <IntentPrefetchLink href={pdfHref}>
                 <span aria-label="open-upload">Open</span>
