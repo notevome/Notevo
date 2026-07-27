@@ -348,20 +348,20 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                   align="end"
                   className="!rounded-none p-1 bg-background w-52 "
                 >
-                  <DropdownMenuGroup className="relative flex-col">
-                    <DropdownMenuLabel className=" px-px pb-px pt-0.5 text-[11px] text-muted-foreground">
+                  <DropdownMenuGroup className="relative flex-col ">
+                    <DropdownMenuLabel className=" p-px text-[11px] text-muted-foreground">
                       Workspaces
                     </DropdownMenuLabel>
                     {getWorkingSpaces?.map((workingSpace) => (
                       <DropdownMenuItem
                         key={workingSpace._id}
-                        className="relative flex-1 mx-1 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
+                        className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
                         onSelect={() =>
                           void createNoteInWorkspace(workingSpace)
                         }
                         disabled={loading}
                       >
-                        <div className=" absolute top-0 -left-[2.5px] h-full w-px bg-border" />
+                        <div className=" absolute top-0 -left-[7px] h-full w-px bg-muted-foreground/30" />
                         <FolderClosed size="16" />
                         <span>
                           {formatWorkspaceNameForCreateSideBarBtn(
