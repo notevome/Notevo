@@ -88,6 +88,7 @@ import NoteContextMenu from "./NoteContextMenu";
 import { FaGithub } from "react-icons/fa6";
 import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
@@ -345,19 +346,23 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <DropdownMenuContent
                   side="bottom"
                   align="end"
-                  className="app-radius-xl p-1 bg-background/90 backdrop-blur border border-solid border-border w-52"
+                  className="!rounded-none p-1 bg-background w-52 "
                 >
-                  <DropdownMenuGroup className="flex-col">
+                  <DropdownMenuGroup className="relative flex-col">
+                    <DropdownMenuLabel className=" px-px pb-px pt-0.5 text-[11px] text-muted-foreground">
+                      Workspaces
+                    </DropdownMenuLabel>
                     {getWorkingSpaces?.map((workingSpace) => (
                       <DropdownMenuItem
                         key={workingSpace._id}
-                        className="relative flex-1 px-2 h-7 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
+                        className="relative flex-1 mx-1 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
                         onSelect={() =>
                           void createNoteInWorkspace(workingSpace)
                         }
                         disabled={loading}
                       >
-                        <FolderClosed size="16" className="mr-2" />
+                        <div className=" absolute top-0 -left-[2.5px] h-full w-px bg-border" />
+                        <FolderClosed size="16" />
                         <span>
                           {formatWorkspaceNameForCreateSideBarBtn(
                             workingSpace.name,
