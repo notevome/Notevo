@@ -1,6 +1,7 @@
 "use client";
 import {
   Notebook,
+  Folders,
   Plus,
   Pin,
   FileText,
@@ -349,7 +350,8 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                   className="!rounded-none p-1 bg-background w-52 "
                 >
                   <DropdownMenuGroup className="relative flex-col ">
-                    <DropdownMenuLabel className=" p-px text-[11px] text-muted-foreground">
+                    <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
+                      <Folders size={14} className=" mb-0.5" />
                       Workspaces
                     </DropdownMenuLabel>
                     {getWorkingSpaces?.map((workingSpace) => (
@@ -361,7 +363,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                         }
                         disabled={loading}
                       >
-                        <div className=" absolute top-0 -left-[7px] h-full w-px bg-muted-foreground/30" />
+                        <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
                         <FolderClosed size="16" />
                         <span>
                           {formatWorkspaceNameForCreateSideBarBtn(
