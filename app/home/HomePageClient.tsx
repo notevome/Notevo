@@ -361,7 +361,7 @@ function Slider({ children }: { children: React.ReactNode }) {
         <div className="z-10 absolute -bottom-8 right-0 flex justify-center items-center gap-2">
           <Button
             size="icon"
-            variant={canScrollLeft ? "default" : "outline"}
+            variant={canScrollLeft ? "revDefault" : "outline"}
             className="h-9 w-8"
             onClick={() => scroll("left")}
           >
@@ -369,7 +369,7 @@ function Slider({ children }: { children: React.ReactNode }) {
           </Button>
           <Button
             size="icon"
-            variant={canScrollRight ? "default" : "outline"}
+            variant={canScrollRight ? "revDefault" : "outline"}
             className="h-9 w-8 !rounded-none"
             onClick={() => scroll("right")}
           >
@@ -518,7 +518,7 @@ function WorkspaceCard({
         <Button
           size="sm"
           asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className=" absolute bottom-0 right-0 h-9 px-2 text-xs"
         >
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
@@ -609,7 +609,7 @@ function NoteCard({ note }: { note: Note }) {
         <Button
           size="sm"
           asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className="absolute bottom-0 right-0 h-9 px-2 text-xs"
         >
           <IntentPrefetchLink
             href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}
