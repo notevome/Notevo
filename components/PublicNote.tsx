@@ -230,6 +230,7 @@ export default function PublicNote({
                 </p>
               </span>
               <Button
+                variant="revDefault"
                 onMouseDown={handlePublished}
                 className="w-full h-8 gap-2"
               >

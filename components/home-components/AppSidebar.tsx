@@ -196,6 +196,48 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   handleCreateWorkingSpace,
   loading,
 }: SidebarHeaderSectionProps) {
+  const [canScrollBottom, setCanScrollBottom] = useState(false);
+  const [canScrollTop, setCanScrollTop] = useState(false);
+  const scrollElementRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSidebarScroll = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+
+    const scrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const clientHeight = el.clientHeight;
+    setCanScrollBottom(scrollHeight - scrollTop - clientHeight > 1);
+
+    setCanScrollTop(scrollTop > 1);
+  }, []);
+
+  const setContainerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      scrollElementRef.current = el;
+      if (!el) return;
+
+      handleSidebarScroll(el);
+
+      const observer = new ResizeObserver(() => {
+        handleSidebarScroll(el);
+      });
+      observer.observe(el);
+
+      (el as any)._cleanupObserver = () => observer.disconnect();
+    },
+    [handleSidebarScroll],
+  );
+  useEffect(() => {
+    return () => {
+      if (
+        scrollElementRef.current &&
+        (scrollElementRef.current as any)._cleanupObserver
+      ) {
+        (scrollElementRef.current as any)._cleanupObserver();
+      }
+    };
+  }, []);
+
   const [savedWorkspaceId, setSavedWorkspaceId] = useState<
     string | null | undefined
   >(undefined);
@@ -233,6 +275,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   }, [getWorkingSpaces]);
 
   const createNoteWorkspace = savedWorkspace ?? firstCreatedWorkspace;
+
   useEffect(() => {
     if (
       typeof window === "undefined" ||
@@ -347,31 +390,49 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <DropdownMenuContent
                   side="bottom"
                   align="end"
-                  className="!rounded-none p-1 bg-background w-52 "
+                  className="!rounded-none p-1 bg-background w-52 max-h-36 relative overflow-hidden"
                 >
                   <DropdownMenuGroup className="relative flex-col ">
                     <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
                       <Folders size={14} className=" mb-0.5" />
                       Workspaces
                     </DropdownMenuLabel>
-                    {getWorkingSpaces?.map((workingSpace) => (
-                      <DropdownMenuItem
-                        key={workingSpace._id}
-                        className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
-                        onSelect={() =>
-                          void createNoteInWorkspace(workingSpace)
-                        }
-                        disabled={loading}
-                      >
-                        <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
-                        <FolderClosed size="16" />
-                        <span>
-                          {formatWorkspaceNameForCreateSideBarBtn(
-                            workingSpace.name,
-                          )}
-                        </span>
-                      </DropdownMenuItem>
-                    ))}
+                    <div
+                      className={`absolute top-[22px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                        canScrollTop ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <div
+                      ref={setContainerRef}
+                      onScroll={(e) => handleSidebarScroll(e.currentTarget)}
+                      className={`overflow-y-auto max-h-[105px] transition-all duration-150 [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border ${
+                        canScrollBottom || canScrollTop ? "pr-1 pb-0.5" : "p-0"
+                      }`}
+                    >
+                      {getWorkingSpaces?.map((workingSpace) => (
+                        <DropdownMenuItem
+                          key={workingSpace._id}
+                          className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
+                          onSelect={() =>
+                            void createNoteInWorkspace(workingSpace)
+                          }
+                          disabled={loading}
+                        >
+                          <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
+                          <FolderClosed size="16" />
+                          <span>
+                            {formatWorkspaceNameForCreateSideBarBtn(
+                              workingSpace.name,
+                            )}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                    <div
+                      className={`absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-t from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                        canScrollBottom ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>

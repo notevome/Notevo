@@ -1988,6 +1988,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
         <Button
           size="sm"
           asChild
+          variant="revDefault"
           className="absolute bottom-0 right-0 h-10 px-4 text-xs"
           aria-label="open-note"
         >
@@ -2134,6 +2135,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
             <Button
               size="sm"
               asChild
+              variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
             >
               <IntentPrefetchLink
@@ -2260,6 +2262,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
           size="sm"
           asChild
           className="absolute bottom-0 right-0 h-10 px-4 text-xs"
+          variant="revDefault"
           aria-label="open-upload"
         >
           <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
@@ -2373,6 +2376,7 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
             <Button
               size="sm"
               asChild
+              variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
             >
               <IntentPrefetchLink href={pdfHref}>
