@@ -380,7 +380,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               align="end"
               side="bottom"
               sideOffset={8}
-              className="w-64 space-y-3 p-2"
+              className="w-64 space-y-3 p-2 bg-muted"
             >
               <ColorRow
                 label="Background color"
