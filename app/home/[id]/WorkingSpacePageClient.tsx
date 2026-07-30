@@ -2122,7 +2122,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card border flex flex-col w-full min-h-[200px]",
+        "group relative overflow-hidden bg-card border flex flex-col w-full min-h-[230px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -2585,6 +2585,55 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
   );
 }
 
+function getLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function LinkFavicon({ url, className }: { url: string; className?: string }) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = getLinkFaviconUrl(url);
+
+  if (!faviconUrl || errored) {
+    return <Link2 className={cn("text-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+function LinkFaviconBadge({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center overflow-hidden",
+        className,
+      )}
+    >
+      <LinkFavicon url={url} className="h-[100%] w-[100%]" />
+    </div>
+  );
+}
+
 function LinkGridCard({ link, onDelete }: LinkCardProps) {
   const deleteLink = useMutation(api.links.deleteLink);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -2609,12 +2658,15 @@ function LinkGridCard({ link, onDelete }: LinkCardProps) {
     <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle
-            className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
-            title={link.url}
-          >
-            {displayTitle}
-          </CardTitle>
+          <div className="flex items-start gap-2 min-w-0">
+            <LinkFaviconBadge url={link.url} className="h-6 w-6 mt-0.5" />
+            <CardTitle
+              className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
+              title={link.url}
+            >
+              {displayTitle}
+            </CardTitle>
+          </div>
           <Button
             type="button"
             variant="Trigger"
@@ -2638,7 +2690,12 @@ function LinkGridCard({ link, onDelete }: LinkCardProps) {
               className="w-full h-full object-cover"
             />
           </div>
-        ) : null}
+        ) : (
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <LinkFaviconBadge url={link.url} className="h-10 w-10" />
+            <span>{platformLabel(link.platform) || "Link"}</span>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
@@ -2690,7 +2747,7 @@ function LinkListCard({ link, onDelete }: LinkCardProps) {
     <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
       <CardContent className="p-3 flex-1">
         <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
+          <div className="relative h-10 w-10 flex items-center justify-center flex-shrink-0">
             {link.metadata?.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -2699,8 +2756,14 @@ function LinkListCard({ link, onDelete }: LinkCardProps) {
                 className="h-full w-full object-cover app-radius-md"
               />
             ) : (
-              <Link2 className="h-5 w-5 text-primary" />
+              <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+                <Link2 className="h-5 w-5 text-muted-foreground" />
+              </div>
             )}
+            <LinkFaviconBadge
+              url={link.url}
+              className="absolute -bottom-1 -right-1 h-[18px] w-[18px]"
+            />
           </div>
           <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
             <h3
