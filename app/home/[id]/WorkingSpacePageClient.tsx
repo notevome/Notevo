@@ -15,7 +15,14 @@ import {
   Filter,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Fragment,
+} from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { useQuery } from "@/cache/useQuery";
@@ -226,20 +233,48 @@ interface NotesDroppableContainerProps {
   setViewMode: (mode: ViewMode) => void;
 }
 
+function HighlightText({ text, query }: { text: string; query?: string }) {
+  const trimmedQuery = query?.trim();
+  if (!trimmedQuery) return <>{text}</>;
+
+  const escaped = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === trimmedQuery.toLowerCase() ? (
+          <mark
+            key={i}
+            className="bg-secondary text-secondary-foreground rounded-sm px-0.5"
+          >
+            {part}
+          </mark>
+        ) : (
+          <Fragment key={i}>{part}</Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
 interface NoteCardProps {
   note: Note;
   workspaceId?: Id<"workingSpaces">;
   onDelete?: (noteId: Id<"notes">) => void;
+  searchQuery?: string;
 }
 
 interface PdfCardProps {
   pdf: PdfItem;
   onDelete?: (pdfId: Id<"pdfs">) => void;
+  searchQuery?: string;
 }
 
 interface LinkCardProps {
   link: LinkItem;
   onDelete?: (linkId: Id<"links">) => void;
+  searchQuery?: string;
 }
 
 interface EmptySearchResultsProps {
@@ -1313,11 +1348,13 @@ export function NotesDroppableContainer({
                       <PdfGridCard
                         pdf={item}
                         onDelete={(pdfId) => handleItemDelete(pdfId)}
+                        searchQuery={searchQuery}
                       />
                     ) : (
                       <PdfListCard
                         pdf={item}
                         onDelete={(pdfId) => handleItemDelete(pdfId)}
+                        searchQuery={searchQuery}
                       />
                     )
                   ) : item.kind === "link" ? (
@@ -1325,11 +1362,13 @@ export function NotesDroppableContainer({
                       <LinkGridCard
                         link={item}
                         onDelete={(linkId) => handleItemDelete(linkId)}
+                        searchQuery={searchQuery}
                       />
                     ) : (
                       <LinkListCard
                         link={item}
                         onDelete={(linkId) => handleItemDelete(linkId)}
+                        searchQuery={searchQuery}
                       />
                     )
                   ) : viewMode === "grid" || isMobile ? (
@@ -1339,6 +1378,7 @@ export function NotesDroppableContainer({
                       onDelete={
                         handleItemDelete as (noteId: Id<"notes">) => void
                       }
+                      searchQuery={searchQuery}
                     />
                   ) : (
                     <ListNoteCard
@@ -1347,6 +1387,7 @@ export function NotesDroppableContainer({
                       onDelete={
                         handleItemDelete as (noteId: Id<"notes">) => void
                       }
+                      searchQuery={searchQuery}
                     />
                   )}
                 </div>
@@ -2051,7 +2092,12 @@ function TimelineMiniCard({
   );
 }
 
-function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
+function GridNoteCard({
+  note,
+  workspaceId,
+  onDelete,
+  searchQuery,
+}: NoteCardProps) {
   const previewText = note.preview
     ? parseTiptapContentTruncateText(note.preview, 80)
     : getContentPreviewFromBody(note.body);
@@ -2149,7 +2195,10 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
-              {note.title || "Untitled"}
+              <HighlightText
+                text={note.title || "Untitled"}
+                query={searchQuery}
+              />
             </CardTitle>
           )}
           <NoteSettings
@@ -2198,7 +2247,12 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   );
 }
 
-function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
+function ListNoteCard({
+  note,
+  workspaceId,
+  onDelete,
+  searchQuery,
+}: NoteCardProps) {
   const previewText = note.preview
     ? parseTiptapContentTruncateText(note.preview, 80)
     : getContentPreviewFromBody(note.body);
@@ -2298,7 +2352,10 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
-                {note.title || "Untitled"}
+                <HighlightText
+                  text={note.title || "Untitled"}
+                  query={searchQuery}
+                />
               </h3>
             )}
             {
@@ -2346,7 +2403,7 @@ function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   );
 }
 
-function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
+function PdfGridCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
@@ -2423,7 +2480,10 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
               onDoubleClick={handleDoubleClick}
               title="Double-click to rename"
             >
-              {pdf.title || "Untitled"}
+              <HighlightText
+                text={pdf.title || "Untitled"}
+                query={searchQuery}
+              />
             </CardTitle>
           )}
           <PdfSettings
@@ -2467,7 +2527,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
   );
 }
 
-function PdfListCard({ pdf, onDelete }: PdfCardProps) {
+function PdfListCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -2542,7 +2602,10 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
                 onDoubleClick={handleDoubleClick}
                 title="Double-click to rename"
               >
-                {pdf.title || "Untitled"}
+                <HighlightText
+                  text={pdf.title || "Untitled"}
+                  query={searchQuery}
+                />
               </h3>
             )}
             <p className="text-sm text-muted-foreground line-clamp-2">
@@ -2634,7 +2697,7 @@ function LinkFaviconBadge({
   );
 }
 
-function LinkGridCard({ link, onDelete }: LinkCardProps) {
+function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
   const deleteLink = useMutation(api.links.deleteLink);
   const [isDeleting, setIsDeleting] = useState(false);
   const displayTitle =
@@ -2664,7 +2727,7 @@ function LinkGridCard({ link, onDelete }: LinkCardProps) {
               className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
               title={link.url}
             >
-              {displayTitle}
+              <HighlightText text={displayTitle} query={searchQuery} />
             </CardTitle>
           </div>
           <Button
@@ -2723,7 +2786,7 @@ function LinkGridCard({ link, onDelete }: LinkCardProps) {
   );
 }
 
-function LinkListCard({ link, onDelete }: LinkCardProps) {
+function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
   const deleteLink = useMutation(api.links.deleteLink);
   const [isDeleting, setIsDeleting] = useState(false);
   const displayTitle =
@@ -2770,7 +2833,7 @@ function LinkListCard({ link, onDelete }: LinkCardProps) {
               className="text-lg font-semibold text-foreground line-clamp-2 flex-1 w-fit"
               title={link.url}
             >
-              {displayTitle}
+              <HighlightText text={displayTitle} query={searchQuery} />
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-2">
               {platformLabel(link.platform)}
