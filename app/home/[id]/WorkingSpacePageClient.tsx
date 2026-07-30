@@ -9,7 +9,10 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Link2,
+  Trash2,
   X,
+  Filter,
 } from "lucide-react";
 import { useMediaQuery } from "react-responsive";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
@@ -19,6 +22,7 @@ import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { z } from "zod";
+import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
@@ -106,6 +110,47 @@ const tableNotesMemoryCache = new Map<string, any[]>();
 
 type ViewMode = "grid" | "list" | "calendar";
 type CalendarZoom = "week" | "month" | "quarter" | "year";
+type ContentFilter =
+  | "all"
+  | "note"
+  | "pdf"
+  | "youtube"
+  | "x"
+  | "instagram"
+  | "linkedin";
+
+const CONTENT_FILTER_OPTIONS: {
+  value: ContentFilter;
+  label: string;
+}[] = [
+  { value: "all", label: "All" },
+  { value: "note", label: "Notes" },
+  { value: "pdf", label: "PDFs" },
+  { value: "youtube", label: "YouTube" },
+  { value: "x", label: "X" },
+  { value: "instagram", label: "Instagram" },
+  { value: "linkedin", label: "LinkedIn" },
+];
+
+function matchesLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+  filter: ContentFilter,
+): boolean {
+  if (!platform) return false;
+  const p = String(platform).toLowerCase();
+  switch (filter) {
+    case "youtube":
+      return p.includes("youtube") || p === "yt";
+    case "x":
+      return p === "x" || p.includes("twitter");
+    case "instagram":
+      return p.includes("instagram") || p === "ig";
+    case "linkedin":
+      return p.includes("linkedin");
+    default:
+      return false;
+  }
+}
 
 interface Note {
   _id: Id<"notes">;
@@ -138,7 +183,36 @@ interface PdfItem {
   kind: "pdf";
 }
 
-type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem;
+interface LinkItem {
+  _id: Id<"links">;
+  url: string;
+  platform: LinkPlatform;
+  metadata?: {
+    description?: string;
+    thumbnailUrl?: string;
+    authorName?: string;
+    authorHandle?: string;
+    authorAvatarUrl?: string;
+    publishedAt?: number;
+    viewCount?: string;
+    likeCount?: number;
+    repostCount?: number;
+    commentCount?: number;
+    duration?: string;
+    embedVideoId?: string;
+    siteName?: string;
+  };
+  title?: string;
+  favorite?: boolean;
+  userId?: Id<"users">;
+  workingSpaceId?: Id<"workingSpaces">;
+  notesTableId?: Id<"notesTables">;
+  createdAt: number;
+  updatedAt: number;
+  kind: "link";
+}
+
+type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem | LinkItem;
 
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
@@ -161,6 +235,11 @@ interface NoteCardProps {
 interface PdfCardProps {
   pdf: PdfItem;
   onDelete?: (pdfId: Id<"pdfs">) => void;
+}
+
+interface LinkCardProps {
+  link: LinkItem;
+  onDelete?: (linkId: Id<"links">) => void;
 }
 
 interface EmptySearchResultsProps {
@@ -763,7 +842,7 @@ export default function WorkingSpacePageClient({
             variant: "destructive",
           });
         } else if (issue.code === "too_big") {
-          setEditedName(workspace?.name);
+          setEditedName(workspace?.name || "Untitled");
           toast({
             title: "Naming failed",
             description: "Name must be 30 characters or less ",
@@ -926,7 +1005,7 @@ export default function WorkingSpacePageClient({
             onValueChange={handleTabChange}
             className="mt-6"
           >
-            <div className=" sticky top-0 left-0 mb-6 z-40">
+            <div className="mb-6">
               <SliderTabsList
                 tables={tables}
                 activeTableId={defaultTableId ?? ""}
@@ -984,6 +1063,9 @@ export function NotesDroppableContainer({
         }
       >
     | undefined;
+  const links = useQuery(api.links.getLinksByTableId, {
+    notesTableId: tableId,
+  }) as Array<Omit<LinkItem, "kind">> | undefined;
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
@@ -996,9 +1078,12 @@ export function NotesDroppableContainer({
     status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
 
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
+  const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     setDeletedItemIds(new Set());
+    setContentFilter("all");
   }, [tableId]);
 
   const filteredItems = useMemo(() => {
@@ -1008,7 +1093,10 @@ export function NotesDroppableContainer({
     const pdfItems = (pdfs ?? []).map(
       (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
     );
-    const notDeletedItems = [...noteItems, ...pdfItems]
+    const linkItems = (links ?? []).map(
+      (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
+    );
+    let items = [...noteItems, ...pdfItems, ...linkItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
       .sort((a, b) => {
         const aPinned = a.favorite ? 1 : 0;
@@ -1017,16 +1105,28 @@ export function NotesDroppableContainer({
         return b.updatedAt - a.updatedAt;
       });
 
-    if (!searchQuery.trim()) return notDeletedItems;
+    if (contentFilter !== "all") {
+      items = items.filter((item) => {
+        if (contentFilter === "note") return item.kind === "note";
+        if (contentFilter === "pdf") return item.kind === "pdf";
+        if (item.kind !== "link") return false;
+        return matchesLinkPlatform(item.platform, contentFilter);
+      });
+    }
+
+    if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase();
-    return notDeletedItems.filter((item) => {
+    return items.filter((item) => {
       const titleMatches = item.title?.toLowerCase().includes(q);
       if (item.kind === "pdf") return titleMatches;
+      if (item.kind === "link") {
+        return titleMatches || item.url.toLowerCase().includes(q);
+      }
 
       const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
       return titleMatches || searchableText.includes(q);
     });
-  }, [deletedItemIds, pdfs, searchQuery, stableResults]);
+  }, [contentFilter, deletedItemIds, links, pdfs, searchQuery, stableResults]);
 
   const handleItemDelete = useCallback((itemId: string) => {
     setDeletedItemIds((prev) => {
@@ -1102,6 +1202,54 @@ export function NotesDroppableContainer({
             workingSpacesSlug={workspaceSlug}
             CNBP_notesTableId={tableId}
           />
+          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 shrink-0 border-border gap-1.5 !rounded-none",
+                  contentFilter !== "all" && "bg-muted",
+                )}
+                aria-label="filter-content"
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
+                    ?.label ?? "All"}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-32 p-1 border-border bg-card"
+            >
+              <div className="flex flex-col gap-0.5">
+                {CONTENT_FILTER_OPTIONS.map((option) => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "justify-start h-8 px-2 font-normal",
+                      contentFilter === option.value && "bg-muted",
+                    )}
+                    onClick={() => {
+                      setContentFilter(option.value);
+                      setIsFilterOpen(false);
+                    }}
+                  >
+                    {option.label}
+                    {contentFilter === option.value ? (
+                      <Check className="ml-auto h-3.5 w-3.5" />
+                    ) : null}
+                  </Button>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
           <TableSettings
             notesTableId={tableId}
             tableName={tables?.find((t) => t._id === tableId)?.name}
@@ -1109,12 +1257,24 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {status === "LoadingFirstPage" && !cachedNotes && pdfs === undefined ? (
+      {status === "LoadingFirstPage" &&
+      !cachedNotes &&
+      pdfs === undefined &&
+      links === undefined ? (
         <NotesSkeleton viewMode={viewMode} />
-      ) : searchQuery && filteredItems.length === 0 ? (
+      ) : (searchQuery || contentFilter !== "all") &&
+        filteredItems.length === 0 ? (
         <EmptySearchResults
-          searchQuery={searchQuery}
-          onClearSearch={() => setSearchQuery("")}
+          searchQuery={
+            searchQuery.trim()
+              ? searchQuery
+              : (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
+                  ?.label ?? "filter")
+          }
+          onClearSearch={() => {
+            setSearchQuery("");
+            setContentFilter("all");
+          }}
         />
       ) : filteredItems.length === 0 ? (
         <EmptyTableState
@@ -1135,12 +1295,19 @@ export function NotesDroppableContainer({
             <div
               className={
                 viewMode === "grid" || isMobile
-                  ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
+                  ? "columns-1 sm:columns-2 md:columns-3 gap-4"
                   : "flex flex-col gap-3"
               }
             >
               {filteredItems.map((item) => (
-                <div key={item._id}>
+                <div
+                  key={item._id}
+                  className={
+                    viewMode === "grid" || isMobile
+                      ? "mb-4 break-inside-avoid"
+                      : undefined
+                  }
+                >
                   {item.kind === "pdf" ? (
                     viewMode === "grid" || isMobile ? (
                       <PdfGridCard
@@ -1151,6 +1318,18 @@ export function NotesDroppableContainer({
                       <PdfListCard
                         pdf={item}
                         onDelete={(pdfId) => handleItemDelete(pdfId)}
+                      />
+                    )
+                  ) : item.kind === "link" ? (
+                    viewMode === "grid" || isMobile ? (
+                      <LinkGridCard
+                        link={item}
+                        onDelete={(linkId) => handleItemDelete(linkId)}
+                      />
+                    ) : (
+                      <LinkListCard
+                        link={item}
+                        onDelete={(linkId) => handleItemDelete(linkId)}
                       />
                     )
                   ) : viewMode === "grid" || isMobile ? (
@@ -1821,28 +2000,38 @@ function TimelineMiniCard({
   inPopover?: boolean;
 }) {
   const isPdf = item.kind === "pdf";
+  const isLink = item.kind === "link";
   const href = isPdf
     ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
         (item as PdfItem).title || "untitled-pdf",
       )}?pdfId=${item._id}`
-    : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+    : isLink
+      ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
+          (item as LinkItem).title ||
+            (item as LinkItem).metadata?.authorName ||
+            "link",
+        )}?linkId=${item._id}`
+      : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
 
   const createdDate = new Date(item.createdAt);
   const isDifferentYear =
     createdDate.getFullYear() !== new Date().getFullYear();
 
-  return (
-    <IntentPrefetchLink
-      href={href}
-      className={cn(
-        "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] shadow-primary transition-all app-radius-md px-2.5 py-2",
-        inPopover ? "w-full" : "w-[168px]",
+  const cardClassName = cn(
+    "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] shadow-primary transition-all app-radius-md px-2.5 py-2",
+    inPopover ? "w-full" : "w-[168px]",
+  );
+
+  const cardContent = (
+    <>
+      {isLink ? (
+        <Link2 className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+      ) : (
+        <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
       )}
-    >
-      <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-          {item.title || "Untitled"}
+          {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
           {createdDate.toLocaleDateString(undefined, {
@@ -1852,6 +2041,12 @@ function TimelineMiniCard({
           })}
         </p>
       </div>
+    </>
+  );
+
+  return (
+    <IntentPrefetchLink href={href} className={cardClassName}>
+      {cardContent}
     </IntentPrefetchLink>
   );
 }
@@ -1927,7 +2122,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card border flex flex-col min-h-[230px]",
+        "group relative overflow-hidden bg-card border flex flex-col w-full min-h-[200px]",
         isEmpty
           ? "border-dashed border-border"
           : "border-border hover:border-border",
@@ -1989,7 +2184,7 @@ function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
           size="sm"
           asChild
           variant="revDefault"
-          className="absolute bottom-0 right-0 h-10 px-4 text-xs"
+          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
           aria-label="open-note"
         >
           <IntentPrefetchLink
@@ -2206,7 +2401,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
   );
 
   return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col min-h-[230px]">
+    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full min-h-[200px]">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           {isEditingTitle ? (
@@ -2261,7 +2456,7 @@ function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
         <Button
           size="sm"
           asChild
-          className="absolute bottom-0 right-0 h-10 px-4 text-xs"
+          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
           variant="revDefault"
           aria-label="open-upload"
         >
@@ -2382,6 +2577,177 @@ function PdfListCard({ pdf, onDelete }: PdfCardProps) {
               <IntentPrefetchLink href={pdfHref}>
                 <span aria-label="open-upload">Open</span>
               </IntentPrefetchLink>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LinkGridCard({ link, onDelete }: LinkCardProps) {
+  const deleteLink = useMutation(api.links.deleteLink);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const displayTitle =
+    link.title ||
+    link.metadata?.authorName ||
+    link.metadata?.siteName ||
+    link.url;
+
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      await deleteLink({ _id: link._id });
+      onDelete?.(link._id);
+    } catch (error) {
+      console.error("Error deleting link:", error);
+      setIsDeleting(false);
+    }
+  }, [deleteLink, link._id, onDelete]);
+
+  return (
+    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle
+            className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
+            title={link.url}
+          >
+            {displayTitle}
+          </CardTitle>
+          <Button
+            type="button"
+            variant="Trigger"
+            size="icon"
+            onClick={() => void handleDelete()}
+            disabled={isDeleting}
+            aria-label="delete-link"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
+        {link.metadata?.thumbnailUrl ? (
+          <div className="w-full h-full app-radius-md overflow-hidden bg-muted">
+            <img
+              src={link.metadata.thumbnailUrl}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+          </div>
+        ) : null}
+      </CardContent>
+
+      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          {typeof window !== "undefined" ? (
+            <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
+          ) : (
+            <SkeletonTextAnimation className="w-20" />
+          )}
+        </div>
+        <Button
+          size="sm"
+          asChild
+          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
+          variant="revDefault"
+          aria-label="open-link"
+        >
+          <a href={link.url} target="_blank" rel="noopener noreferrer">
+            Open {link.metadata?.siteName}
+          </a>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
+
+function LinkListCard({ link, onDelete }: LinkCardProps) {
+  const deleteLink = useMutation(api.links.deleteLink);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const displayTitle =
+    link.title ||
+    link.metadata?.authorName ||
+    link.metadata?.siteName ||
+    link.url;
+
+  const handleDelete = useCallback(async () => {
+    setIsDeleting(true);
+    try {
+      await deleteLink({ _id: link._id });
+      onDelete?.(link._id);
+    } catch (error) {
+      console.error("Error deleting link:", error);
+      setIsDeleting(false);
+    }
+  }, [deleteLink, link._id, onDelete]);
+
+  return (
+    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
+      <CardContent className="p-3 flex-1">
+        <div className="flex items-center justify-center gap-4">
+          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
+            {link.metadata?.thumbnailUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={link.metadata.thumbnailUrl}
+                alt="link metadata thumbnailUrl"
+                className="h-full w-full object-cover app-radius-md"
+              />
+            ) : (
+              <Link2 className="h-5 w-5 text-primary" />
+            )}
+          </div>
+          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
+            <h3
+              className="text-lg font-semibold text-foreground line-clamp-2 flex-1 w-fit"
+              title={link.url}
+            >
+              {displayTitle}
+            </h3>
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {platformLabel(link.platform)}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              {typeof window !== "undefined" ? (
+                <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
+              ) : (
+                <SkeletonTextAnimation className="w-20" />
+              )}
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => void handleDelete()}
+              disabled={isDeleting}
+              aria-label="delete-link"
+              className="h-7 w-7 pt-0 mr-10 mt-1.5 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              asChild
+              variant="revDefault"
+              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+            >
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="open-link"
+              >
+                Open
+              </a>
             </Button>
           </div>
         </div>
@@ -2520,11 +2886,11 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
 
   if (viewMode === "grid") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
         {Array.from({ length: 5 }).map((_, index) => (
           <Card
             key={index}
-            className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px]"
+            className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px] w-full mb-4 break-inside-avoid"
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
@@ -2612,11 +2978,11 @@ function TablesSkeleton() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
           {Array.from({ length: 6 }).map((_, index) => (
             <Card
               key={index}
-              className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px]"
+              className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px] w-full mb-4 break-inside-avoid"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">

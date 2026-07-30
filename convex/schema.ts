@@ -1,6 +1,7 @@
 import { authTables } from "@convex-dev/auth/server";
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
 
 export default defineSchema({
   ...authTables,
@@ -59,6 +60,22 @@ export default defineSchema({
   // New table for PDF uploads
   pdfs: defineTable({
     storageId: v.id("_storage"),
+    userId: v.id("users"),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
+    notesTableId: v.optional(v.id("notesTables")),
+    title: v.optional(v.string()),
+    favorite: v.optional(v.boolean()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_workingSpaceId", ["workingSpaceId"])
+    .index("by_notesTableId", ["notesTableId"]),
+
+  links: defineTable({
+    url: v.string(),
+    platform: linkPlatformValidator,
+    metadata: linkMetadataValidator,
     userId: v.id("users"),
     workingSpaceId: v.optional(v.id("workingSpaces")),
     notesTableId: v.optional(v.id("notesTables")),

@@ -150,7 +150,7 @@ export const updateTable = mutation({
       throw new Error("Not authorized to update tables in this workspace");
     }
 
-    const generateSlugName = generateSlug(name ?? "Untitled");
+    const generateSlugName = generateSlug(name ?? table.name ?? "Untitled");
     // Check if the slug already exists and add incremental number if it does
     let slug = generateSlugName;
     let existingTable = await ctx.db
@@ -217,12 +217,26 @@ export const deleteTable = mutation({
       .collect();
 
     for (const note of notesToDelete) {
+      if (note.tags) {
+        for (const tagId of note.tags) {
+          await ctx.db.delete(tagId);
+        }
+      }
       await ctx.db.delete(note._id);
     }
 
     for (const pdf of pdfsToDelete) {
       await ctx.storage.delete(pdf.storageId);
       await ctx.db.delete(pdf._id);
+    }
+
+    const linksToDelete = await ctx.db
+      .query("links")
+      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .collect();
+
+    for (const link of linksToDelete) {
+      await ctx.db.delete(link._id);
     }
 
     await ctx.db.delete(_id);
