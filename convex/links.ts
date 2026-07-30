@@ -1,0 +1,122 @@
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
+
+async function assertTableAccess(
+  ctx: { db: any },
+  userId: string,
+  notesTableId: string | undefined,
+  workingSpaceId: string | undefined,
+) {
+  if (workingSpaceId) {
+    const workspace = await ctx.db.get(workingSpaceId);
+    if (!workspace || workspace.userId !== userId) {
+      throw new Error("Workspace not found or not authorized");
+    }
+  }
+
+  if (notesTableId) {
+    const table = await ctx.db.get(notesTableId);
+    if (!table) {
+      throw new Error("Table not found");
+    }
+
+    const workspace = await ctx.db.get(table.workingSpaceId);
+    if (!workspace || workspace.userId !== userId) {
+      throw new Error("Workspace not found or not authorized");
+    }
+
+    if (workingSpaceId && table.workingSpaceId !== workingSpaceId) {
+      throw new Error("Table does not belong to the provided workspace");
+    }
+  }
+}
+
+export const createLink = mutation({
+  args: {
+    url: v.string(),
+    platform: linkPlatformValidator,
+    metadata: linkMetadataValidator,
+    title: v.optional(v.string()),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
+    notesTableId: v.optional(v.id("notesTables")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    await assertTableAccess(
+      ctx,
+      userId,
+      args.notesTableId,
+      args.workingSpaceId,
+    );
+
+    const now = Date.now();
+    return await ctx.db.insert("links", {
+      url: args.url,
+      platform: args.platform,
+      metadata: args.metadata,
+      title: args.title,
+      userId,
+      workingSpaceId: args.workingSpaceId,
+      notesTableId: args.notesTableId,
+      favorite: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+  },
+});
+
+export const getLinksByTableId = query({
+  args: {
+    notesTableId: v.id("notesTables"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    const table = await ctx.db.get(args.notesTableId);
+    if (!table) {
+      throw new Error("Table not found");
+    }
+
+    const workspace = await ctx.db.get(table.workingSpaceId);
+    if (!workspace || workspace.userId !== userId) {
+      throw new Error("Workspace not found or not authorized");
+    }
+
+    return await ctx.db
+      .query("links")
+      .withIndex("by_notesTableId", (q) =>
+        q.eq("notesTableId", args.notesTableId),
+      )
+      .order("desc")
+      .collect();
+  },
+});
+
+export const deleteLink = mutation({
+  args: {
+    _id: v.id("links"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    const link = await ctx.db.get(args._id);
+    if (!link || link.userId !== userId) {
+      throw new Error("Link not found or not authorized");
+    }
+
+    await ctx.db.delete(args._id);
+    return args._id;
+  },
+});
