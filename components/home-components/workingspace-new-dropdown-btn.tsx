@@ -44,7 +44,7 @@ import {
   type LinkPlatform,
 } from "@/lib/link-platform";
 
-type PreferredAction = "note" | "upload";
+type PreferredAction = "note" | "upload" | "link";
 
 const STORAGE_KEY = "notevo_workspace_primary_create_action";
 
@@ -122,7 +122,11 @@ export default function WorkingspaceNewDropdownBtn({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedAction = window.localStorage.getItem(STORAGE_KEY);
-    if (savedAction === "note" || savedAction === "upload") {
+    if (
+      savedAction === "note" ||
+      savedAction === "upload" ||
+      savedAction === "link"
+    ) {
       setPreferredAction(savedAction);
     }
   }, []);
@@ -326,14 +330,29 @@ export default function WorkingspaceNewDropdownBtn({
     workingSpaceId,
   ]);
 
+  const handleSelectInsertLink = useCallback(() => {
+    persistPreferredAction("link");
+    setLinkUrl("");
+    setLinkTitle("");
+    setIsLinkDialogOpen(true);
+    setTimeout(() => {
+      linkInputRef.current?.focus();
+    }, 100);
+  }, [persistPreferredAction]);
+
   const handlePrimaryAction = useCallback(async () => {
     if (preferredAction === "upload") {
       fileInputRef.current?.click();
       return;
     }
 
+    if (preferredAction === "link") {
+      handleSelectInsertLink();
+      return;
+    }
+
     await handleCreateNote();
-  }, [handleCreateNote, preferredAction]);
+  }, [handleCreateNote, handleSelectInsertLink, preferredAction]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -355,15 +374,6 @@ export default function WorkingspaceNewDropdownBtn({
     fileInputRef.current?.click();
   }, [persistPreferredAction]);
 
-  const handleSelectInsertLink = useCallback(() => {
-    setLinkUrl("");
-    setLinkTitle("");
-    setIsLinkDialogOpen(true);
-    setTimeout(() => {
-      linkInputRef.current?.focus();
-    }, 100);
-  }, []);
-
   useEffect(() => {
     const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
       if (
@@ -380,6 +390,31 @@ export default function WorkingspaceNewDropdownBtn({
     return () =>
       window.removeEventListener("keydown", handlerCreateNoteShortcut);
   }, [handleCreateNote]);
+
+  useEffect(() => {
+    const handlerInsertLinkShortcut = (e: KeyboardEvent) => {
+      if (
+        e.shiftKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "l"
+      ) {
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const isEditableTarget =
+          tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+        if (isEditableTarget) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        handleSelectInsertLink();
+      }
+    };
+    window.addEventListener("keydown", handlerInsertLinkShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerInsertLinkShortcut);
+  }, [handleSelectInsertLink]);
 
   return (
     <>
@@ -439,6 +474,14 @@ export default function WorkingspaceNewDropdownBtn({
             <DropdownMenuItem onClick={handleSelectInsertLink}>
               <Link2 className="h-4 w-4 text-muted-foreground" />
               Insert Link
+              <span className="inline-flex gap-0.5">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs">Shift</span>
+                </kbd>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-xs">L</span>
+                </kbd>
+              </span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
