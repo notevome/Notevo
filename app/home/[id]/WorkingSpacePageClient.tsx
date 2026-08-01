@@ -499,98 +499,75 @@ function TableTab({ table }: { table: any }) {
 
   return (
     <>
-      <Popover
-        open={isRenameOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            setIsRenameOpen(true);
-            return;
-          }
-          handleRenameCancel();
-        }}
+      <div
+        className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
       >
-        <PopoverAnchor asChild>
-          <div
-            className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
-            onMouseEnter={handleContentMouseEnter}
-            onMouseLeave={handleContentMouseLeave}
-          >
-            <TabsTrigger
-              value={table._id}
-              data-tab-id={table._id}
-              className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
-              onDoubleClick={handleDoubleClick}
-              aria-label="rename-table"
-            >
-              <p className={cn(textClassName, "w-full")}>
-                {formatTableName(table.name)}
-              </p>
-            </TabsTrigger>
-            <div
-              className={cn(
-                "absolute inset-y-0 right-2 flex items-center",
-                isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
-              )}
-            >
-              <Tooltip open={deleteTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={(e) => {
-                      if (e.button === 0 && e.shiftKey) {
-                        e.preventDefault();
-                        handleDelete();
-                      } else {
-                        setIsDeleteAlertOpen(true);
-                      }
-                    }}
-                    className=" px-1.5 h-7 text-foreground hover:text-destructive"
-                    aria-label="delete-table"
-                    {...deleteTooltip.triggerProps}
-                  >
-                    <X size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  className=" !rounded-none"
-                  side="right"
-                  sideOffset={5}
-                >
-                  Delete table
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </PopoverAnchor>
-        <PopoverContent
-          align="start"
-          side="bottom"
-          sideOffset={3}
-          className="w-52 border-0 bg-transparent p-0"
-        >
-          <div className=" relative flex items-center gap-2">
+        {isRenameOpen ? (
+          <div className=" relative flex items-center gap-1.5 px-2 py-2 rounded-none rounded-tl-lg w-full border-2 border-border border-b-0 bg-card">
             <Input
               ref={inputRef as any}
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
               onKeyDown={handleKeyDown}
+              onBlur={() => void handleRenameSave()}
               placeholder="Rename table"
-              className="h-8 border-border bg-background px-1 py-1"
+              aria-label="rename-table-input"
+              className="h-6 flex-grow border-none bg-transparent px-1 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
-            <Button
-              variant="ghost"
-              type="button"
-              size="icon"
-              onClick={() => void handleRenameSave()}
-              className=" absolute top-1/2 -translate-y-1/2 right-1 h-6 w-6 shrink-0 bg-primary text-primary-foreground hover:text-primary-foreground hover:bg-primary/80"
-              aria-label="save-table-name"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
           </div>
-        </PopoverContent>
-      </Popover>
+        ) : (
+          <TabsTrigger
+            value={table._id}
+            data-tab-id={table._id}
+            className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+            onDoubleClick={handleDoubleClick}
+            aria-label="rename-table"
+          >
+            <p className={cn(textClassName, "w-full")}>
+              {formatTableName(table.name)}
+            </p>
+          </TabsTrigger>
+        )}
+        <div
+          className={cn(
+            "absolute inset-y-0 right-2 flex items-center",
+            isHovered && !isRenameOpen
+              ? "opacity-100 "
+              : "opacity-0 pointer-events-none",
+          )}
+        >
+          <Tooltip open={deleteTooltip.open}>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  if (e.button === 0 && e.shiftKey) {
+                    e.preventDefault();
+                    handleDelete();
+                  } else {
+                    setIsDeleteAlertOpen(true);
+                  }
+                }}
+                className=" px-1.5 h-7 text-foreground hover:text-destructive"
+                aria-label="delete-table"
+                {...deleteTooltip.triggerProps}
+              >
+                <X size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              className=" !rounded-none"
+              side="right"
+              sideOffset={5}
+            >
+              Delete table
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
