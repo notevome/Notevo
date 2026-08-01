@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Folder,
   FolderOpen,
+  Link2,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -194,6 +195,33 @@ function PdfItem({
   );
 }
 
+function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        indented && "ml-7",
+        isSelected ? "bg-border" : "hover:bg-border",
+      )}
+    >
+      <Link2 size={14} />
+      <div className="flex-1 overflow-hidden">
+        <p className="text-sm text-foreground font-medium truncate transition-colors">
+          <HighlightedText
+            text={link.title || link.url || "Untitled"}
+            query={query}
+          />
+        </p>
+      </div>
+      <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        <span>{getRelativeTime(new Date(link.createdAt))}</span>
+      </div>
+    </div>
+  );
+}
+
 // Tables are now collapsible — each manages its own open/close state
 function TableSection({
   table,
@@ -206,6 +234,7 @@ function TableSection({
   const [isExpanded, setIsExpanded] = useState(true);
   const notes: any[] = table.notes ?? [];
   const pdfs: any[] = table.pdfs ?? [];
+  const links: any[] = table.links ?? [];
   const items = [
     ...notes.map((note) => ({ ...note, kind: "note" as const })),
     ...pdfs.map((pdf) => ({
@@ -213,6 +242,7 @@ function TableSection({
       kind: "pdf" as const,
       slug: buildPdfSlug(pdf.title),
     })),
+    ...links.map((link) => ({ ...link, kind: "link" as const })),
   ].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
@@ -254,6 +284,19 @@ function TableSection({
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
                 onIntentPrefetch={onIntentPrefetch}
+                indented
+              />
+            ) : item.kind === "link" ? (
+              <LinkItem
+                key={item._id}
+                link={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={(e: any) => onNoteClick(item, e)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
                 indented
               />
             ) : (
@@ -411,6 +454,12 @@ export default function SearchDialog({
           workingSpaceName: ws.name,
           tableName: t.name,
         })),
+        ...(t.links ?? []).map((link: any) => ({
+          ...link,
+          kind: "link" as const,
+          workingSpaceName: ws.name,
+          tableName: t.name,
+        })),
       ]),
     );
   }, [searchTargets]);
@@ -473,7 +522,7 @@ export default function SearchDialog({
   useEffect(() => {
     if (!open) return;
     const note = allNotes[selectedIndex];
-    if (!note) return;
+    if (!note || note.kind === "link") return;
     const href =
       note.kind === "pdf"
         ? `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`
@@ -491,6 +540,10 @@ export default function SearchDialog({
   const { openPane } = useHomePane();
   const handleNoteClick = (note: any, event: any) => {
     setOpen(false);
+    if (note.kind === "link") {
+      window.open(note.url, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (note.kind === "pdf") {
       if (event.button === 0 && event.altKey) {
         event.preventDefault();

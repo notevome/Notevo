@@ -464,11 +464,19 @@ export const getWorkspaceTree = query({
                 )
                 .order("desc")
                 .collect();
+              const allLinks = await ctx.db
+                .query("links")
+                .withIndex("by_notesTableId", (q) =>
+                  q.eq("notesTableId", table._id),
+                )
+                .order("desc")
+                .collect();
 
               return {
                 ...table,
                 notes: allNotes.map(({ body, ...rest }) => rest),
                 pdfs: allPdfs,
+                links: allLinks,
               };
             }
 
@@ -486,18 +494,29 @@ export const getWorkspaceTree = query({
               )
               .order("desc")
               .take(TREE_NOTES_PER_TABLE);
+            const firstLinks = await ctx.db
+              .query("links")
+              .withIndex("by_notesTableId", (q) =>
+                q.eq("notesTableId", table._id),
+              )
+              .order("desc")
+              .take(TREE_NOTES_PER_TABLE);
 
             return {
               ...table,
               notes: firstNotes.map(({ body, ...rest }) => rest),
               pdfs: firstPdfs,
+              links: firstLinks,
             };
           }),
         );
 
-        // Only keep tables that have at least one note or pdf
+        // Only keep tables that have at least one note, pdf, or link
         const nonEmptyTables = tablesWithNotes.filter(
-          (table) => table.notes.length > 0 || table.pdfs.length > 0,
+          (table) =>
+            table.notes.length > 0 ||
+            table.pdfs.length > 0 ||
+            (table.links?.length ?? 0) > 0,
         );
 
         // Drop workspace entirely if it has no non-empty tables
@@ -523,10 +542,22 @@ export const getWorkspaceTree = query({
             const matchingPdfs = table.pdfs.filter((pdf: any) =>
               normalizeSearchText(pdf.title).includes(normalizedQuery),
             );
+            const matchingLinks = (table.links ?? []).filter((link: any) =>
+              normalizeSearchText(link.title).includes(normalizedQuery),
+            );
 
             if (tableMatches) return table;
-            if (matchingNotes.length > 0 || matchingPdfs.length > 0)
-              return { ...table, notes: matchingNotes, pdfs: matchingPdfs };
+            if (
+              matchingNotes.length > 0 ||
+              matchingPdfs.length > 0 ||
+              matchingLinks.length > 0
+            )
+              return {
+                ...table,
+                notes: matchingNotes,
+                pdfs: matchingPdfs,
+                links: matchingLinks,
+              };
 
             return null;
           })
