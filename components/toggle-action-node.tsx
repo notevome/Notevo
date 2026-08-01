@@ -257,11 +257,11 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     <NodeViewWrapper
       data-toggle-action
       style={wrapperStyle}
-      className="my-3 rounded-tl-lg border border-border bg-muted/20 text-foreground transition-colors group"
+      className="my-2 text-foreground transition-colors group"
     >
       <div
         contentEditable={false}
-        className="flex min-h-10 items-center gap-2 px-3 py-2"
+        className="flex min-h-10 items-center gap-0 px-1 py-1.5"
       >
         <Tooltip open={toggleTooltip.open} disableHoverableContent>
           <TooltipTrigger asChild>
@@ -269,7 +269,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               type="button"
               variant="Trigger"
               size="icon"
-              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground mt-px"
               style={contrastStyle}
               onClick={() => {
                 updateAttributes({ open: !isOpen });
