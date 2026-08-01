@@ -23,12 +23,12 @@ export default function SkeletonSidebar({
   return (
     <Sidebar
       variant="inset"
-      className="group bg-muted"
+      className="bg-muted hover:bg-transparent"
       style={{
         width: `${sidebarWidth}px`,
       }}
     >
-      <SidebarHeader className=" text-foreground border-b border-border">
+      <SidebarHeader className=" text-foreground border-b border-border hover:bg-transparent">
         <div className=" w-full flex items-center justify-between p-1.5">
           <div className="flex items-center justify-start gap-2">
             {open ? (
@@ -50,19 +50,19 @@ export default function SkeletonSidebar({
           )}
         </div>
       </SidebarHeader>
-      <SidebarContent className="text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border">
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-border">
+      <SidebarContent className="text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent hover:bg-transparent">
+        <SidebarGroup className="hover:bg-transparent">
+          <SidebarGroupLabel className="text-border hover:bg-transparent">
             <SkeletonTextAnimation className="w-24 h-3" />
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
+          <SidebarGroupContent className="hover:bg-transparent">
+            <SidebarMenu className="hover:bg-transparent">
+              <SidebarMenuItem className="hover:bg-transparent">
                 <SkeletonTextAndIconAnimation
                   text_className={open ? "w-full h-5" : "hidden"}
                 />
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="hover:bg-transparent">
                 <SkeletonTextAndIconAnimation
                   text_className={open ? "w-full h-5" : "hidden"}
                 />
@@ -70,18 +70,18 @@ export default function SkeletonSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-border">
+        <SidebarGroup className="hover:bg-transparent">
+          <SidebarGroupLabel className="text-border hover:bg-transparent">
             <SkeletonTextAnimation className="w-24 h-3" />
           </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
+          <SidebarGroupContent className="hover:bg-transparent">
+            <SidebarMenu className="hover:bg-transparent">
+              <SidebarMenuItem className="hover:bg-transparent">
                 <SkeletonTextAndIconAnimation
                   text_className={open ? "w-full h-5" : "hidden"}
                 />
               </SidebarMenuItem>
-              <SidebarMenuItem>
+              <SidebarMenuItem className="hover:bg-transparent">
                 <SkeletonTextAndIconAnimation
                   text_className={open ? "w-full h-5" : "hidden"}
                 />
@@ -90,11 +90,11 @@ export default function SkeletonSidebar({
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="text-foreground">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <div className="my-2">
-              <div className="border-none w-full h-15 flex items-center justify-between">
+      <SidebarFooter className="text-foreground hover:bg-transparent">
+        <SidebarMenu className="hover:bg-transparent">
+          <SidebarMenuItem className="hover:bg-transparent">
+            <div className="my-2 hover:bg-transparent">
+              <div className="border-none w-full h-15 flex items-center justify-between hover:bg-transparent">
                 <SkeletonSmImgAnimation className="h-8 w-8" />
                 {open ? (
                   <div className="flex flex-col items-start justify-center">
