@@ -129,6 +129,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
       </PopoverTrigger>
       <PopoverContent
         sideOffset={5}
+        onOpenAutoFocus={(event) => event.preventDefault()}
         className="my-1 rounded-tl-lg px-1 py-2 transition-all flex max-h-80 w-48 flex-col overflow-hidden overflow-y-auto p-1 shadow-xl"
         align="start"
       >
