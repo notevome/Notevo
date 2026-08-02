@@ -350,32 +350,32 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
 
         <div className="ml-auto flex items-center transition-opacity duration-150 ease-in-out opacity-0 group-hover:opacity-100">
           <Popover>
-            <PopoverTrigger>
-              <Tooltip open={customTooltip.open} disableHoverableContent>
-                <TooltipTrigger asChild>
+            <Tooltip open={customTooltip.open} disableHoverableContent>
+              <PopoverTrigger asChild>
+                <TooltipTrigger asChild {...customTooltip.triggerProps}>
                   <Button
                     type="button"
                     variant="Trigger"
                     size="icon"
                     className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
                     style={contrastStyle}
-                    aria-label=""
-                    {...customTooltip.triggerProps}
+                    aria-label="Customize toggle appearance"
                   >
                     <Palette className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
+              </PopoverTrigger>
 
-                <TooltipContent
-                  side="bottom"
-                  align="center"
-                  sideOffset={5}
-                  className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
-                >
-                  <p>Customize toggle appearance</p>
-                </TooltipContent>
-              </Tooltip>
-            </PopoverTrigger>
+              <TooltipContent
+                side="bottom"
+                align="center"
+                sideOffset={5}
+                className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+              >
+                <p>Customize toggle appearance</p>
+              </TooltipContent>
+            </Tooltip>
+
             <PopoverContent
               align="end"
               side="bottom"
