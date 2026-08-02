@@ -965,7 +965,7 @@ export default function WorkingSpacePageClient({
   }, [workspace?.name, tables?.length]);
 
   return (
-    <MaxWContainer className="my-5 grid grid-cols-1">
+    <MaxWContainer className="grid grid-cols-1">
       <header>
         <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
