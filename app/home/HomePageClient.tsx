@@ -140,7 +140,7 @@ export default function HomePageClient() {
   }, [viewer]);
 
   return (
-    <MaxWContainer className="relative my-5">
+    <MaxWContainer className="relative">
       {/* Hero Section */}
       <div className="overflow-hidden border border-border app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
         <header className="relative max-w-3xl mx-auto text-center">
