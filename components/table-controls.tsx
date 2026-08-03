@@ -54,7 +54,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(150);
   const focusCell = useCallback(
     (cell: HTMLElement) => {
       try {

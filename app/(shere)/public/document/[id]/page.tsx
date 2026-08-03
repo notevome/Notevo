@@ -34,8 +34,8 @@ import { Textarea } from "@/components/ui/textarea";
 export default function PublicNotePage() {
   const { resolvedTheme, setTheme } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
-  const themeTooltip = useHoverTooltip(100);
-  const noteWidthTooltip = useHoverTooltip(100);
+  const themeTooltip = useHoverTooltip(200);
+  const noteWidthTooltip = useHoverTooltip(200);
   const { noteWidth, toggleWidth } = useNoteWidth();
   const isMobile = useMediaQuery({ maxWidth: 640 });
 

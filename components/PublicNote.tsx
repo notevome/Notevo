@@ -49,7 +49,7 @@ export default function PublicNote({
   const isMobile = useMediaQuery({ maxWidth: 640 });
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(150);
   const copyTooltip = useHoverTooltip(200);
 
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
