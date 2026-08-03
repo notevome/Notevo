@@ -89,7 +89,7 @@ export default function PdfSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const tooltip = useHoverTooltip(150);
+  const tooltip = useHoverTooltip(300);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });

@@ -178,9 +178,9 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     setDraftTitle(title);
   }, [title]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const titleTooltip = useHoverTooltip(200);
-  const toggleTooltip = useHoverTooltip(200);
-  const customTooltip = useHoverTooltip(200);
+  const titleTooltip = useHoverTooltip(300);
+  const toggleTooltip = useHoverTooltip(300);
+  const customTooltip = useHoverTooltip(300);
   const isDark = useIsDarkMode();
 
   const [style, setStyle] = useState<ToggleStyle>(DEFAULT_STYLE);

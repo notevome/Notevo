@@ -185,7 +185,7 @@ export default function TableSettings({
       setIsAlertOpen(false); // Close Alert after deletion
     }
   };
-  const tooltip = useHoverTooltip(150);
+  const tooltip = useHoverTooltip(300);
   const createdAtText = formatTimestamp(table?.createdAt);
   const updatedAtText = formatTimestamp(table?.updatedAt);
   return (
