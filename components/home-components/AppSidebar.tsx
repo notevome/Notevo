@@ -398,7 +398,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                       Workspaces
                     </DropdownMenuLabel>
                     <div
-                      className={`absolute top-[22px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                      className={`absolute top-[21.5px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
                         canScrollTop ? "opacity-100" : "opacity-0"
                       }`}
                     />
@@ -1662,34 +1662,57 @@ const AppSidebar = React.memo(function AppSidebar() {
 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [loading, setLoading] = useState(false);
-  const sidebarContentRef = useRef<HTMLDivElement>(null);
-  const [scrollTop, setScrollTop] = useState(0);
+  const [scrollTop, setScrollTop] = useState(1);
   const [canScroll, setCanScroll] = useState(false);
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
+  const sidebarContentRef = useRef<HTMLDivElement | null>(null);
 
-  const handleSidebarScroll = useCallback(() => {
-    const el = sidebarContentRef.current;
+  const recalcSidebarScroll = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
-    setScrollTop(el.scrollTop);
-    const overflow = el.scrollHeight > el.clientHeight;
+    const scrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const clientHeight = el.clientHeight;
+    const overflow = scrollHeight > clientHeight;
+
+    setScrollTop(scrollTop);
     setCanScroll(overflow);
-    setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
-    );
+    setHasMoreBelow(overflow && scrollTop + clientHeight < scrollHeight - 9);
   }, []);
 
-  const ishome = useMemo(() => pathname === "/home", [pathname]);
+  const setSidebarContentRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      sidebarContentRef.current = el;
+      if (!el) return;
+
+      recalcSidebarScroll(el);
+
+      const observer = new ResizeObserver(() => {
+        recalcSidebarScroll(el);
+      });
+      observer.observe(el);
+
+      (el as any)._cleanupObserver = () => observer.disconnect();
+    },
+    [recalcSidebarScroll],
+  );
 
   useEffect(() => {
-    const el = sidebarContentRef.current;
-    if (!el) return;
-    const overflow = el.scrollHeight > el.clientHeight;
-    setCanScroll(overflow);
-    setScrollTop(el.scrollTop);
-    setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
-    );
-  }, [results?.length, favoritePdfs?.length, getWorkingSpaces?.length]);
+    return () => {
+      if (
+        sidebarContentRef.current &&
+        (sidebarContentRef.current as any)._cleanupObserver
+      ) {
+        (sidebarContentRef.current as any)._cleanupObserver();
+      }
+    };
+  }, []);
+
+  const handleSidebarScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => recalcSidebarScroll(e.currentTarget),
+    [recalcSidebarScroll],
+  );
+
+  const ishome = useMemo(() => pathname === "/home", [pathname]);
 
   const isSidebarLoading = useMemo(
     () => getWorkingSpaces === undefined || User === undefined,
@@ -1781,7 +1804,7 @@ const AppSidebar = React.memo(function AppSidebar() {
           />
         )}
         <SidebarContent
-          ref={sidebarContentRef}
+          ref={setSidebarContentRef}
           onScroll={handleSidebarScroll}
           className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border"
         >
