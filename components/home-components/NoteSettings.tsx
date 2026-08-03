@@ -86,7 +86,7 @@ export default function NoteSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(150);
 
   const { noteWidth, toggleWidth } = useNoteWidth();
 
