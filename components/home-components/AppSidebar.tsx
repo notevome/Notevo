@@ -390,7 +390,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <DropdownMenuContent
                   side="bottom"
                   align="end"
-                  className="!rounded-none p-1 bg-background w-52 max-h-36 relative overflow-hidden"
+                  className="!rounded-none p-1 bg-background w-52 max-h-36 relative overflow-hidden z-[90000]"
                 >
                   <DropdownMenuGroup className="relative flex-col ">
                     <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
@@ -398,7 +398,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                       Workspaces
                     </DropdownMenuLabel>
                     <div
-                      className={`absolute top-[22px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                      className={`absolute top-[21px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
                         canScrollTop ? "opacity-100" : "opacity-0"
                       }`}
                     />
