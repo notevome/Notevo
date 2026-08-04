@@ -54,7 +54,7 @@ export default function BreadcrumbWithCustomSeparator() {
 
   return (
     <div className="py-2">
-      <Breadcrumb>
+      <Breadcrumb className=" *:select-none">
         <BreadcrumbList className="flex flex-nowrap overflow-x-auto whitespace-nowrap text-primary !gap-0.5 [&::-webkit-scrollbar]:w-[0.4rem] scrollbar-gutter-stable">
           {pathSegments.map((segment, index) => {
             // Build the path up to this segment
