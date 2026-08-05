@@ -796,7 +796,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
             variant="SidebarMenuButton"
             size="sm"
             onClick={() => loadMore(5)}
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <ChevronDown size="16" className=" text-muted-foreground" />
             Show More
@@ -810,7 +810,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
             variant="SidebarMenuButton"
             size="sm"
             disabled
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <LoadingAnimation className="h-3 w-3" />
             Loading...
@@ -1095,7 +1095,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
             variant="SidebarMenuButton"
             size="sm"
             onClick={() => loadMore(5)}
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <ChevronDown size="16" className=" text-muted-foreground" />
             Show More
@@ -1109,7 +1109,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
             variant="SidebarMenuButton"
             size="sm"
             disabled
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <LoadingAnimation className="h-3 w-3" />
             Loading...
