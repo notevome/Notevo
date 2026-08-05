@@ -1662,34 +1662,86 @@ const AppSidebar = React.memo(function AppSidebar() {
 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [loading, setLoading] = useState(false);
-  const sidebarContentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-fade tracking
+  const sidebarContentRef = useRef<HTMLDivElement | null>(null);
+  const sidebarInnerRef = useRef<HTMLDivElement | null>(null);
+
   const [scrollTop, setScrollTop] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
 
-  const handleSidebarScroll = useCallback(() => {
+  const recalcSidebarScroll = useCallback(() => {
     const el = sidebarContentRef.current;
     if (!el) return;
-    setScrollTop(el.scrollTop);
-    const overflow = el.scrollHeight > el.clientHeight;
+
+    const currentScrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const clientHeight = el.clientHeight;
+    const overflow = scrollHeight - clientHeight > 1;
+
+    setScrollTop(currentScrollTop);
     setCanScroll(overflow);
     setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
+      overflow && scrollHeight - currentScrollTop - clientHeight > 1,
     );
   }, []);
 
-  const ishome = useMemo(() => pathname === "/home", [pathname]);
+  const handleSidebarScroll = recalcSidebarScroll;
+
+  const setSidebarContentRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (
+        sidebarContentRef.current &&
+        (sidebarContentRef.current as any)._cleanupOuter
+      ) {
+        (sidebarContentRef.current as any)._cleanupOuter();
+      }
+      sidebarContentRef.current = el;
+      if (!el) return;
+
+      recalcSidebarScroll();
+
+      const ro = new ResizeObserver(() => recalcSidebarScroll());
+      ro.observe(el);
+      (el as any)._cleanupOuter = () => ro.disconnect();
+    },
+    [recalcSidebarScroll],
+  );
+
+  const setSidebarInnerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (
+        sidebarInnerRef.current &&
+        (sidebarInnerRef.current as any)._cleanupInner
+      ) {
+        (sidebarInnerRef.current as any)._cleanupInner();
+      }
+      sidebarInnerRef.current = el;
+      if (!el) return;
+
+      recalcSidebarScroll();
+
+      const ro = new ResizeObserver(() => recalcSidebarScroll());
+      ro.observe(el);
+      (el as any)._cleanupInner = () => ro.disconnect();
+    },
+    [recalcSidebarScroll],
+  );
 
   useEffect(() => {
-    const el = sidebarContentRef.current;
-    if (!el) return;
-    const overflow = el.scrollHeight > el.clientHeight;
-    setCanScroll(overflow);
-    setScrollTop(el.scrollTop);
-    setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
-    );
-  }, [results?.length, favoritePdfs?.length, getWorkingSpaces?.length]);
+    return () => {
+      (sidebarContentRef.current as any)?._cleanupOuter?.();
+      (sidebarInnerRef.current as any)?._cleanupInner?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("resize", recalcSidebarScroll);
+    return () => window.removeEventListener("resize", recalcSidebarScroll);
+  }, [recalcSidebarScroll]);
+
+  const ishome = useMemo(() => pathname === "/home", [pathname]);
 
   const isSidebarLoading = useMemo(
     () => getWorkingSpaces === undefined || User === undefined,
@@ -1770,48 +1822,50 @@ const AppSidebar = React.memo(function AppSidebar() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         {canScroll && scrollTop > 8 && (
           <div
-            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-20 bg-gradient-to-b from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-32 bg-gradient-to-b from-muted from-5% to-100% to-transparent"
             aria-hidden
           />
         )}
         {canScroll && hasMoreBelow && (
           <div
-            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-20 bg-gradient-to-t from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-32 bg-gradient-to-t from-muted from-5% to-100% to-transparent"
             aria-hidden
           />
         )}
         <SidebarContent
-          ref={sidebarContentRef}
+          ref={setSidebarContentRef}
           onScroll={handleSidebarScroll}
           className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border"
         >
-          <SidebarNavigation
-            pathname={pathname}
-            ishome={ishome}
-            isMobile={isMobile}
-            open={open}
-          />
+          <div ref={setSidebarInnerRef}>
+            <SidebarNavigation
+              pathname={pathname}
+              ishome={ishome}
+              isMobile={isMobile}
+              open={open}
+            />
 
-          <PinnedNotesList
-            favoriteNotes={results}
-            pathname={pathname}
-            open={open}
-            status={status}
-            loadMore={loadMore}
-          />
-          <PinnedUploadsList
-            favoritePdfs={favoritePdfs}
-            pathname={pathname}
-            open={open}
-            status={favoritePdfsStatus}
-            loadMore={loadMorePdfs}
-          />
-          <WorkspacesList
-            getWorkingSpaces={getWorkingSpaces}
-            handleCreateWorkingSpace={handleCreateWorkingSpace}
-            pathname={pathname}
-            open={open}
-          />
+            <PinnedNotesList
+              favoriteNotes={results}
+              pathname={pathname}
+              open={open}
+              status={status}
+              loadMore={loadMore}
+            />
+            <PinnedUploadsList
+              favoritePdfs={favoritePdfs}
+              pathname={pathname}
+              open={open}
+              status={favoritePdfsStatus}
+              loadMore={loadMorePdfs}
+            />
+            <WorkspacesList
+              getWorkingSpaces={getWorkingSpaces}
+              handleCreateWorkingSpace={handleCreateWorkingSpace}
+              pathname={pathname}
+              open={open}
+            />
+          </div>
         </SidebarContent>
       </div>
       <UserAccountSection
