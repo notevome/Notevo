@@ -575,7 +575,7 @@ function PdfViewerContent({
         <div className=" pointer-events-none absolute inset-x-0 top-1 z-20">
           <div
             className={cn(
-              "pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl",
+              "pointer-events-auto mx-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
               !renderedInPane && "app-radius-lg",
             )}
           >
@@ -594,12 +594,12 @@ function PdfViewerContent({
             )}
             {!renderedInPane && (
               <div
-                className={` px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
+                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
               >
                 <h1
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className=" md:text-lg cursor-text flex justify-start items-center min-w-[16rem] overflow-hidden "
+                  className=" flex-1 text-lg cursor-text flex justify-start items-center min-w-[20rem] overflow-hidden "
                 >
                   {isEditingName ? (
                     <Input
@@ -614,7 +614,7 @@ function PdfViewerContent({
                         setIsEditingName(false);
                       }}
                       placeholder="Untitled PDF"
-                      className=" !w-full placeholder:text-muted-foreground/50 border-transparent bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-8 cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                      className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                     />
                   ) : (
                     <span className=" w-full overflow-hidden text-nowrap">
@@ -624,77 +624,89 @@ function PdfViewerContent({
                 </h1>
               </div>
             )}
-            <div className="flex items-center gap-0">
-              <Tooltip open={searchTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border border-border !rounded-none"
-                    onClick={() =>
-                      setPanelMode((current) =>
-                        current === "search" ? null : "search",
-                      )
-                    }
-                    aria-label="show-search-panel"
-                    aria-pressed={panelMode === "search"}
-                    {...searchTooltip.triggerProps}
-                  >
-                    {panelMode === "search" ? (
-                      <X size={16} />
-                    ) : (
-                      <FileSearch size={16} />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className=" text-xs px-1.5 py-1">
-                  {panelMode === "search" ? "Close Search" : "Open Search"}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip open={thumbnailsTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-y !border-l-0 border-border !rounded-none"
-                    onClick={() =>
-                      setPanelMode((current) =>
-                        current === "thumbnails" ? null : "thumbnails",
-                      )
-                    }
-                    aria-label="show-thumbnails-panel"
-                    aria-pressed={panelMode === "thumbnails"}
-                    {...thumbnailsTooltip.triggerProps}
-                  >
-                    {panelMode === "thumbnails" ? (
-                      <X size={16} />
-                    ) : (
-                      <span className="text-[11px] font-semibold">Pg</span>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className=" text-xs px-1.5 py-1">
-                  {panelMode === "thumbnails"
-                    ? "Close Thumbnails"
-                    : "Open Thumbnails"}
-                </TooltipContent>
-              </Tooltip>
-              <ZoomDropdown />
+            <div className=" w-full flex items-center justify-between gap-0">
+              <span>
+                <div className="flex items-center gap-0">
+                  <Tooltip open={searchTooltip.open}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border border-border !rounded-none"
+                        onClick={() =>
+                          setPanelMode((current) =>
+                            current === "search" ? null : "search",
+                          )
+                        }
+                        aria-label="show-search-panel"
+                        aria-pressed={panelMode === "search"}
+                        {...searchTooltip.triggerProps}
+                      >
+                        {panelMode === "search" ? (
+                          <X size={16} />
+                        ) : (
+                          <FileSearch size={16} />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className=" text-xs px-1.5 py-1"
+                    >
+                      {panelMode === "search" ? "Close Search" : "Open Search"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip open={thumbnailsTooltip.open}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border-y !border-l-0 border-border !rounded-none"
+                        onClick={() =>
+                          setPanelMode((current) =>
+                            current === "thumbnails" ? null : "thumbnails",
+                          )
+                        }
+                        aria-label="show-thumbnails-panel"
+                        aria-pressed={panelMode === "thumbnails"}
+                        {...thumbnailsTooltip.triggerProps}
+                      >
+                        {panelMode === "thumbnails" ? (
+                          <X size={16} />
+                        ) : (
+                          <span className="text-[11px] font-semibold">Pg</span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className=" text-xs px-1.5 py-1"
+                    >
+                      {panelMode === "thumbnails"
+                        ? "Close Thumbnails"
+                        : "Open Thumbnails"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <ZoomDropdown />
+                </div>
+              </span>
+              <span className="flex items-center gap-0">
+                <PageNavigator />
+                {!renderedInPane && (
+                  <PdfSettings
+                    pdfId={pdfId}
+                    pdfTitle={pdftitle}
+                    iconVariant="horizontal_icon"
+                    dropdownMenuContentAlign="end"
+                    tooltipContentAlign="end"
+                    btnVariant="outline"
+                    btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
+                  />
+                )}
+              </span>
             </div>
-            <PageNavigator />
-            {!renderedInPane && (
-              <PdfSettings
-                pdfId={pdfId}
-                pdfTitle={pdftitle}
-                iconVariant="horizontal_icon"
-                dropdownMenuContentAlign="end"
-                tooltipContentAlign="end"
-                btnVariant="outline"
-                btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
-              />
-            )}
           </div>
         </div>
 
