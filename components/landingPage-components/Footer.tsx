@@ -34,7 +34,7 @@ export default function Footer() {
           </defs>
         </svg>
       </div>
-      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 pb-48 bg-[#EFEFEF]">
+      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-52 bg-[#EFEFEF]">
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -162,8 +162,13 @@ export default function Footer() {
           </div>
         </div>
       </footer>
-      <h1 className="z-50 bg-gradient-to-b from-primary/30 from-60% to-100% to-transparent text-transparent bg-clip-text inline-block text-nowrap  text-[200px] absolute -bottom-6 right-0 align-bottom text-center pointer-events-none select-none w-full overflow-hidden font-bold tracking-tighter leading-[9rem] -indent-8">
-        Notes Without The Hassle
+      <h1
+        style={{
+          textShadow: "14px 14px 0 #644A40",
+        }}
+        className="z-50 text-primary/30 inline-block text-nowrap text-[60vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-bold tracking-tight leading-[30vh] -indent-[10vh]"
+      >
+        Notevo
       </h1>
     </div>
   );
