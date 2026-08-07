@@ -34,7 +34,7 @@ export default function Footer() {
           </defs>
         </svg>
       </div>
-      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-52 bg-[#EFEFEF]">
+      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[20rem] bg-[#EFEFEF]">
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
