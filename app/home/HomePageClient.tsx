@@ -297,11 +297,11 @@ function Slider({ children }: { children: React.ReactNode }) {
     const container = scrollContainerRef.current;
     if (!container) return;
     const hasOverflow = container.scrollWidth > container.clientWidth;
-    setCanScrollLeft(container.scrollLeft > 10);
+    setCanScrollLeft(container.scrollLeft > 0.2);
     setCanScrollRight(
       hasOverflow &&
         container.scrollLeft <
-          container.scrollWidth - container.clientWidth - 10,
+          container.scrollWidth - container.clientWidth - 0.2,
     );
   };
 
