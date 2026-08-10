@@ -2,6 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
+import { paginationOptsValidator } from "convex/server";
 
 async function assertTableAccess(
   ctx: { db: any },
@@ -98,6 +99,64 @@ export const getLinksByTableId = query({
       )
       .order("desc")
       .collect();
+  },
+});
+
+export const getLinkById = query({
+  args: {
+    _id: v.id("links"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    const link = await ctx.db.get(args._id);
+    if (!link || link.userId !== userId) {
+      throw new Error("Link not found or not authorized");
+    }
+
+    return link;
+  },
+});
+
+export const getFavLinks = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    return await ctx.db
+      .query("links")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("favorite"), true))
+      .order("desc")
+      .paginate(paginationOpts);
+  },
+});
+
+export const updateLink = mutation({
+  args: {
+    _id: v.id("links"),
+    favorite: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("Unauthenticated");
+    }
+
+    const link = await ctx.db.get(args._id);
+    if (!link || link.userId !== userId) {
+      throw new Error("Link not found or not authorized");
+    }
+
+    await ctx.db.patch(args._id, {
+      favorite: args.favorite ?? link.favorite,
+    });
   },
 });
 

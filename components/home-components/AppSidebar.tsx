@@ -63,6 +63,7 @@ import { redirect, usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import type { Id } from "@hello-pangea/dnd";
 import {
+  cn,
   formatWorkspaceName,
   formatUserName,
   formatUserEmail,
@@ -72,6 +73,7 @@ import { Doc } from "@/convex/_generated/dataModel";
 import { Input } from "../ui/input";
 import NoteSettingsSidbar from "./NoteSettingsSidbar";
 import PdfSettingsSidebar from "./PdfSettingsSidebar";
+import LinkSettingsSidebar from "./LinkSettingsSidebar";
 import WorkingSpaceSettingsSidbar from "./WorkingSpaceSettingsSidbar";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
@@ -116,6 +118,8 @@ const PINNED_NOTES_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_notes_expanded";
 const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_uploads_expanded";
+const PINNED_LINKS_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_links_expanded";
 
 function OpenInPaneButton({
   label,
@@ -1120,6 +1124,230 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   );
 });
 
+interface PinnedLinkItemProps {
+  link: Doc<"links">;
+  open: boolean;
+}
+
+function getSidebarLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function SidebarLinkFavicon({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = getSidebarLinkFaviconUrl(url);
+
+  if (!faviconUrl || errored) {
+    return <Globe className={cn("text-muted-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+const PinnedLinkItem = memo(
+  function PinnedLinkItem({ link, open }: PinnedLinkItemProps) {
+    const titleTooltip = useHoverTooltip(300);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const displayTitle =
+      link.title ||
+      link.metadata?.authorName ||
+      link.metadata?.siteName ||
+      link.url;
+
+    const handleContentMouseEnter = useCallback(() => {
+      setIsHovered(true);
+    }, []);
+
+    const handleContentMouseLeave = useCallback(() => {
+      setIsHovered(false);
+    }, []);
+
+    const textClassName = isHovered
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
+      : "truncate flex-grow";
+
+    return (
+      <SidebarGroupContent
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
+      >
+        <SidebarMenu className="flex-1">
+          <SidebarMenuItem>
+            <Tooltip open={titleTooltip.open}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="SidebarMenuButton"
+                  className="px-2 my-0.5 h-8 group flex-1"
+                  asChild
+                  {...titleTooltip.triggerProps}
+                >
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 flex-grow min-w-0"
+                  >
+                    <SidebarLinkFavicon
+                      url={link.url}
+                      className="h-4 w-4 flex-shrink-0"
+                    />
+                    <span className={textClassName}>
+                      {formatWorkspaceName(displayTitle)}
+                    </span>
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                sideOffset={5}
+                className=" !rounded-none py-[5px]"
+              >
+                {displayTitle}
+              </TooltipContent>
+            </Tooltip>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div
+          className={`absolute right-0 flex items-center ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
+        >
+          <LinkSettingsSidebar linkId={link._id} />
+        </div>
+      </SidebarGroupContent>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.link.favorite === nextProps.link.favorite &&
+      prevProps.link.title === nextProps.link.title &&
+      prevProps.link.url === nextProps.link.url &&
+      prevProps.open === nextProps.open
+    );
+  },
+);
+
+interface PinnedLinksListProps {
+  favoriteLinks: Doc<"links">[];
+  open: boolean;
+  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  loadMore: (numItems: number) => void;
+}
+
+const PinnedLinksList = memo(function PinnedLinksList({
+  favoriteLinks,
+  open,
+  status,
+  loadMore,
+}: PinnedLinksListProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_LINKS_EXPANDED_STORAGE_KEY,
+  );
+
+  if (status === "LoadingFirstPage") {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+          <span>Pinned Links</span>
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  if (favoriteLinks.length === 0) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>
+        <Button
+          variant="Trigger"
+          size="sm"
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
+          className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
+        >
+          <span>Pinned Links</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
+        </Button>
+      </SidebarGroupLabel>
+      {isExpanded &&
+        favoriteLinks.map((link) => (
+          <PinnedLinkItem key={link._id} link={link} open={open} />
+        ))}
+
+      {isExpanded && favoriteLinks.length > 4 && status === "CanLoadMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            onClick={() => loadMore(5)}
+            className="px-2 my-0.5 h-7 group flex-1"
+          >
+            <ChevronDown size="16" className=" text-muted-foreground" />
+            Show More
+          </Button>
+        </SidebarGroupContent>
+      )}
+
+      {isExpanded && favoriteLinks.length > 4 && status === "LoadingMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            disabled
+            className="px-2 my-0.5 h-7 group flex-1"
+          >
+            <LoadingAnimation className="h-3 w-3" />
+            Loading...
+          </Button>
+        </SidebarGroupContent>
+      )}
+    </SidebarGroup>
+  );
+});
+
 interface WorkspaceItemProps {
   workingSpace: Doc<"workingSpaces">;
   pathname: string;
@@ -1630,6 +1858,11 @@ const AppSidebar = React.memo(function AppSidebar() {
     status: favoritePdfsStatus,
     loadMore: loadMorePdfs,
   } = usePaginatedQuery(api.pdfs.getFavPdfs, {}, { initialNumItems: 5 });
+  const {
+    results: favoriteLinks,
+    status: favoriteLinksStatus,
+    loadMore: loadMoreLinks,
+  } = usePaginatedQuery(api.links.getFavLinks, {}, { initialNumItems: 5 });
   const createTable = useMutation(
     api.notesTables.createTable,
   ).withOptimisticUpdate((local, args) => {
@@ -1858,6 +2091,12 @@ const AppSidebar = React.memo(function AppSidebar() {
               open={open}
               status={favoritePdfsStatus}
               loadMore={loadMorePdfs}
+            />
+            <PinnedLinksList
+              favoriteLinks={favoriteLinks}
+              open={open}
+              status={favoriteLinksStatus}
+              loadMore={loadMoreLinks}
             />
             <WorkspacesList
               getWorkingSpaces={getWorkingSpaces}
