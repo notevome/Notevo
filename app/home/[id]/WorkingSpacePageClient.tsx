@@ -73,7 +73,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, formatTableName } from "@/lib/utils";
+import { cn, formatTableName, formatWorkspaceName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
@@ -969,7 +969,7 @@ export default function WorkingSpacePageClient({
       <header>
         <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
-            <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
+            <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[3rem] ">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -986,7 +986,7 @@ export default function WorkingSpacePageClient({
                     setIsEditingName(false);
                   }}
                   placeholder="Untitled WorkSpace"
-                  className="min-w-fit max-w-2xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[3rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
@@ -994,7 +994,7 @@ export default function WorkingSpacePageClient({
                   title="Double-click to rename"
                   className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
                 >
-                  {workspace.name}
+                  {formatWorkspaceName(workspace.name)}
                 </span>
               )}
             </h1>
