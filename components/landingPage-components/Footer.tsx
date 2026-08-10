@@ -164,7 +164,7 @@ export default function Footer() {
       </footer>
       <h1
         style={{
-          textShadow: "14px 14px 0 #644A40",
+          textShadow: "2vh 2vh 0 #644A40",
         }}
         className="z-50 text-primary/30 inline-block text-nowrap text-[60vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-bold tracking-tight leading-[30vh] -indent-[10vh]"
       >
