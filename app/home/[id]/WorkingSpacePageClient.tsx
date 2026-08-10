@@ -10,7 +10,6 @@ import {
   ChevronRight,
   ChevronDown,
   Link2,
-  Trash2,
   X,
   Filter,
 } from "lucide-react";
@@ -36,6 +35,7 @@ import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
 import NoteSettings from "@/components/home-components/NoteSettings";
+import LinkSettings from "@/components/home-components/LinkSettings";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -1110,12 +1110,7 @@ export function NotesDroppableContainer({
     );
     let items = [...noteItems, ...pdfItems, ...linkItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
-      .sort((a, b) => {
-        const aPinned = a.favorite ? 1 : 0;
-        const bPinned = b.favorite ? 1 : 0;
-        if (aPinned !== bPinned) return bPinned - aPinned;
-        return b.updatedAt - a.updatedAt;
-      });
+      .sort((a, b) => b.updatedAt - a.updatedAt);
 
     if (contentFilter !== "all") {
       items = items.filter((item) => {
@@ -2675,24 +2670,11 @@ function LinkFaviconBadge({
 }
 
 function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
-  const deleteLink = useMutation(api.links.deleteLink);
-  const [isDeleting, setIsDeleting] = useState(false);
   const displayTitle =
     link.title ||
     link.metadata?.authorName ||
     link.metadata?.siteName ||
     link.url;
-
-  const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      await deleteLink({ _id: link._id });
-      onDelete?.(link._id);
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      setIsDeleting(false);
-    }
-  }, [deleteLink, link._id, onDelete]);
 
   return (
     <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
@@ -2707,17 +2689,18 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
               <HighlightText text={displayTitle} query={searchQuery} />
             </CardTitle>
           </div>
-          <Button
-            type="button"
-            variant="Trigger"
-            size="icon"
-            onClick={() => void handleDelete()}
-            disabled={isDeleting}
-            aria-label="delete-link"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <LinkSettings
+            linkId={link._id}
+            linkUrl={link.url}
+            linkTitle={displayTitle}
+            favorite={link.favorite}
+            createdAt={link.createdAt}
+            updatedAt={link.updatedAt}
+            iconVariant="horizontal_icon"
+            dropdownMenuContentAlign="end"
+            tooltipContentAlign="end"
+            onDelete={onDelete}
+          />
         </div>
       </CardHeader>
 
@@ -2764,24 +2747,11 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
 }
 
 function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
-  const deleteLink = useMutation(api.links.deleteLink);
-  const [isDeleting, setIsDeleting] = useState(false);
   const displayTitle =
     link.title ||
     link.metadata?.authorName ||
     link.metadata?.siteName ||
     link.url;
-
-  const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      await deleteLink({ _id: link._id });
-      onDelete?.(link._id);
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      setIsDeleting(false);
-    }
-  }, [deleteLink, link._id, onDelete]);
 
   return (
     <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
@@ -2826,17 +2796,19 @@ function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
                 <SkeletonTextAnimation className="w-20" />
               )}
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => void handleDelete()}
-              disabled={isDeleting}
-              aria-label="delete-link"
-              className="h-7 w-7 pt-0 mr-10 mt-1.5 text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <LinkSettings
+              linkId={link._id}
+              linkUrl={link.url}
+              linkTitle={displayTitle}
+              favorite={link.favorite}
+              createdAt={link.createdAt}
+              updatedAt={link.updatedAt}
+              iconVariant="horizontal_icon"
+              btnClassName="mr-10 mt-1.5"
+              dropdownMenuContentAlign="end"
+              tooltipContentAlign="end"
+              onDelete={onDelete}
+            />
             <Button
               size="sm"
               asChild
