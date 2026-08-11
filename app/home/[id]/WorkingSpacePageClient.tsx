@@ -246,7 +246,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
         part.toLowerCase() === trimmedQuery.toLowerCase() ? (
           <mark
             key={i}
-            className="bg-secondary text-secondary-foreground rounded-sm px-0.5"
+            className="text-secondary bg-secondary-foreground rounded-sm px-0.5"
           >
             {part}
           </mark>
@@ -2836,7 +2836,7 @@ function EmptySearchResults({
   onClearSearch,
 }: EmptySearchResultsProps) {
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-border">
+    <Card className="bg-transparent  border-0">
       <CardContent className="pt-12 pb-12 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="h-10 w-10 flex items-center justify-center mb-4">
