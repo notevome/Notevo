@@ -994,7 +994,9 @@ export default function WorkingSpacePageClient({
                   title="Double-click to rename"
                   className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
                 >
-                  {formatWorkspaceName(workspace.name)}
+                  {workspace.name.length > 20
+                    ? `${workspace.name.slice(0, 17)}...`
+                    : workspace.name}
                 </span>
               )}
             </h1>
