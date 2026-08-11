@@ -82,6 +82,12 @@ import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useDebouncedCallback } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
+
+function getMediaQuery() {
+  const isMobile = useMediaQuery({ maxWidth: 640 });
+  return isMobile;
+}
+
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -964,12 +970,14 @@ export default function WorkingSpacePageClient({
     };
   }, [workspace?.name, tables?.length]);
 
+  const isMobile = getMediaQuery();
+
   return (
     <MaxWContainer className="grid grid-cols-1">
       <header>
         <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
-            <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[3rem] ">
+            <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[4rem] ">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -986,15 +994,15 @@ export default function WorkingSpacePageClient({
                     setIsEditingName(false);
                   }}
                   placeholder="Untitled WorkSpace"
-                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[3rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[4rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20 leading-normal md:leading-[4rem]"
                 >
-                  {workspace.name.length > 20
+                  {workspace.name.length > 20 && isMobile
                     ? `${workspace.name.slice(0, 17)}...`
                     : workspace.name}
                 </span>
@@ -1087,7 +1095,6 @@ export function NotesDroppableContainer({
       tableNotesMemoryCache.set(tableId as unknown as string, results);
     }
   }, [results, status, tableId]);
-
   const stableResults =
     status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
 
@@ -1144,7 +1151,7 @@ export function NotesDroppableContainer({
       return newSet;
     });
   }, []);
-  const isMobile = useMediaQuery({ maxWidth: 640 });
+  const isMobile = getMediaQuery();
 
   return (
     <div className="grid grid-cols-1 gap-6 w-full max-w-full">
