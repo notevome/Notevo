@@ -142,9 +142,9 @@ export default function HomePageClient() {
   return (
     <MaxWContainer className="relative">
       {/* Hero Section */}
-      <div className="overflow-hidden border border-border app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
-        <header className="relative max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
+      <div className="overflow-hidden py-2 mb-16">
+        <header className="flex flex-col justify-center items-start gap-2 relative">
+          <h1 className="text-3xl sm:text-4xl font-bold text-primary">
             {viewer?.name ? (
               <>
                 Hello,{" "}
@@ -159,19 +159,18 @@ export default function HomePageClient() {
                 }`}
               </>
             ) : (
-              <SkeletonTextAnimation className="w-full h-10" />
+              <SkeletonTextAnimation className=" mx-0 min-w-52 h-10" />
             )}
           </h1>
-          <p className="text-white/90 text-md max-w-2xl mx-auto mb-6">
-            Organize your thoughts, manage your workspaces, and boost your
-            productivity with Notevo.
+          <p className="text-white/90 text-md ">
+            Organize your thoughts , and manage your workspaces,
           </p>
         </header>
       </div>
 
       {/* Workspaces Slider */}
-      <div className="mb-12">
-        <div className="mb-6 flex justify-between items-center">
+      <div className="mb-8">
+        <div className="mb-4 flex justify-between items-center">
           <h2 className="text-foreground text-xl font-semibold">
             Your Workspaces
           </h2>
@@ -208,26 +207,10 @@ export default function HomePageClient() {
         )}
       </div>
 
-      {/* Pinned Notes Slider */}
-      {pinnedNotes.length > 0 && (
-        <div className="mb-12">
-          <div className="mb-6">
-            <h2 className="text-foreground text-xl font-semibold">
-              Pinned Notes
-            </h2>
-          </div>
-          <Slider>
-            {pinnedNotes.map((note) => (
-              <NoteCard key={note._id} note={note} />
-            ))}
-          </Slider>
-        </div>
-      )}
-
       {/* Recent Notes Slider */}
       {recentNotes.length !== 0 && (
-        <div className="mb-12">
-          <div className="mb-6">
+        <div className="mb-8">
+          <div className="mb-4">
             <h2 className="text-foreground text-xl font-semibold">
               Recent Notes
             </h2>
@@ -358,7 +341,7 @@ function Slider({ children }: { children: React.ReactNode }) {
       )}
 
       {(canScrollRight || canScrollLeft) && (
-        <div className="z-10 absolute -bottom-8 right-0 flex justify-center items-center gap-2">
+        <div className="z-10 absolute -bottom-1 right-0 flex justify-center items-center gap-2">
           <Button
             size="icon"
             variant={canScrollLeft ? "revDefault" : "outline"}
@@ -472,7 +455,7 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[230px] ">
+    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[200px] ">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
           <div className="flex flex-col gap-1 pr-8 max-w-sm">
@@ -494,7 +477,7 @@ function WorkspaceCard({
             {workspace.name || "Untitled"}
           </CardTitle>
         )}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-1.5 right-2">
           <WorkingSpaceSettings
             workingSpaceId={workspace._id}
             workingspaceName={workspace.name}
@@ -518,7 +501,7 @@ function WorkspaceCard({
         <Button
           size="sm"
           asChild
-          className=" absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className=" absolute bottom-0 right-0 h-9 px-6 text-xs"
         >
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
@@ -569,7 +552,7 @@ function NoteCard({ note }: { note: Note }) {
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden bg-card border transition-all duration-300 flex-shrink-0 w-[330px] h-[230px] flex flex-col",
+        "group relative overflow-hidden bg-card border transition-all duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col",
         isEmpty ? "border-dashed border-border" : "border-border",
       )}
     >
@@ -609,7 +592,7 @@ function NoteCard({ note }: { note: Note }) {
         <Button
           size="sm"
           asChild
-          className="absolute bottom-0 right-0 h-9 px-2 text-xs"
+          className="absolute bottom-0 right-0 h-9 px-6 text-xs"
         >
           <IntentPrefetchLink
             href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}
