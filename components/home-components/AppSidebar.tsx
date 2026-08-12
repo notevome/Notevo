@@ -1185,7 +1185,7 @@ const PinnedLinkItem = memo(
     }, []);
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-60% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     return (
