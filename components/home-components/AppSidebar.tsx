@@ -128,7 +128,7 @@ function OpenInPaneButton({
   label: string;
   onOpen: () => void;
 }) {
-  const tooltip = useHoverTooltip(400);
+  const tooltip = useHoverTooltip(100);
 
   return (
     <Tooltip open={tooltip.open}>
