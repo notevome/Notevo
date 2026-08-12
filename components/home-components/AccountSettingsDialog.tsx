@@ -175,7 +175,7 @@ export default function AccountSettingsDialog({
     useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteConfirmationEmail, setDeleteConfirmationEmail] = useState("");
-  const removeAvatarTooltip = useHoverTooltip(300);
+  const removeAvatarTooltip = useHoverTooltip(100);
 
   useEffect(() => {
     if (!open) return;

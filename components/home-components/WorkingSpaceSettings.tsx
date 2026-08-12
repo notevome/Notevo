@@ -62,7 +62,7 @@ export default function WorkingSpaceSettings({
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(100);
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input
 
   useEffect(() => {

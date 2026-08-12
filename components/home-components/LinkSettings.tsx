@@ -80,7 +80,7 @@ export default function LinkSettings({
 }: LinkSettingsProps) {
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(100);
 
   const updateLink = useMutation(api.links.updateLink);
   const deleteLink = useMutation(api.links.deleteLink);

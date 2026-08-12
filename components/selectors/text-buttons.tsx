@@ -35,7 +35,7 @@ function ToolbarTooltipButton({
   label: string;
   shortcut: string;
 } & ComponentProps<typeof Button>) {
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(400);
 
   return (
     <Tooltip open={tooltip.open}>

@@ -105,7 +105,7 @@ function HomePaneDrawer({
   const startXRef = useRef(0);
   const startWidthRef = useRef(DEFAULT_PANE_WIDTH);
   const rafRef = useRef<number>(0);
-  const closeTooltip = useHoverTooltip(300);
+  const closeTooltip = useHoverTooltip(400);
 
   useEffect(() => {
     const savedWidth = window.localStorage.getItem(PANE_WIDTH_STORAGE_KEY);

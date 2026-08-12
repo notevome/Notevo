@@ -101,7 +101,7 @@ export default function WorkingSpaceSettingsSidbar({
 
   const tableCount = tables?.length || 0;
   const hasContent = tableCount > 0;
-  const deleteTooltip = useHoverTooltip(300);
+  const deleteTooltip = useHoverTooltip(100);
 
   return (
     <>

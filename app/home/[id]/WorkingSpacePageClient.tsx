@@ -359,7 +359,7 @@ const CALENDAR_ZOOM_PADDING_DAYS: Record<CalendarZoom, number> = {
 };
 
 function TableTab({ table }: { table: any }) {
-  const deleteTooltip = useHoverTooltip(300);
+  const deleteTooltip = useHoverTooltip(100);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
@@ -1970,7 +1970,7 @@ function CalendarGapMarker({
   };
   onToggle: () => void;
 }) {
-  const gapTooltip = useHoverTooltip(300);
+  const gapTooltip = useHoverTooltip(100);
   const hiddenDaysLabel = `${gap.emptyDays} hidden day${
     gap.emptyDays === 1 ? "" : "s"
   }`;

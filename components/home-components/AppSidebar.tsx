@@ -128,7 +128,7 @@ function OpenInPaneButton({
   label: string;
   onOpen: () => void;
 }) {
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(400);
 
   return (
     <Tooltip open={tooltip.open}>
@@ -501,7 +501,7 @@ interface PinnedNoteItemProps {
 
 const PinnedNoteItem = memo(
   function PinnedNoteItem({ note, pathname, open }: PinnedNoteItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
     const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -833,7 +833,7 @@ interface PinnedUploadItemProps {
 
 const PinnedUploadItem = memo(
   function PinnedUploadItem({ pdf, pathname, open }: PinnedUploadItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
     const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -1167,7 +1167,7 @@ function SidebarLinkFavicon({
 
 const PinnedLinkItem = memo(
   function PinnedLinkItem({ link, open }: PinnedLinkItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
     const [isHovered, setIsHovered] = useState(false);
 
     const displayTitle =
@@ -1356,7 +1356,7 @@ interface WorkspaceItemProps {
 
 const WorkspaceItem = memo(
   function WorkspaceItem({ workingSpace, pathname, open }: WorkspaceItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
     const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -1583,7 +1583,7 @@ const WorkspacesList = memo(function WorkspacesList({
   pathname,
   open,
 }: WorkspacesListProps) {
-  const addWorkspaceTooltip = useHoverTooltip(300);
+  const addWorkspaceTooltip = useHoverTooltip(400);
 
   return (
     <SidebarGroup>
