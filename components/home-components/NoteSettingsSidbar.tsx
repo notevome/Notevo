@@ -114,8 +114,8 @@ export default function NoteSettingsSidbar({
     });
   };
 
-  const pinTooltip = useHoverTooltip(300);
-  const deleteTooltip = useHoverTooltip(300);
+  const pinTooltip = useHoverTooltip(100);
+  const deleteTooltip = useHoverTooltip(100);
 
   return (
     <>

@@ -47,8 +47,8 @@ export default function PdfSettingsSidebar({
     });
   };
 
-  const pinTooltip = useHoverTooltip(300);
-  const deleteTooltip = useHoverTooltip(300);
+  const pinTooltip = useHoverTooltip(100);
+  const deleteTooltip = useHoverTooltip(100);
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();

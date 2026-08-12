@@ -490,8 +490,8 @@ function PdfViewerContent({
   const { open, isMobile } = useSidebar();
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
-  const searchTooltip = useHoverTooltip(300);
-  const thumbnailsTooltip = useHoverTooltip(300);
+  const searchTooltip = useHoverTooltip(100);
+  const thumbnailsTooltip = useHoverTooltip(100);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(pdftitle || "");
   const nameInputRef = useRef<HTMLInputElement>(null);
