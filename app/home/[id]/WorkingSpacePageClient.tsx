@@ -298,7 +298,151 @@ const STORAGE_KEYS = {
   VIEW_MODE: "notevo_view_mode",
   ACTIVE_TABLE: "notevo_active_table",
   CALENDAR_ZOOM: "notevo_calendar_zoom",
+  CUSTOM_ORDER_PREFIX: "notevo_custom_order_",
 };
+
+/**
+ * Lets the user drag-and-drop reorder a list of items purely on the client.
+ * The order is kept in React state + localStorage (per table), and is NEVER
+ * written back to Convex — the backend's own sort (updatedAt, etc.) is
+ * untouched. Reload the tab and the manual order survives (it's per
+ * browser/device); open the same table somewhere else and it'll fall back
+ * to the default sort until dragged there too.
+ */
+type DropTarget = { id: string; position: "before" | "after" };
+
+function useClientSideOrder<T extends { _id: string }>(
+  storageKey: string,
+  items: T[],
+) {
+  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  // The dragged card's own size, captured on drag start, so the drop
+  // indicator can render as a same-shaped placeholder instead of a bare bar.
+  const [draggedSize, setDraggedSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  // Where the dragged card would land if dropped right now — used to draw
+  // an insertion line, rather than shuffling the whole list live.
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+
+  // Load any saved order whenever we switch tables.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setOrderIds(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setOrderIds([]);
+    }
+  }, [storageKey]);
+
+  const persist = useCallback(
+    (ids: string[]) => {
+      setOrderIds(ids);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+      } catch {
+        // e.g. private browsing / storage full — safe to ignore, order just
+        // won't survive a refresh.
+      }
+    },
+    [storageKey],
+  );
+
+  // Apply the saved order on top of the current items. Anything not yet in
+  // the saved order (new notes, items just un-filtered, etc.) is placed at
+  // the front, keeping the backend's own ordering for those.
+  const orderedItems = useMemo(() => {
+    if (orderIds.length === 0) return items;
+    const itemById = new Map(items.map((item) => [item._id, item]));
+    const known = orderIds
+      .map((id) => itemById.get(id))
+      .filter((item): item is T => Boolean(item));
+    const knownIds = new Set(known.map((item) => item._id));
+    const fresh = items.filter((item) => !knownIds.has(item._id));
+    return [...fresh, ...known];
+  }, [items, orderIds]);
+
+  // Remember newly-seen items in the stored order too, so future drags
+  // (and the next page load) keep including them in the right slot.
+  useEffect(() => {
+    if (items.length === 0) return;
+    const ids = orderedItems.map((item) => item._id);
+    const unchanged =
+      ids.length === orderIds.length &&
+      ids.every((id, i) => id === orderIds[i]);
+    if (!unchanged) persist(ids);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderedItems]);
+
+  const handleDragStart = useCallback(
+    (id: string, rect?: { width: number; height: number }) => {
+      setDraggingId(id);
+      setDropTarget(null);
+      setDraggedSize(rect ?? null);
+    },
+    [],
+  );
+
+  // Fires continuously while hovering a card. We look at the pointer's Y
+  // position relative to that card's own midpoint to decide whether the
+  // dragged card would land above or below it.
+  const handleDragOverItem = useCallback(
+    (
+      e: {
+        clientY: number;
+        currentTarget: HTMLElement;
+        preventDefault: () => void;
+      },
+      id: string,
+    ) => {
+      e.preventDefault();
+      if (!draggingId || draggingId === id) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const isBefore = e.clientY < rect.top + rect.height / 2;
+      setDropTarget((prev) =>
+        prev?.id === id && prev.position === (isBefore ? "before" : "after")
+          ? prev
+          : { id, position: isBefore ? "before" : "after" },
+      );
+    },
+    [draggingId],
+  );
+
+  const handleDrop = useCallback(() => {
+    if (draggingId && dropTarget && dropTarget.id !== draggingId) {
+      const ids = orderedItems.map((item) => item._id);
+      const withoutDragged = ids.filter((id) => id !== draggingId);
+      const targetIndex = withoutDragged.indexOf(dropTarget.id);
+      const insertAt =
+        dropTarget.position === "before" ? targetIndex : targetIndex + 1;
+      withoutDragged.splice(insertAt, 0, draggingId);
+      persist(withoutDragged);
+    }
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+  }, [draggingId, dropTarget, orderedItems, persist]);
+
+  const handleDragEnd = useCallback(() => {
+    // Fallback cleanup in case the drop lands outside a valid target.
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+  }, []);
+
+  return {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  };
+}
 
 const DAY_MS = 86400000;
 const MONTH_LABELS = [
@@ -612,12 +756,14 @@ interface SliderTabsListProps {
   tables: any[];
   activeTableId: string;
   onTabChange: (id: string) => void;
+  workingSpaceId: string;
 }
 
 function SliderTabsList({
   tables,
   activeTableId,
   onTabChange,
+  workingSpaceId,
 }: SliderTabsListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -674,6 +820,20 @@ function SliderTabsList({
       behavior: "smooth",
     });
   };
+
+  const {
+    orderedItems: orderedTables,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}tabs_${workingSpaceId}`,
+    tables,
+  );
 
   return (
     <div className=" relative py-2.5">
@@ -741,12 +901,57 @@ function SliderTabsList({
               } as React.CSSProperties
             }
           >
-            {tables.map((table) => (
-              <TableTab
-                key={table._id}
-                data-table-id={table._id}
-                table={table}
-              />
+            {orderedTables.map((table) => (
+              <Fragment key={table._id}>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "before" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+                <div
+                  draggable
+                  onDragStart={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    handleDragStart(table._id, {
+                      width: rect.width,
+                      height: rect.height,
+                    });
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => handleDragOverItem(e, table._id)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop();
+                  }}
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    "cursor-grab active:cursor-grabbing",
+                    draggingId === table._id &&
+                      "opacity-40 scale-[0.98] transition-transform",
+                  )}
+                >
+                  <TableTab data-table-id={table._id} table={table} />
+                </div>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "after" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+              </Fragment>
             ))}
           </div>
         </TabsList>
@@ -972,6 +1177,12 @@ export default function WorkingSpacePageClient({
 
   const isMobile = getMediaQuery();
 
+  useEffect(() => {
+    if (isMobile && viewMode === "grid") {
+      setViewMode("list");
+    }
+  }, [isMobile, viewMode]);
+
   return (
     <MaxWContainer className="grid grid-cols-1">
       <header>
@@ -1032,6 +1243,7 @@ export default function WorkingSpacePageClient({
                 tables={tables}
                 activeTableId={defaultTableId ?? ""}
                 onTabChange={handleTabChange}
+                workingSpaceId={workingSpaceId as unknown as string}
               />
             </div>
 
@@ -1153,6 +1365,27 @@ export function NotesDroppableContainer({
   }, []);
   const isMobile = getMediaQuery();
 
+  const {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}${tableId}`,
+    filteredItems,
+  );
+  // Manual drag order only makes sense for the default, unfiltered view —
+  // fall back to the normal sort while searching/filtering so results stay
+  // predictable.
+  const displayItems =
+    searchQuery.trim() || contentFilter !== "all"
+      ? filteredItems
+      : orderedItems;
+
   return (
     <div className="grid grid-cols-1 gap-6 w-full max-w-full">
       <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
@@ -1171,31 +1404,34 @@ export function NotesDroppableContainer({
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+          <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+            {!isMobile && (
+              <Button
+                variant="SidebarMenuButton"
+                size="sm"
+                className={cn(
+                  "!rounded-none hover:bg-muted",
+                  viewMode === "grid" && "bg-muted",
+                )}
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid
+                  className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
+                />
+              </Button>
+            )}
             <Button
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
                 "!rounded-none hover:bg-muted",
-                viewMode === "grid" && "bg-muted",
-              )}
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid
-                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
-              />
-            </Button>
-            <Button
-              variant="SidebarMenuButton"
-              size="sm"
-              className={cn(
-                "!rounded-none hover:bg-muted border border-l-border border-r-border ",
+                !isMobile && "border border-l-border border-r-border",
                 viewMode === "list" && "bg-muted",
               )}
               onClick={() => setViewMode("list")}
             >
               <List
-                className={`h-3.5 w-3.5 ${viewMode === "list" && !isMobile && "text-foreground"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-foreground"}`}
               />
             </Button>
             <Button
@@ -1209,7 +1445,7 @@ export function NotesDroppableContainer({
               aria-label="calendar-view"
             >
               <Calendar
-                className={`h-3.5 w-3.5 ${viewMode === "calendar" && !isMobile && "text-foreground"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "calendar" && "text-foreground"}`}
               />
             </Button>
           </div>
@@ -1300,7 +1536,7 @@ export function NotesDroppableContainer({
         />
       ) : (
         <>
-          {viewMode === "calendar" && !isMobile ? (
+          {viewMode === "calendar" ? (
             <CalendarTimelineView
               items={filteredItems}
               workspaceId={workspaceId}
@@ -1315,64 +1551,122 @@ export function NotesDroppableContainer({
                   : "flex flex-col gap-3"
               }
             >
-              {filteredItems.map((item) => (
-                <div
-                  key={item._id}
-                  className={
-                    viewMode === "grid" || isMobile
-                      ? "mb-4 break-inside-avoid"
-                      : undefined
-                  }
-                >
-                  {item.kind === "pdf" ? (
-                    viewMode === "grid" || isMobile ? (
-                      <PdfGridCard
-                        pdf={item}
-                        onDelete={(pdfId) => handleItemDelete(pdfId)}
-                        searchQuery={searchQuery}
-                      />
-                    ) : (
-                      <PdfListCard
-                        pdf={item}
-                        onDelete={(pdfId) => handleItemDelete(pdfId)}
-                        searchQuery={searchQuery}
-                      />
-                    )
-                  ) : item.kind === "link" ? (
-                    viewMode === "grid" || isMobile ? (
-                      <LinkGridCard
-                        link={item}
-                        onDelete={(linkId) => handleItemDelete(linkId)}
-                        searchQuery={searchQuery}
-                      />
-                    ) : (
-                      <LinkListCard
-                        link={item}
-                        onDelete={(linkId) => handleItemDelete(linkId)}
-                        searchQuery={searchQuery}
-                      />
-                    )
-                  ) : viewMode === "grid" || isMobile ? (
-                    <GridNoteCard
-                      note={item}
-                      workspaceId={workspaceId}
-                      onDelete={
-                        handleItemDelete as (noteId: Id<"notes">) => void
-                      }
-                      searchQuery={searchQuery}
-                    />
-                  ) : (
-                    <ListNoteCard
-                      note={item}
-                      workspaceId={workspaceId}
-                      onDelete={
-                        handleItemDelete as (noteId: Id<"notes">) => void
-                      }
-                      searchQuery={searchQuery}
-                    />
-                  )}
-                </div>
-              ))}
+              {displayItems.map((item) => {
+                const draggableEnabled =
+                  !searchQuery.trim() && contentFilter === "all";
+                return (
+                  <Fragment key={item._id}>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "before" && (
+                        <div
+                          className={cn(
+                            "app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0",
+                            viewMode === "grid" || isMobile
+                              ? "w-full mb-4 break-inside-avoid"
+                              : "w-full",
+                          )}
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                    <div
+                      draggable={draggableEnabled}
+                      onDragStart={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        handleDragStart(item._id, {
+                          width: rect.width,
+                          height: rect.height,
+                        });
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragOver={(e) => handleDragOverItem(e, item._id)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                      onDragEnd={handleDragEnd}
+                      className={cn(
+                        viewMode === "grid" || isMobile
+                          ? "mb-4 break-inside-avoid"
+                          : undefined,
+                        draggableEnabled &&
+                          "cursor-grab active:cursor-grabbing",
+                        draggingId === item._id &&
+                          "opacity-40 scale-[0.98] transition-transform",
+                      )}
+                    >
+                      {item.kind === "pdf" ? (
+                        viewMode === "grid" || isMobile ? (
+                          <PdfGridCard
+                            pdf={item}
+                            onDelete={(pdfId) => handleItemDelete(pdfId)}
+                            searchQuery={searchQuery}
+                          />
+                        ) : (
+                          <PdfListCard
+                            pdf={item}
+                            onDelete={(pdfId) => handleItemDelete(pdfId)}
+                            searchQuery={searchQuery}
+                          />
+                        )
+                      ) : item.kind === "link" ? (
+                        viewMode === "grid" || isMobile ? (
+                          <LinkGridCard
+                            link={item}
+                            onDelete={(linkId) => handleItemDelete(linkId)}
+                            searchQuery={searchQuery}
+                          />
+                        ) : (
+                          <LinkListCard
+                            link={item}
+                            onDelete={(linkId) => handleItemDelete(linkId)}
+                            searchQuery={searchQuery}
+                          />
+                        )
+                      ) : viewMode === "grid" || isMobile ? (
+                        <GridNoteCard
+                          note={item}
+                          workspaceId={workspaceId}
+                          onDelete={
+                            handleItemDelete as (noteId: Id<"notes">) => void
+                          }
+                          searchQuery={searchQuery}
+                        />
+                      ) : (
+                        <ListNoteCard
+                          note={item}
+                          workspaceId={workspaceId}
+                          onDelete={
+                            handleItemDelete as (noteId: Id<"notes">) => void
+                          }
+                          searchQuery={searchQuery}
+                        />
+                      )}
+                    </div>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "after" && (
+                        <div
+                          className={cn(
+                            "app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0",
+                            viewMode === "grid" || isMobile
+                              ? "w-full mb-4 break-inside-avoid"
+                              : "w-full",
+                          )}
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                  </Fragment>
+                );
+              })}
             </div>
           )}
 
@@ -2650,8 +2944,9 @@ function LinkFavicon({ url, className }: { url: string; className?: string }) {
     <img
       src={faviconUrl}
       alt=""
+      draggable={false}
       className={cn(
-        "object-contain grayscale contrast-125 saturate-0",
+        "object-contain grayscale contrast-125 saturate-0 select-none [-webkit-user-drag:none]",
         className,
       )}
       onError={() => setErrored(true)}
@@ -2719,7 +3014,8 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
             <img
               src={link.metadata.thumbnailUrl}
               alt=""
-              className="w-full h-full object-cover"
+              draggable={false}
+              className="w-full h-full object-cover select-none [-webkit-user-drag:none]"
             />
           </div>
         ) : (
@@ -2772,7 +3068,8 @@ function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
               <img
                 src={link.metadata.thumbnailUrl}
                 alt="link metadata thumbnailUrl"
-                className="h-full w-full object-cover app-radius-md"
+                draggable={false}
+                className="h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none]"
               />
             ) : (
               <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
@@ -3052,7 +3349,7 @@ function TablesSkeleton() {
           </div>
 
           <div className="flex items-center gap-2 w-auto justify-end">
-            <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+            <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
               <div className="h-9 w-10 bg-border animate-pulse" />
               <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
               <div className="h-9 w-10 bg-border animate-pulse" />
