@@ -301,14 +301,6 @@ const STORAGE_KEYS = {
   CUSTOM_ORDER_PREFIX: "notevo_custom_order_",
 };
 
-/**
- * Lets the user drag-and-drop reorder a list of items purely on the client.
- * The order is kept in React state + localStorage (per table), and is NEVER
- * written back to Convex — the backend's own sort (updatedAt, etc.) is
- * untouched. Reload the tab and the manual order survives (it's per
- * browser/device); open the same table somewhere else and it'll fall back
- * to the default sort until dragged there too.
- */
 type DropTarget = { id: string; position: "before" | "after" };
 
 function useClientSideOrder<T extends { _id: string }>(
@@ -317,17 +309,12 @@ function useClientSideOrder<T extends { _id: string }>(
 ) {
   const [orderIds, setOrderIds] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
-  // The dragged card's own size, captured on drag start, so the drop
-  // indicator can render as a same-shaped placeholder instead of a bare bar.
   const [draggedSize, setDraggedSize] = useState<{
     width: number;
     height: number;
   } | null>(null);
-  // Where the dragged card would land if dropped right now — used to draw
-  // an insertion line, rather than shuffling the whole list live.
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
-  // Load any saved order whenever we switch tables.
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -350,9 +337,6 @@ function useClientSideOrder<T extends { _id: string }>(
     [storageKey],
   );
 
-  // Apply the saved order on top of the current items. Anything not yet in
-  // the saved order (new notes, items just un-filtered, etc.) is placed at
-  // the front, keeping the backend's own ordering for those.
   const orderedItems = useMemo(() => {
     if (orderIds.length === 0) return items;
     const itemById = new Map(items.map((item) => [item._id, item]));
@@ -364,8 +348,6 @@ function useClientSideOrder<T extends { _id: string }>(
     return [...fresh, ...known];
   }, [items, orderIds]);
 
-  // Remember newly-seen items in the stored order too, so future drags
-  // (and the next page load) keep including them in the right slot.
   useEffect(() => {
     if (items.length === 0) return;
     const ids = orderedItems.map((item) => item._id);
@@ -385,9 +367,6 @@ function useClientSideOrder<T extends { _id: string }>(
     [],
   );
 
-  // Fires continuously while hovering a card. We look at the pointer's Y
-  // position relative to that card's own midpoint to decide whether the
-  // dragged card would land above or below it.
   const handleDragOverItem = useCallback(
     (
       e: {
@@ -1378,9 +1357,6 @@ export function NotesDroppableContainer({
     `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}${tableId}`,
     filteredItems,
   );
-  // Manual drag order only makes sense for the default, unfiltered view —
-  // fall back to the normal sort while searching/filtering so results stay
-  // predictable.
   const displayItems =
     searchQuery.trim() || contentFilter !== "all"
       ? filteredItems
@@ -3043,7 +3019,7 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
           aria-label="open-link"
         >
           <a href={link.url} target="_blank" rel="noopener noreferrer">
-            Open {link.metadata?.siteName}
+            Open
           </a>
         </Button>
       </CardFooter>
