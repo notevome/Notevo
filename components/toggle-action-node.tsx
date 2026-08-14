@@ -82,7 +82,7 @@ function hexToRgba(hex: string, opacityPercent: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const MAX_BG_OPACITY = 70;
+const MAX_BG_OPACITY = 30;
 
 function getReadableTextColor(
   hex: string,
@@ -261,7 +261,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     >
       <div
         contentEditable={false}
-        className="flex min-h-10 items-center gap-0 px-2 py-1.5"
+        className="flex min-h-10 items-center gap-0 px-1.5 py-1.5"
       >
         <Tooltip open={toggleTooltip.open} disableHoverableContent>
           <TooltipTrigger asChild>
@@ -269,7 +269,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               type="button"
               variant="Trigger"
               size="icon"
-              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground mt-px"
+              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
               style={contrastStyle}
               onClick={() => {
                 updateAttributes({ open: !isOpen });
