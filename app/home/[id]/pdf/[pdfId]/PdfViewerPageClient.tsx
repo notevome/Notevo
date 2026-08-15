@@ -798,6 +798,36 @@ export default function PdfViewerPageClient({
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (!pdf?.title) return;
+
+    const originalTitle = document.title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const originalContent = metaDescription?.getAttribute("content");
+    const pdfTitle = pdf.title || "Untitled PDF";
+
+    document.title = `${pdfTitle} - Notevo PDF`;
+    const descriptionContent = `${pdfTitle} PDF.`;
+
+    if (metaDescription) {
+      metaDescription.setAttribute("content", descriptionContent);
+    } else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "description";
+      newMeta.content = descriptionContent;
+      document.head.appendChild(newMeta);
+    }
+
+    return () => {
+      document.title = originalTitle;
+      if (metaDescription && originalContent) {
+        metaDescription.setAttribute("content", originalContent);
+      } else if (!metaDescription) {
+        document.querySelector('meta[name="description"]')?.remove();
+      }
+    };
+  }, [pdf?.title]);
+
+  useEffect(() => {
     setIsViewerReady(false);
     const frame = window.requestAnimationFrame(() => {
       setIsViewerReady(true);
