@@ -142,9 +142,9 @@ export default function HomePageClient() {
   return (
     <MaxWContainer className="relative">
       {/* Hero Section */}
-      <div className="overflow-hidden py-2 mb-16">
+      <div className="overflow-hidden py-6 mb-16">
         <header className="flex flex-col justify-center items-start gap-2 relative">
-          <h1 className="text-3xl sm:text-4xl font-bold text-primary">
+          <h1 className="text-3xl sm:text-5xl font-bold text-primary">
             {viewer?.name ? (
               <>
                 Hello,{" "}
