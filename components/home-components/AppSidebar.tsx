@@ -340,29 +340,33 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
         <SidebarTrigger />
       </div>
       {getWorkingSpaces?.length === 0 && (
-        <Button
-          className="font-medium w-full h-9 flex justify-start items-center gap-1.5"
-          onClick={handleCreateWorkingSpace}
-        >
-          <FolderPlus size={16} /> Create Workspace
-        </Button>
+        <div className="flex h-[42px] p-[3px] w-full items-center overflow-hidden ">
+          <Button
+            className="font-medium w-full h-9 flex justify-start items-center gap-1.5"
+            onClick={handleCreateWorkingSpace}
+          >
+            <FolderPlus size={16} /> Create Workspace
+          </Button>
+        </div>
       )}
       {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
         ? getWorkingSpaces.map((workingSpace) => (
-            <Button
-              key={workingSpace._id}
-              className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
-              disabled={loading}
-              onMouseDown={() => void createNoteInWorkspace(workingSpace)}
-            >
-              {loading ? (
-                <>redirecting...</>
-              ) : (
-                <>
-                  <SquarePen size={16} className=" mt-px" /> New Note
-                </>
-              )}
-            </Button>
+            <div className="flex h-[42px] p-[3px] w-full items-center overflow-hidden ">
+              <Button
+                key={workingSpace._id}
+                className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
+                disabled={loading}
+                onMouseDown={() => void createNoteInWorkspace(workingSpace)}
+              >
+                {loading ? (
+                  <>redirecting...</>
+                ) : (
+                  <>
+                    <SquarePen size={16} className=" mt-px" /> New Note
+                  </>
+                )}
+              </Button>
+            </div>
           ))
         : createNoteWorkspace && (
             <div className="flex h-[42px] p-[3px] bg-gradient-to-br from-primary/60 via-border to-muted-foreground/70 w-full items-center rounded-tl-[0.6rem] overflow-hidden ">
