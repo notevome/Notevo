@@ -26,9 +26,9 @@ export default function Error({
       : "An unexpected error occurred. Please try again.";
 
   return (
-    <section className="relative flex min-h-svh flex-col items-center justify-center bg-background p-6 overflow-hidden">
+    <section className="relative flex min-h-svh flex-col items-center justify-center bg-background overflow-hidden">
       <MaxWContainer className="flex flex-col items-center justify-center gap-3 *:text-center relative px-4 sm:px-6 lg:px-8">
-        <div className=" gap-2 flex justify-center items-center ">
+        <div className=" px-2 w-full gap-2 flex justify-start items-center ">
           <Image
             src={imgsrc}
             alt="Notevo Logo"
@@ -36,12 +36,12 @@ export default function Error({
             width={20}
             height={20}
           />
-          <p className="text-sm text-foreground">Notevo.me</p>
+          <p className="text-base text-foreground font-semibold">Notevo.me</p>
         </div>
-        <Card className="overflow-hidden bg-card border-border ">
-          <CardContent className="relative pt-4 pb-16">
+        <Card className="overflow-hidden bg-card border-border min-w-[300px] max-w-2xl w-full">
+          <CardContent className="relative pt-4 pb-16 ">
             <div className="flex flex-col justify-center">
-              <div className="  flex flex-col items-center justify-center gap-4 text-center">
+              <div className=" flex flex-col items-center justify-center gap-4 text-center">
                 <h2 className="text-3xl md:text-6xl text-muted-foreground font-bold">
                   Something went wrong!
                 </h2>
@@ -50,7 +50,7 @@ export default function Error({
                 </p>
               </div>
             </div>
-            <Button className=" absolute bottom-0 right-0 w-auto mt-4 h-9">
+            <Button className=" absolute bottom-0 right-0 w-auto mt-4 h-9 px-6">
               <Link href="/">Try again</Link>
             </Button>
           </CardContent>
