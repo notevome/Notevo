@@ -54,9 +54,10 @@ function NoteCardSkeleton() {
 function SliderRow({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative w-full h-[250px] group">
-      <div className="absolute inset-0 flex gap-4 h-fit overflow-x-auto scrollbar-hide">
+      <div className="absolute inset-0 flex gap-4 h-fit overflow-x-auto scrollbar-none">
         {children}
       </div>
+      <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[5] pointer-events-none" />
     </div>
   );
 }
