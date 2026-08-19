@@ -159,7 +159,7 @@ export default function HomePageClient() {
                 }`}
               </>
             ) : (
-              <SkeletonTextAnimation className=" mx-0 min-w-52 h-10" />
+              <SkeletonTextAnimation className=" mx-0 min-w-60 h-14" />
             )}
           </h1>
           <p className="text-white/90 text-md ">
