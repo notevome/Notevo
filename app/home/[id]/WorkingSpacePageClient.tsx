@@ -308,6 +308,7 @@ function useClientSideOrder<T extends { _id: string }>(
   items: T[],
 ) {
   const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [hasLoadedOrder, setHasLoadedOrder] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggedSize, setDraggedSize] = useState<{
     width: number;
@@ -316,12 +317,14 @@ function useClientSideOrder<T extends { _id: string }>(
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
   useEffect(() => {
+    setHasLoadedOrder(false);
     try {
       const raw = localStorage.getItem(storageKey);
       setOrderIds(raw ? (JSON.parse(raw) as string[]) : []);
     } catch {
       setOrderIds([]);
     }
+    setHasLoadedOrder(true);
   }, [storageKey]);
 
   const persist = useCallback(
@@ -330,7 +333,6 @@ function useClientSideOrder<T extends { _id: string }>(
       try {
         localStorage.setItem(storageKey, JSON.stringify(ids));
       } catch {
-        // e.g. private browsing / storage full — safe to ignore, order just
         // won't survive a refresh.
       }
     },
@@ -349,6 +351,7 @@ function useClientSideOrder<T extends { _id: string }>(
   }, [items, orderIds]);
 
   useEffect(() => {
+    if (!hasLoadedOrder) return;
     if (items.length === 0) return;
     const ids = orderedItems.map((item) => item._id);
     const unchanged =
@@ -356,7 +359,7 @@ function useClientSideOrder<T extends { _id: string }>(
       ids.every((id, i) => id === orderIds[i]);
     if (!unchanged) persist(ids);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderedItems]);
+  }, [orderedItems, hasLoadedOrder]);
 
   const handleDragStart = useCallback(
     (id: string, rect?: { width: number; height: number }) => {
@@ -949,12 +952,14 @@ export default function WorkingSpacePageClient({
   const cached = workspacePageMemoryCache.get(
     workingSpaceId as unknown as string,
   );
-  const workspaceQuery = useQuery(api.workingSpaces.getWorkingSpaceById, {
-    _id: workingSpaceId,
-  }) as any;
-  const tablesQuery = useQuery(api.notesTables.getTables, {
-    workingSpaceId,
-  }) as any;
+  const workspaceQuery = useQuery(
+    api.workingSpaces.getWorkingSpaceById,
+    workingSpaceId ? { _id: workingSpaceId } : "skip",
+  ) as any;
+  const tablesQuery = useQuery(
+    api.notesTables.getTables,
+    workingSpaceId ? { workingSpaceId } : "skip",
+  ) as any;
 
   const workspace = workspaceQuery ?? cached?.workspace;
   const workingSpacesSlug: string | undefined =
