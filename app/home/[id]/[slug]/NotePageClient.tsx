@@ -239,7 +239,7 @@ export default function NotePageClient({
             placeholder="Untitled Note"
             rows={1}
             style={{ resize: "none", overflow: "hidden", width: "100%" }}
-            className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] !text-4xl md:!text-5xl !leading-tight font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
       </div>
