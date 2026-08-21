@@ -289,7 +289,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
           <TooltipContent
             side="bottom"
             align="start"
-            sideOffset={10}
+            sideOffset={5}
             className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
           >
             <p>{isOpen ? "Collapse toggle action" : "Expand toggle action"}</p>
@@ -328,7 +328,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               <button
                 type="button"
                 style={contrastStyle}
-                className="min-w-0 truncate text-left text-sm cursor-text font-medium text-muted-foreground"
+                className="min-w-0 truncate text-left text-sm cursor-text font-medium text--foreground"
                 onDoubleClick={handleDoubleClick}
                 aria-label="Double click to rename"
                 {...titleTooltip.triggerProps}
@@ -340,7 +340,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
             <TooltipContent
               side="bottom"
               align="start"
-              sideOffset={10}
+              sideOffset={5}
               className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
             >
               <p>Double click to rename</p>
