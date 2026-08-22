@@ -142,7 +142,7 @@ export default function HomePageClient() {
   return (
     <MaxWContainer className="relative">
       {/* Hero Section */}
-      <div className="overflow-hidden py-6 mb-16">
+      <div className="overflow-hidden py-2 mb-14">
         <header className="flex flex-col justify-center items-start gap-2 relative">
           <h1 className="text-3xl sm:text-5xl font-bold text-primary">
             {viewer?.name ? (
@@ -159,7 +159,11 @@ export default function HomePageClient() {
                 }`}
               </>
             ) : (
-              <SkeletonTextAnimation className=" mx-0 min-w-60 h-14" />
+              <span className="flex justify-center items-center gap-0.5">
+                <SkeletonTextAnimation className=" mx-0 min-w-20 h-10" />
+                ,
+                <SkeletonTextAnimation className=" mx-0 min-w-60 h-10" />
+              </span>
             )}
           </h1>
           <p className="text-white/90 text-md ">
