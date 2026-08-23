@@ -162,7 +162,7 @@ export default function HomePageClient() {
               <span className="flex justify-center items-center gap-0.5">
                 <SkeletonTextAnimation className=" mx-0 min-w-20 h-10" />
                 ,
-                <SkeletonTextAnimation className=" mx-0 min-w-60 h-10" />
+                <SkeletonTextAnimation className="!rounded-none mx-2 min-w-60 h-10" />
               </span>
             )}
           </h1>
