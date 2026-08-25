@@ -320,7 +320,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               titleTooltip.hide();
             }}
             style={contrastStyle}
-            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none"
+            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !rounded-none"
           />
         ) : (
           <Tooltip open={titleTooltip.open} disableHoverableContent>
