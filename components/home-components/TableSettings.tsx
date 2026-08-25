@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
+import { FileOutput } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import MoveTableDialog from "./MoveTableDialog";
 interface TableSettingsProps {
   notesTableId: Id<"notesTables"> | any; // Strongly typed Id
   tableName: string | any;
@@ -58,6 +60,7 @@ export default function TableSettings({
   const [inputValue, setInputValue] = useState(tableName);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert Dialog State
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const table = useQuery(api.notesTables.getTableById, { _id: notesTableId });
   const updateTable = useMutation(
@@ -185,6 +188,11 @@ export default function TableSettings({
       setIsAlertOpen(false); // Close Alert after deletion
     }
   };
+  const handleMoveDialogOpen = () => {
+    setOpen(false);
+    setIsMoveDialogOpen(true);
+  };
+
   const tooltip = useHoverTooltip(100);
   const createdAtText = formatTimestamp(table?.createdAt);
   const updatedAtText = formatTimestamp(table?.updatedAt);
@@ -229,6 +237,17 @@ export default function TableSettings({
             </DropdownMenuGroup>
             <DropdownMenuGroup>
               <Button
+                variant="SidebarMenuButton"
+                className="w-full h-8 px-2 text-sm"
+                onClick={handleMoveDialogOpen}
+                aria-label="move-table"
+              >
+                <FileOutput size={14} className="text-muted-foreground" />
+                Move Table
+              </Button>
+
+              <DropdownMenuSeparator />
+              <Button
                 variant="SidebarMenuButton_destructive"
                 className="w-full h-8 px-2 text-sm"
                 onClick={initiateDelete}
@@ -245,7 +264,7 @@ export default function TableSettings({
             </DropdownMenuGroup>
           </DropdownMenuContent>
           <TooltipContent side="bottom" alignOffset={1} align="end">
-            Rename , Delete
+            Rename, Move, Delete
           </TooltipContent>
         </Tooltip>
       </DropdownMenu>
@@ -279,6 +298,18 @@ export default function TableSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {table && (
+        <MoveTableDialog
+          open={isMoveDialogOpen}
+          onOpenChange={setIsMoveDialogOpen}
+          table={{
+            _id: notesTableId,
+            name: table.name,
+            workingSpaceId: table.workingSpaceId,
+          }}
+        />
+      )}
     </>
   );
 }

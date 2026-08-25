@@ -410,7 +410,69 @@ export const getFavNotes = query({
     };
   },
 });
+export const getWorkspaceTreeForMove = query({
+  args: {
+    searchQuery: v.optional(v.string()),
+  },
+  handler: async (ctx, { searchQuery }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
 
+    const normalizedQuery = normalizeSearchText(searchQuery?.trim());
+    const isSearching = normalizedQuery.length > 0;
+
+    const workspaces = await ctx.db
+      .query("workingSpaces")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    const targets = await Promise.all(
+      workspaces.map(async (workspace) => {
+        const allTables = await ctx.db
+          .query("notesTables")
+          .withIndex("by_workingSpaceId", (q) =>
+            q.eq("workingSpaceId", workspace._id),
+          )
+          .collect();
+
+        const sortedTables = allTables.sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        );
+
+        if (!isSearching) {
+          // No filtering here: every workspace and every table is a valid
+          // move destination, whether or not it has content yet.
+          return { ...workspace, tables: sortedTables };
+        }
+
+        const workspaceMatches = normalizeSearchText(workspace.name).includes(
+          normalizedQuery,
+        );
+
+        // Workspace name matched: keep all its tables so the user can
+        // still pick any of them, not just ones whose name also matched.
+        if (workspaceMatches) {
+          return { ...workspace, tables: sortedTables };
+        }
+
+        const matchingTables = sortedTables.filter((table) =>
+          normalizeSearchText(table.name).includes(normalizedQuery),
+        );
+
+        if (matchingTables.length > 0) {
+          return { ...workspace, tables: matchingTables };
+        }
+
+        return null;
+      }),
+    );
+
+    return targets.filter(Boolean) as NonNullable<(typeof targets)[number]>[];
+  },
+});
 export const getWorkspaceTree = query({
   args: {
     searchQuery: v.optional(v.string()),

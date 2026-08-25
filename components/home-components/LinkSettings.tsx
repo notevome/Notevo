@@ -2,10 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { useMutation } from "convex/react";
-import { ExternalLink, Pin } from "lucide-react";
+import { ExternalLink, FileOutput, Pin } from "lucide-react";
 import { FaEllipsis, FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
+import { useQuery } from "@/cache/useQuery";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -31,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import MoveLinkDialog from "./MoveLinksDialog";
 
 interface LinkSettingsProps {
   linkId: Id<"links">;
@@ -80,10 +82,13 @@ export default function LinkSettings({
 }: LinkSettingsProps) {
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const tooltip = useHoverTooltip(100);
 
   const updateLink = useMutation(api.links.updateLink);
   const deleteLink = useMutation(api.links.deleteLink);
+
+  const link = useQuery(api.links.getLinkById, { _id: linkId });
 
   const handleFavoritePin = useCallback(async () => {
     await updateLink({
@@ -154,7 +159,7 @@ export default function LinkSettings({
             align={tooltipContentAlign}
             className="text-xs px-1.5 py-1"
           >
-            Pin, Open, Delete
+            Pin, Open, Move, Delete
           </TooltipContent>
         </Tooltip>
 
@@ -185,6 +190,19 @@ export default function LinkSettings({
                 <ExternalLink size={14} className="text-muted-foreground" />
                 Open Link
               </a>
+            </Button>
+
+            <Button
+              variant="SidebarMenuButton"
+              className="w-full h-8 px-2 text-sm"
+              onClick={() => {
+                setOpen(false);
+                setIsMoveDialogOpen(true);
+              }}
+              aria-label="move-link"
+            >
+              <FileOutput size={14} className="text-muted-foreground" />
+              Move Link
             </Button>
 
             <DropdownMenuSeparator />
@@ -236,6 +254,17 @@ export default function LinkSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveLinkDialog
+        open={isMoveDialogOpen}
+        onOpenChange={setIsMoveDialogOpen}
+        link={{
+          _id: linkId,
+          title: linkTitle,
+          workingSpaceId: link?.workingSpaceId,
+          notesTableId: link?.notesTableId,
+        }}
+      />
     </>
   );
 }

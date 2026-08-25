@@ -72,7 +72,7 @@ export default function MovePdfDialog({
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
 
-  const moveTargets = useQuery(api.notes.getWorkspaceTree, {
+  const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
