@@ -1,21 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
   ChevronRight,
+  FileSymlink,
   Folder,
   FolderOpen,
   Plus,
   Search,
-  FileSymlink,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
+import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +27,13 @@ import {
 } from "@/components/ui/dialog";
 import CreateTableBtn from "./CreateTableBtn";
 import IntentPrefetchLink from "../IntentPrefetchLink";
-interface MoveNoteDialogProps {
+
+interface MoveLinkDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  note: {
-    _id: Id<"notes">;
+  link: {
+    _id: Id<"links">;
     title?: string;
-    slug?: string;
     workingSpaceId?: Id<"workingSpaces">;
     notesTableId?: Id<"notesTables">;
   };
@@ -58,12 +56,12 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
-export default function MoveNoteDialog({
+export default function MoveLinkDialog({
   open,
   onOpenChange,
-  note,
-}: MoveNoteDialogProps) {
-  const router = useRouter();
+  link,
+}: MoveLinkDialogProps) {
+  const { toast } = useToast();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -72,37 +70,26 @@ export default function MoveNoteDialog({
   );
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
-  const moveNote = useMutation(api.notes.moveNote).withOptimisticUpdate(
+  const moveLink = useMutation(api.links.moveLink).withOptimisticUpdate(
     (local, args) => {
-      const currentNote = local.getQuery(api.notes.getNoteById, {
+      const currentLink = local.getQuery(api.links.getLinkById, {
         _id: args._id,
       });
 
-      if (!currentNote) return;
-
-      const targets =
-        local.getQuery(api.notes.getWorkspaceTreeForMove, {
-          searchQuery: undefined,
-        }) ?? [];
-      const targetWorkspace = targets.find(
-        (workspace: any) => workspace._id === args.targetWorkingSpaceId,
-      );
+      if (!currentLink) return;
 
       local.setQuery(
-        api.notes.getNoteById,
+        api.links.getLinkById,
         { _id: args._id },
         {
-          ...currentNote,
+          ...currentLink,
           workingSpaceId: args.targetWorkingSpaceId,
           notesTableId: args.targetNotesTableId,
-          workingSpacesSlug:
-            targetWorkspace?.slug ?? currentNote.workingSpacesSlug,
           updatedAt: Date.now(),
         },
       );
@@ -124,7 +111,7 @@ export default function MoveNoteDialog({
     setQuery("");
     setDebouncedQuery("");
     setExpandedWorkspaceIds(
-      note.workingSpaceId ? [String(note.workingSpaceId)] : [],
+      link.workingSpaceId ? [String(link.workingSpaceId)] : [],
     );
     setIsCreatingWorkspace(false);
     setMovingTableId(null);
@@ -134,7 +121,7 @@ export default function MoveNoteDialog({
     }, 20);
 
     return () => clearTimeout(timer);
-  }, [open, note.workingSpaceId]);
+  }, [open, link.workingSpaceId]);
 
   useEffect(() => {
     if (!debouncedQuery || !moveTargets) return;
@@ -178,21 +165,22 @@ export default function MoveNoteDialog({
   ) => {
     try {
       setMovingTableId(String(targetNotesTableId));
-      const result = await moveNote({
-        _id: note._id,
+      const result = await moveLink({
+        _id: link._id,
         targetWorkingSpaceId,
         targetNotesTableId,
       });
       onOpenChange(false);
+
       toast({
         variant: "default",
-        title: "Note moved successfully ",
-        description: "hey go and take a look at your stuff !!",
+        title: "Link moved successfully",
+        description: "Jump straight to the link in its new location.",
         action: (
-          <Button variant="secondary" className="px-3 h-8" size="sm">
+          <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}/${result.slug}?id=${note._id}`}
-              className="flex justify-center items-center gap-2 text-xs"
+              href={`/home/${result.workingSpaceId}?linkId=${link._id}`}
+              className="flex justify-center items-center gap-2"
             >
               <FileSymlink size={16} />
               Checkout
@@ -201,10 +189,10 @@ export default function MoveNoteDialog({
         ),
       });
     } catch (error) {
-      console.error(" Failed to move note:", error);
+      console.error("Failed to move link:", error);
       toast({
         variant: "destructive",
-        title: "Failed to move note",
+        title: "Failed to move link",
         description: "Try again later",
       });
     } finally {
@@ -217,10 +205,10 @@ export default function MoveNoteDialog({
       <DialogContent className="p-0 overflow-hidden bg-muted border-border md:min-w-[500px] gap-0 shadow-2xl">
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-border">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground mb-1">
-            Move note
+            Move link
           </p>
           <DialogTitle className="text-[15px] font-medium text-foreground leading-snug">
-            {note.title || "Untitled"}
+            {link.title || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
             Select a destination table in this workspace or any other workspace.
@@ -273,7 +261,7 @@ export default function MoveNoteDialog({
                   : "No workspaces found"}
               </p>
               <p className="mt-1">
-                Create a workspace or table, then move this note there.
+                Create a workspace or table, then move this link there.
               </p>
             </div>
           ) : (
@@ -316,7 +304,7 @@ export default function MoveNoteDialog({
                     {isExpanded && (
                       <div className="space-y-0.5 px-1 py-1">
                         {tables.length === 0 ? (
-                          <div className=" flex flex-col justify-center items-center gap-2 app-radius-lg mx-2 py-3 bg-card text-xs text-muted-foreground/60 text-center">
+                          <div className="flex flex-col justify-center items-center gap-2 app-radius-lg mx-2 py-3 bg-card text-xs text-muted-foreground/60 text-center">
                             No tables in this workspace yet.
                             <CreateTableBtn
                               workingSpaceId={workspace._id}
@@ -336,8 +324,8 @@ export default function MoveNoteDialog({
                         ) : (
                           tables.map((table: any) => {
                             const isCurrentTarget =
-                              note.workingSpaceId === workspace._id &&
-                              note.notesTableId === table._id;
+                              link.workingSpaceId === workspace._id &&
+                              link.notesTableId === table._id;
                             const isMoving =
                               movingTableId === String(table._id);
 
@@ -353,12 +341,11 @@ export default function MoveNoteDialog({
                                     handleMove(workspace._id, table._id)
                                   }
                                   disabled={isCurrentTarget || isMoving}
-                                  aria-label=" handle-move-target"
                                   className={cn(
                                     "flex w-full items-center justify-between app-radius-lg mx-4 px-2 py-2 text-left transition-colors",
                                     isCurrentTarget
                                       ? "cursor-not-allowed bg-muted"
-                                      : " hover:bg-border",
+                                      : "hover:bg-border",
                                   )}
                                 >
                                   <div className="flex min-w-0 items-center gap-2">
