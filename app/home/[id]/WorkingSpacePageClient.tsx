@@ -2954,6 +2954,44 @@ function LinkFaviconBadge({
   );
 }
 
+function LinkThumbnail({ link }: { link: LinkItem }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const thumbnailUrl = link.metadata?.thumbnailUrl;
+  // No `metadata` object yet usually means the OG scrape hasn't resolved -
+  // keep the skeleton up rather than jumping straight to the favicon fallback.
+  const isPending = link.metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+  return (
+    <div className="relative w-full aspect-video app-radius-md overflow-hidden bg-muted">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
+          <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
+          <span>{platformLabel(link.platform) || "Link"}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
   const displayTitle =
     link.title ||
@@ -2990,21 +3028,7 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
       </CardHeader>
 
       <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        {link.metadata?.thumbnailUrl ? (
-          <div className="w-full h-full app-radius-md overflow-hidden bg-muted">
-            <img
-              src={link.metadata.thumbnailUrl}
-              alt=""
-              draggable={false}
-              className="w-full h-full object-cover select-none [-webkit-user-drag:none]"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <LinkFaviconBadge url={link.url} className="h-10 w-10" />
-            <span>{platformLabel(link.platform) || "Link"}</span>
-          </div>
-        )}
+        <LinkThumbnail link={link} />
       </CardContent>
 
       <CardFooter className="py-4 flex items-center justify-between border-t border-border">
@@ -3032,6 +3056,46 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
   );
 }
 
+function LinkListThumbnail({ link }: { link: LinkItem }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const thumbnailUrl = link.metadata?.thumbnailUrl;
+  const isPending = link.metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+  return (
+    <div className="relative h-10 w-10 flex items-center justify-center flex-shrink-0">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+          <Link2 className="h-5 w-5 text-muted-foreground" />
+        </div>
+      )}
+
+      <LinkFaviconBadge
+        url={link.url}
+        className="absolute -bottom-1 -right-1 h-[18px] w-[18px]"
+      />
+    </div>
+  );
+}
+
 function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
   const displayTitle =
     link.title ||
@@ -3043,25 +3107,7 @@ function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
     <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
       <CardContent className="p-3 flex-1">
         <div className="flex items-center justify-center gap-4">
-          <div className="relative h-10 w-10 flex items-center justify-center flex-shrink-0">
-            {link.metadata?.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={link.metadata.thumbnailUrl}
-                alt="link metadata thumbnailUrl"
-                draggable={false}
-                className="h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none]"
-              />
-            ) : (
-              <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-muted-foreground" />
-              </div>
-            )}
-            <LinkFaviconBadge
-              url={link.url}
-              className="absolute -bottom-1 -right-1 h-[18px] w-[18px]"
-            />
-          </div>
+          <LinkListThumbnail link={link} />
           <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
             <h3
               className="text-lg font-semibold text-foreground line-clamp-2 flex-1 w-fit"
