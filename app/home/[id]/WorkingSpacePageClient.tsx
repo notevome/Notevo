@@ -1297,6 +1297,32 @@ export function NotesDroppableContainer({
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        target?.isContentEditable ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey;
+
+      if (isTyping) return;
+
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     setDeletedItemIds(new Set());
@@ -1374,13 +1400,21 @@ export function NotesDroppableContainer({
           <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
             <Input
+              ref={searchInputRef as any}
               type="text"
               placeholder="Search notes and uploads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-border h-9 mt-0.5"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              className="pl-10 pr-9 border-border h-[37px] my-0 !rounded-none"
               aria-label="search-notes"
             />
+            {!isSearchFocused && !searchQuery && (
+              <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 mt-px inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+                /
+              </kbd>
+            )}
           </div>
         </div>
 
