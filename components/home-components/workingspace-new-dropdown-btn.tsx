@@ -454,16 +454,21 @@ export default function WorkingspaceNewDropdownBtn({
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-fit">
-            <DropdownMenuItem onClick={() => void handleSelectNote()}>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              New note
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={() => void handleSelectNote()}
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                New Note
+              </span>
               <span className="inline-flex gap-0.5">
                 <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">Ctrl + Shift</span>
+                  <span className="text-[10px]">Ctrl + Shift</span>
                 </kbd>
                 <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">O</span>
+                  <span className="text-[10px]">O</span>
                 </kbd>
               </span>
             </DropdownMenuItem>
@@ -471,15 +476,20 @@ export default function WorkingspaceNewDropdownBtn({
               <FileUp className="h-4 w-4 text-muted-foreground" />
               Upload PDF
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSelectInsertLink}>
-              <Link2 className="h-4 w-4 text-muted-foreground" />
-              Insert Link
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={handleSelectInsertLink}
+            >
+              <span className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-muted-foreground" />
+                Insert Link
+              </span>
               <span className="inline-flex gap-0.5">
                 <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">Shift</span>
+                  <span className="text-[10px]">Shift</span>
                 </kbd>
                 <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">L</span>
+                  <span className="text-[10px]">L</span>
                 </kbd>
               </span>
             </DropdownMenuItem>

@@ -1385,7 +1385,7 @@ export function NotesDroppableContainer({
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+          <div className="flex h-9 items-center border border-border rounded-none overflow-hidden">
             {!isMobile && (
               <Button
                 variant="SidebarMenuButton"
