@@ -83,7 +83,7 @@ export default function LinkSettingsSidebar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card !rounded-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="pin-link"
               {...pinTooltip.triggerProps}
             >
