@@ -76,6 +76,7 @@ export const createLink = mutation({
 export const getLinksByTableId = query({
   args: {
     notesTableId: v.id("notesTables"),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -99,7 +100,7 @@ export const getLinksByTableId = query({
         q.eq("notesTableId", args.notesTableId),
       )
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
   },
 });
 
