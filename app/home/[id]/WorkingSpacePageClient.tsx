@@ -120,6 +120,8 @@ const workspacePageMemoryCache = new Map<
 >();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
+const tablePdfsMemoryCache = new Map<string, any[]>();
+const tableLinksMemoryCache = new Map<string, any[]>();
 
 type ViewMode = "grid" | "list" | "calendar";
 type CalendarZoom = "week" | "month" | "quarter" | "year";
@@ -1267,32 +1269,131 @@ export function NotesDroppableContainer({
   tables,
   setViewMode,
 }: NotesDroppableContainerProps) {
-  const { results, status, loadMore } = usePaginatedQuery(
+  const {
+    results: noteResults,
+    status: notesStatus,
+    loadMore: loadMoreNotes,
+  } = usePaginatedQuery(
     api.notes.getNotesByTableId,
     { notesTableId: tableId },
     { initialNumItems: 5 },
   );
-  const pdfs = useQuery(api.pdfs.getPdfsByTableId, {
-    notesTableId: tableId,
-  }) as
-    | Array<
-        Omit<PdfItem, "kind"> & {
-          fileUrl?: string | null;
-        }
-      >
-    | undefined;
-  const links = useQuery(api.links.getLinksByTableId, {
-    notesTableId: tableId,
-  }) as Array<Omit<LinkItem, "kind">> | undefined;
+  const {
+    results: pdfResults,
+    status: pdfsStatus,
+    loadMore: loadMorePdfs,
+  } = usePaginatedQuery(
+    api.pdfs.getPdfsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<PdfItem, "kind"> & { fileUrl?: string | null }>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
+  const {
+    results: linkResults,
+    status: linksStatus,
+    loadMore: loadMoreLinks,
+  } = usePaginatedQuery(
+    api.links.getLinksByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<LinkItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
-    if (status !== "LoadingFirstPage") {
-      tableNotesMemoryCache.set(tableId as unknown as string, results);
+    if (notesStatus !== "LoadingFirstPage") {
+      tableNotesMemoryCache.set(tableId as unknown as string, noteResults);
     }
-  }, [results, status, tableId]);
+  }, [noteResults, notesStatus, tableId]);
   const stableResults =
-    status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
+    notesStatus === "LoadingFirstPage" && cachedNotes
+      ? cachedNotes
+      : noteResults;
+
+  const cachedPdfs = tablePdfsMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (pdfsStatus !== "LoadingFirstPage") {
+      tablePdfsMemoryCache.set(tableId as unknown as string, pdfResults);
+    }
+  }, [pdfResults, pdfsStatus, tableId]);
+  const stablePdfs =
+    pdfsStatus === "LoadingFirstPage" && cachedPdfs ? cachedPdfs : pdfResults;
+
+  const cachedLinks = tableLinksMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (linksStatus !== "LoadingFirstPage") {
+      tableLinksMemoryCache.set(tableId as unknown as string, linkResults);
+    }
+  }, [linkResults, linksStatus, tableId]);
+  const stableLinks =
+    linksStatus === "LoadingFirstPage" && cachedLinks
+      ? cachedLinks
+      : linkResults;
+
+  // Single combined pagination state driving one "Show More" button for
+  // notes + pdfs + links together.
+  const aggregateStatus:
+    | "LoadingFirstPage"
+    | "CanLoadMore"
+    | "LoadingMore"
+    | "Exhausted" =
+    notesStatus === "LoadingFirstPage" &&
+    !cachedNotes &&
+    pdfsStatus === "LoadingFirstPage" &&
+    !cachedPdfs &&
+    linksStatus === "LoadingFirstPage" &&
+    !cachedLinks
+      ? "LoadingFirstPage"
+      : [notesStatus, pdfsStatus, linksStatus].some((s) => s === "CanLoadMore")
+        ? "CanLoadMore"
+        : [notesStatus, pdfsStatus, linksStatus].some(
+              (s) => s === "LoadingMore",
+            )
+          ? "LoadingMore"
+          : "Exhausted";
+
+  const handleLoadMore = useCallback(() => {
+    if (notesStatus === "CanLoadMore") loadMoreNotes(15);
+    if (pdfsStatus === "CanLoadMore") loadMorePdfs(15);
+    if (linksStatus === "CanLoadMore") loadMoreLinks(15);
+  }, [
+    notesStatus,
+    pdfsStatus,
+    linksStatus,
+    loadMoreNotes,
+    loadMorePdfs,
+    loadMoreLinks,
+  ]);
+
+  // Infinite scroll for grid/list view: observe a sentinel at the bottom of
+  // the item list and load the next page once it enters the viewport.
+  // Calendar view keeps its own explicit "Show More" button instead.
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (viewMode === "calendar") return;
+    if (aggregateStatus !== "CanLoadMore") return;
+
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [viewMode, aggregateStatus, handleLoadMore]);
 
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
@@ -1333,10 +1434,10 @@ export function NotesDroppableContainer({
     const noteItems = stableResults.map(
       (note) => ({ ...note, kind: "note" }) as WorkspaceEntry,
     );
-    const pdfItems = (pdfs ?? []).map(
+    const pdfItems = stablePdfs.map(
       (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
     );
-    const linkItems = (links ?? []).map(
+    const linkItems = stableLinks.map(
       (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
     );
     let items = [...noteItems, ...pdfItems, ...linkItems]
@@ -1364,7 +1465,14 @@ export function NotesDroppableContainer({
       const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
       return titleMatches || searchableText.includes(q);
     });
-  }, [contentFilter, deletedItemIds, links, pdfs, searchQuery, stableResults]);
+  }, [
+    contentFilter,
+    deletedItemIds,
+    stableLinks,
+    stablePdfs,
+    searchQuery,
+    stableResults,
+  ]);
 
   const handleItemDelete = useCallback((itemId: string) => {
     setDeletedItemIds((prev) => {
@@ -1524,10 +1632,7 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {status === "LoadingFirstPage" &&
-      !cachedNotes &&
-      pdfs === undefined &&
-      links === undefined ? (
+      {aggregateStatus === "LoadingFirstPage" ? (
         <NotesSkeleton viewMode={viewMode} />
       ) : (searchQuery || contentFilter !== "all") &&
         filteredItems.length === 0 ? (
@@ -1555,8 +1660,8 @@ export function NotesDroppableContainer({
             <CalendarTimelineView
               items={filteredItems}
               workspaceId={workspaceId}
-              paginationStatus={status}
-              onLoadMore={() => loadMore(15)}
+              paginationStatus={aggregateStatus}
+              onLoadMore={handleLoadMore}
             />
           ) : (
             <div
@@ -1685,27 +1790,22 @@ export function NotesDroppableContainer({
             </div>
           )}
 
-          {viewMode !== "calendar" && status === "CanLoadMore" && (
-            <div className="flex justify-center mt-6">
-              <Button
-                variant="outline"
-                onClick={() => loadMore(15)}
-                className="border-border"
-                aria-label="load-more-notes"
+          {viewMode !== "calendar" &&
+            (aggregateStatus === "CanLoadMore" ||
+              aggregateStatus === "LoadingMore") && (
+              <div
+                ref={loadMoreSentinelRef}
+                className="flex justify-center mt-6 h-9"
+                aria-label="load-more-items"
               >
-                Show More
-              </Button>
-            </div>
-          )}
-
-          {viewMode !== "calendar" && status === "LoadingMore" && (
-            <div className="flex justify-center mt-6">
-              <Button variant="outline" disabled className="border-border">
-                <LoadingAnimation className="h-4 w-4 mr-2" />
-                Loading...
-              </Button>
-            </div>
-          )}
+                {aggregateStatus === "LoadingMore" && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <LoadingAnimation className="h-4 w-4" />
+                    Loading...
+                  </div>
+                )}
+              </div>
+            )}
         </>
       )}
     </div>
