@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Folder,
   FolderOpen,
-  Link2,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -195,6 +195,42 @@ function PdfItem({
   );
 }
 
+function getSearchLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function SearchLinkFavicon({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = url ? getSearchLinkFaviconUrl(url) : null;
+
+  if (!faviconUrl || errored) {
+    return <Globe className={cn("text-muted-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
 function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
   return (
     <div
@@ -205,7 +241,7 @@ function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <Link2 size={14} />
+      <SearchLinkFavicon url={link.url} className="h-3.5 w-3.5 shrink-0" />
       <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText
