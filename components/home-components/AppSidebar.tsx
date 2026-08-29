@@ -20,6 +20,7 @@ import {
   FolderPlus,
   SquarePen,
   PanelRightOpen,
+  ExternalLink,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -1214,10 +1215,17 @@ const PinnedLinkItem = memo(
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 flex-grow min-w-0"
                   >
-                    <SidebarLinkFavicon
-                      url={link.url}
-                      className="h-4 w-4 flex-shrink-0"
-                    />
+                    {isHovered ? (
+                      <ExternalLink
+                        size="16"
+                        className="text-muted-foreground flex-shrink-0"
+                      />
+                    ) : (
+                      <SidebarLinkFavicon
+                        url={link.url}
+                        className="h-4 w-4 flex-shrink-0"
+                      />
+                    )}
                     <span className={textClassName}>
                       {formatWorkspaceName(displayTitle)}
                     </span>
