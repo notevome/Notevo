@@ -21,6 +21,7 @@ import {
   useCallback,
   useRef,
   Fragment,
+  memo,
 } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -86,6 +87,15 @@ import { Separator } from "@/components/ui/separator";
 function getMediaQuery() {
   const isMobile = useMediaQuery({ maxWidth: 640 });
   return isMobile;
+}
+
+function useGridColumnCount(enabled: boolean) {
+  const isMdUp = useMediaQuery({ minWidth: 768 });
+  const isSmUp = useMediaQuery({ minWidth: 640 });
+  if (!enabled) return 1;
+  if (isMdUp) return 3;
+  if (isSmUp) return 2;
+  return 1;
 }
 
 const getContentPreviewFromBody = (body: any) => {
@@ -310,7 +320,6 @@ function useClientSideOrder<T extends { _id: string }>(
   items: T[],
 ) {
   const [orderIds, setOrderIds] = useState<string[]>([]);
-  const [hasLoadedOrder, setHasLoadedOrder] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggedSize, setDraggedSize] = useState<{
     width: number;
@@ -319,14 +328,12 @@ function useClientSideOrder<T extends { _id: string }>(
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
 
   useEffect(() => {
-    setHasLoadedOrder(false);
     try {
       const raw = localStorage.getItem(storageKey);
       setOrderIds(raw ? (JSON.parse(raw) as string[]) : []);
     } catch {
       setOrderIds([]);
     }
-    setHasLoadedOrder(true);
   }, [storageKey]);
 
   const persist = useCallback(
@@ -349,19 +356,8 @@ function useClientSideOrder<T extends { _id: string }>(
       .filter((item): item is T => Boolean(item));
     const knownIds = new Set(known.map((item) => item._id));
     const fresh = items.filter((item) => !knownIds.has(item._id));
-    return [...fresh, ...known];
+    return [...known, ...fresh];
   }, [items, orderIds]);
-
-  useEffect(() => {
-    if (!hasLoadedOrder) return;
-    if (items.length === 0) return;
-    const ids = orderedItems.map((item) => item._id);
-    const unchanged =
-      ids.length === orderIds.length &&
-      ids.every((id, i) => id === orderIds[i]);
-    if (!unchanged) persist(ids);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderedItems, hasLoadedOrder]);
 
   const handleDragStart = useCallback(
     (id: string, rect?: { width: number; height: number }) => {
@@ -1336,7 +1332,6 @@ export function NotesDroppableContainer({
       ? cachedLinks
       : linkResults;
 
-  // Single combined pagination state driving one "Show More" button for
   // notes + pdfs + links together.
   const aggregateStatus:
     | "LoadingFirstPage"
@@ -1371,9 +1366,6 @@ export function NotesDroppableContainer({
     loadMoreLinks,
   ]);
 
-  // Infinite scroll for grid/list view: observe a sentinel at the bottom of
-  // the item list and load the next page once it enters the viewport.
-  // Calendar view keeps its own explicit "Show More" button instead.
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (viewMode === "calendar") return;
@@ -1482,6 +1474,8 @@ export function NotesDroppableContainer({
     });
   }, []);
   const isMobile = getMediaQuery();
+  const isGridLayout = viewMode === "grid" || isMobile;
+  const numColumns = useGridColumnCount(isGridLayout);
 
   const {
     orderedItems,
@@ -1664,14 +1658,8 @@ export function NotesDroppableContainer({
               onLoadMore={handleLoadMore}
             />
           ) : (
-            <div
-              className={
-                viewMode === "grid" || isMobile
-                  ? "columns-1 sm:columns-2 md:columns-3 gap-4"
-                  : "flex flex-col gap-3"
-              }
-            >
-              {displayItems.map((item) => {
+            (() => {
+              const renderItem = (item: (typeof displayItems)[number]) => {
                 const draggableEnabled =
                   !searchQuery.trim() && contentFilter === "all";
                 return (
@@ -1679,12 +1667,7 @@ export function NotesDroppableContainer({
                     {dropTarget?.id === item._id &&
                       dropTarget.position === "before" && (
                         <div
-                          className={cn(
-                            "app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0",
-                            viewMode === "grid" || isMobile
-                              ? "w-full mb-4 break-inside-avoid"
-                              : "w-full",
-                          )}
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
                           style={{ height: draggedSize?.height ?? 96 }}
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => {
@@ -1710,9 +1693,6 @@ export function NotesDroppableContainer({
                       }}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        viewMode === "grid" || isMobile
-                          ? "mb-4 break-inside-avoid"
-                          : undefined,
                         draggableEnabled &&
                           "cursor-grab active:cursor-grabbing",
                         draggingId === item._id &&
@@ -1720,34 +1700,34 @@ export function NotesDroppableContainer({
                       )}
                     >
                       {item.kind === "pdf" ? (
-                        viewMode === "grid" || isMobile ? (
+                        isGridLayout ? (
                           <PdfGridCard
                             pdf={item}
-                            onDelete={(pdfId) => handleItemDelete(pdfId)}
+                            onDelete={handleItemDelete}
                             searchQuery={searchQuery}
                           />
                         ) : (
                           <PdfListCard
                             pdf={item}
-                            onDelete={(pdfId) => handleItemDelete(pdfId)}
+                            onDelete={handleItemDelete}
                             searchQuery={searchQuery}
                           />
                         )
                       ) : item.kind === "link" ? (
-                        viewMode === "grid" || isMobile ? (
+                        isGridLayout ? (
                           <LinkGridCard
                             link={item}
-                            onDelete={(linkId) => handleItemDelete(linkId)}
+                            onDelete={handleItemDelete}
                             searchQuery={searchQuery}
                           />
                         ) : (
                           <LinkListCard
                             link={item}
-                            onDelete={(linkId) => handleItemDelete(linkId)}
+                            onDelete={handleItemDelete}
                             searchQuery={searchQuery}
                           />
                         )
-                      ) : viewMode === "grid" || isMobile ? (
+                      ) : isGridLayout ? (
                         <GridNoteCard
                           note={item}
                           workspaceId={workspaceId}
@@ -1770,12 +1750,7 @@ export function NotesDroppableContainer({
                     {dropTarget?.id === item._id &&
                       dropTarget.position === "after" && (
                         <div
-                          className={cn(
-                            "app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0",
-                            viewMode === "grid" || isMobile
-                              ? "w-full mb-4 break-inside-avoid"
-                              : "w-full",
-                          )}
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
                           style={{ height: draggedSize?.height ?? 96 }}
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={(e) => {
@@ -1786,8 +1761,37 @@ export function NotesDroppableContainer({
                       )}
                   </Fragment>
                 );
-              })}
-            </div>
+              };
+
+              if (!isGridLayout) {
+                return (
+                  <div className="flex flex-col gap-3">
+                    {displayItems.map((item) => renderItem(item))}
+                  </div>
+                );
+              }
+
+              const columnItems: (typeof displayItems)[number][][] = Array.from(
+                { length: numColumns },
+                () => [],
+              );
+              displayItems.forEach((item, index) => {
+                columnItems[index % numColumns].push(item);
+              });
+
+              return (
+                <div className="flex gap-4 items-start w-full max-w-full">
+                  {columnItems.map((column, colIndex) => (
+                    <div
+                      key={colIndex}
+                      className="flex flex-col gap-4 flex-1 min-w-0"
+                    >
+                      {column.map((item) => renderItem(item))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
           )}
 
           {viewMode !== "calendar" &&
@@ -2482,7 +2486,7 @@ function TimelineMiniCard({
   );
 }
 
-function GridNoteCard({
+const GridNoteCard = memo(function GridNoteCard({
   note,
   workspaceId,
   onDelete,
@@ -2635,9 +2639,9 @@ function GridNoteCard({
       </CardFooter>
     </Card>
   );
-}
+});
 
-function ListNoteCard({
+const ListNoteCard = memo(function ListNoteCard({
   note,
   workspaceId,
   onDelete,
@@ -2791,9 +2795,13 @@ function ListNoteCard({
       </CardContent>
     </Card>
   );
-}
+});
 
-function PdfGridCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
+const PdfGridCard = memo(function PdfGridCard({
+  pdf,
+  onDelete,
+  searchQuery,
+}: PdfCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
@@ -2915,9 +2923,13 @@ function PdfGridCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
       </CardFooter>
     </Card>
   );
-}
+});
 
-function PdfListCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
+const PdfListCard = memo(function PdfListCard({
+  pdf,
+  onDelete,
+  searchQuery,
+}: PdfCardProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -3036,7 +3048,7 @@ function PdfListCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
 
 function getLinkFaviconUrl(url: string): string | null {
   try {
@@ -3126,7 +3138,11 @@ function LinkThumbnail({ link }: { link: LinkItem }) {
   );
 }
 
-function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
+const LinkGridCard = memo(function LinkGridCard({
+  link,
+  onDelete,
+  searchQuery,
+}: LinkCardProps) {
   const displayTitle =
     link.title ||
     link.metadata?.authorName ||
@@ -3188,7 +3204,7 @@ function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
       </CardFooter>
     </Card>
   );
-}
+});
 
 function LinkListThumbnail({ link }: { link: LinkItem }) {
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -3230,7 +3246,11 @@ function LinkListThumbnail({ link }: { link: LinkItem }) {
   );
 }
 
-function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
+const LinkListCard = memo(function LinkListCard({
+  link,
+  onDelete,
+  searchQuery,
+}: LinkCardProps) {
   const displayTitle =
     link.title ||
     link.metadata?.authorName ||
@@ -3296,7 +3316,7 @@ function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
 
 function EmptySearchResults({
   searchQuery,
