@@ -319,7 +319,7 @@ function useClientSideOrder<T extends { _id: string }>(
   storageKey: string,
   items: T[],
 ) {
-  const [orderIds, setOrderIds] = useState<string[]>([]);
+  const [sessionOrder, setSessionOrder] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggedSize, setDraggedSize] = useState<{
     width: number;
@@ -330,15 +330,26 @@ function useClientSideOrder<T extends { _id: string }>(
   useEffect(() => {
     try {
       const raw = localStorage.getItem(storageKey);
-      setOrderIds(raw ? (JSON.parse(raw) as string[]) : []);
+      setSessionOrder(raw ? (JSON.parse(raw) as string[]) : []);
     } catch {
-      setOrderIds([]);
+      setSessionOrder([]);
     }
   }, [storageKey]);
 
+  useEffect(() => {
+    setSessionOrder((prev) => {
+      const known = new Set(prev);
+      const newIds = items
+        .map((item) => item._id)
+        .filter((id) => !known.has(id));
+      if (newIds.length === 0) return prev;
+      return [...prev, ...newIds];
+    });
+  }, [items]);
+
   const persist = useCallback(
     (ids: string[]) => {
-      setOrderIds(ids);
+      setSessionOrder(ids);
       try {
         localStorage.setItem(storageKey, JSON.stringify(ids));
       } catch {
@@ -349,15 +360,14 @@ function useClientSideOrder<T extends { _id: string }>(
   );
 
   const orderedItems = useMemo(() => {
-    if (orderIds.length === 0) return items;
     const itemById = new Map(items.map((item) => [item._id, item]));
-    const known = orderIds
+    const known = sessionOrder
       .map((id) => itemById.get(id))
       .filter((item): item is T => Boolean(item));
     const knownIds = new Set(known.map((item) => item._id));
     const fresh = items.filter((item) => !knownIds.has(item._id));
     return [...known, ...fresh];
-  }, [items, orderIds]);
+  }, [items, sessionOrder]);
 
   const handleDragStart = useCallback(
     (id: string, rect?: { width: number; height: number }) => {
@@ -1332,6 +1342,7 @@ export function NotesDroppableContainer({
       ? cachedLinks
       : linkResults;
 
+  // Single combined pagination state driving one "Show More" button for
   // notes + pdfs + links together.
   const aggregateStatus:
     | "LoadingFirstPage"
