@@ -2436,6 +2436,57 @@ function CalendarGapMarker({
   );
 }
 
+function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const isLink = item.kind === "link";
+  const thumbnailUrl = isLink
+    ? (item as LinkItem).metadata?.thumbnailUrl
+    : undefined;
+  const isPending = isLink && (item as LinkItem).metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+  if (!isLink) {
+    return (
+      <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
+        <FileText className="h-4 w-4 text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-9 w-9 flex items-center justify-center flex-shrink-0">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+          <Link2 className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+
+      <LinkFaviconBadge
+        url={(item as LinkItem).url}
+        className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
+      />
+    </div>
+  );
+}
+
 function TimelineMiniCard({
   item,
   workspaceId,
@@ -2464,17 +2515,13 @@ function TimelineMiniCard({
     createdDate.getFullYear() !== new Date().getFullYear();
 
   const cardClassName = cn(
-    "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] shadow-primary transition-all app-radius-md px-2.5 py-2",
+    "group flex items-center gap-2 border border-border bg-card hover:border-primary/20 hover:bg-muted/40 transition-colors app-radius-md px-2.5 py-2",
     inPopover ? "w-full" : "w-[168px]",
   );
 
   const cardContent = (
     <>
-      {isLink ? (
-        <Link2 className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-      ) : (
-        <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-      )}
+      <TimelineMiniThumbnail item={item} />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
           {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
