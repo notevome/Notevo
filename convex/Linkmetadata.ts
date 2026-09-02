@@ -125,14 +125,6 @@ async function fetchOgTags(url: string) {
   };
 }
 
-// Preferred path: YouTube's official Data API v3. Requires a
-// YOUTUBE_API_KEY environment variable (free tier — set it in the Convex
-// dashboard under Settings > Environment Variables, or `npx convex env set
-// YOUTUBE_API_KEY <key>`). This is reliable because it's a normal signed
-// API call, not scraping — Google does not consent-wall or CAPTCHA
-// server-to-server API traffic the way it does plain HTML requests coming
-// from a datacenter IP (which is exactly what makes the HTML-scrape
-// fallback below unreliable in production).
 async function fetchYoutubeChannelInfoViaApi(
   videoId: string,
 ): Promise<{ avatarUrl?: string; handle?: string; channelName?: string }> {
@@ -200,11 +192,34 @@ async function fetchYoutubeChannelInfoViaApi(
   }
 }
 
-// Fallback for when YOUTUBE_API_KEY isn't set: scrape the channel page's
-// <meta> tags / canonical link the same way `fetchOgTags` does for other
-// platforms. Less reliable than the Data API above — Google frequently
-// serves a consent/CAPTCHA page instead of the real HTML to non-browser
-// traffic from server IPs, so this may silently return nothing.
+function extractYoutubeHandleFromHtml(html: string): string | undefined {
+  const vanityMatch = html.match(/"vanityChannelUrl":"[^"]*\/(@[^"\\]+)"/);
+  if (vanityMatch?.[1]) return vanityMatch[1];
+
+  const canonicalBaseMatch = html.match(/"canonicalBaseUrl":"\\?\/(@[^"\\]+)"/);
+  if (canonicalBaseMatch?.[1]) return canonicalBaseMatch[1];
+
+  const itemPropMatch = html.match(
+    /<link[^>]+itemprop=["']url["'][^>]*href=["']https?:\/\/(?:www\.)?youtube\.com\/(@[^"'/?]+)["']/i,
+  );
+  if (itemPropMatch?.[1]) return itemPropMatch[1];
+
+  const canonicalMatch = html.match(
+    /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
+  );
+  if (canonicalMatch?.[1]) {
+    try {
+      const path = new URL(canonicalMatch[1]).pathname;
+      const segment = path.split("/").filter(Boolean).pop();
+      if (segment?.startsWith("@")) return segment;
+    } catch {
+      // Malformed canonical URL — nothing to extract.
+    }
+  }
+
+  return undefined;
+}
+
 async function fetchYoutubeChannelExtras(
   channelUrl: string,
 ): Promise<{ avatarUrl?: string; handle?: string }> {
@@ -223,20 +238,7 @@ async function fetchYoutubeChannelExtras(
 
     const avatarUrl =
       extractMeta(html, "og:image") ?? extractMeta(html, "twitter:image");
-
-    let handle: string | undefined;
-    const canonicalMatch = html.match(
-      /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
-    );
-    if (canonicalMatch?.[1]) {
-      try {
-        const canonicalPath = new URL(canonicalMatch[1]).pathname;
-        const segment = canonicalPath.split("/").filter(Boolean).pop();
-        if (segment?.startsWith("@")) handle = segment;
-      } catch {
-        // Malformed canonical URL — just skip the handle.
-      }
-    }
+    const handle = extractYoutubeHandleFromHtml(html);
 
     return { avatarUrl, handle };
   } catch (error) {
@@ -286,15 +288,29 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
     authorAvatarUrl = apiInfo.avatarUrl;
     authorHandle = apiInfo.handle;
     if (!authorName && apiInfo.channelName) authorName = apiInfo.channelName;
+    console.log("[yt-metadata] Data API result", {
+      videoId,
+      avatarUrl: apiInfo.avatarUrl,
+      handle: apiInfo.handle,
+    });
   }
 
-  // Only fall back to scraping for whatever the API didn't cover (e.g. no
-  // API key configured, or the video lookup failed for some reason).
   if ((!authorAvatarUrl || !authorHandle) && authorUrl) {
     const extras = await fetchYoutubeChannelExtras(authorUrl);
+    console.log("[yt-metadata] HTML scrape fallback result", {
+      authorUrl,
+      avatarUrl: extras.avatarUrl,
+      handle: extras.handle,
+    });
     authorAvatarUrl = authorAvatarUrl ?? extras.avatarUrl;
     authorHandle = authorHandle ?? extras.handle;
   }
+
+  console.log("[yt-metadata] final", {
+    videoId,
+    authorHandle,
+    authorAvatarUrl,
+  });
 
   if (!videoId) {
     return {
@@ -329,10 +345,6 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   let thumbnailUrl: string | undefined;
   let authorAvatarUrl: string | undefined;
 
-  // A profile link (x.com/username) has exactly one path segment; a tweet
-  // permalink (x.com/username/status/123) has more. og:image only reflects
-  // the account's own picture for the former — for a tweet it's the
-  // attached media/card image, which isn't a safe stand-in for an avatar.
   const isProfileUrl = (() => {
     try {
       const path = new URL(url).pathname.replace(/^\/|\/$/g, "");
