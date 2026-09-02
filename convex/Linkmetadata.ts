@@ -1,5 +1,5 @@
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { linkPlatformValidator, linkMetadataFields } from "./linkValidators";
 import {
@@ -18,6 +18,7 @@ type FetchedLinkMetadata = {
     thumbnailUrl?: string;
     authorName?: string;
     authorHandle?: string;
+    authorAvatarUrl?: string;
     publishedAt?: number;
     duration?: string;
     embedVideoId?: string;
@@ -124,11 +125,132 @@ async function fetchOgTags(url: string) {
   };
 }
 
+// Preferred path: YouTube's official Data API v3. Requires a
+// YOUTUBE_API_KEY environment variable (free tier — set it in the Convex
+// dashboard under Settings > Environment Variables, or `npx convex env set
+// YOUTUBE_API_KEY <key>`). This is reliable because it's a normal signed
+// API call, not scraping — Google does not consent-wall or CAPTCHA
+// server-to-server API traffic the way it does plain HTML requests coming
+// from a datacenter IP (which is exactly what makes the HTML-scrape
+// fallback below unreliable in production).
+async function fetchYoutubeChannelInfoViaApi(
+  videoId: string,
+): Promise<{ avatarUrl?: string; handle?: string; channelName?: string }> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) return {};
+
+  try {
+    const videoRes = await fetchWithTimeout(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(
+        videoId,
+      )}&key=${apiKey}`,
+    );
+    if (!videoRes.ok) {
+      console.error(
+        `YouTube Data API videos.list failed: ${videoRes.status} ${await videoRes.text().catch(() => "")}`,
+      );
+      return {};
+    }
+    const videoData = (await videoRes.json()) as {
+      items?: { snippet?: { channelId?: string } }[];
+    };
+    const channelId = videoData.items?.[0]?.snippet?.channelId;
+    if (!channelId) return {};
+
+    const channelRes = await fetchWithTimeout(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent(
+        channelId,
+      )}&key=${apiKey}`,
+    );
+    if (!channelRes.ok) {
+      console.error(
+        `YouTube Data API channels.list failed: ${channelRes.status} ${await channelRes.text().catch(() => "")}`,
+      );
+      return {};
+    }
+    const channelData = (await channelRes.json()) as {
+      items?: {
+        snippet?: {
+          title?: string;
+          customUrl?: string;
+          thumbnails?: {
+            default?: { url?: string };
+            medium?: { url?: string };
+          };
+        };
+      }[];
+    };
+    const snippet = channelData.items?.[0]?.snippet;
+    if (!snippet) return {};
+
+    const rawHandle = snippet.customUrl;
+    return {
+      avatarUrl:
+        snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url,
+      handle: rawHandle
+        ? rawHandle.startsWith("@")
+          ? rawHandle
+          : `@${rawHandle}`
+        : undefined,
+      channelName: snippet.title,
+    };
+  } catch (error) {
+    console.error("YouTube Data API channel lookup failed:", error);
+    return {};
+  }
+}
+
+// Fallback for when YOUTUBE_API_KEY isn't set: scrape the channel page's
+// <meta> tags / canonical link the same way `fetchOgTags` does for other
+// platforms. Less reliable than the Data API above — Google frequently
+// serves a consent/CAPTCHA page instead of the real HTML to non-browser
+// traffic from server IPs, so this may silently return nothing.
+async function fetchYoutubeChannelExtras(
+  channelUrl: string,
+): Promise<{ avatarUrl?: string; handle?: string }> {
+  try {
+    const response = await fetchWithTimeout(channelUrl, {
+      headers: {
+        // Bypasses the EU cookie-consent interstitial that would otherwise
+        // replace the real channel page with a consent screen.
+        Cookie: "CONSENT=YES+1",
+      },
+    });
+    if (!response.ok) return {};
+
+    const rawHtml = await response.text();
+    const html = rawHtml.slice(0, MAX_HTML_LENGTH);
+
+    const avatarUrl =
+      extractMeta(html, "og:image") ?? extractMeta(html, "twitter:image");
+
+    let handle: string | undefined;
+    const canonicalMatch = html.match(
+      /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
+    );
+    if (canonicalMatch?.[1]) {
+      try {
+        const canonicalPath = new URL(canonicalMatch[1]).pathname;
+        const segment = canonicalPath.split("/").filter(Boolean).pop();
+        if (segment?.startsWith("@")) handle = segment;
+      } catch {
+        // Malformed canonical URL — just skip the handle.
+      }
+    }
+
+    return { avatarUrl, handle };
+  } catch (error) {
+    console.error("YouTube channel page fetch failed:", error);
+    return {};
+  }
+}
+
 async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
   const videoId = extractYoutubeVideoId(url) ?? undefined;
 
   let title: string | undefined;
   let authorName: string | undefined;
+  let authorUrl: string | undefined;
   let thumbnailUrl: string | undefined = videoId
     ? youtubeThumbnailUrl(videoId)
     : undefined;
@@ -144,14 +266,34 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
       const data = (await response.json()) as {
         title?: string;
         author_name?: string;
+        author_url?: string;
         thumbnail_url?: string;
       };
       title = data.title;
       authorName = data.author_name;
+      authorUrl = data.author_url;
       if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
     }
   } catch (error) {
     console.error("YouTube oEmbed failed:", error);
+  }
+
+  let authorHandle: string | undefined;
+  let authorAvatarUrl: string | undefined;
+
+  if (videoId) {
+    const apiInfo = await fetchYoutubeChannelInfoViaApi(videoId);
+    authorAvatarUrl = apiInfo.avatarUrl;
+    authorHandle = apiInfo.handle;
+    if (!authorName && apiInfo.channelName) authorName = apiInfo.channelName;
+  }
+
+  // Only fall back to scraping for whatever the API didn't cover (e.g. no
+  // API key configured, or the video lookup failed for some reason).
+  if ((!authorAvatarUrl || !authorHandle) && authorUrl) {
+    const extras = await fetchYoutubeChannelExtras(authorUrl);
+    authorAvatarUrl = authorAvatarUrl ?? extras.avatarUrl;
+    authorHandle = authorHandle ?? extras.handle;
   }
 
   if (!videoId) {
@@ -160,6 +302,8 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
       metadata: {
         thumbnailUrl,
         authorName,
+        authorHandle,
+        authorAvatarUrl,
         siteName: "YouTube",
       },
     };
@@ -169,6 +313,8 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
     metadata: {
       thumbnailUrl,
       authorName,
+      authorHandle,
+      authorAvatarUrl,
       publishedAt,
       duration,
       siteName: "YouTube",
@@ -181,6 +327,20 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   let authorName: string | undefined;
   let authorHandle: string | undefined;
   let thumbnailUrl: string | undefined;
+  let authorAvatarUrl: string | undefined;
+
+  // A profile link (x.com/username) has exactly one path segment; a tweet
+  // permalink (x.com/username/status/123) has more. og:image only reflects
+  // the account's own picture for the former — for a tweet it's the
+  // attached media/card image, which isn't a safe stand-in for an avatar.
+  const isProfileUrl = (() => {
+    try {
+      const path = new URL(url).pathname.replace(/^\/|\/$/g, "");
+      return Boolean(path) && !path.includes("/");
+    } catch {
+      return false;
+    }
+  })();
 
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(
@@ -203,6 +363,7 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   try {
     const og = await fetchOgTags(url);
     thumbnailUrl = og.image;
+    if (isProfileUrl) authorAvatarUrl = og.image;
     if (!authorName && og.author) authorName = og.author.replace(/^@/, "");
   } catch (error) {
     console.error("X OG failed:", error);
@@ -212,6 +373,7 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
     title: authorName ? `${authorName} on X` : undefined,
     metadata: {
       thumbnailUrl,
+      authorAvatarUrl,
       authorName,
       authorHandle,
       siteName: "X",
@@ -351,5 +513,70 @@ export const fetchLinkMetadata = action({
       console.error("fetchLinkMetadata failed:", error);
       return { metadata: {} };
     }
+  },
+});
+
+// One-time backfill for YouTube links saved before channel avatar/handle
+// lookup existed. Re-fetches each one via fetchYoutubeMetadata (which now
+// prefers the YouTube Data API when YOUTUBE_API_KEY is set) and patches in
+// whatever is missing. Safe to re-run — it only touches links that are
+// still missing an avatar or handle, and skips a link entirely if nothing
+// new was found for it.
+export const backfillYoutubeChannelInfo = action({
+  args: {},
+  returns: v.object({
+    scanned: v.number(),
+    updated: v.number(),
+    usingApiKey: v.boolean(),
+  }),
+  handler: async (
+    ctx,
+  ): Promise<{ scanned: number; updated: number; usingApiKey: boolean }> => {
+    const usingApiKey = Boolean(process.env.YOUTUBE_API_KEY);
+    if (!usingApiKey) {
+      console.warn(
+        "YOUTUBE_API_KEY is not set — falling back to HTML scraping, " +
+          "which YouTube frequently blocks from server IPs. Results may " +
+          "come back mostly empty. Set YOUTUBE_API_KEY in the Convex " +
+          "dashboard (Settings > Environment Variables) for reliable results.",
+      );
+    }
+
+    let cursor: string | null = null;
+    let scanned = 0;
+    let updated = 0;
+
+    while (true) {
+      const page: any = await ctx.runQuery(
+        internal.links.internalGetYoutubeLinksMissingChannelInfo,
+        { paginationOpts: { numItems: 25, cursor } },
+      );
+
+      for (const link of page.page) {
+        scanned += 1;
+        try {
+          const result = await fetchYoutubeMetadata(link.url);
+          const { authorHandle, authorAvatarUrl } = result.metadata;
+          if (authorHandle || authorAvatarUrl) {
+            await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
+              _id: link._id,
+              metadata: {
+                authorHandle: authorHandle ?? link.metadata?.authorHandle,
+                authorAvatarUrl:
+                  authorAvatarUrl ?? link.metadata?.authorAvatarUrl,
+              },
+            });
+            updated += 1;
+          }
+        } catch (error) {
+          console.error(`Backfill failed for link ${link._id}:`, error);
+        }
+      }
+
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
+
+    return { scanned, updated, usingApiKey };
   },
 });

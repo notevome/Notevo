@@ -1,4 +1,9 @@
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
@@ -181,6 +186,55 @@ export const deleteLink = mutation({
     return args._id;
   },
 });
+// Internal — used by the one-time backfillYoutubeChannelInfo admin action,
+// not exposed to the client. Runs without a user session (the dashboard's
+// "Run action" / a CLI-triggered run has no signed-in user attached), and
+// covers links for every user since it's a maintenance task, not a
+// per-user request.
+export const internalUpdateLinkMetadata = internalMutation({
+  args: {
+    _id: v.id("links"),
+    title: v.optional(v.string()),
+    metadata: linkMetadataValidator,
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db.get(args._id);
+    if (!link) return;
+
+    await ctx.db.patch(args._id, {
+      title: args.title ?? link.title,
+      metadata: {
+        ...link.metadata,
+        ...args.metadata,
+      },
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Internal — same rationale as internalUpdateLinkMetadata above. Scans
+// across all users' YouTube links (not scoped to a single userId) for
+// links still missing a channel avatar/handle.
+export const internalGetYoutubeLinksMissingChannelInfo = internalQuery({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("links")
+      .filter((q) => q.eq(q.field("platform"), "youtube"))
+      .paginate(args.paginationOpts);
+
+    return {
+      ...page,
+      page: page.page.filter(
+        (link) =>
+          !link.metadata?.authorAvatarUrl || !link.metadata?.authorHandle,
+      ),
+    };
+  },
+});
+
 export const moveLink = mutation({
   args: {
     _id: v.id("links"),

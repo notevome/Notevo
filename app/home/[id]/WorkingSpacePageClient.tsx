@@ -58,6 +58,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -142,7 +152,10 @@ type ContentFilter =
   | "youtube"
   | "x"
   | "instagram"
-  | "linkedin";
+  | "linkedin"
+  | "link";
+
+type FilterIconComponent = (props: { className?: string }) => any;
 
 const CONTENT_FILTER_OPTIONS: {
   value: ContentFilter;
@@ -155,14 +168,38 @@ const CONTENT_FILTER_OPTIONS: {
   { value: "x", label: "X" },
   { value: "instagram", label: "Instagram" },
   { value: "linkedin", label: "LinkedIn" },
+  { value: "link", label: "Link" },
 ];
+
+const GROUPABLE_LINK_FILTERS = new Set<ContentFilter>([
+  "youtube",
+  "x",
+  "instagram",
+  "linkedin",
+  "link",
+]);
+
+function isGenericLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  if (!platform) return true;
+  const p = String(platform).toLowerCase();
+  return !(
+    p.includes("youtube") ||
+    p === "yt" ||
+    p === "x" ||
+    p.includes("twitter") ||
+    p.includes("instagram") ||
+    p === "ig" ||
+    p.includes("linkedin")
+  );
+}
 
 function matchesLinkPlatform(
   platform: LinkPlatform | string | undefined,
   filter: ContentFilter,
 ): boolean {
-  if (!platform) return false;
-  const p = String(platform).toLowerCase();
+  const p = String(platform ?? "").toLowerCase();
   switch (filter) {
     case "youtube":
       return p.includes("youtube") || p === "yt";
@@ -172,9 +209,98 @@ function matchesLinkPlatform(
       return p.includes("instagram") || p === "ig";
     case "linkedin":
       return p.includes("linkedin");
+    case "link":
+      return isGenericLinkPlatform(platform);
     default:
       return false;
   }
+}
+
+function getLinkGroupKey(link: LinkItem, filter: ContentFilter): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "").toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+  const handle = link.metadata?.authorHandle?.trim();
+  const name = link.metadata?.authorName?.trim();
+  return (handle || name || null)?.toLowerCase() ?? null;
+}
+
+// Human-readable label for a group key (see getLinkGroupKey).
+function getLinkGroupLabel(
+  link: LinkItem,
+  filter: ContentFilter,
+): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  }
+  return (
+    link.metadata?.authorName?.trim() ||
+    link.metadata?.authorHandle?.trim() ||
+    null
+  );
+}
+
+interface LinkFilterGroup {
+  key: string;
+  label: string;
+  handle?: string;
+  avatarUrl?: string;
+  sampleUrl?: string;
+  count: number;
+}
+
+// Normalizes a raw handle into "@handle" display form.
+function formatHandle(handle?: string | null): string | null {
+  const trimmed = handle?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+function GroupAvatar({
+  avatarUrl,
+  label,
+  className,
+}: {
+  avatarUrl?: string;
+  label: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const src = avatarUrl && !errored ? avatarUrl : null;
+
+  if (!src) {
+    return (
+      <div
+        className={cn(
+          "h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0",
+          className,
+        )}
+      >
+        {label.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      key={src}
+      src={src}
+      alt=""
+      draggable={false}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      className={cn("h-6 w-6 rounded-full object-cover shrink-0", className)}
+      onError={() => setErrored(true)}
+    />
+  );
 }
 
 interface Note {
@@ -1400,6 +1526,7 @@ export function NotesDroppableContainer({
 
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
+  const [subFilterValue, setSubFilterValue] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -1431,7 +1558,65 @@ export function NotesDroppableContainer({
   useEffect(() => {
     setDeletedItemIds(new Set());
     setContentFilter("all");
+    setSubFilterValue(null);
   }, [tableId]);
+
+  const linkGroupsByFilter = useMemo(() => {
+    const map: Partial<Record<ContentFilter, LinkFilterGroup[]>> = {};
+
+    GROUPABLE_LINK_FILTERS.forEach((filter) => {
+      const matched = stableLinks.filter((link) =>
+        matchesLinkPlatform((link as LinkItem).platform, filter),
+      );
+
+      const counts = new Map<
+        string,
+        {
+          label: string;
+          handle?: string;
+          avatarUrl?: string;
+          sampleUrl: string;
+          count: number;
+        }
+      >();
+
+      matched.forEach((rawLink) => {
+        const link = rawLink as LinkItem;
+        const key = getLinkGroupKey(link, filter);
+        if (!key) return;
+        const label = getLinkGroupLabel(link, filter) ?? key;
+        const existing = counts.get(key);
+        if (existing) {
+          existing.count += 1;
+          if (!existing.avatarUrl && link.metadata?.authorAvatarUrl) {
+            existing.avatarUrl = link.metadata.authorAvatarUrl;
+          }
+          if (!existing.handle && link.metadata?.authorHandle) {
+            existing.handle = link.metadata.authorHandle;
+          }
+        } else {
+          counts.set(key, {
+            label,
+            handle: filter === "link" ? undefined : link.metadata?.authorHandle,
+            avatarUrl:
+              filter === "link" ? undefined : link.metadata?.authorAvatarUrl,
+            sampleUrl: link.url,
+            count: 1,
+          });
+        }
+      });
+
+      const groups = Array.from(counts.entries())
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+      if (groups.length > 1) {
+        map[filter] = groups;
+      }
+    });
+
+    return map;
+  }, [stableLinks]);
 
   const filteredItems = useMemo(() => {
     const noteItems = stableResults.map(
@@ -1454,6 +1639,14 @@ export function NotesDroppableContainer({
         if (item.kind !== "link") return false;
         return matchesLinkPlatform(item.platform, contentFilter);
       });
+
+      if (subFilterValue && GROUPABLE_LINK_FILTERS.has(contentFilter)) {
+        items = items.filter(
+          (item) =>
+            item.kind === "link" &&
+            getLinkGroupKey(item as LinkItem, contentFilter) === subFilterValue,
+        );
+      }
     }
 
     if (!searchQuery.trim()) return items;
@@ -1470,6 +1663,7 @@ export function NotesDroppableContainer({
     });
   }, [
     contentFilter,
+    subFilterValue,
     deletedItemIds,
     stableLinks,
     stablePdfs,
@@ -1502,7 +1696,7 @@ export function NotesDroppableContainer({
     filteredItems,
   );
   const displayItems =
-    searchQuery.trim() || contentFilter !== "all"
+    searchQuery.trim() || contentFilter !== "all" || subFilterValue
       ? filteredItems
       : orderedItems;
 
@@ -1582,8 +1776,8 @@ export function NotesDroppableContainer({
             workingSpacesSlug={workspaceSlug}
             CNBP_notesTableId={tableId}
           />
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger asChild>
+          <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
@@ -1595,41 +1789,128 @@ export function NotesDroppableContainer({
                 aria-label="filter-content"
               >
                 <Filter className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">
-                  {CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
-                    ?.label ?? "All"}
+                <span className="hidden sm:inline truncate max-w-[9rem] items-center gap-1.5 ">
+                  <span className="truncate">
+                    {CONTENT_FILTER_OPTIONS.find(
+                      (o) => o.value === contentFilter,
+                    )?.label ?? "All"}
+                    {subFilterValue
+                      ? ` · ${
+                          linkGroupsByFilter[contentFilter]?.find(
+                            (g) => g.key === subFilterValue,
+                          )?.label ?? subFilterValue
+                        }`
+                      : ""}
+                  </span>
                 </span>
               </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-32 p-1 border-border bg-card"
-            >
-              <div className="flex flex-col gap-0.5">
-                {CONTENT_FILTER_OPTIONS.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "justify-start h-8 px-2 font-normal",
-                      contentFilter === option.value && "bg-muted",
-                    )}
-                    onClick={() => {
-                      setContentFilter(option.value);
-                      setIsFilterOpen(false);
-                    }}
-                  >
-                    {option.label}
-                    {contentFilter === option.value ? (
-                      <Check className="ml-auto h-3.5 w-3.5" />
-                    ) : null}
-                  </Button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {CONTENT_FILTER_OPTIONS.map((option) => {
+                const groups = linkGroupsByFilter[option.value];
+                const hasGroups = Boolean(groups && groups.length > 0);
+                const isActiveCategory = contentFilter === option.value;
+
+                if (!hasGroups) {
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                      onSelect={() => {
+                        setContentFilter(option.value);
+                        setSubFilterValue(null);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isActiveCategory && !subFilterValue ? (
+                        <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  );
+                }
+
+                return (
+                  <DropdownMenuSub key={option.value}>
+                    <DropdownMenuSubTrigger
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                    >
+                      <span className="truncate">{option.label}</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-64 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border">
+                      <DropdownMenuItem
+                        className={cn(
+                          "gap-2",
+                          isActiveCategory && !subFilterValue && "bg-muted",
+                        )}
+                        onSelect={() => {
+                          setContentFilter(option.value);
+                          setSubFilterValue(null);
+                        }}
+                      >
+                        <span className="truncate">All {option.label}</span>
+                        {isActiveCategory && !subFilterValue ? (
+                          <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                        ) : null}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {groups!.map((group) => {
+                        const isActiveGroup =
+                          isActiveCategory && subFilterValue === group.key;
+                        return (
+                          <DropdownMenuItem
+                            key={group.key}
+                            className={cn(
+                              "gap-2 py-1.5",
+                              isActiveGroup && "bg-muted",
+                            )}
+                            onSelect={() => {
+                              setContentFilter(option.value);
+                              setSubFilterValue(group.key);
+                            }}
+                          >
+                            {option.value === "link" ? (
+                              <LinkFaviconBadge
+                                url={group.sampleUrl ?? ""}
+                                className="h-6 w-6 shrink-0"
+                              />
+                            ) : (
+                              <GroupAvatar
+                                avatarUrl={group.avatarUrl}
+                                label={group.label}
+                              />
+                            )}
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <span className="text-xs font-medium truncate w-full text-left">
+                                {group.label}
+                              </span>
+                              {option.value !== "link" &&
+                              formatHandle(group.handle) ? (
+                                <span className="text-[10px] text-muted-foreground truncate w-full text-left">
+                                  {formatHandle(group.handle)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0 pl-1">
+                              {group.count}
+                            </span>
+                            {isActiveGroup ? (
+                              <Check className="h-3 w-3 shrink-0" />
+                            ) : null}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <TableSettings
             notesTableId={tableId}
             tableName={tables?.find((t) => t._id === tableId)?.name}
@@ -1645,12 +1926,18 @@ export function NotesDroppableContainer({
           searchQuery={
             searchQuery.trim()
               ? searchQuery
-              : (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
-                  ?.label ?? "filter")
+              : (subFilterValue &&
+                  linkGroupsByFilter[contentFilter]?.find(
+                    (g) => g.key === subFilterValue,
+                  )?.label) ||
+                (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
+                  ?.label ??
+                  "filter")
           }
           onClearSearch={() => {
             setSearchQuery("");
             setContentFilter("all");
+            setSubFilterValue(null);
           }}
         />
       ) : filteredItems.length === 0 ? (
