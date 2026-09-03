@@ -186,11 +186,7 @@ export const deleteLink = mutation({
     return args._id;
   },
 });
-// Internal — used by the one-time backfillYoutubeChannelInfo admin action,
-// not exposed to the client. Runs without a user session (the dashboard's
-// "Run action" / a CLI-triggered run has no signed-in user attached), and
-// covers links for every user since it's a maintenance task, not a
-// per-user request.
+
 export const internalUpdateLinkMetadata = internalMutation({
   args: {
     _id: v.id("links"),
@@ -212,17 +208,15 @@ export const internalUpdateLinkMetadata = internalMutation({
   },
 });
 
-// Internal — same rationale as internalUpdateLinkMetadata above. Scans
-// across all users' YouTube links (not scoped to a single userId) for
-// links still missing a channel avatar/handle.
-export const internalGetYoutubeLinksMissingChannelInfo = internalQuery({
+export const internalGetLinksMissingChannelInfo = internalQuery({
   args: {
+    platform: linkPlatformValidator,
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const page = await ctx.db
       .query("links")
-      .filter((q) => q.eq(q.field("platform"), "youtube"))
+      .filter((q) => q.eq(q.field("platform"), args.platform))
       .paginate(args.paginationOpts);
 
     return {
