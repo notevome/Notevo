@@ -339,20 +339,24 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
   };
 }
 
+async function fetchXProfileAvatar(
+  handle: string,
+): Promise<string | undefined> {
+  try {
+    const profileUrl = `https://x.com/${encodeURIComponent(handle)}`;
+    const og = await fetchOgTags(profileUrl);
+    return og.image;
+  } catch (error) {
+    console.error("X profile avatar fetch failed:", error);
+    return undefined;
+  }
+}
+
 async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   let authorName: string | undefined;
   let authorHandle: string | undefined;
   let thumbnailUrl: string | undefined;
   let authorAvatarUrl: string | undefined;
-
-  const isProfileUrl = (() => {
-    try {
-      const path = new URL(url).pathname.replace(/^\/|\/$/g, "");
-      return Boolean(path) && !path.includes("/");
-    } catch {
-      return false;
-    }
-  })();
 
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(
@@ -375,11 +379,21 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   try {
     const og = await fetchOgTags(url);
     thumbnailUrl = og.image;
-    if (isProfileUrl) authorAvatarUrl = og.image;
     if (!authorName && og.author) authorName = og.author.replace(/^@/, "");
   } catch (error) {
     console.error("X OG failed:", error);
   }
+
+  if (authorHandle) {
+    authorAvatarUrl = await fetchXProfileAvatar(authorHandle);
+  }
+
+  console.log("[x-metadata] result", {
+    url,
+    authorHandle,
+    authorName,
+    authorAvatarUrl,
+  });
 
   return {
     title: authorName ? `${authorName} on X` : undefined,
@@ -528,12 +542,52 @@ export const fetchLinkMetadata = action({
   },
 });
 
-// One-time backfill for YouTube links saved before channel avatar/handle
-// lookup existed. Re-fetches each one via fetchYoutubeMetadata (which now
-// prefers the YouTube Data API when YOUTUBE_API_KEY is set) and patches in
-// whatever is missing. Safe to re-run — it only touches links that are
-// still missing an avatar or handle, and skips a link entirely if nothing
-// new was found for it.
+async function runChannelInfoBackfill(
+  ctx: { runQuery: any; runMutation: any },
+  platform: "youtube" | "x" | "instagram" | "linkedin",
+  fetcher: (url: string) => Promise<FetchedLinkMetadata>,
+): Promise<{ scanned: number; updated: number }> {
+  let cursor: string | null = null;
+  let scanned = 0;
+  let updated = 0;
+
+  while (true) {
+    const page: any = await ctx.runQuery(
+      internal.links.internalGetLinksMissingChannelInfo,
+      { platform, paginationOpts: { numItems: 25, cursor } },
+    );
+
+    for (const link of page.page) {
+      scanned += 1;
+      try {
+        const result = await fetcher(link.url);
+        const { authorHandle, authorAvatarUrl } = result.metadata;
+        if (authorHandle || authorAvatarUrl) {
+          await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
+            _id: link._id,
+            metadata: {
+              authorHandle: authorHandle ?? link.metadata?.authorHandle,
+              authorAvatarUrl:
+                authorAvatarUrl ?? link.metadata?.authorAvatarUrl,
+            },
+          });
+          updated += 1;
+        }
+      } catch (error) {
+        console.error(
+          `Backfill failed for ${platform} link ${link._id}:`,
+          error,
+        );
+      }
+    }
+
+    if (page.isDone) break;
+    cursor = page.continueCursor;
+  }
+
+  return { scanned, updated };
+}
+
 export const backfillYoutubeChannelInfo = action({
   args: {},
   returns: v.object({
@@ -554,41 +608,20 @@ export const backfillYoutubeChannelInfo = action({
       );
     }
 
-    let cursor: string | null = null;
-    let scanned = 0;
-    let updated = 0;
-
-    while (true) {
-      const page: any = await ctx.runQuery(
-        internal.links.internalGetYoutubeLinksMissingChannelInfo,
-        { paginationOpts: { numItems: 25, cursor } },
-      );
-
-      for (const link of page.page) {
-        scanned += 1;
-        try {
-          const result = await fetchYoutubeMetadata(link.url);
-          const { authorHandle, authorAvatarUrl } = result.metadata;
-          if (authorHandle || authorAvatarUrl) {
-            await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
-              _id: link._id,
-              metadata: {
-                authorHandle: authorHandle ?? link.metadata?.authorHandle,
-                authorAvatarUrl:
-                  authorAvatarUrl ?? link.metadata?.authorAvatarUrl,
-              },
-            });
-            updated += 1;
-          }
-        } catch (error) {
-          console.error(`Backfill failed for link ${link._id}:`, error);
-        }
-      }
-
-      if (page.isDone) break;
-      cursor = page.continueCursor;
-    }
+    const { scanned, updated } = await runChannelInfoBackfill(
+      ctx,
+      "youtube",
+      fetchYoutubeMetadata,
+    );
 
     return { scanned, updated, usingApiKey };
+  },
+});
+
+export const backfillXChannelInfo = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runChannelInfoBackfill(ctx, "x", fetchXMetadata);
   },
 });
