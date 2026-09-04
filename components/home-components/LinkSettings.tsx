@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useMutation } from "convex/react";
-import { ExternalLink, FileOutput, Pin } from "lucide-react";
+import { Check, Copy, ExternalLink, FileOutput, Pin } from "lucide-react";
 import { FaEllipsis, FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
@@ -83,6 +83,7 @@ export default function LinkSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const tooltip = useHoverTooltip(100);
 
   const updateLink = useMutation(api.links.updateLink);
@@ -96,6 +97,16 @@ export default function LinkSettings({
       favorite: !favorite,
     });
   }, [favorite, linkId, updateLink]);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(linkUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+    }
+  }, [linkUrl]);
 
   const handleDelete = useCallback(async () => {
     if (onDelete) onDelete(linkId);
@@ -159,7 +170,7 @@ export default function LinkSettings({
             align={tooltipContentAlign}
             className="text-xs px-1.5 py-1"
           >
-            Pin, Open, Move, Delete
+            Pin, Open, Copy, Move, Delete
           </TooltipContent>
         </Tooltip>
 
@@ -190,6 +201,20 @@ export default function LinkSettings({
                 <ExternalLink size={14} className="text-muted-foreground" />
                 Open Link
               </a>
+            </Button>
+
+            <Button
+              variant="SidebarMenuButton"
+              className="w-full h-8 px-2 text-sm"
+              onClick={() => void handleCopyLink()}
+              aria-label="copy-link"
+            >
+              {copied ? (
+                <Check size={14} className="text-muted-foreground" />
+              ) : (
+                <Copy size={14} className="text-muted-foreground" />
+              )}
+              {copied ? "Copied!" : "Copy Link"}
             </Button>
 
             <Button
