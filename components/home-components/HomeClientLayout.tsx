@@ -73,6 +73,12 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
 
   const showTopFade = scrollTop > 0;
 
+  // Only on notevo.me/home/[id] — grow the fade once the user scrolls past 180px
+  const isNoteDetailRoute = /^\/home\/[^/]+\/?$/.test(pathname);
+  const isPastFadeGrowThreshold = scrollTop > 180;
+  const fadeHeight =
+    isNoteDetailRoute && isPastFadeGrowThreshold ? "16rem" : "6rem";
+
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
       <AppSidebar />
@@ -125,10 +131,13 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           }`}
         >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showTopFade ? 1 : 0 }}
-            transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
-            className="rounded-tl-lg absolute top-0 left-0 w-full h-[4rem] bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
+            initial={{ opacity: 0, height: "6rem" }}
+            animate={{ opacity: showTopFade ? 1 : 0, height: fadeHeight }}
+            transition={{
+              opacity: showTopFade ? fadeTransition.show : fadeTransition.hide,
+              height: { ease: "easeInOut", duration: 0.2 },
+            }}
+            className="rounded-tl-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
           {children}
