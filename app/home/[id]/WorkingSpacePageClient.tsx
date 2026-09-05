@@ -1702,7 +1702,7 @@ export function NotesDroppableContainer({
 
   return (
     <div className="grid grid-cols-1 gap-6 w-full max-w-full">
-      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
+      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-5 z-30">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
@@ -1714,11 +1714,11 @@ export function NotesDroppableContainer({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="pl-10 pr-9 border-border h-[37px] my-0 !rounded-none"
+              className="pl-10 pr-9 border-border h-[37px] my-0 !rounded-none bg-background"
               aria-label="search-notes"
             />
             {!isSearchFocused && !searchQuery && (
-              <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 mt-px inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+              <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
                 /
               </kbd>
             )}
@@ -1732,7 +1732,7 @@ export function NotesDroppableContainer({
                 variant="SidebarMenuButton"
                 size="sm"
                 className={cn(
-                  "!rounded-none hover:bg-muted",
+                  "!rounded-none bg-background hover:bg-muted",
                   viewMode === "grid" && "bg-muted",
                 )}
                 onClick={() => setViewMode("grid")}
@@ -1746,7 +1746,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
+                "!rounded-none bg-background hover:bg-muted",
                 !isMobile && "border border-l-border border-r-border",
                 viewMode === "list" && "bg-muted",
               )}
@@ -1760,7 +1760,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
+                "!rounded-none bg-background hover:bg-muted",
                 viewMode === "calendar" && "bg-muted",
               )}
               onClick={() => setViewMode("calendar")}

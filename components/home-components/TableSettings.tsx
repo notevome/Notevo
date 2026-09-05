@@ -68,9 +68,6 @@ export default function TableSettings({
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
 
-    // Try to find the table in cached queries to get workingSpaceId
-    // This is a best-effort optimization - server will sync correctly regardless
-    // We search through common workspace queries
     const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
@@ -209,8 +206,8 @@ export default function TableSettings({
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
-                variant="Trigger"
-                className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
+                variant="outline"
+                className="h-9 px-0.5  !rounded-none bg-background"
                 {...tooltip.triggerProps}
                 aria-label="table-options"
               >
