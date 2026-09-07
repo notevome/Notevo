@@ -459,7 +459,7 @@ const BrowserMockup: React.FC = () => {
           Desktop:h-[43rem] 
           h-[35rem]
           overflow-hidden
-          rounded-lg
+          app-radius-lg
           border border-border
         "
       >
@@ -469,9 +469,9 @@ const BrowserMockup: React.FC = () => {
           <div className="bg-secondary h-11 flex items-stretch">
             {/* Mac Dots */}
             <div className="pl-3 pr-2 pt-3 flex-none flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-background/80"></span>
-              <span className="w-3 h-3 rounded-full bg-background/80"></span>
-              <span className="w-3 h-3 rounded-full bg-background/80"></span>
+              <span className="w-3 h-3 app-radius-full bg-background/80"></span>
+              <span className="w-3 h-3 app-radius-full bg-background/80"></span>
+              <span className="w-3 h-3 app-radius-full bg-background/80"></span>
             </div>
 
             {/* Tabs */}
@@ -481,7 +481,7 @@ const BrowserMockup: React.FC = () => {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`
-                    px-4 py-2 text-xs sm:text-sm cursor-pointer rounded-t-md transition
+                    px-4 py-2 text-xs sm:text-sm cursor-pointer app-radius-md transition
                     border-x border-t border-border
                     ${
                       activeTab === tab.id
@@ -517,7 +517,7 @@ const BrowserMockup: React.FC = () => {
             </div>
 
             {/* URL Bar */}
-            <div className="flex-1 bg-background/80 backdrop-blur rounded-lg px-4 py-1.5 text-xs sm:text-sm text-muted-foreground border border-border">
+            <div className="flex-1 bg-background/80 backdrop-blur app-radius-lg px-4 py-1.5 text-xs sm:text-sm text-muted-foreground border border-border">
               {currentTab.url}
             </div>
 
@@ -542,7 +542,7 @@ const BrowserMockup: React.FC = () => {
         </div>
 
         {/* Page Content Area */}
-        <div className="h-full pt-24 pb-6 px-4 sm:px-6 lg:px-8 bg-background rounded-b-lg overflow-y-auto">
+        <div className="h-full pt-24 pb-6 px-4 sm:px-6 lg:px-8 bg-background app-radius-lg overflow-y-auto">
           <TailwindAdvancedEditor
             editorBubblePlacement={false}
             initialContent={currentTab.content}

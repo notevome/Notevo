@@ -236,7 +236,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const pill = (
     <div
       ref={pillRef}
-      className="fixed flex items-center gap-0.5 bg-muted border border-border rounded-tl-lg shadow-md px-0.5 py-0.5 z-[9998]"
+      className="fixed flex items-center gap-0.5 bg-muted border border-border app-radius-lg shadow-md px-0.5 py-0.5 z-[9998]"
       style={{ left: pillX, top: pillY }}
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -267,7 +267,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
             variant="ghost"
             aria-label="Cell options"
             onClick={openMenu}
-            className=" w-6 h-6 !rounded-none"
+            className=" w-6 h-6 !app-radius-none"
             size="icon"
           >
             <ChevronDown className="w-3.5 h-3.5" />
@@ -288,7 +288,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const fullMenu = menu.show && (
     <div
       ref={menuRef}
-      className="fixed bg-muted border border-border rounded-tl-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent scrollbar-gutter-stable"
+      className="fixed bg-muted border border-border app-radius-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent scrollbar-gutter-stable"
       style={{ left: menu.x, top: menu.y }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
@@ -392,7 +392,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
             <button
               key={color.name}
               title={color.name}
-              className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+              className="w-6 h-6 app-radius-md border border-border hover:scale-110 transition-transform"
               style={{
                 backgroundColor: color.value || "transparent",
                 borderColor: color.value ? "transparent" : "#888",

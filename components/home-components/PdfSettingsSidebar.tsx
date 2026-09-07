@@ -83,7 +83,7 @@ export default function PdfSettingsSidebar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card !rounded-none"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
               aria-label="pin-upload"
               {...pinTooltip.triggerProps}
             >
@@ -97,7 +97,7 @@ export default function PdfSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className=" !rounded-none"
+            className=" !app-radius-none"
           >
             {pdf?.favorite ? "Unpin upload" : "Pin upload"}
           </TooltipContent>
@@ -107,7 +107,7 @@ export default function PdfSettingsSidebar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !rounded-none"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
               aria-label="delete-upload"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -115,7 +115,7 @@ export default function PdfSettingsSidebar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!rounded-none">
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             Delete upload
           </TooltipContent>
         </Tooltip>
@@ -132,7 +132,7 @@ export default function PdfSettingsSidebar({
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.

@@ -13,7 +13,7 @@ const toggleVariants = cva(
       variant: {
         default: "bg-transparent",
         Trigger:
-          "group relative h-5 w-9 min-w-9 rounded-full border-border bg-border/70 p-0 hover:bg-border data-[state=on]:border-primary data-[state=on]:bg-primary",
+          "group relative h-5 w-9 min-w-9 app-radius-full border-border bg-border/70 p-0 hover:bg-border data-[state=on]:border-primary data-[state=on]:bg-primary",
         SidebarMenuButton:
           "flex justify-center items-center gap-2 bg-none w-full text-foreground hover:bg-card/80",
         outline:

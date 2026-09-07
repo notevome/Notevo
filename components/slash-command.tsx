@@ -100,7 +100,7 @@ function YoutubeDialog({
           <Button
             disabled={!youtubeUrlSchema.safeParse(url).success}
             onClick={handleSubmit}
-            className=" h-8 !rounded-none before:!rounded-none before:inset-[-2px]"
+            className=" h-8 !app-radius-none before:!app-radius-none before:inset-[-2px]"
           >
             Embed
           </Button>

@@ -36,11 +36,11 @@ export const WobbleCard = ({
         transition: "transform 0.1s ease-out",
       }}
       className={cn(
-        "mx-auto w-full bg-transparent relative rounded-lg overflow-hidden",
+        "mx-auto w-full bg-transparent relative app-radius-lg overflow-hidden",
         containerClassName,
       )}
     >
-      <div className="relative  h-full  sm:mx-0 sm:rounded-lg overflow-hidden">
+      <div className="relative  h-full  sm:mx-0 sm:app-radius-lg overflow-hidden">
         <motion.div
           style={{
             transform: isHovering

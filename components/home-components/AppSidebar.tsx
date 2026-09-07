@@ -153,7 +153,7 @@ function OpenInPaneButton({
       <TooltipContent
         side="right"
         sideOffset={5}
-        className="flex justify-center items-center gap-2 !rounded-none"
+        className="flex justify-center items-center gap-2 !app-radius-none"
       >
         Open in Pane
         <ShortcutBadge keys="Alt + Click" />
@@ -331,10 +331,10 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
 
   return (
     <SidebarHeader className=" text-foreground">
-      <div className="flex items-center justify-between p-1.5">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between p-1">
+        <div className="flex items-center gap-1">
           <span className="font-semibold text-primary">Notevo</span>
-          <Badge variant="secondary" className="text-[0.6rem]">
+          <Badge variant="secondary" className="text-[0.5rem] px-1 py-px">
             BETA
           </Badge>
         </div>
@@ -370,10 +370,10 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             </div>
           ))
         : createNoteWorkspace && (
-            <div className="flex h-[42px] p-[3px] bg-gradient-to-br from-primary/60 via-border to-muted-foreground/70 w-full items-center rounded-tl-[0.6rem] overflow-hidden ">
+            <div className="flex h-[42px] p-[3px] bg-gradient-to-br from-primary/60 via-border to-muted-foreground/70 w-full items-center app-radius-lg overflow-hidden ">
               <Button
                 variant="revDefault"
-                className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !rounded-r-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 disabled={loading}
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
@@ -389,7 +389,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="revDefault"
-                    className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !rounded-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                    className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                     disabled={loading}
                     aria-label="select-create-note-workspace"
                   >
@@ -399,7 +399,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 <DropdownMenuContent
                   side="bottom"
                   align="end"
-                  className="!rounded-none p-1 bg-background w-52 max-h-36 relative overflow-hidden z-[90000]"
+                  className="!app-radius-none p-1 bg-background w-52 max-h-36 relative overflow-hidden z-[90000]"
                 >
                   <DropdownMenuGroup className="relative flex-col ">
                     <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
@@ -421,7 +421,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                       {getWorkingSpaces?.map((workingSpace) => (
                         <DropdownMenuItem
                           key={workingSpace._id}
-                          className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !rounded-none"
+                          className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !app-radius-none"
                           onSelect={() =>
                             void createNoteInWorkspace(workingSpace)
                           }
@@ -675,7 +675,7 @@ const PinnedNoteItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!rounded-none py-[5px]"
+                  className="!app-radius-none py-[5px]"
                 >
                   {note.title || "Untitled"}
                 </TooltipContent>
@@ -986,7 +986,7 @@ const PinnedUploadItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className=" !rounded-none py-[5px]"
+                  className=" !app-radius-none py-[5px]"
                 >
                   {pdf.title || "Untitled"}
                 </TooltipContent>
@@ -1235,7 +1235,7 @@ const PinnedLinkItem = memo(
               <TooltipContent
                 side="right"
                 sideOffset={5}
-                className=" !rounded-none py-[5px]"
+                className=" !app-radius-none py-[5px]"
               >
                 {displayTitle}
               </TooltipContent>
@@ -1551,7 +1551,7 @@ const WorkspaceItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!rounded-none py-[5px]"
+                  className="!app-radius-none py-[5px]"
                 >
                   {workingSpace.name || "Untitled"}
                 </TooltipContent>
@@ -1607,7 +1607,7 @@ const WorkspacesList = memo(function WorkspacesList({
           <SidebarGroupAction
             onClick={handleCreateWorkingSpace}
             {...addWorkspaceTooltip.triggerProps}
-            className=" !rounded-none"
+            className=" !app-radius-none"
           >
             <Plus size={16} className=" text-muted-foreground" />{" "}
             <span className="sr-only">Add Workspace</span>
@@ -1616,7 +1616,7 @@ const WorkspacesList = memo(function WorkspacesList({
         <TooltipContent
           side="right"
           sideOffset={5}
-          className=" text-xs py-0.5 px-1.5 !rounded-none"
+          className=" text-xs py-0.5 px-1.5 !app-radius-none"
         >
           Add Workspace
         </TooltipContent>

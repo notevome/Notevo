@@ -170,7 +170,7 @@ export default function PublicNotePage() {
                   </TooltipContent>
                 </Tooltip>
                 <NoteDownloadDropdown
-                  className=" !rounded-none"
+                  className=" !app-radius-none"
                   noteBody={JSON.stringify(content)}
                   noteTitle={getNote.title ?? "note"}
                 />
@@ -181,7 +181,7 @@ export default function PublicNotePage() {
               <TooltipTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`w-8 h-8 pt-0.5 ${isMobile ? "" : "!rounded-none"} `}
+                  className={`w-8 h-8 pt-0.5 ${isMobile ? "" : "!app-radius-none"} `}
                   size="icon"
                   onClick={cycleTheme}
                   {...themeTooltip.triggerProps}
@@ -200,7 +200,7 @@ export default function PublicNotePage() {
             </Tooltip>
             <Button
               variant="outline"
-              className="text-sm px-1.5 py-1.5 h-8 bg-secondary/70 hover:bg-secondary !rounded-none"
+              className="text-sm px-1.5 py-1.5 h-8 bg-secondary/70 hover:bg-secondary !app-radius-none"
             >
               <Link
                 href="https://notevo.me/"
@@ -241,7 +241,7 @@ export default function PublicNotePage() {
               autoFocus={true}
               rows={1}
               style={{ resize: "none", overflow: "hidden" }}
-              className="px-0.5 py-6 my-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !rounded-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="px-0.5 py-6 my-0 field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-fit whitespace-pre-wrap [overflow-wrap:anywhere] text-2xl md:!text-5xl font-bold placeholder:text-muted-foreground/50 !app-radius-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
         </div>

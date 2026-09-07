@@ -197,7 +197,7 @@ export default function HeroSection() {
                 Array.from({ length: 5 }).map((_, index) => (
                   <div key={index}>
                     <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-primary/20 !rounded-full animate-pulse" />
+                      <AvatarFallback className="bg-primary/20 !app-radius-full animate-pulse" />
                     </Avatar>
                   </div>
                 ))
@@ -212,9 +212,9 @@ export default function HeroSection() {
                           <AvatarImage
                             src={user.image || "/placeholder.svg"}
                             alt={user.name || "User"}
-                            className="rounded-full"
+                            className="app-radius-full"
                           />
-                          <AvatarFallback className="bg-primary/20 !rounded-full">
+                          <AvatarFallback className="bg-primary/20 !app-radius-full">
                             {user.name ? user.name.charAt(0) : "U"}
                           </AvatarFallback>
                         </Avatar>
@@ -227,7 +227,7 @@ export default function HeroSection() {
                       transition={{ delay: 1.0 }}
                     >
                       <Avatar className="w-10 h-10">
-                        <AvatarFallback className="text-sm font-medium !rounded-full">
+                        <AvatarFallback className="text-sm font-medium !app-radius-full">
                           + 75
                         </AvatarFallback>
                       </Avatar>
@@ -254,12 +254,12 @@ export default function HeroSection() {
           initial={{ opacity: 0, y: 20, filter: "blur(16px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.55, delay: 0.38 }}
-          className="relative w-full p-1 Desktop:p-2 rounded-tl-lg bg-primary/50 backdrop-blur-lg"
+          className="relative w-full p-1 Desktop:p-2 app-radius-lg bg-primary/50 backdrop-blur-lg"
         >
           <HeroVideo
             src="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.mp4"
             poster="https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_1200/v1774021286/notevo-homepage_irogrs.jpg"
-            className="w-full h-full object-cover rounded-tl-lg"
+            className="w-full h-full object-cover app-radius-lg"
             style={{ pointerEvents: "none" }}
           />
         </motion.div>

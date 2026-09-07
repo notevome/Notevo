@@ -127,7 +127,7 @@ export default function SignInPage() {
           }}
         />
       </div>
-      <div className="w-full relative max-w-sm Desktop:max-w-[53rem]  rounded-lg">
+      <div className="w-full relative max-w-sm Desktop:max-w-[53rem]  app-radius-lg">
         <motion.svg
           className="absolute z-[2] Desktop:-top-16 -top-14 Desktop:-left-16 -left-12 w-40 h-40 md:w-48 md:h-48 text-primary/80"
           viewBox="0 0 120 120"
@@ -280,7 +280,7 @@ function SignInWithGoogle() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1 !rounded-none"
+      className="w-full flex-1 !app-radius-none"
       variant="outline"
       type="button"
       onClick={() => {

@@ -189,7 +189,7 @@ function SignUpPreview() {
         {["GitHub", "Google"].map((label, i) => (
           <div
             key={label}
-            className={`flex-1 bg-background border border-border ${i === 0 ? "app-radius-lg" : "rounded-none"} py-2 text-center text-[11px] text-foreground font-medium`}
+            className={`flex-1 bg-background border border-border ${i === 0 ? "app-radius-lg" : "app-radius-none"} py-2 text-center text-[11px] text-foreground font-medium`}
           >
             {label}
           </div>
@@ -271,7 +271,7 @@ function WorkspacePreview() {
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="w-1 h-1 rounded-full bg-muted-foreground/40"
+                      className="w-1 h-1 app-radius-full bg-muted-foreground/40"
                     />
                   ))}
                 </div>
@@ -461,7 +461,7 @@ export default function HowToStartSection() {
                   ref={(el) => {
                     nodeRefs.current[i] = el;
                   }}
-                  className="z-10 w-8 h-8 rounded-tl-md border-2 border-primary/30 bg-background flex items-center justify-center text-xs font-bold text-primary flex-shrink-0"
+                  className="z-10 w-8 h-8 app-radius-md border-2 border-primary/30 bg-background flex items-center justify-center text-xs font-bold text-primary flex-shrink-0"
                 >
                   {i + 1}
                 </div>

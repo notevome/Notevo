@@ -140,7 +140,7 @@ function ColorRow({
           aria-label="No color"
           onClick={() => onChange(null)}
           className={cn(
-            "h-5 w-5 !rounded text-muted-foreground hover:bg-transparent hover:text-foreground",
+            "h-5 w-5 app-radius-md text-muted-foreground hover:bg-transparent hover:text-foreground",
             value === null && "outline-1 outline-muted-foreground",
           )}
         >
@@ -156,7 +156,7 @@ function ColorRow({
             onClick={() => onChange(swatch.name)}
             style={{ backgroundColor: isDark ? swatch.dark : swatch.light }}
             className={cn(
-              "h-5 w-5 !rounded p-0 transition-transform hover:scale-110",
+              "h-5 w-5 app-radius-md p-0 transition-transform hover:scale-110",
               value === swatch.name && " outline-1 outline-muted-foreground",
             )}
           />
@@ -257,7 +257,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     <NodeViewWrapper
       data-toggle-action
       style={wrapperStyle}
-      className="my-2 text-foreground bg-muted/50 rounded transition-colors group"
+      className="my-2 text-foreground bg-muted/50 app-radius-md transition-colors group"
     >
       <div
         contentEditable={false}
@@ -290,7 +290,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
             side="bottom"
             align="start"
             sideOffset={5}
-            className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+            className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
           >
             <p>{isOpen ? "Collapse toggle action" : "Expand toggle action"}</p>
           </TooltipContent>
@@ -320,7 +320,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               titleTooltip.hide();
             }}
             style={contrastStyle}
-            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !rounded-none"
+            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !app-radius-none"
           />
         ) : (
           <Tooltip open={titleTooltip.open} disableHoverableContent>
@@ -341,7 +341,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               side="bottom"
               align="start"
               sideOffset={5}
-              className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+              className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
             >
               <p>Double click to rename</p>
             </TooltipContent>
@@ -370,7 +370,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
                 side="bottom"
                 align="center"
                 sideOffset={5}
-                className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
               >
                 <p>Customize toggle appearance</p>
               </TooltipContent>

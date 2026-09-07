@@ -42,7 +42,7 @@ const TableGridSelector = ({
           Array.from({ length: maxCols }).map((_, colIndex) => (
             <div
               key={`${rowIndex}-${colIndex}`}
-              className={`w-6 h-6 border-2 rounded-lg cursor-pointer transition-colors ${
+              className={`w-6 h-6 border-2 app-radius-lg cursor-pointer transition-colors ${
                 rowIndex < hoveredCell.row && colIndex < hoveredCell.col
                   ? "bg-primary border-primary"
                   : "bg-background border-border hover:border-primary/50"

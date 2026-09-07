@@ -565,7 +565,7 @@ export default function AccountSettingsDialog({
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center app-radius-full border border-border bg-muted text-muted-foreground shadow-sm transition-colors hover:bg-destructive hover:text-destructive-foreground disabled:cursor-not-allowed disabled:opacity-60"
                           aria-label="Remove profile photo"
                           disabled={isUploadingAvatar || isDeletingAvatar}
                           onClick={() => void handleDeleteAvatar()}
@@ -737,7 +737,7 @@ export default function AccountSettingsDialog({
                 </div>
                 <Button
                   variant="ghost"
-                  className="flex h-8 w-8 items-center justify-center rounded-full"
+                  className="flex h-8 w-8 items-center justify-center app-radius-full"
                   onClick={closePhotoEditor}
                   size="icon"
                   aria-label="Close photo editor"
@@ -866,7 +866,7 @@ export default function AccountSettingsDialog({
                     <Button
                       type="button"
                       variant="outline"
-                      className=" h-8 !rounded-none"
+                      className=" h-8 !app-radius-none"
                       onClick={() => {
                         closePhotoEditor();
                         if (hasAvatarImage) void handleDeleteAvatar();
@@ -879,7 +879,7 @@ export default function AccountSettingsDialog({
                     type="button"
                     onClick={() => void handleConfirmPhotoEdit()}
                     disabled={isUploadingAvatar}
-                    className=" !rounded-none h-8"
+                    className=" !app-radius-none h-8"
                   >
                     {isUploadingAvatar ? "Uploading..." : "Confirm"}
                   </Button>

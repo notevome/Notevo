@@ -112,11 +112,11 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
       <PopoverTrigger asChild>
         <Button
           size="sm"
-          className="gap-2 rounded-l-none border-none px-2 h-8"
+          className="gap-2 app-radius-none border-none px-2 h-8"
           variant="SidebarMenuButton"
         >
           <span
-            className="rounded-tl-lg px-1"
+            className="app-radius-lg px-1"
             style={{
               color: activeColorItem?.color,
               backgroundColor: activeHighlightItem?.color,
@@ -130,7 +130,7 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
       <PopoverContent
         sideOffset={5}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="my-1 rounded-tl-lg px-1 py-2 transition-all flex max-h-80 w-48 flex-col overflow-hidden overflow-y-auto p-1 shadow-xl"
+        className="my-1 app-radius-lg px-1 py-2 transition-all flex max-h-80 w-48 flex-col overflow-hidden overflow-y-auto p-1 shadow-xl"
         align="start"
       >
         <div className="flex flex-col">
@@ -145,10 +145,10 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                   editor.commands.setColor(color);
                   onOpenChange(false);
                 }}
-                className="cursor-pointer flex items-center justify-center px-2 py-1 text-md rounded-tl-lg text-foreground group "
+                className="cursor-pointer flex items-center justify-center px-2 py-1 text-md app-radius-lg text-foreground group "
               >
                 <div
-                  className="rounded-tl-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
+                  className="app-radius-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
                   style={{ color }}
                 >
                   A
@@ -168,10 +168,10 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
                 onSelect={() => {
                   editor.commands.setHighlight({ color });
                 }}
-                className="flex cursor-pointer items-center justify-between px-2 py-1 text-md rounded-lg text-foreground group"
+                className="flex cursor-pointer items-center justify-between px-2 py-1 text-md app-radius-lg text-foreground group"
               >
                 <div
-                  className="rounded-tl-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
+                  className="app-radius-lg border text-base border-border px-2 py-px font-medium group-hover:border-muted-foreground"
                   style={{ backgroundColor: color }}
                 >
                   A

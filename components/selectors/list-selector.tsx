@@ -45,7 +45,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
         <Button
           size="sm"
           variant="ghost"
-          className="gap-2 rounded-none border-none"
+          className="gap-2 app-radius-none border-none"
         >
           <p className="text-base">↗</p>
           <p
@@ -87,7 +87,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
               size="icon"
               variant="outline"
               type="button"
-              className="flex h-8 items-center rounded-lg p-1 text-red-600 transition-all hover:bg-red-100 dark:hover:bg-red-800"
+              className="flex h-8 items-center app-radius-lg p-1 text-red-600 transition-all hover:bg-red-100 dark:hover:bg-red-800"
               onClick={() => {
                 editor.chain().focus().unsetLink().run();
                 if (inputRef.current) inputRef.current.value = "";

@@ -194,7 +194,7 @@ export default function PdfSettings({
             <TooltipTrigger asChild>
               <Button
                 variant={btnVariant || "Trigger"}
-                className={cn("px-0.5 h-8 mt-0.5", btnClassName)}
+                className={cn("px-0.5 h-8", btnClassName)}
                 size="icon"
                 {...tooltip.triggerProps}
                 aria-label="upload-options"
@@ -333,7 +333,7 @@ export default function PdfSettings({
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.

@@ -238,7 +238,7 @@ const TailwindAdvancedEditor = ({
                       <button
                         type="button"
                         aria-label="Delete block"
-                        className="group flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
+                        className="group flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground app-radius-none opacity-50 transition-colors hover:bg-border"
                         onMouseDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -255,7 +255,7 @@ const TailwindAdvancedEditor = ({
                     <TooltipContent
                       side="left"
                       align="center"
-                      className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                      className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
                     >
                       <p>Delete block</p>
                     </TooltipContent>
@@ -267,7 +267,7 @@ const TailwindAdvancedEditor = ({
                         <button
                           type="button"
                           aria-label="Insert block below"
-                          className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground rounded-none opacity-50 transition-colors hover:bg-border"
+                          className="flex h-5 w-5 mt-0.5 items-center justify-center text-muted-foreground app-radius-none opacity-50 transition-colors hover:bg-border"
                           onMouseDown={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -284,7 +284,7 @@ const TailwindAdvancedEditor = ({
                       <TooltipContent
                         side="left"
                         align="center"
-                        className=" text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                        className=" text-xs font-bold py-0.5 px-1.5 !app-radius-none"
                       >
                         <p> Click to insert block below </p>
                       </TooltipContent>
@@ -324,7 +324,7 @@ const TailwindAdvancedEditor = ({
                     <TooltipContent
                       side="left"
                       align="center"
-                      className=" text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                      className=" text-xs font-bold py-0.5 px-1.5 !app-radius-none"
                     >
                       <p>Drag</p>
                     </TooltipContent>
@@ -373,7 +373,7 @@ const TailwindAdvancedEditor = ({
             }}
             slotAfter={<ImageResizer />}
           >
-            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
+            <EditorCommand className="z-50 h-auto max-h-[330px] overflow-y-auto app-radius-lg border border-border bg-muted px-1 py-1 transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
               <EditorCommandEmpty className="px-2 text-muted-foreground">
                 No results
               </EditorCommandEmpty>
@@ -382,10 +382,10 @@ const TailwindAdvancedEditor = ({
                   <EditorCommandItem
                     value={item.title}
                     onCommand={(val) => item.command(val)}
-                    className="flex w-full items-center space-x-2.5 rounded-tl-lg my-1 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-border"
+                    className="flex w-full items-center space-x-2.5 app-radius-lg my-1 px-1 py-1 text-left text-sm text-foreground hover:bg-border aria-selected:bg-border"
                     key={item.title}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center border border-border rounded-tl-lg text-muted-foreground">
+                    <div className="flex h-8 w-8 items-center justify-center border border-border app-radius-lg text-muted-foreground">
                       {item.icon}
                     </div>
                     <div>
@@ -431,7 +431,7 @@ const TailwindAdvancedEditor = ({
             top: plusMenuPos.y,
             zIndex: 9999,
           }}
-          className="relative w-64 max-h-[330px] overflow-y-auto rounded-tl-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
+          className="relative w-64 max-h-[330px] overflow-y-auto app-radius-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
         >
           <input
             autoFocus
@@ -466,7 +466,7 @@ const TailwindAdvancedEditor = ({
                   executePlusMenuItem(editorInstance, filtered[selectedIndex]);
               }
             }}
-            className=" sticky -top-1.5 left-0 w-full px-2 py-1 m-0 text-xs bg-muted border-b border-border rounded-tl text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
+            className=" sticky -top-1.5 left-0 w-full px-2 py-1 m-0 text-xs bg-muted border-b border-border app-radius-md text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0"
           />
           {(() => {
             const filtered = suggestionItems.filter(
@@ -494,11 +494,11 @@ const TailwindAdvancedEditor = ({
                   executePlusMenuItem(editorInstance, item);
                 }}
                 onMouseEnter={() => setSelectedIndex(idx)}
-                className={`flex w-full items-center space-x-2.5 rounded-tl-lg my-0.5 px-1 py-1 text-left text-sm text-foreground transition-colors ${
+                className={`flex w-full items-center space-x-2.5 app-radius-lg my-0.5 px-1 py-1 text-left text-sm text-foreground transition-colors ${
                   idx === selectedIndex ? "bg-border" : "hover:bg-border"
                 }`}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border rounded-tl-lg text-muted-foreground">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center border border-border app-radius-lg text-muted-foreground">
                   {item.icon}
                 </div>
                 <div>
@@ -527,7 +527,7 @@ const TailwindAdvancedEditor = ({
             <img
               src={imagePreviewSrc}
               alt="Expanded editor image"
-              className="overflow-hidden rounded-none rounded-tl-lg border border-border/70 max-h-[80vh] w-full object-contain"
+              className="overflow-hidden app-radius-lg border border-border/70 max-h-[80vh] w-full object-contain"
             />
           )}
         </DialogContent>
