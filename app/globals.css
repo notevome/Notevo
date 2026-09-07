@@ -288,7 +288,7 @@ input::-webkit-inner-spin-button {
   width: 0;
   height: 100%;
   background-color: hsl(var(--secondary));
-  border-radius: 0.5rem;
+  border-radius: 0;
   z-index: -1;
 
 }
@@ -429,24 +429,12 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
     width: fit-content;
   }
 
-  .app-radius-sm {
-    @apply rounded-none rounded-tl-sm;
+  .app-radius-none {
+    @apply rounded-none;
   }
 
-  .app-radius-md {
-    @apply rounded-none rounded-tl-md;
-  }
-
-  .app-radius-lg {
-    @apply rounded-none rounded-tl-lg;
-  }
-
-  .app-radius-xl {
-    @apply rounded-none rounded-tl-xl;
-  }
-
-  .app-radius-2xl {
-    @apply rounded-none rounded-tl-2xl;
+  .app-radius-full {
+    @apply rounded-full;
   }
 }
 
@@ -788,7 +776,7 @@ hr {
 .code-block-wrapper {
   position: relative;
   margin: 1.5rem 0;
-  border-radius: calc(var(--radius) - 2px);
+  border-radius: 0;
   overflow: hidden;
   border: 1px solid hsl(var(--border));
   background-color: hsl(var(--card));
@@ -813,7 +801,7 @@ hr {
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.025em;
-  border-radius: calc(var(--radius) - 4px);
+  border-radius: 0;
 }
 
 /* Language dropdown scrollbar */
@@ -960,7 +948,7 @@ hr {
   width: 1.125rem;
   height: 1.125rem;
   border: 1.5px solid hsl(var(--border));
-  border-radius: 0.25rem;
+  border-radius: 0;
   background-color: hsl(var(--background));
   cursor: pointer;
   position: relative;
@@ -1017,7 +1005,7 @@ hr {
   overflow: hidden;
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 0.5rem;
+  border-radius: 0;
 }
 
 .ProseMirror th,

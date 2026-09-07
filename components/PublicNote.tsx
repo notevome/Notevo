@@ -182,7 +182,7 @@ export default function PublicNote({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
-                    className=" rounded-tl-sm px-1.5"
+                    className=" app-radius-sm px-1.5"
                     side="bottom"
                   >
                     Copy link
@@ -199,7 +199,7 @@ export default function PublicNote({
                   Unpublish
                 </Button>
                 <Button
-                  className="w-full h-8 !rounded-none "
+                  className="w-full h-8 !app-radius-none "
                   variant="secondary"
                 >
                   <Link

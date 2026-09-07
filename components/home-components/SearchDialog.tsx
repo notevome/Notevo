@@ -637,10 +637,10 @@ export default function SearchDialog({
               <div className="w-full flex items-center justify-between gap-1">
                 Search
                 <span className="inline-flex gap-1">
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">Ctrl</span>
                   </kbd>
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">K</span>
                   </kbd>
                 </span>
@@ -736,26 +736,26 @@ export default function SearchDialog({
           <div className="w-full flex justify-between items-center">
             <span className="flex justify-center items-center gap-2 space-x-2">
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <ArrowDownUp size={14} />
                 </kbd>
                 <p className="text-foreground font-mono text-xs">Navigate</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <Undo2 size={14} />
                 </kbd>
                 <p className="text-foreground text-xs">Open</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   Alt + click
                 </kbd>
                 <p className="text-foreground text-xs">Open in pane</p>
               </span>
             </span>
             <span className="flex justify-center items-center gap-2">
-              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                 ESC
               </kbd>
               <p className="text-foreground  text-xs">Close</p>

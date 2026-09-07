@@ -20,7 +20,7 @@ export default function NoteNotFound({
     <MaxWContainer>
       <div className="flex h-[calc(100vh-4rem)] flex-col items-center justify-center">
         <div className="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+          <div className="flex h-20 w-20 items-center justify-center app-radius-full bg-muted">
             <FileX className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="mt-4 text-lg font-semibold text-foreground">

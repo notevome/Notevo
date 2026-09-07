@@ -123,7 +123,7 @@ export default function WorkingSpaceSettingsSidbar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!rounded-none">
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             Delete workspace
           </TooltipContent>
         </Tooltip>
@@ -159,7 +159,7 @@ export default function WorkingSpaceSettingsSidbar({
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.

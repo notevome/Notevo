@@ -98,10 +98,10 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
       />
       <main
         className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${
-          open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
-        } rounded-none`}
+          open && !isMobile ? `app-radius-lg border-t border-l mt-3` : ""
+        } app-radius-none`}
       >
-        <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
+        <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
           <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
               {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
@@ -137,7 +137,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
               opacity: showTopFade ? fadeTransition.show : fadeTransition.hide,
               height: { ease: "easeInOut", duration: 0.2 },
             }}
-            className="rounded-tl-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
+            className="app-radius-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
           {children}

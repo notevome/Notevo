@@ -428,7 +428,7 @@ export default function WorkingspaceNewDropdownBtn({
 
       <div
         className={cn(
-          "flex h-9 items-center overflow-hidden !rounded-none",
+          "flex h-9 items-center overflow-hidden !app-radius-none",
           className,
         )}
       >
@@ -437,7 +437,7 @@ export default function WorkingspaceNewDropdownBtn({
           variant="outline"
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className="h-9 !rounded-none"
+          className="h-9 !app-radius-none"
         >
           {isUploading ? "Uploading..." : "New"}
         </Button>
@@ -448,7 +448,7 @@ export default function WorkingspaceNewDropdownBtn({
               type="button"
               variant="outline"
               disabled={isDisabled}
-              className="h-9 px-1 border-l-0 !rounded-none"
+              className="h-9 px-1 border-l-0 !app-radius-none"
               aria-label="open-create-menu"
             >
               <ChevronDown className="h-4 w-4" />
@@ -464,10 +464,10 @@ export default function WorkingspaceNewDropdownBtn({
                 New Note
               </span>
               <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <span className="text-[10px]">Ctrl + Shift</span>
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <span className="text-[10px]">O</span>
                 </kbd>
               </span>
@@ -485,10 +485,10 @@ export default function WorkingspaceNewDropdownBtn({
                 Insert Link
               </span>
               <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <span className="text-[10px]">Shift</span>
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                   <span className="text-[10px]">L</span>
                 </kbd>
               </span>
@@ -543,7 +543,7 @@ export default function WorkingspaceNewDropdownBtn({
               variant="revDefault"
               onClick={() => void handleInsertLink()}
               disabled={isInsertingLink || !linkUrl.trim()}
-              className=" h-8 !rounded-none"
+              className=" h-8 !app-radius-none"
             >
               {isInsertingLink ? "Inserting..." : "Insert Link"}
             </Button>

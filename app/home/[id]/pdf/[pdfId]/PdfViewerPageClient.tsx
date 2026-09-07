@@ -258,7 +258,7 @@ function SearchPanel({
                   type="button"
                   onClick={() => void handleResultClick(result)}
                   className={cn(
-                    "w-full rounded-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
+                    "w-full app-radius-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
                     activeKey === itemKey && "border-muted-foreground bg-muted",
                   )}
                 >
@@ -324,7 +324,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
                   <Thumbnail
                     pageNumber={pageNumber}
                     className={cn(
-                      "w-[88px] rounded-[14px] bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
+                      "w-[88px] app-radius-lg bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
                       isActive &&
                         "border-muted-foreground outline-muted-foreground",
                     )}
@@ -350,7 +350,7 @@ function ZoomDropdown() {
         <Button
           type="button"
           variant="outline"
-          className="h-8 gap-2 border-border !border-l-0 !rounded-none"
+          className="h-8 gap-2 border-border !border-l-0 !app-radius-none"
         >
           <span>{Math.round(zoom * 100)}%</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground " />
@@ -366,7 +366,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev - 0.1).toFixed(2)))
               }
@@ -377,7 +377,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev + 0.1).toFixed(2)))
               }
@@ -427,7 +427,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
@@ -463,7 +463,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handleNextPage}
         disabled={currentPage >= pages}
         aria-label="next-page"
@@ -587,7 +587,7 @@ function PdfViewerContent({
                 size="icon"
                 className={cn(
                   "h-8 w-8 border border-border",
-                  renderedInPane || (isMobile && "!rounded-none"),
+                  renderedInPane || (isMobile && "!app-radius-none"),
                 )}
                 aria-label="show-search-panel"
               >
@@ -596,7 +596,7 @@ function PdfViewerContent({
             )}
             {!renderedInPane && (
               <div
-                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
+                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
               >
                 <h1
                   onDoubleClick={handleNameDoubleClick}
@@ -635,7 +635,7 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border border-border !rounded-none"
+                        className="h-8 w-8 border border-border !app-radius-none"
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "search" ? null : "search",
@@ -665,7 +665,7 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border-y !border-l-0 border-border !rounded-none"
+                        className="h-8 w-8 border-y !border-l-0 border-border !app-radius-none"
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "thumbnails" ? null : "thumbnails",
@@ -704,7 +704,7 @@ function PdfViewerContent({
                     dropdownMenuContentAlign="end"
                     tooltipContentAlign="end"
                     btnVariant="outline"
-                    btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
+                    btnClassName="h-8 w-8 m-0 px-1 border-border !app-radius-none"
                   />
                 )}
               </span>
@@ -763,7 +763,7 @@ function PdfViewerShell({
       source={fileUrl}
       isZoomFitWidth
       className={cn(
-        "pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch",
+        "pdf-viewer-shell relative h-full w-full overflow-hidden app-radius-none border-0 bg-background flex flex-col justify-stretch",
         open && !isMobile && !renderedInPane && "app-radius-lg",
       )}
       loader={
@@ -878,7 +878,7 @@ export default function PdfViewerPageClient({
   if (pdf === undefined) {
     return (
       <div className="flex h-full max-w-full min-h-0 flex-col px-0 py-0 mx-0">
-        <div className="flex-1 rounded-none border-none bg-transparent animate-pulse" />
+        <div className="flex-1 app-radius-none border-none bg-transparent animate-pulse" />
       </div>
     );
   }

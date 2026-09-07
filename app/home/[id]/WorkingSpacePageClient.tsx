@@ -280,7 +280,7 @@ function GroupAvatar({
     return (
       <div
         className={cn(
-          "h-6 w-6 rounded-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0",
+          "h-6 w-6 app-radius-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0",
           className,
         )}
       >
@@ -297,7 +297,7 @@ function GroupAvatar({
       draggable={false}
       referrerPolicy="no-referrer"
       loading="lazy"
-      className={cn("h-6 w-6 rounded-full object-cover shrink-0", className)}
+      className={cn("h-6 w-6 app-radius-full object-cover shrink-0", className)}
       onError={() => setErrored(true)}
     />
   );
@@ -390,7 +390,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
         part.toLowerCase() === trimmedQuery.toLowerCase() ? (
           <mark
             key={i}
-            className="text-secondary bg-secondary-foreground rounded-sm px-0.5"
+            className="text-secondary bg-secondary-foreground app-radius-sm px-0.5"
           >
             {part}
           </mark>
@@ -771,7 +771,7 @@ function TableTab({ table }: { table: any }) {
         onMouseLeave={handleContentMouseLeave}
       >
         {isRenameOpen ? (
-          <div className=" relative flex items-center gap-1.5 px-2 py-2 rounded-none rounded-tl-lg w-full border-2 border-border border-b-0 bg-card">
+          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg w-full border-2 border-border border-b-0 bg-card">
             <Input
               ref={inputRef as any}
               value={editedName}
@@ -787,7 +787,7 @@ function TableTab({ table }: { table: any }) {
           <TabsTrigger
             value={table._id}
             data-tab-id={table._id}
-            className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+            className=" px-4 py-2.5 app-radius-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
             onDoubleClick={handleDoubleClick}
             aria-label="rename-table"
           >
@@ -825,7 +825,7 @@ function TableTab({ table }: { table: any }) {
               </Button>
             </TooltipTrigger>
             <TooltipContent
-              className=" !rounded-none"
+              className=" !app-radius-none"
               side="right"
               sideOffset={5}
             >
@@ -846,7 +846,7 @@ function TableTab({ table }: { table: any }) {
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.
@@ -960,7 +960,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-none",
+            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -975,7 +975,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-none",
+            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -1002,7 +1002,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !app-radius-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
@@ -1342,7 +1342,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" h-9 rounded-tr-none rounded-b-none "
+              className=" h-9 app-radius-none "
               aria-label="create-table"
             />
           )}
@@ -1714,11 +1714,11 @@ export function NotesDroppableContainer({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="pl-10 pr-9 border-border h-[37px] my-0 !rounded-none bg-background"
+              className="pl-10 pr-9 border-border h-[37px] my-0 !app-radius-none bg-background"
               aria-label="search-notes"
             />
             {!isSearchFocused && !searchQuery && (
-              <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+              <kbd className="pointer-events-none leading-4 absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center app-radius-md border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
                 /
               </kbd>
             )}
@@ -1726,13 +1726,13 @@ export function NotesDroppableContainer({
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="flex h-9 items-center border border-border rounded-none overflow-hidden">
+          <div className="flex h-9 items-center border border-border app-radius-none overflow-hidden">
             {!isMobile && (
               <Button
                 variant="SidebarMenuButton"
                 size="sm"
                 className={cn(
-                  "!rounded-none bg-background hover:bg-muted",
+                  "!app-radius-none bg-background hover:bg-muted",
                   viewMode === "grid" && "bg-muted",
                 )}
                 onClick={() => setViewMode("grid")}
@@ -1746,7 +1746,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none bg-background hover:bg-muted",
+                "!app-radius-none bg-background hover:bg-muted",
                 !isMobile && "border border-l-border border-r-border",
                 viewMode === "list" && "bg-muted",
               )}
@@ -1760,7 +1760,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none bg-background hover:bg-muted",
+                "!app-radius-none bg-background hover:bg-muted",
                 viewMode === "calendar" && "bg-muted",
               )}
               onClick={() => setViewMode("calendar")}
@@ -1783,7 +1783,7 @@ export function NotesDroppableContainer({
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-9 shrink-0 border-border gap-1.5 !rounded-none",
+                  "h-9 shrink-0 border-border gap-1.5 !app-radius-none",
                   contentFilter !== "all" && "bg-muted",
                 )}
                 aria-label="filter-content"
@@ -2455,7 +2455,7 @@ function CalendarTimelineView({
               <Button
                 variant="Trigger"
                 size="sm"
-                className="h-8 border-border text-xs px-1.5 gap-1 !rounded-none"
+                className="h-8 border-border text-xs px-1.5 gap-1 !app-radius-none"
                 aria-label="calendar-zoom-level"
               >
                 {config.label}
@@ -2588,7 +2588,7 @@ function CalendarTimelineView({
               className="absolute inset-0 w-px bg-primary z-10"
               style={{ left: todayOffset }}
             >
-              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
+              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 app-radius-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
                 Today
               </div>
             </div>
@@ -2611,7 +2611,7 @@ function CalendarTimelineView({
                   <div className="flex flex-col items-center">
                     <div
                       className={cn(
-                        "h-2.5 w-2.5 rounded-full border-2 border-card",
+                        "h-2.5 w-2.5 app-radius-full border-2 border-card",
                         cluster.entries.length > 1
                           ? "bg-primary"
                           : "bg-muted-foreground/60",
@@ -2696,7 +2696,7 @@ function CalendarGapMarker({
           size="sm"
           onClick={onToggle}
           className={cn(
-            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !rounded-none",
+            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !app-radius-none",
             gap.expanded ? "top-20" : "top-16",
           )}
           style={{ left: gap.x }}
@@ -2959,7 +2959,7 @@ const GridNoteCard = memo(function GridNoteCard({
         </p>
       </CardContent>
 
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-visible ">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -2972,7 +2972,7 @@ const GridNoteCard = memo(function GridNoteCard({
           size="sm"
           asChild
           variant="revDefault"
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
+          className=" h-9 px-6 text-xs"
           aria-label="open-note"
         >
           <IntentPrefetchLink
@@ -3247,7 +3247,7 @@ const PdfGridCard = memo(function PdfGridCard({
         </div>
       </CardContent>
 
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -3259,8 +3259,8 @@ const PdfGridCard = memo(function PdfGridCard({
         <Button
           size="sm"
           asChild
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
           variant="revDefault"
+          className="h-9 px-6 text-xs"
           aria-label="open-upload"
         >
           <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
@@ -3497,7 +3497,7 @@ const LinkGridCard = memo(function LinkGridCard({
   return (
     <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-start gap-2 min-w-0">
             <LinkFaviconBadge url={link.url} className="h-6 w-6 mt-0.5" />
             <CardTitle
@@ -3514,10 +3514,11 @@ const LinkGridCard = memo(function LinkGridCard({
             favorite={link.favorite}
             createdAt={link.createdAt}
             updatedAt={link.updatedAt}
-            iconVariant="horizontal_icon"
-            dropdownMenuContentAlign="end"
-            tooltipContentAlign="end"
+            iconVariant="vertical_icon"
+            dropdownMenuContentAlign="start"
+            tooltipContentAlign="start"
             onDelete={onDelete}
+            btnClassName="pt-0"
           />
         </div>
       </CardHeader>
@@ -3526,7 +3527,7 @@ const LinkGridCard = memo(function LinkGridCard({
         <LinkThumbnail link={link} />
       </CardContent>
 
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Calendar className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -3538,8 +3539,8 @@ const LinkGridCard = memo(function LinkGridCard({
         <Button
           size="sm"
           asChild
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
           variant="revDefault"
+          className="h-9 px-6 text-xs"
           aria-label="open-link"
         >
           <a href={link.url} target="_blank" rel="noopener noreferrer">
@@ -3729,8 +3730,8 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
       <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
         <div className="relative min-w-0 w-full max-w-full">
           <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
-            <div className="h-8 w-16 bg-border rounded animate-pulse" />
-            <div className="h-8 w-20 bg-border rounded animate-pulse" />
+            <div className="h-8 w-16 bg-border app-radius-md animate-pulse" />
+            <div className="h-8 w-20 bg-border app-radius-md animate-pulse" />
           </div>
           <div className="min-w-0 w-full max-w-full overflow-hidden">
             <div className="relative w-full" style={{ height: 300 }}>
@@ -3741,7 +3742,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     className="absolute top-0 h-7 flex items-center"
                     style={{ left: `${left}%` }}
                   >
-                    <div className="h-2.5 w-14 bg-border rounded animate-pulse" />
+                    <div className="h-2.5 w-14 bg-border app-radius-md animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -3753,7 +3754,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     className="absolute top-1"
                     style={{ left: `${i * 12.5 + 1}%` }}
                   >
-                    <div className="h-2.5 w-4 bg-border rounded animate-pulse" />
+                    <div className="h-2.5 w-4 bg-border app-radius-md animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -3774,11 +3775,11 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     style={{ left: `${left}%`, transform: "translateX(-50%)" }}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="h-2.5 w-2.5 rounded-full bg-border animate-pulse" />
+                      <div className="h-2.5 w-2.5 app-radius-full bg-border animate-pulse" />
                       <div className="w-px h-3 bg-border" />
                       <div className="w-[168px] border border-border bg-card app-radius-md px-2.5 py-2 space-y-1.5">
-                        <div className="h-3 w-3/4 bg-border rounded animate-pulse" />
-                        <div className="h-2.5 w-1/2 bg-border rounded animate-pulse" />
+                        <div className="h-3 w-3/4 bg-border app-radius-md animate-pulse" />
+                        <div className="h-2.5 w-1/2 bg-border app-radius-md animate-pulse" />
                       </div>
                     </div>
                   </div>
@@ -3801,20 +3802,20 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
               </div>
             </CardHeader>
             <CardContent className="flex-grow flex-1">
               <div className="space-y-2">
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
-                <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
               </div>
             </CardContent>
-            <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-              <div className="h-4 w-24 bg-border rounded animate-pulse" />
-              <div className="h-9 w-12 bg-border rounded animate-pulse" />
+            <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
+              <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+              <div className="h-9 w-16 bg-border app-radius-md animate-pulse" />
             </CardFooter>
           </Card>
         ))}
@@ -3830,13 +3831,13 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 app-radius-md bg-border animate-pulse flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="h-5 w-2/3 bg-border rounded animate-pulse" />
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
+                <div className="h-5 w-2/3 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
-                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
               </div>
             </div>
           </CardContent>
@@ -3855,11 +3856,11 @@ function TablesSkeleton() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className={`px-4 py-2.5 min-w-[110px] rounded-t-lg border-2 border-b-0 ${
+              className={`px-4 py-2.5 min-w-[110px] app-radius-lg border-2 border-b-0 ${
                 i === 0 ? "border-border bg-card" : "border-transparent"
               }`}
             >
-              <div className="h-4 w-16 bg-border rounded animate-pulse" />
+              <div className="h-4 w-16 bg-border app-radius-md animate-pulse" />
             </div>
           ))}
         </div>
@@ -3870,7 +3871,7 @@ function TablesSkeleton() {
         <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative flex-1 min-w-0 md:max-w-md">
-              <div className="h-9 w-full bg-border rounded animate-pulse" />
+              <div className="h-9 w-full bg-border app-radius-md animate-pulse" />
             </div>
           </div>
 
@@ -3880,8 +3881,8 @@ function TablesSkeleton() {
               <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
               <div className="h-9 w-10 bg-border animate-pulse" />
             </div>
-            <div className="h-9 w-28 bg-border rounded-lg animate-pulse" />
-            <div className="h-9 w-9 bg-border rounded-lg animate-pulse" />
+            <div className="h-9 w-28 bg-border app-radius-lg animate-pulse" />
+            <div className="h-9 w-9 bg-border app-radius-lg animate-pulse" />
           </div>
         </div>
 
@@ -3893,20 +3894,20 @@ function TablesSkeleton() {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                  <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                  <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                  <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
                 </div>
               </CardHeader>
               <CardContent className="flex-grow flex-1">
                 <div className="space-y-2">
-                  <div className="h-4 w-full bg-border rounded animate-pulse" />
-                  <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                  <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                  <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
                 </div>
               </CardContent>
               <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-                <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
               </CardFooter>
             </Card>
           ))}

@@ -22,7 +22,7 @@ export default function Section({
   className,
   initialY = 90,
   initialMargin = 30,
-  initialRadius = 30,
+  initialRadius = 0,
   initialMarginMobile = 0,
   initialRadiusMobile = 0,
 }: SectionProps) {

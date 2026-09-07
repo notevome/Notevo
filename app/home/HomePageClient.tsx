@@ -162,7 +162,7 @@ export default function HomePageClient() {
               <span className="flex justify-center items-center gap-0.5">
                 <SkeletonTextAnimation className=" mx-0 min-w-20 h-10" />
                 ,
-                <SkeletonTextAnimation className="!rounded-none mx-2 min-w-60 h-10" />
+                <SkeletonTextAnimation className="!app-radius-none mx-2 min-w-60 h-10" />
               </span>
             )}
           </h1>
@@ -242,9 +242,9 @@ function WorkspaceCardSkeleton() {
           <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </CardContent>
-      <CardFooter className="py-4 flex justify-between items-center border-t border-border">
+      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-12" />
+        <Skeleton className="h-9 w-16" />
       </CardFooter>
     </Card>
   );
@@ -266,9 +266,9 @@ function NoteCardSkeleton() {
         <Skeleton className="h-3 w-5/6" />
         <Skeleton className="h-3 w-4/6" />
       </CardContent>
-      <CardFooter className="py-4 flex justify-between items-center border-t border-border mt-auto">
+      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border mt-auto">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-12" />
+        <Skeleton className="h-9 w-16" />
       </CardFooter>
     </Card>
   );
@@ -357,7 +357,7 @@ function Slider({ children }: { children: React.ReactNode }) {
           <Button
             size="icon"
             variant={canScrollRight ? "revDefault" : "outline"}
-            className="h-9 w-8 !rounded-none"
+            className="h-9 w-8 !app-radius-none"
             onClick={() => scroll("right")}
           >
             <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -493,7 +493,7 @@ function WorkspaceCard({
           <FolderClosed className=" h-10 w-full text-primary text-center" />
         </span>
       </CardContent>
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -505,7 +505,8 @@ function WorkspaceCard({
         <Button
           size="sm"
           asChild
-          className=" absolute bottom-0 right-0 h-9 px-6 text-xs"
+          variant="revDefault"
+          className="h-8 px-6 text-xs"
         >
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
@@ -584,8 +585,8 @@ function NoteCard({ note }: { note: Note }) {
         </p>
       </CardContent>
 
-      <CardFooter className=" relative py-4 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
-        <div className="flex items-center gap-1.5">
+      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
             <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
@@ -596,7 +597,8 @@ function NoteCard({ note }: { note: Note }) {
         <Button
           size="sm"
           asChild
-          className="absolute bottom-0 right-0 h-9 px-6 text-xs"
+          variant="revDefault"
+          className="h-8 px-6 text-xs"
         >
           <IntentPrefetchLink
             href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}

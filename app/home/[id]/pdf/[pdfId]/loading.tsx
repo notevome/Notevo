@@ -3,7 +3,7 @@ import MaxWContainer from "@/components/ui/MaxWContainer";
 export default function Loading() {
   return (
     <MaxWContainer className="flex h-full w-[900px] flex-col px-0 py-0 mx-0">
-      <div className="flex-1 rounded-none border-none bg-transparent animate-pulse" />
+      <div className="flex-1 app-radius-none border-none bg-transparent animate-pulse" />
     </MaxWContainer>
   );
 }

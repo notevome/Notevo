@@ -94,7 +94,7 @@ export default function LinkSettingsSidebar({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!rounded-none">
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             {link?.favorite ? "Unpin link" : "Pin link"}
           </TooltipContent>
         </Tooltip>
@@ -103,7 +103,7 @@ export default function LinkSettingsSidebar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !rounded-none"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
               aria-label="delete-link"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -111,7 +111,7 @@ export default function LinkSettingsSidebar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!rounded-none">
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             Delete link
           </TooltipContent>
         </Tooltip>
@@ -128,7 +128,7 @@ export default function LinkSettingsSidebar({
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.

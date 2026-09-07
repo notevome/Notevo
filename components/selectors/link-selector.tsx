@@ -45,7 +45,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
         <Button
           size="sm"
           variant="SidebarMenuButton"
-          className="gap-1 border-none px-2 h-8 !rounded-none"
+          className="gap-1 border-none px-2 h-8 !app-radius-none"
         >
           <p className="text-base">↗</p>
           <p
@@ -87,7 +87,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
               size="icon"
               variant="outline"
               type="button"
-              className="flex h-8 items-center rounded-lg p-1 text-destructive transition-all hover:bg-destructive/10"
+              className="flex h-8 items-center app-radius-lg p-1 text-destructive transition-all hover:bg-destructive/10"
               onClick={() => {
                 editor.chain().focus().unsetLink().run();
                 if (inputRef.current) inputRef.current.value = "";
