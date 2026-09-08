@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 export default function MoreAboutMe() {
   return (
     <section id="about" className="py-12 sm:py-16 md:py-20 Desktop:py-24">
-      <MaxWContainer className=" max-w-[1200px]">
+      <MaxWContainer className=" !max-w-[1300px]">
         <div className="relative pt-10">
           <div className="absolute inset-x-0 bottom-0 top-4 app-radius-sm bg-primary" />
           <div className="absolute inset-x-0 bottom-0 top-2 app-radius-sm bg-primary/90" />

@@ -12,11 +12,6 @@ import {
 } from "lucide-react";
 
 export const NavLinks = [
-  // {
-  //   Name: "Home",
-  //   path: "/",
-  //   clicked: true,
-  // },
   {
     Name: "Features",
     path: "/#features",
@@ -64,8 +59,14 @@ export const AccordionData = [
     content:
       "I want to create a product that is truly for the users,  Plus, it just feels good to share your work with the world and see how others can build on it.",
   },
+  {
+    id: "3",
+    itmevalue: "ownership",
+    trigger: "Can I change my email or transfer ownership?",
+    content:
+      "no unfortunately, you cannot change your email or transfer ownership of your account. BUT we're wokring on that ",
+  },
 ] as const;
-
 export const HowToStartSteps = [
   {
     id: "1",
