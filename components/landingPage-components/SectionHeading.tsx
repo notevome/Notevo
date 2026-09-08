@@ -25,7 +25,7 @@ export default function SectionHeading({
           {SectionTitle}
         </span>
       </h2>
-      <p className="text-lg text-muted-foreground max-w-[29rem] mx-auto">
+      <p className=" text-sm md:text-lg text-muted-foreground max-w-[29rem] mx-auto">
         {SectionSubTitle}
       </p>
     </motion.div>

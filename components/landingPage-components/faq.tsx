@@ -13,11 +13,11 @@ export default function FAQ() {
       id="faq"
       className="relative pt-12 sm:pt-16 md:pt-20 Desktop:pt-24 "
     >
-      <MaxWContainer className="flex justify-between items-start !max-w-[1300px] ">
-        <div className="sticky top-24 max-w-lg">
+      <MaxWContainer className="md:flex justify-between items-start !max-w-[1300px] ">
+        <div className="md:sticky top-24 md:max-w-lg">
           <SectionHeading
             SectionTitle="Frequently Asked Questions"
-            SectionSubTitle="if your interested in learning more about Notevo, here are some common QaA that may help you."
+            SectionSubTitle="if your interested in learning more about Notevo. "
           />
         </div>
 
@@ -25,7 +25,7 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-2xl  min-h-[500px] flex-1"
+          className="max-w-2xl mx-auto md:mx-0 min-h-[500px] flex-1"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem key={index} value={item.itmevalue} className="mb-4">
