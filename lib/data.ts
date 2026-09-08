@@ -62,7 +62,7 @@ export const AccordionData = [
   {
     id: "3",
     itmevalue: "ownership",
-    trigger: "Can I change my email or transfer ownership?",
+    trigger: "Can I change my email?",
     content:
       "no unfortunately, you cannot change your email or transfer ownership of your account. BUT we're wokring on that ",
   },
