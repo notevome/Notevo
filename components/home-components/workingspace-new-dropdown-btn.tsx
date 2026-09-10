@@ -9,7 +9,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { insertAtTop, useAction, useMutation } from "convex/react";
-import { ChevronDown, FileUp, FileText, Link2 } from "lucide-react";
+import { ChevronDown, FileUp, FileText, Link2, PanelTop } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ import {
   type LinkPlatform,
 } from "@/lib/link-platform";
 
-type PreferredAction = "note" | "upload" | "link";
+type PreferredAction = "note" | "upload" | "link" | "whiteboard";
 
 const STORAGE_KEY = "notevo_workspace_primary_create_action";
 
@@ -125,7 +125,8 @@ export default function WorkingspaceNewDropdownBtn({
     if (
       savedAction === "note" ||
       savedAction === "upload" ||
-      savedAction === "link"
+      savedAction === "link" ||
+      savedAction === "whiteboard"
     ) {
       setPreferredAction(savedAction);
     }
@@ -176,6 +177,7 @@ export default function WorkingspaceNewDropdownBtn({
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
   const createLink = useMutation(api.links.createLink);
+  const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
   const isDisabled = useMemo(
@@ -202,6 +204,24 @@ export default function WorkingspaceNewDropdownBtn({
       });
     }
   }, [createNote, notesTableId, toast, workingSpaceId, workingSpacesSlug]);
+
+  const handleCreateWhiteboard = useCallback(async () => {
+    if (!notesTableId || !workingSpaceId) return;
+    try {
+      await createWhiteboard({
+        title: "Untitled whiteboard",
+        notesTableId,
+        workingSpaceId,
+      });
+    } catch (error) {
+      console.error("Failed to create whiteboard:", error);
+      toast({
+        title: "Could not create whiteboard",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [createWhiteboard, notesTableId, toast, workingSpaceId]);
 
   const uploadPdfFile = useCallback(
     async (file: File) => {
@@ -351,6 +371,11 @@ export default function WorkingspaceNewDropdownBtn({
       return;
     }
 
+    if (preferredAction === "whiteboard") {
+      await handleCreateWhiteboard();
+      return;
+    }
+
     await handleCreateNote();
   }, [handleCreateNote, handleSelectInsertLink, preferredAction]);
 
@@ -373,6 +398,11 @@ export default function WorkingspaceNewDropdownBtn({
     persistPreferredAction("upload");
     fileInputRef.current?.click();
   }, [persistPreferredAction]);
+
+  const handleSelectWhiteboard = useCallback(async () => {
+    persistPreferredAction("whiteboard");
+    await handleCreateWhiteboard();
+  }, [handleCreateWhiteboard, persistPreferredAction]);
 
   useEffect(() => {
     const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
@@ -475,6 +505,10 @@ export default function WorkingspaceNewDropdownBtn({
             <DropdownMenuItem onClick={handleSelectUpload}>
               <FileUp className="h-4 w-4 text-muted-foreground" />
               Upload PDF
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleSelectWhiteboard()}>
+              <PanelTop className="h-4 w-4 text-muted-foreground" />
+              New Whiteboard
             </DropdownMenuItem>
             <DropdownMenuItem
               className="justify-between"

@@ -533,12 +533,20 @@ export const getWorkspaceTree = query({
                 )
                 .order("desc")
                 .collect();
+              const allWhiteboards = await ctx.db
+                .query("whiteboards")
+                .withIndex("by_notesTableId", (q) =>
+                  q.eq("notesTableId", table._id),
+                )
+                .order("desc")
+                .collect();
 
               return {
                 ...table,
                 notes: allNotes.map(({ body, ...rest }) => rest),
                 pdfs: allPdfs,
                 links: allLinks,
+                whiteboards: allWhiteboards,
               };
             }
 
@@ -563,12 +571,20 @@ export const getWorkspaceTree = query({
               )
               .order("desc")
               .take(TREE_NOTES_PER_TABLE);
+            const firstWhiteboards = await ctx.db
+              .query("whiteboards")
+              .withIndex("by_notesTableId", (q) =>
+                q.eq("notesTableId", table._id),
+              )
+              .order("desc")
+              .take(TREE_NOTES_PER_TABLE);
 
             return {
               ...table,
               notes: firstNotes.map(({ body, ...rest }) => rest),
               pdfs: firstPdfs,
               links: firstLinks,
+              whiteboards: firstWhiteboards,
             };
           }),
         );
@@ -578,7 +594,8 @@ export const getWorkspaceTree = query({
           (table) =>
             table.notes.length > 0 ||
             table.pdfs.length > 0 ||
-            (table.links?.length ?? 0) > 0,
+            (table.links?.length ?? 0) > 0 ||
+            (table.whiteboards?.length ?? 0) > 0,
         );
 
         // Drop workspace entirely if it has no non-empty tables
@@ -607,18 +624,24 @@ export const getWorkspaceTree = query({
             const matchingLinks = (table.links ?? []).filter((link: any) =>
               normalizeSearchText(link.title).includes(normalizedQuery),
             );
+            const matchingWhiteboards = (table.whiteboards ?? []).filter(
+              (whiteboard: any) =>
+                normalizeSearchText(whiteboard.title).includes(normalizedQuery),
+            );
 
             if (tableMatches) return table;
             if (
               matchingNotes.length > 0 ||
               matchingPdfs.length > 0 ||
-              matchingLinks.length > 0
+              matchingLinks.length > 0 ||
+              matchingWhiteboards.length > 0
             )
               return {
                 ...table,
                 notes: matchingNotes,
                 pdfs: matchingPdfs,
                 links: matchingLinks,
+                whiteboards: matchingWhiteboards,
               };
 
             return null;
