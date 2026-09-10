@@ -1,6 +1,179 @@
+@import "tldraw/tldraw.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Whiteboard Canvas App Theme Overrides */
+.whiteboard-canvas {
+  --tl-color-background: hsl(var(--background));
+  --tl-color-panel: hsl(var(--card));
+  --tl-color-panel-contrast: hsl(var(--popover));
+  --tl-color-low: hsl(var(--muted));
+  --tl-color-low-border: hsl(var(--border));
+  --tl-color-divider: hsl(var(--border));
+  --tl-color-text: hsl(var(--card-foreground));
+  --tl-color-text-0: hsl(var(--card-foreground));
+  --tl-color-text-1: hsl(var(--card-foreground));
+  --tl-color-text-3: hsl(var(--muted-foreground));
+  --tl-color-selected: hsl(var(--primary));
+  --tl-color-selected-contrast: hsl(var(--primary-foreground));
+  --tl-color-muted-1: hsl(var(--accent));
+  --tl-color-muted-2: hsl(var(--muted));
+
+  --tl-radius-0: 0;
+  --tl-radius-1: 0;
+  --tl-radius-2: 0;
+  --tl-radius-3: 0;
+  --tl-radius-4: 0;
+}
+
+
+.whiteboard-canvas .tlui-style-panel .tlui-toolbar {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.whiteboard-canvas .tlui-style-panel__section:last-child .tlui-toolbar:last-child {
+  border-bottom: none !important;
+}
+
+/* Hide watermark, production tracking & attribution links */
+.whiteboard-canvas .tl-watermark_SEE-LICENSE,
+.whiteboard-canvas [data-testid*="tl-watermark"],
+.whiteboard-canvas .tl-watermark,
+.whiteboard-canvas .tlui-watermark,
+.whiteboard-canvas a[href*="tldraw.dev"] {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+/* Whiteboard Panels, Toolbars & Menus background, border, & rounded styling */
+.whiteboard-canvas .tlui-toolbar,
+.whiteboard-canvas .tlui-menu-zone,
+.whiteboard-canvas .tlui-navigation-zone,
+.whiteboard-canvas .tlui-style-panel,
+.whiteboard-canvas .tlui-popover__content,
+.whiteboard-canvas .tlui-menu {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--card-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* No .whiteboard-canvas scope — tooltips render outside it via a portal */
+.tlui-tooltip {
+  background-color: hsl(var(--muted)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.tlui-tooltip svg,
+.tlui-tooltip [data-radix-popper-arrow] {
+  display: none !important;
+}
+
+.whiteboard-canvas .tlui-minimap {
+  background-color: hsl(var(--background)) !important;
+}
+
+.whiteboard-canvas .tlui-navigation-panel::before {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.whiteboard-canvas .tlui-navigation-panel .tlui-toolbar {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Menu zone placement in bottom-right corner */
+.whiteboard-canvas .tlui-menu-zone {
+  position: absolute;
+  inset: auto 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) auto;
+  z-index: var(--tl-layer-panels);
+}
+
+
+/* Base button styling inside whiteboard UI */
+.whiteboard-canvas .tlui-button {
+  border-radius: 0 !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+
+/* Hover state for buttons & menu items */
+.whiteboard-canvas .tlui-button:hover:not(:disabled):not([data-disabled="true"]),
+.whiteboard-canvas .tlui-button[data-state="hover"] {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* Active / Selected tool buttons — cover every state attribute tldraw may use */
+.whiteboard-canvas .tlui-button[data-state="selected"],
+.whiteboard-canvas .tlui-button[aria-pressed="true"],
+.whiteboard-canvas .tlui-button[data-selected="true"],
+.whiteboard-canvas .tlui-button[data-isactive="true"],
+.whiteboard-canvas .tlui-button__tool[data-state="selected"] {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .tlui-button::after,
+.whiteboard-canvas .tlui-toolbar-toggle-group-item::after {
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .tlui-button__tool[aria-pressed="true"]::after,
+.whiteboard-canvas .tlui-button__tool[data-isactive="true"]::after,
+.whiteboard-canvas .tlui-button__tool[data-state="selected"]::after {
+  background-color: hsl(var(--primary)) !important;
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .tlui-button[data-state="selected"] svg,
+.whiteboard-canvas .tlui-button[aria-pressed="true"] svg,
+.whiteboard-canvas .tlui-button[data-selected="true"] svg,
+.whiteboard-canvas .tlui-button[data-isactive="true"] svg {
+  color: hsl(var(--primary-foreground)) !important;
+  fill: currentColor;
+}
+
+/* Opacity slider */
+.whiteboard-canvas .tlui-slider__track {
+  background-color: hsl(var(--card)) !important;
+}
+
+.whiteboard-canvas .tlui-slider__range {
+  background-color: hsl(var(--primary)) !important;
+}
+
+.whiteboard-canvas .tlui-slider__thumb {
+  background-color: hsl(var(--background)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+  border-radius: 50% !important;
+}
+
+.whiteboard-canvas .tlui-slider__thumb:focus-visible {
+  outline: 2px solid hsl(var(--ring)) !important;
+  outline-offset: 2px;
+}
+
+.whiteboard-canvas .tlui-slider__container {
+  background-color: hsl(var(--card)) !important;
+  padding: 0.2rem 0.5rem !important;
+}
 
 *:focus,
 *:focus-visible {

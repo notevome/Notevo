@@ -21,6 +21,7 @@ import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
 import type * as pdfs from "../pdfs.js";
 import type * as users from "../users.js";
+import type * as whiteboards from "../whiteboards.js";
 import type * as workingSpaces from "../workingSpaces.js";
 
 import type {
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
   pdfs: typeof pdfs;
   users: typeof users;
+  whiteboards: typeof whiteboards;
   workingSpaces: typeof workingSpaces;
 }>;
 

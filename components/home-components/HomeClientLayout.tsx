@@ -66,6 +66,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
   const noteTitle = parseSlug(`${pathSegments[2]}`);
   const isPdfRoute = pathSegments[2] === "pdf";
+  const isWhiteboardRoute = pathSegments[2] === "whiteboard";
   const currentPdf = useQuery(
     api.pdfs.getPdfById,
     pdfId ? { _id: pdfId } : "skip",
@@ -127,7 +128,9 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         <div
           ref={scrollContainerRef}
           className={`scrollbar-gutter-stable min-h-0 flex-1 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent ${
-            isPdfRoute ? "overflow-hidden pt-0" : "overflow-y-auto py-16"
+            isPdfRoute || isWhiteboardRoute
+              ? "overflow-hidden py-0"
+              : "overflow-y-auto py-16"
           }`}
         >
           <motion.div

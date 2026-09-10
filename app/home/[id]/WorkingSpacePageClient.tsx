@@ -10,6 +10,8 @@ import {
   ChevronRight,
   ChevronDown,
   Link2,
+  PanelTop,
+  Trash2,
   X,
   Filter,
 } from "lucide-react";
@@ -142,6 +144,7 @@ const workspacePageMemoryCache = new Map<
 const tableNotesMemoryCache = new Map<string, any[]>();
 const tablePdfsMemoryCache = new Map<string, any[]>();
 const tableLinksMemoryCache = new Map<string, any[]>();
+const tableWhiteboardsMemoryCache = new Map<string, any[]>();
 
 type ViewMode = "grid" | "list" | "calendar";
 type CalendarZoom = "week" | "month" | "quarter" | "year";
@@ -149,6 +152,7 @@ type ContentFilter =
   | "all"
   | "note"
   | "pdf"
+  | "whiteboard"
   | "youtube"
   | "x"
   | "instagram"
@@ -164,6 +168,7 @@ const CONTENT_FILTER_OPTIONS: {
   { value: "all", label: "All" },
   { value: "note", label: "Notes" },
   { value: "pdf", label: "PDFs" },
+  { value: "whiteboard", label: "Whiteboards" },
   { value: "youtube", label: "YouTube" },
   { value: "x", label: "X" },
   { value: "instagram", label: "Instagram" },
@@ -363,7 +368,19 @@ interface LinkItem {
   kind: "link";
 }
 
-type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem | LinkItem;
+interface WhiteboardItem {
+  _id: Id<"whiteboards">;
+  title: string;
+  preview?: string;
+  userId: Id<"users">;
+  workingSpaceId: Id<"workingSpaces">;
+  notesTableId: Id<"notesTables">;
+  createdAt: number;
+  updatedAt: number;
+  kind: "whiteboard";
+}
+
+type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem | LinkItem | WhiteboardItem;
 
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
@@ -418,6 +435,12 @@ interface PdfCardProps {
 interface LinkCardProps {
   link: LinkItem;
   onDelete?: (linkId: Id<"links">) => void;
+  searchQuery?: string;
+}
+
+interface WhiteboardCardProps {
+  whiteboard: WhiteboardItem;
+  onDelete?: (whiteboardId: Id<"whiteboards">) => void;
   searchQuery?: string;
 }
 
@@ -1436,6 +1459,19 @@ export function NotesDroppableContainer({
     status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
     loadMore: (numItems: number) => void;
   };
+  const {
+    results: whiteboardResults,
+    status: whiteboardsStatus,
+    loadMore: loadMoreWhiteboards,
+  } = usePaginatedQuery(
+    api.whiteboards.getWhiteboardsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<WhiteboardItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
@@ -1468,8 +1504,24 @@ export function NotesDroppableContainer({
       ? cachedLinks
       : linkResults;
 
+  const cachedWhiteboards = tableWhiteboardsMemoryCache.get(
+    tableId as unknown as string,
+  );
+  useEffect(() => {
+    if (whiteboardsStatus !== "LoadingFirstPage") {
+      tableWhiteboardsMemoryCache.set(
+        tableId as unknown as string,
+        whiteboardResults,
+      );
+    }
+  }, [tableId, whiteboardResults, whiteboardsStatus]);
+  const stableWhiteboards =
+    whiteboardsStatus === "LoadingFirstPage" && cachedWhiteboards
+      ? cachedWhiteboards
+      : whiteboardResults;
+
   // Single combined pagination state driving one "Show More" button for
-  // notes + pdfs + links together.
+  // notes + pdfs + links + whiteboards together.
   const aggregateStatus:
     | "LoadingFirstPage"
     | "CanLoadMore"
@@ -1480,11 +1532,13 @@ export function NotesDroppableContainer({
     pdfsStatus === "LoadingFirstPage" &&
     !cachedPdfs &&
     linksStatus === "LoadingFirstPage" &&
-    !cachedLinks
+    !cachedLinks &&
+    whiteboardsStatus === "LoadingFirstPage" &&
+    !cachedWhiteboards
       ? "LoadingFirstPage"
-      : [notesStatus, pdfsStatus, linksStatus].some((s) => s === "CanLoadMore")
+      : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some((s) => s === "CanLoadMore")
         ? "CanLoadMore"
-        : [notesStatus, pdfsStatus, linksStatus].some(
+        : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
               (s) => s === "LoadingMore",
             )
           ? "LoadingMore"
@@ -1494,6 +1548,7 @@ export function NotesDroppableContainer({
     if (notesStatus === "CanLoadMore") loadMoreNotes(15);
     if (pdfsStatus === "CanLoadMore") loadMorePdfs(15);
     if (linksStatus === "CanLoadMore") loadMoreLinks(15);
+    if (whiteboardsStatus === "CanLoadMore") loadMoreWhiteboards(15);
   }, [
     notesStatus,
     pdfsStatus,
@@ -1501,6 +1556,8 @@ export function NotesDroppableContainer({
     loadMoreNotes,
     loadMorePdfs,
     loadMoreLinks,
+    loadMoreWhiteboards,
+    whiteboardsStatus,
   ]);
 
   const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
@@ -1628,7 +1685,10 @@ export function NotesDroppableContainer({
     const linkItems = stableLinks.map(
       (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
     );
-    let items = [...noteItems, ...pdfItems, ...linkItems]
+    const whiteboardItems = stableWhiteboards.map(
+      (whiteboard) => ({ ...whiteboard, kind: "whiteboard" }) as WorkspaceEntry,
+    );
+    let items = [...noteItems, ...pdfItems, ...linkItems, ...whiteboardItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
       .sort((a, b) => b.updatedAt - a.updatedAt);
 
@@ -1636,6 +1696,7 @@ export function NotesDroppableContainer({
       items = items.filter((item) => {
         if (contentFilter === "note") return item.kind === "note";
         if (contentFilter === "pdf") return item.kind === "pdf";
+        if (contentFilter === "whiteboard") return item.kind === "whiteboard";
         if (item.kind !== "link") return false;
         return matchesLinkPlatform(item.platform, contentFilter);
       });
@@ -1654,6 +1715,9 @@ export function NotesDroppableContainer({
     return items.filter((item) => {
       const titleMatches = item.title?.toLowerCase().includes(q);
       if (item.kind === "pdf") return titleMatches;
+      if (item.kind === "whiteboard") {
+        return titleMatches || item.preview?.toLowerCase().includes(q);
+      }
       if (item.kind === "link") {
         return titleMatches || item.url.toLowerCase().includes(q);
       }
@@ -1667,6 +1731,7 @@ export function NotesDroppableContainer({
     deletedItemIds,
     stableLinks,
     stablePdfs,
+    stableWhiteboards,
     searchQuery,
     stableResults,
   ]);
@@ -1997,7 +2062,21 @@ export function NotesDroppableContainer({
                           "opacity-40 scale-[0.98] transition-transform",
                       )}
                     >
-                      {item.kind === "pdf" ? (
+                      {item.kind === "whiteboard" ? (
+                        isGridLayout ? (
+                          <WhiteboardGridCard
+                            whiteboard={item}
+                            onDelete={handleItemDelete as (whiteboardId: Id<"whiteboards">) => void}
+                            searchQuery={searchQuery}
+                          />
+                        ) : (
+                          <WhiteboardListCard
+                            whiteboard={item}
+                            onDelete={handleItemDelete as (whiteboardId: Id<"whiteboards">) => void}
+                            searchQuery={searchQuery}
+                          />
+                        )
+                      ) : item.kind === "pdf" ? (
                         isGridLayout ? (
                           <PdfGridCard
                             pdf={item}
@@ -2726,6 +2805,7 @@ function CalendarGapMarker({
 function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
   const thumbnailUrl = isLink
     ? (item as LinkItem).metadata?.thumbnailUrl
     : undefined;
@@ -2735,7 +2815,11 @@ function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
   if (!isLink) {
     return (
       <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
-        <FileText className="h-4 w-4 text-muted-foreground" />
+        {isWhiteboard ? (
+          <PanelTop className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
       </div>
     );
   }
@@ -2785,7 +2869,12 @@ function TimelineMiniCard({
 }) {
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
-  const href = isPdf
+  const isWhiteboard = item.kind === "whiteboard";
+  const href = isWhiteboard
+    ? `/home/${(item as WhiteboardItem).workingSpaceId}/whiteboard/${generateSlug(
+        (item as WhiteboardItem).title || "untitled-whiteboard",
+      )}?whiteboardId=${item._id}`
+    : isPdf
     ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
         (item as PdfItem).title || "untitled-pdf",
       )}?pdfId=${item._id}`
@@ -3389,6 +3478,110 @@ const PdfListCard = memo(function PdfListCard({
               </IntentPrefetchLink>
             </Button>
           </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
+
+function WhiteboardPreview({ preview }: { preview?: string }) {
+  return (
+    <div className="relative flex h-24 w-full items-center justify-center overflow-hidden border border-border bg-[linear-gradient(hsl(var(--border)/.45)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border)/.45)_1px,transparent_1px)] bg-[size:18px_18px]">
+      <PanelTop className="h-8 w-8 text-primary/70" />
+      <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        {preview || "Empty canvas"}
+      </span>
+    </div>
+  );
+}
+
+const WhiteboardGridCard = memo(function WhiteboardGridCard({
+  whiteboard,
+  onDelete,
+  searchQuery,
+}: WhiteboardCardProps) {
+  const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
+  const whiteboardHref = `/home/${whiteboard.workingSpaceId}/whiteboard/${generateSlug(
+    whiteboard.title || "untitled-whiteboard",
+  )}?whiteboardId=${whiteboard._id}`;
+
+  const handleDelete = async () => {
+    await deleteWhiteboard({ _id: whiteboard._id });
+    onDelete?.(whiteboard._id);
+  };
+
+  return (
+    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full min-h-[200px]">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-lg font-semibold text-foreground line-clamp-2">
+            <HighlightText text={whiteboard.title || "Untitled whiteboard"} query={searchQuery} />
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            aria-label="delete-whiteboard"
+            onClick={() => void handleDelete()}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-grow flex-1">
+        <WhiteboardPreview preview={whiteboard.preview} />
+      </CardContent>
+      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Calendar className="h-3.5 w-3.5" />
+          <span>{new Date(whiteboard.updatedAt).toLocaleDateString()}</span>
+        </div>
+        <Button size="sm" asChild variant="revDefault" className="h-9 px-6 text-xs" aria-label="open-whiteboard">
+          <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+});
+
+const WhiteboardListCard = memo(function WhiteboardListCard({
+  whiteboard,
+  onDelete,
+  searchQuery,
+}: WhiteboardCardProps) {
+  const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
+  const whiteboardHref = `/home/${whiteboard.workingSpaceId}/whiteboard/${generateSlug(
+    whiteboard.title || "untitled-whiteboard",
+  )}?whiteboardId=${whiteboard._id}`;
+
+  const handleDelete = async () => {
+    await deleteWhiteboard({ _id: whiteboard._id });
+    onDelete?.(whiteboard._id);
+  };
+
+  return (
+    <Card className="relative flex min-h-[100px] items-center border border-border bg-card">
+      <CardContent className="flex w-full items-center gap-4 p-3">
+        <div className="h-10 w-10 shrink-0 overflow-hidden">
+          <WhiteboardPreview preview={undefined} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-lg font-semibold text-foreground line-clamp-1">
+            <HighlightText text={whiteboard.title || "Untitled whiteboard"} query={searchQuery} />
+          </h3>
+          <p className="text-sm text-muted-foreground">{whiteboard.preview || "Empty canvas"}</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {new Date(whiteboard.updatedAt).toLocaleDateString()}
+          </span>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="delete-whiteboard" onClick={() => void handleDelete()}>
+            <Trash2 className="h-4 w-4" />
+          </Button>
+          <Button size="sm" asChild variant="revDefault" className="h-8 px-3 text-xs">
+            <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
+          </Button>
         </div>
       </CardContent>
     </Card>

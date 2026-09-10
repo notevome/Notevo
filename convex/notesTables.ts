@@ -222,6 +222,10 @@ export const deleteTable = mutation({
       .query("pdfs")
       .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
       .collect();
+    const whiteboardsToDelete = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .collect();
 
     for (const note of notesToDelete) {
       if (note.tags) {
@@ -235,6 +239,10 @@ export const deleteTable = mutation({
     for (const pdf of pdfsToDelete) {
       await ctx.storage.delete(pdf.storageId);
       await ctx.db.delete(pdf._id);
+    }
+
+    for (const whiteboard of whiteboardsToDelete) {
+      await ctx.db.delete(whiteboard._id);
     }
 
     const linksToDelete = await ctx.db
@@ -383,7 +391,7 @@ export const moveTable = mutation({
       updatedAt: Date.now(),
     });
 
-    const [notesInTable, pdfsInTable, linksInTable] = await Promise.all([
+    const [notesInTable, pdfsInTable, linksInTable, whiteboardsInTable] = await Promise.all([
       ctx.db
         .query("notes")
         .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
@@ -394,6 +402,10 @@ export const moveTable = mutation({
         .collect(),
       ctx.db
         .query("links")
+        .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+        .collect(),
+      ctx.db
+        .query("whiteboards")
         .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
         .collect(),
     ]);
@@ -414,6 +426,12 @@ export const moveTable = mutation({
       ),
       ...linksInTable.map((link) =>
         ctx.db.patch(link._id, {
+          workingSpaceId: targetWorkingSpaceId,
+          updatedAt: Date.now(),
+        }),
+      ),
+      ...whiteboardsInTable.map((whiteboard) =>
+        ctx.db.patch(whiteboard._id, {
           workingSpaceId: targetWorkingSpaceId,
           updatedAt: Date.now(),
         }),
