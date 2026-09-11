@@ -11,6 +11,7 @@
 import type * as Linkmetadata from "../Linkmetadata.js";
 import type * as ResendMagicLink from "../ResendMagicLink.js";
 import type * as auth from "../auth.js";
+import type * as files from "../files.js";
 import type * as http from "../http.js";
 import type * as linkValidators from "../linkValidators.js";
 import type * as links from "../links.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   Linkmetadata: typeof Linkmetadata;
   ResendMagicLink: typeof ResendMagicLink;
   auth: typeof auth;
+  files: typeof files;
   http: typeof http;
   linkValidators: typeof linkValidators;
   links: typeof links;
