@@ -1,178 +1,248 @@
-@import "tldraw/tldraw.css";
+@import "@excalidraw/excalidraw/index.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Whiteboard Canvas App Theme Overrides */
-.whiteboard-canvas {
-  --tl-color-background: hsl(var(--background));
-  --tl-color-panel: hsl(var(--card));
-  --tl-color-panel-contrast: hsl(var(--popover));
-  --tl-color-low: hsl(var(--muted));
-  --tl-color-low-border: hsl(var(--border));
-  --tl-color-divider: hsl(var(--border));
-  --tl-color-text: hsl(var(--card-foreground));
-  --tl-color-text-0: hsl(var(--card-foreground));
-  --tl-color-text-1: hsl(var(--card-foreground));
-  --tl-color-text-3: hsl(var(--muted-foreground));
-  --tl-color-selected: hsl(var(--primary));
-  --tl-color-selected-contrast: hsl(var(--primary-foreground));
-  --tl-color-muted-1: hsl(var(--accent));
-  --tl-color-muted-2: hsl(var(--muted));
 
-  --tl-radius-0: 0;
-  --tl-radius-1: 0;
-  --tl-radius-2: 0;
-  --tl-radius-3: 0;
-  --tl-radius-4: 0;
+.whiteboard-canvas .excalidraw {
+  --ui-font: inherit;
+  --default-bg-color: hsl(var(--background));
+  --input-bg-color: hsl(var(--card));
+  --input-border-color: hsl(var(--border));
+  --input-hover-bg-color: hsl(var(--accent));
+  --input-label-color: hsl(var(--muted-foreground));
+  --island-bg-color: hsl(var(--card));
+  --popup-bg-color: hsl(var(--popover));
+  --popup-secondary-bg-color: hsl(var(--muted));
+  --popup-text-color: hsl(var(--popover-foreground));
+  --popup-text-inverted-color: hsl(var(--primary-foreground));
+  --overlay-bg-color: hsl(var(--background) / 0.78);
+  --default-border-color: hsl(var(--border));
+  --sidebar-border-color: hsl(var(--border));
+  --sidebar-bg-color: hsl(var(--card));
+  --dialog-border-color: hsl(var(--border));
+  --text-primary-color: hsl(var(--foreground));
+  --icon-fill-color: hsl(var(--foreground));
+  --keybinding-color: hsl(var(--muted-foreground));
+  --color-on-surface: hsl(var(--foreground));
+  --color-surface-lowest: hsl(var(--background));
+  --color-surface-low: hsl(var(--card));
+  --color-surface-mid: hsl(var(--muted));
+  --color-surface-high: hsl(var(--accent));
+  --color-primary: hsl(var(--primary));
+  --color-primary-darker: hsl(var(--primary) / 0.88);
+  --color-primary-darkest: hsl(var(--primary) / 0.76);
+  --color-primary-hover: hsl(var(--primary) / 0.9);
+  --color-primary-light: hsl(var(--primary) / 0.16);
+  --color-primary-light-darker: hsl(var(--primary) / 0.24);
+  --color-selection: hsl(var(--primary));
+  --color-brand-hover: hsl(var(--primary) / 0.9);
+  --color-brand-active: hsl(var(--primary));
+  --color-on-primary-container: hsl(var(--primary));
+  --color-surface-primary-container: hsl(var(--primary) / 0.16);
+  --button-gray-1: hsl(var(--card));
+  --button-gray-2: hsl(var(--accent));
+  --button-gray-3: hsl(var(--muted));
+  --button-hover-bg: hsl(var(--accent));
+  --button-active-bg: hsl(var(--muted));
+  --button-active-border: hsl(var(--primary));
+  --focus-highlight-color: hsl(var(--ring));
+  --scrollbar-thumb: hsl(var(--border));
+  --scrollbar-thumb-hover: hsl(var(--muted-foreground));
+  --border-radius-md: 0;
+  --border-radius-lg: 0;
+  --shadow-island: none;
+  --sidebar-shadow: none;
+  --modal-shadow: 0 12px 32px hsl(var(--foreground) / 0.14);
+  background: hsl(var(--background));
 }
 
-
-.whiteboard-canvas .tlui-style-panel .tlui-toolbar {
-  background-color: transparent !important;
-  border: none !important;
-  border-bottom: 1px solid hsl(var(--border)) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
+.whiteboard-canvas .excalidraw .Island,
+.whiteboard-canvas .excalidraw .App-toolbar,
+.whiteboard-canvas .excalidraw .App-menu__left,
+.whiteboard-canvas .excalidraw .dropdown-menu,
+.whiteboard-canvas .excalidraw .popover,
+.whiteboard-canvas .excalidraw .Modal .Modal__content {
+  border: 1px solid hsl(var(--border));
+  box-shadow: none;
 }
 
-.whiteboard-canvas .tlui-style-panel__section:last-child .tlui-toolbar:last-child {
-  border-bottom: none !important;
+.whiteboard-canvas .excalidraw .range-wrapper {
+  --color-slider-track: hsl(var(--primary));
+  --button-bg: hsl(var(--muted));
 }
 
-/* Hide watermark, production tracking & attribution links */
-.whiteboard-canvas .tl-watermark_SEE-LICENSE,
-.whiteboard-canvas [data-testid*="tl-watermark"],
-.whiteboard-canvas .tl-watermark,
-.whiteboard-canvas .tlui-watermark,
-.whiteboard-canvas a[href*="tldraw.dev"] {
-  display: none !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-  visibility: hidden !important;
-}
-
-/* Whiteboard Panels, Toolbars & Menus background, border, & rounded styling */
-.whiteboard-canvas .tlui-toolbar,
-.whiteboard-canvas .tlui-menu-zone,
-.whiteboard-canvas .tlui-navigation-zone,
-.whiteboard-canvas .tlui-style-panel,
-.whiteboard-canvas .tlui-popover__content,
-.whiteboard-canvas .tlui-menu {
-  background-color: hsl(var(--card)) !important;
-  color: hsl(var(--card-foreground)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  border-radius: 0 !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-}
-
-/* No .whiteboard-canvas scope — tooltips render outside it via a portal */
-.tlui-tooltip {
-  background-color: hsl(var(--muted)) !important;
-  color: hsl(var(--muted-foreground)) !important;
-  border: 1px solid hsl(var(--border)) !important;
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-
-.tlui-tooltip svg,
-.tlui-tooltip [data-radix-popper-arrow] {
-  display: none !important;
-}
-
-.whiteboard-canvas .tlui-minimap {
-  background-color: hsl(var(--background)) !important;
-}
-
-.whiteboard-canvas .tlui-navigation-panel::before {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-.whiteboard-canvas .tlui-navigation-panel .tlui-toolbar {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
-/* Menu zone placement in bottom-right corner */
-.whiteboard-canvas .tlui-menu-zone {
-  position: absolute;
-  inset: auto 0.75rem calc(0.75rem + env(safe-area-inset-bottom)) auto;
-  z-index: var(--tl-layer-panels);
-}
-
-
-/* Base button styling inside whiteboard UI */
-.whiteboard-canvas .tlui-button {
-  border-radius: 0 !important;
-  transition: background-color 0.15s ease, color 0.15s ease !important;
-}
-
-/* Hover state for buttons & menu items */
-.whiteboard-canvas .tlui-button:hover:not(:disabled):not([data-disabled="true"]),
-.whiteboard-canvas .tlui-button[data-state="hover"] {
-  background-color: hsl(var(--accent)) !important;
-  color: hsl(var(--accent-foreground)) !important;
-}
-
-/* Active / Selected tool buttons — cover every state attribute tldraw may use */
-.whiteboard-canvas .tlui-button[data-state="selected"],
-.whiteboard-canvas .tlui-button[aria-pressed="true"],
-.whiteboard-canvas .tlui-button[data-selected="true"],
-.whiteboard-canvas .tlui-button[data-isactive="true"],
-.whiteboard-canvas .tlui-button__tool[data-state="selected"] {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-  border-radius: 0 !important;
-}
-
-.whiteboard-canvas .tlui-button::after,
-.whiteboard-canvas .tlui-toolbar-toggle-group-item::after {
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-
-.whiteboard-canvas .tlui-button__tool[aria-pressed="true"]::after,
-.whiteboard-canvas .tlui-button__tool[data-isactive="true"]::after,
-.whiteboard-canvas .tlui-button__tool[data-state="selected"]::after {
-  background-color: hsl(var(--primary)) !important;
-  border-radius: 0 !important;
-}
-
-.whiteboard-canvas .tlui-button[data-state="selected"] svg,
-.whiteboard-canvas .tlui-button[aria-pressed="true"] svg,
-.whiteboard-canvas .tlui-button[data-selected="true"] svg,
-.whiteboard-canvas .tlui-button[data-isactive="true"] svg {
-  color: hsl(var(--primary-foreground)) !important;
-  fill: currentColor;
-}
-
-/* Opacity slider */
-.whiteboard-canvas .tlui-slider__track {
-  background-color: hsl(var(--card)) !important;
-}
-
-.whiteboard-canvas .tlui-slider__range {
-  background-color: hsl(var(--primary)) !important;
-}
-
-.whiteboard-canvas .tlui-slider__thumb {
+.whiteboard-canvas .excalidraw .range-input::-webkit-slider-thumb {
   background-color: hsl(var(--background)) !important;
   border: 2px solid hsl(var(--primary)) !important;
-  border-radius: 50% !important;
 }
 
-.whiteboard-canvas .tlui-slider__thumb:focus-visible {
+.whiteboard-canvas .excalidraw .range-input::-moz-range-thumb {
+  background-color: hsl(var(--background)) !important;
+  border: 2px solid hsl(var(--primary)) !important;
+}
+
+.whiteboard-canvas .excalidraw .App-menu__left {
+  position: absolute;
+  inset: auto 1rem max(4rem, env(safe-area-inset-bottom)) -1rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: flex-end;
+  gap: 0;
+  z-index: var(--zIndex-layerUI);
+  max-height: 800px;
+}
+
+/* Excalidraw left properties panel – clean scrollbar */
+.whiteboard-canvas .excalidraw .App-menu__left {
+  overflow-x: hidden !important;
+  /* no horizontal scroll */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+/* WebKit */
+.whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+  /* kills horizontal scrollbar */
+}
+
+.whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 0;
+}
+
+.whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
+
+/* Remove the arrow buttons completely */
+.whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-button {
+  display: none !important;
+  height: 0;
+  width: 0;
+}
+
+.whiteboard-canvas div.color-picker-container>div.color-picker__top-picks {
+  gap: 4;
+}
+
+.whiteboard-canvas div.color-picker-container>div.color-picker__top-picks>button.color-picker__button {
+  border-radius: 0;
+}
+
+/* Color swatches (stroke, background, fill) and their selection ring */
+.whiteboard-canvas .excalidraw .color-picker__button,
+.whiteboard-canvas .excalidraw .color-picker__button-outline {
+  --radius: 0;
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .excalidraw .scroll-back-to-content {
+  position: fixed !important;
+  top: auto !important;
+  left: auto !important;
+  right: max(0rem, env(safe-area-inset-right)) !important;
+  bottom: max(1rem, env(safe-area-inset-bottom)) !important;
+  z-index: var(--zIndex-layerUI);
+  font-size: 0.8rem;
+  padding: 0.5rem;
+}
+
+.whiteboard-canvas .excalidraw .buttonList button,
+.whiteboard-canvas .excalidraw .buttonList label,
+.whiteboard-canvas .excalidraw .ToolIcon,
+.whiteboard-canvas .excalidraw .zIndexButton {
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .excalidraw .color-picker__button:hover {
+  border-radius: 0 !important;
+}
+
+.whiteboard-canvas .excalidraw .ToolIcon__icon,
+.whiteboard-canvas .excalidraw button.standalone,
+.whiteboard-canvas .excalidraw .dropdown-select {
+  border-radius: 0;
+}
+
+.whiteboard-canvas .excalidraw .ToolIcon .ToolIcon_type_radio:checked+.ToolIcon__icon,
+.whiteboard-canvas .excalidraw .ToolIcon .ToolIcon_type_checkbox:checked+.ToolIcon__icon,
+.whiteboard-canvas .excalidraw button.standalone.active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+
+.whiteboard-canvas .excalidraw .ToolIcon .ToolIcon_type_radio:checked+.ToolIcon__icon svg,
+.whiteboard-canvas .excalidraw .ToolIcon .ToolIcon_type_checkbox:checked+.ToolIcon__icon svg,
+.whiteboard-canvas .excalidraw button.standalone.active svg {
+  color: hsl(var(--primary-foreground));
+}
+
+div.layer-ui__wrapper__footer-right.zen-mode-transition {
+  display: none !important;
+
+}
+
+.App-toolbar__extra-tools-trigger {
+  display: none !important;
+}
+
+div.layer-ui__wrapper__top-right.zen-mode-transition {
+
+  display: none !important;
+
+}
+
+.whiteboard-canvas .excalidraw .App-menu_top {
+  position: absolute;
+  inset: auto 1rem max(1rem, env(safe-area-inset-bottom)) 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: flex-end;
+  gap: 0;
+  z-index: var(--zIndex-layerUI);
+}
+
+.whiteboard-canvas .excalidraw .App-menu_top .shapes-section {
+  grid-column: 2;
+  justify-self: center;
+}
+
+/* Excalidraw defaults to a downward menu because its toolbar is normally at
+   the top. The Notevo dock lives at the bottom, so its menus open upward. */
+.whiteboard-canvas .excalidraw .App-menu_top .dropdown-menu {
+  top: auto;
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+/* Keep the layout column for centering, but do not expose Excalidraw's main
+   menu because Notevo owns persistence and canvas-level actions. */
+.whiteboard-canvas .excalidraw .main-menu-trigger {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .whiteboard-canvas .excalidraw .App-menu_top {
+    inset-inline: 0.5rem;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* The global focus reset is useful for the app chrome; restore a visible,
+   token-aligned indicator inside the keyboard-driven drawing interface. */
+.whiteboard-canvas .excalidraw :focus-visible {
   outline: 2px solid hsl(var(--ring)) !important;
   outline-offset: 2px;
-}
-
-.whiteboard-canvas .tlui-slider__container {
-  background-color: hsl(var(--card)) !important;
-  padding: 0.2rem 0.5rem !important;
 }
 
 *:focus,
