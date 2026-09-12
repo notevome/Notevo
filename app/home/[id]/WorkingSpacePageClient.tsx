@@ -3231,6 +3231,7 @@ const ListNoteCard = memo(function ListNoteCard({
               asChild
               variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              aria-label="open-note"
             >
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
@@ -3364,7 +3365,7 @@ const PdfGridCard = memo(function PdfGridCard({
           asChild
           variant="revDefault"
           className="h-9 px-6 text-xs"
-          aria-label="open-upload"
+          aria-label="open-pdf"
         >
           <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
         </Button>
@@ -3486,9 +3487,10 @@ const PdfListCard = memo(function PdfListCard({
               asChild
               variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              aria-label="open-pdf"
             >
               <IntentPrefetchLink href={pdfHref}>
-                <span aria-label="open-upload">Open</span>
+                <span aria-label="open-pdf">Open</span>
               </IntentPrefetchLink>
             </Button>
           </div>
@@ -3618,6 +3620,7 @@ const WhiteboardListCard = memo(function WhiteboardListCard({
             asChild
             variant="revDefault"
             className="h-8 px-3 text-xs"
+            aria-label="open-whiteboard"
           >
             <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
           </Button>
