@@ -380,7 +380,11 @@ interface WhiteboardItem {
   kind: "whiteboard";
 }
 
-type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem | LinkItem | WhiteboardItem;
+type WorkspaceEntry =
+  | (Note & { kind: "note" })
+  | PdfItem
+  | LinkItem
+  | WhiteboardItem;
 
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
@@ -1536,7 +1540,9 @@ export function NotesDroppableContainer({
     whiteboardsStatus === "LoadingFirstPage" &&
     !cachedWhiteboards
       ? "LoadingFirstPage"
-      : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some((s) => s === "CanLoadMore")
+      : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
+            (s) => s === "CanLoadMore",
+          )
         ? "CanLoadMore"
         : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
               (s) => s === "LoadingMore",
@@ -2066,13 +2072,21 @@ export function NotesDroppableContainer({
                         isGridLayout ? (
                           <WhiteboardGridCard
                             whiteboard={item}
-                            onDelete={handleItemDelete as (whiteboardId: Id<"whiteboards">) => void}
+                            onDelete={
+                              handleItemDelete as (
+                                whiteboardId: Id<"whiteboards">,
+                              ) => void
+                            }
                             searchQuery={searchQuery}
                           />
                         ) : (
                           <WhiteboardListCard
                             whiteboard={item}
-                            onDelete={handleItemDelete as (whiteboardId: Id<"whiteboards">) => void}
+                            onDelete={
+                              handleItemDelete as (
+                                whiteboardId: Id<"whiteboards">,
+                              ) => void
+                            }
                             searchQuery={searchQuery}
                           />
                         )
@@ -2875,16 +2889,16 @@ function TimelineMiniCard({
         (item as WhiteboardItem).title || "untitled-whiteboard",
       )}?whiteboardId=${item._id}`
     : isPdf
-    ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
-        (item as PdfItem).title || "untitled-pdf",
-      )}?pdfId=${item._id}`
-    : isLink
-      ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
-          (item as LinkItem).title ||
-            (item as LinkItem).metadata?.authorName ||
-            "link",
-        )}?linkId=${item._id}`
-      : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+      ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
+          (item as PdfItem).title || "untitled-pdf",
+        )}?pdfId=${item._id}`
+      : isLink
+        ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
+            (item as LinkItem).title ||
+              (item as LinkItem).metadata?.authorName ||
+              "link",
+          )}?linkId=${item._id}`
+        : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
 
   const createdDate = new Date(item.createdAt);
   const isDifferentYear =
@@ -3217,6 +3231,7 @@ const ListNoteCard = memo(function ListNoteCard({
               asChild
               variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              aria-label="open-note"
             >
               <IntentPrefetchLink
                 href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
@@ -3350,7 +3365,7 @@ const PdfGridCard = memo(function PdfGridCard({
           asChild
           variant="revDefault"
           className="h-9 px-6 text-xs"
-          aria-label="open-upload"
+          aria-label="open-pdf"
         >
           <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
         </Button>
@@ -3472,9 +3487,10 @@ const PdfListCard = memo(function PdfListCard({
               asChild
               variant="revDefault"
               className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+              aria-label="open-pdf"
             >
               <IntentPrefetchLink href={pdfHref}>
-                <span aria-label="open-upload">Open</span>
+                <span aria-label="open-pdf">Open</span>
               </IntentPrefetchLink>
             </Button>
           </div>
@@ -3515,7 +3531,10 @@ const WhiteboardGridCard = memo(function WhiteboardGridCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <CardTitle className="text-lg font-semibold text-foreground line-clamp-2">
-            <HighlightText text={whiteboard.title || "Untitled whiteboard"} query={searchQuery} />
+            <HighlightText
+              text={whiteboard.title || "Untitled whiteboard"}
+              query={searchQuery}
+            />
           </CardTitle>
           <Button
             variant="ghost"
@@ -3536,7 +3555,13 @@ const WhiteboardGridCard = memo(function WhiteboardGridCard({
           <Calendar className="h-3.5 w-3.5" />
           <span>{new Date(whiteboard.updatedAt).toLocaleDateString()}</span>
         </div>
-        <Button size="sm" asChild variant="revDefault" className="h-9 px-6 text-xs" aria-label="open-whiteboard">
+        <Button
+          size="sm"
+          asChild
+          variant="revDefault"
+          className="h-9 px-6 text-xs"
+          aria-label="open-whiteboard"
+        >
           <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
         </Button>
       </CardFooter>
@@ -3567,19 +3592,36 @@ const WhiteboardListCard = memo(function WhiteboardListCard({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold text-foreground line-clamp-1">
-            <HighlightText text={whiteboard.title || "Untitled whiteboard"} query={searchQuery} />
+            <HighlightText
+              text={whiteboard.title || "Untitled whiteboard"}
+              query={searchQuery}
+            />
           </h3>
-          <p className="text-sm text-muted-foreground">{whiteboard.preview || "Empty canvas"}</p>
+          <p className="text-sm text-muted-foreground">
+            {whiteboard.preview || "Empty canvas"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
             {new Date(whiteboard.updatedAt).toLocaleDateString()}
           </span>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" aria-label="delete-whiteboard" onClick={() => void handleDelete()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+            aria-label="delete-whiteboard"
+            onClick={() => void handleDelete()}
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
-          <Button size="sm" asChild variant="revDefault" className="h-8 px-3 text-xs">
+          <Button
+            size="sm"
+            asChild
+            variant="revDefault"
+            className="h-8 px-3 text-xs"
+            aria-label="open-whiteboard"
+          >
             <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
           </Button>
         </div>
