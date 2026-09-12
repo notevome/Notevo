@@ -77,8 +77,8 @@ export default defineSchema({
     workingSpaceId: v.id("workingSpaces"),
     notesTableId: v.id("notesTables"),
     title: v.string(),
-    // A serialized tldraw editor snapshot. Keeping this with the board makes
-    // each canvas available wherever the owner signs in.
+    // A serialized Excalidraw scene. Keeping this with the board makes each
+    // canvas available wherever the owner signs in.
     snapshot: v.optional(v.string()),
     preview: v.optional(v.string()),
     createdAt: v.number(),

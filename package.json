@@ -1,6 +1,6 @@
 {
   "name": "notevo",
-  "version": "0.1.1",
+  "version": "14.0.0",
   "private": true,
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",
@@ -23,6 +23,7 @@
     "@auth/core": "^0.37.0",
     "@convex-dev/auth": "^0.0.77",
     "@elevenlabs/react": "^0.12.3",
+    "@excalidraw/excalidraw": "^0.18.1",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroui/react-utils": "^2.1.8",
     "@heroui/shared-utils": "^2.1.7",
