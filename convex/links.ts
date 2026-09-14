@@ -229,6 +229,23 @@ export const internalGetLinksMissingChannelInfo = internalQuery({
   },
 });
 
+// Returns ALL links for a platform, regardless of whether metadata fields
+// are already populated. Used by the "force refresh" backfill so stale
+// data (from an older version of the fetch logic) gets overwritten, not
+// just links that are missing data entirely.
+export const internalGetLinksByPlatform = internalQuery({
+  args: {
+    platform: linkPlatformValidator,
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("links")
+      .filter((q) => q.eq(q.field("platform"), args.platform))
+      .paginate(args.paginationOpts);
+  },
+});
+
 export const moveLink = mutation({
   args: {
     _id: v.id("links"),
