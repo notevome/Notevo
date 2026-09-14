@@ -457,7 +457,9 @@ type DropTarget = { id: string; position: "before" | "after" };
 function useClientSideOrder<T extends { _id: string }>(
   storageKey: string,
   items: T[],
+  options?: { newItemPosition?: "start" | "end" },
 ) {
+  const newItemPosition = options?.newItemPosition ?? "end";
   const [sessionOrder, setSessionOrder] = useState<string[]>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [draggedSize, setDraggedSize] = useState<{
@@ -485,9 +487,11 @@ function useClientSideOrder<T extends { _id: string }>(
         .map((item) => item._id)
         .filter((id) => !known.has(id));
       if (newIds.length === 0) return prev;
-      return [...prev, ...newIds];
+      return newItemPosition === "start"
+        ? [...newIds, ...prev]
+        : [...prev, ...newIds];
     });
-  }, [items]);
+  }, [items, newItemPosition]);
 
   const persist = useCallback(
     (ids: string[]) => {
@@ -1779,6 +1783,7 @@ export function NotesDroppableContainer({
   } = useClientSideOrder(
     `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}${tableId}`,
     filteredItems,
+    { newItemPosition: "start" },
   );
   const displayItems =
     searchQuery.trim() || contentFilter !== "all" || subFilterValue

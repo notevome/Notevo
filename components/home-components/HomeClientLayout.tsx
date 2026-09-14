@@ -64,9 +64,12 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const noteid = searchParams.get("id") as Id<"notes">;
   const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
+  const whiteboardId = searchParams.get(
+    "whiteboardId",
+  ) as Id<"whiteboards"> | null;
   const noteTitle = parseSlug(`${pathSegments[2]}`);
-  const isPdfRoute = pathSegments[2] === "pdf";
-  const isWhiteboardRoute = pathSegments[2] === "whiteboard";
+  const isPdfRoute = Boolean(pdfId);
+  const isWhiteboardRoute = Boolean(whiteboardId);
   const currentPdf = useQuery(
     api.pdfs.getPdfById,
     pdfId ? { _id: pdfId } : "skip",
@@ -74,8 +77,10 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
 
   const showTopFade = scrollTop > 0;
 
-  // Only on notevo.me/home/[id] — grow the fade once the user scrolls past 180px
-  const isNoteDetailRoute = /^\/home\/[^/]+\/?$/.test(pathname);
+  const isNoteDetailRoute =
+    /^\/home\/[^/]+\/[^/]+\/?$/.test(pathname) &&
+    !isPdfRoute &&
+    !isWhiteboardRoute;
   const isPastFadeGrowThreshold = scrollTop > 180;
   const fadeHeight =
     isNoteDetailRoute && isPastFadeGrowThreshold ? "16rem" : "6rem";
@@ -105,11 +110,13 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
           <div className="flex justify-between items-center w-full px-4 py-2 ">
             <div className="flex justify-start items-center gap-3">
-              {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
+              {(!open || isMobile) && !isPdfRoute && !isWhiteboardRoute && (
+                <SidebarTrigger />
+              )}
               {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
             </div>
             <div>
-              {!isPdfRoute && noteid && noteTitle && (
+              {!isPdfRoute && !isWhiteboardRoute && noteid && noteTitle && (
                 <span className=" flex justify-between items-center gap-2">
                   <PublicNote noteId={noteid} noteTitle={noteTitle} />
                   <NoteSettings
