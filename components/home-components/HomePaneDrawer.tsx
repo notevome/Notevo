@@ -12,8 +12,8 @@ import {
   useState,
 } from "react";
 import { PanelRightClose, X } from "lucide-react";
-import NotePageClient from "@/app/home/[id]/[slug]/NotePageClient";
-import PdfViewerPageClient from "@/app/home/[id]/pdf/[pdfId]/PdfViewerPageClient";
+import NotePageClient from "@/app/home/[id]/[itemId]/NotePageClient";
+import PdfViewerPageClient from "@/app/home/[id]/[itemId]/PdfViewerPageClient";
 import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
 import { Button } from "@/components/ui/button";
 import {

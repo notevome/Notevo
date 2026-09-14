@@ -10,6 +10,7 @@ import {
   Pin,
   FolderPlus,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -474,9 +475,8 @@ function WorkspaceCard({
           </div>
         ) : (
           <CardTitle
-            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
+            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50"
             onDoubleClick={handleNameDoubleClick}
-            title="Double-click to rename"
           >
             {workspace.name || "Untitled"}
           </CardTitle>
@@ -553,12 +553,21 @@ function NoteCard({ note }: { note: Note }) {
     : getContentPreviewFromBody(note.body);
 
   const isEmpty = !(note.preview || note.body);
+  const router = useRouter();
+  const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+
+  const handleOpen = useCallback(() => {
+    router.push(href);
+  }, [router, href]);
 
   return (
     <Card
+      onDoubleClick={handleOpen}
       className={cn(
-        "group relative overflow-hidden bg-card border transition-all duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col",
-        isEmpty ? "border-dashed border-border" : "border-border",
+        "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none",
+        isEmpty
+          ? "border-dashed border-border hover:border-muted-foreground/50"
+          : "border-border hover:border-muted-foreground/50",
       )}
     >
       <CardHeader className="pb-2">
@@ -594,18 +603,6 @@ function NoteCard({ note }: { note: Note }) {
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="h-8 px-6 text-xs"
-        >
-          <IntentPrefetchLink
-            href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}
-          >
-            Open
-          </IntentPrefetchLink>
-        </Button>
       </CardFooter>
     </Card>
   );

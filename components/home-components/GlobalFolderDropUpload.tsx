@@ -225,7 +225,7 @@ export default function GlobalFolderDropUpload() {
 
           if (!firstPdfRoute) {
             const pdfSlug = generateSlug(file.name.replace(/\.pdf$/i, ""));
-            firstPdfRoute = `/home/${workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdfId}`;
+            firstPdfRoute = `/home/${workingSpaceId}/${pdfSlug}?pdfId=${pdfId}`;
           }
         }
 

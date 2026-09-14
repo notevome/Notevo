@@ -11,10 +11,10 @@ import {
   ChevronDown,
   Link2,
   PanelTop,
-  Trash2,
   X,
   Filter,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
 import {
   useState,
@@ -39,6 +39,7 @@ import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import LinkSettings from "@/components/home-components/LinkSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -198,6 +199,15 @@ function isGenericLinkPlatform(
     p === "ig" ||
     p.includes("linkedin")
   );
+}
+
+// A "social" link is one from a platform we can render as an authored post
+// (avatar + name + handle + post content). Anything else is treated as a
+// plain website link (title + Open Graph image).
+function isSocialLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  return !isGenericLinkPlatform(platform);
 }
 
 function matchesLinkPlatform(
@@ -371,6 +381,8 @@ interface LinkItem {
 interface WhiteboardItem {
   _id: Id<"whiteboards">;
   title: string;
+  favorite?: boolean;
+  snapshot?: string;
   preview?: string;
   userId: Id<"users">;
   workingSpaceId: Id<"workingSpaces">;
@@ -422,32 +434,6 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
     </>
   );
 }
-
-interface NoteCardProps {
-  note: Note;
-  workspaceId?: Id<"workingSpaces">;
-  onDelete?: (noteId: Id<"notes">) => void;
-  searchQuery?: string;
-}
-
-interface PdfCardProps {
-  pdf: PdfItem;
-  onDelete?: (pdfId: Id<"pdfs">) => void;
-  searchQuery?: string;
-}
-
-interface LinkCardProps {
-  link: LinkItem;
-  onDelete?: (linkId: Id<"links">) => void;
-  searchQuery?: string;
-}
-
-interface WhiteboardCardProps {
-  whiteboard: WhiteboardItem;
-  onDelete?: (whiteboardId: Id<"whiteboards">) => void;
-  searchQuery?: string;
-}
-
 interface EmptySearchResultsProps {
   searchQuery: string;
   onClearSearch: () => void;
@@ -479,6 +465,9 @@ function useClientSideOrder<T extends { _id: string }>(
     height: number;
   } | null>(null);
   const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const justDraggedRef = useRef(false);
+  const clearJustDraggedTimeoutRef =
+    useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     try {
@@ -527,6 +516,10 @@ function useClientSideOrder<T extends { _id: string }>(
       setDraggingId(id);
       setDropTarget(null);
       setDraggedSize(rect ?? null);
+      justDraggedRef.current = true;
+      if (clearJustDraggedTimeoutRef.current) {
+        clearTimeout(clearJustDraggedTimeoutRef.current);
+      }
     },
     [],
   );
@@ -553,6 +546,15 @@ function useClientSideOrder<T extends { _id: string }>(
     [draggingId],
   );
 
+  const scheduleClearJustDragged = useCallback(() => {
+    if (clearJustDraggedTimeoutRef.current) {
+      clearTimeout(clearJustDraggedTimeoutRef.current);
+    }
+    clearJustDraggedTimeoutRef.current = setTimeout(() => {
+      justDraggedRef.current = false;
+    }, 300);
+  }, []);
+
   const handleDrop = useCallback(() => {
     if (draggingId && dropTarget && dropTarget.id !== draggingId) {
       const ids = orderedItems.map((item) => item._id);
@@ -566,20 +568,23 @@ function useClientSideOrder<T extends { _id: string }>(
     setDraggingId(null);
     setDropTarget(null);
     setDraggedSize(null);
-  }, [draggingId, dropTarget, orderedItems, persist]);
+    scheduleClearJustDragged();
+  }, [draggingId, dropTarget, orderedItems, persist, scheduleClearJustDragged]);
 
   const handleDragEnd = useCallback(() => {
     // Fallback cleanup in case the drop lands outside a valid target.
     setDraggingId(null);
     setDropTarget(null);
     setDraggedSize(null);
-  }, []);
+    scheduleClearJustDragged();
+  }, [scheduleClearJustDragged]);
 
   return {
     orderedItems,
     draggingId,
     dropTarget,
     draggedSize,
+    justDraggedRef,
     handleDragStart,
     handleDragOverItem,
     handleDrop,
@@ -1355,8 +1360,7 @@ export default function WorkingSpacePageClient({
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
-                  title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20 leading-normal md:leading-[4rem]"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
                 >
                   {workspace.name.length > 20 && isMobile
                     ? `${workspace.name.slice(0, 17)}...`
@@ -1725,7 +1729,16 @@ export function NotesDroppableContainer({
         return titleMatches || item.preview?.toLowerCase().includes(q);
       }
       if (item.kind === "link") {
-        return titleMatches || item.url.toLowerCase().includes(q);
+        if (titleMatches || item.url.toLowerCase().includes(q)) return true;
+        const metadata = item.metadata;
+        if (!metadata) return false;
+        return (
+          metadata.authorName?.toLowerCase().includes(q) ||
+          metadata.authorHandle?.toLowerCase().includes(q) ||
+          metadata.siteName?.toLowerCase().includes(q) ||
+          metadata.description?.toLowerCase().includes(q) ||
+          false
+        );
       }
 
       const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
@@ -1758,6 +1771,7 @@ export function NotesDroppableContainer({
     draggingId,
     dropTarget,
     draggedSize,
+    justDraggedRef,
     handleDragStart,
     handleDragOverItem,
     handleDrop,
@@ -2061,6 +2075,21 @@ export function NotesDroppableContainer({
                         handleDrop();
                       }}
                       onDragEnd={handleDragEnd}
+                      onClickCapture={(e) => {
+                        // Some browsers fire a stray click/dblclick right
+                        // after a drop lands - don't let that also open the
+                        // card that was just being reordered.
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      onDoubleClickCapture={(e) => {
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
                       className={cn(
                         draggableEnabled &&
                           "cursor-grab active:cursor-grabbing",
@@ -2068,72 +2097,18 @@ export function NotesDroppableContainer({
                           "opacity-40 scale-[0.98] transition-transform",
                       )}
                     >
-                      {item.kind === "whiteboard" ? (
-                        isGridLayout ? (
-                          <WhiteboardGridCard
-                            whiteboard={item}
-                            onDelete={
-                              handleItemDelete as (
-                                whiteboardId: Id<"whiteboards">,
-                              ) => void
-                            }
-                            searchQuery={searchQuery}
-                          />
-                        ) : (
-                          <WhiteboardListCard
-                            whiteboard={item}
-                            onDelete={
-                              handleItemDelete as (
-                                whiteboardId: Id<"whiteboards">,
-                              ) => void
-                            }
-                            searchQuery={searchQuery}
-                          />
-                        )
-                      ) : item.kind === "pdf" ? (
-                        isGridLayout ? (
-                          <PdfGridCard
-                            pdf={item}
-                            onDelete={handleItemDelete}
-                            searchQuery={searchQuery}
-                          />
-                        ) : (
-                          <PdfListCard
-                            pdf={item}
-                            onDelete={handleItemDelete}
-                            searchQuery={searchQuery}
-                          />
-                        )
-                      ) : item.kind === "link" ? (
-                        isGridLayout ? (
-                          <LinkGridCard
-                            link={item}
-                            onDelete={handleItemDelete}
-                            searchQuery={searchQuery}
-                          />
-                        ) : (
-                          <LinkListCard
-                            link={item}
-                            onDelete={handleItemDelete}
-                            searchQuery={searchQuery}
-                          />
-                        )
-                      ) : isGridLayout ? (
-                        <GridNoteCard
-                          note={item}
+                      {isGridLayout ? (
+                        <WorkspaceGridCard
+                          item={item}
                           workspaceId={workspaceId}
-                          onDelete={
-                            handleItemDelete as (noteId: Id<"notes">) => void
-                          }
+                          onDelete={handleItemDelete}
                           searchQuery={searchQuery}
                         />
                       ) : (
-                        <ListNoteCard
-                          note={item}
+                        <WorkspaceListCard
+                          item={item}
                           workspaceId={workspaceId}
-                          onDelete={
-                            handleItemDelete as (noteId: Id<"notes">) => void
-                          }
+                          onDelete={handleItemDelete}
                           searchQuery={searchQuery}
                         />
                       )}
@@ -2885,11 +2860,11 @@ function TimelineMiniCard({
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
   const href = isWhiteboard
-    ? `/home/${(item as WhiteboardItem).workingSpaceId}/whiteboard/${generateSlug(
+    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${generateSlug(
         (item as WhiteboardItem).title || "untitled-whiteboard",
       )}?whiteboardId=${item._id}`
     : isPdf
-      ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
+      ? `/home/${(item as PdfItem).workingSpaceId}/${generateSlug(
           (item as PdfItem).title || "untitled-pdf",
         )}?pdfId=${item._id}`
       : isLink
@@ -2934,701 +2909,389 @@ function TimelineMiniCard({
   );
 }
 
-const GridNoteCard = memo(function GridNoteCard({
-  note,
-  workspaceId,
+function getWorkspaceItemDetails(
+  item: WorkspaceEntry,
+  workspaceId?: Id<"workingSpaces">,
+) {
+  if (item.kind === "whiteboard") {
+    const board = item as WhiteboardItem;
+    return {
+      title: board.title || "Untitled whiteboard",
+      subtitle: "",
+      href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+    };
+  }
+  if (item.kind === "pdf") {
+    const pdf = item as PdfItem;
+    return {
+      title: pdf.title || "Untitled PDF",
+      subtitle: "PDF upload",
+      href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+    };
+  }
+  if (item.kind === "link") {
+    const link = item as LinkItem;
+    return {
+      title:
+        link.title ||
+        link.metadata?.authorName ||
+        link.metadata?.siteName ||
+        link.url,
+      subtitle:
+        link.metadata?.description || platformLabel(link.platform) || link.url,
+      href: link.url,
+    };
+  }
+  const note = item as Note;
+  return {
+    title: note.title || "Untitled",
+    subtitle: note.preview
+      ? parseTiptapContentTruncateText(note.preview, 80)
+      : getContentPreviewFromBody(note.body),
+    href: `/home/${workspaceId}/${note.slug}?id=${note._id}`,
+  };
+}
+
+function WorkspaceItemSettings({
+  item,
   onDelete,
-  searchQuery,
-}: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
-      }
-    },
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [note.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        setEditedTitle(note.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: any) => {
-      if (e.key === "Enter") {
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
-    },
-    [note.title],
-  );
-
+}: {
+  item: WorkspaceEntry;
+  onDelete?: (id: any) => void;
+}) {
+  if (item.kind === "whiteboard")
+    return (
+      <WhiteboardSettings
+        whiteboard={item as WhiteboardItem}
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "pdf")
+    return (
+      <PdfSettings
+        pdfId={item._id as Id<"pdfs">}
+        pdfTitle={(item as PdfItem).title}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "link")
+    return (
+      <LinkSettings
+        linkId={item._id as Id<"links">}
+        linkUrl={(item as LinkItem).url}
+        linkTitle={(item as LinkItem).title}
+        favorite={(item as LinkItem).favorite}
+        createdAt={item.createdAt}
+        updatedAt={item.updatedAt}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  const note = item as Note;
   return (
-    <Card
-      className={cn(
-        "group relative overflow-hidden bg-card border flex flex-col w-full min-h-[230px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-          ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
-              <HighlightText
-                text={note.title || "Untitled"}
-                query={searchQuery}
-              />
-            </CardTitle>
-          )}
-          <NoteSettings
-            noteId={note._id}
-            noteTitle={note.title}
-            ShowWidthOp={false}
-            IconVariant="vertical_icon"
-            DropdownMenuContentAlign="start"
-            TooltipContentAlign="start"
-            onDelete={onDelete}
-            BtnClassName="pt-0"
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className=" flex-grow flex-1">
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {previewText}
-        </p>
-      </CardContent>
-
-      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-visible ">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className=" h-9 px-6 text-xs"
-          aria-label="open-note"
-        >
-          <IntentPrefetchLink
-            href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
-          >
-            Open
-          </IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
+    <NoteSettings
+      noteId={note._id}
+      noteTitle={note.title}
+      ShowWidthOp={false}
+      IconVariant="vertical_icon"
+      DropdownMenuContentAlign="start"
+      TooltipContentAlign="start"
+      onDelete={onDelete}
+      BtnClassName="pt-0"
+    />
   );
-});
+}
 
-const ListNoteCard = memo(function ListNoteCard({
-  note,
-  workspaceId,
-  onDelete,
-  searchQuery,
-}: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
-      }
-    },
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [note.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating note title:", error);
-        setEditedTitle(note.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
-    },
-    [note.title],
-  );
-
+function WorkspaceItemThumbnail({
+  item,
+  compact = false,
+}: {
+  item: WorkspaceEntry;
+  compact?: boolean;
+}) {
+  const size = compact ? " w-10" : "w-full";
+  if (item.kind === "whiteboard")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <WhiteboardPreview
+          snapshot={(item as WhiteboardItem).snapshot}
+          preview={(item as WhiteboardItem).preview}
+        />
+      </div>
+    );
+  if (item.kind === "link")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <LinkThumbnail link={item as LinkItem} showFaviconBadge />
+      </div>
+    );
+  if ((item.kind === "note" || item.kind === "pdf") && !compact) return null;
   return (
-    <Card
-      className={cn(
-        "group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border transition-all duration-300 w-full min-h-[100px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
-    >
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className=" relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <>
-                <Input
-                  ref={titleInputRef as any}
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={handleTitleKeyDown}
-                  className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </>
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
-              >
-                <HighlightText
-                  text={note.title || "Untitled"}
-                  query={searchQuery}
-                />
-              </h3>
-            )}
-            {
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {previewText}
-              </p>
-            }
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className=" relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <NoteSettings
-              noteId={note._id}
-              noteTitle={note.title}
-              ShowWidthOp={false}
-              IconVariant="vertical_icon"
-              DropdownMenuContentAlign="start"
-              TooltipContentAlign="start"
-              onDelete={onDelete}
-              BtnClassName="pt-0 mr-10 mt-1.5"
-            />
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-              aria-label="open-note"
-            >
-              <IntentPrefetchLink
-                href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
-              >
-                <span aria-label="open-note">Open</span>
-              </IntentPrefetchLink>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-
-const PdfGridCard = memo(function PdfGridCard({
-  pdf,
-  onDelete,
-  searchQuery,
-}: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
-
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
-  );
-
-  return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full min-h-[200px]">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-          ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
-              <HighlightText
-                text={pdf.title || "Untitled"}
-                query={searchQuery}
-              />
-            </CardTitle>
-          )}
-          <PdfSettings
-            pdfId={pdf._id}
-            pdfTitle={pdf.title}
-            iconVariant="vertical_icon"
-            dropdownMenuContentAlign="start"
-            tooltipContentAlign="start"
-            onDelete={onDelete}
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <FileText className="h-5 w-5 text-primary" />
-          <span>PDF upload</span>
-        </div>
-      </CardContent>
-
-      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="h-9 px-6 text-xs"
-          aria-label="open-pdf"
-        >
-          <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-});
-
-const PdfListCard = memo(function PdfListCard({
-  pdf,
-  onDelete,
-  searchQuery,
-}: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
-
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
-  );
-
-  return (
-    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-[100px]">
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <Input
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
-              >
-                <HighlightText
-                  text={pdf.title || "Untitled"}
-                  query={searchQuery}
-                />
-              </h3>
-            )}
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              PDF upload
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <PdfSettings
-              pdfId={pdf._id}
-              pdfTitle={pdf.title}
-              iconVariant="vertical_icon"
-              dropdownMenuContentAlign="start"
-              tooltipContentAlign="start"
-              onDelete={onDelete}
-              btnClassName="pt-0 mr-10 mt-1.5"
-            />
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-              aria-label="open-pdf"
-            >
-              <IntentPrefetchLink href={pdfHref}>
-                <span aria-label="open-pdf">Open</span>
-              </IntentPrefetchLink>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
-
-function WhiteboardPreview({ preview }: { preview?: string }) {
-  return (
-    <div className="relative flex h-24 w-full items-center justify-center overflow-hidden border border-border bg-[linear-gradient(hsl(var(--border)/.45)_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border)/.45)_1px,transparent_1px)] bg-[size:18px_18px]">
-      <PanelTop className="h-8 w-8 text-primary/70" />
-      <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-        {preview || "Empty canvas"}
-      </span>
+    <div className={`${size} flex shrink-0 items-center justify-center`}>
+      <FileText className="h-6 w-6 text-primary" />
     </div>
   );
 }
 
-const WhiteboardGridCard = memo(function WhiteboardGridCard({
-  whiteboard,
+const WorkspaceGridCard = memo(function WorkspaceGridCard({
+  item,
+  workspaceId,
   onDelete,
   searchQuery,
-}: WhiteboardCardProps) {
-  const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
-  const whiteboardHref = `/home/${whiteboard.workingSpaceId}/whiteboard/${generateSlug(
-    whiteboard.title || "untitled-whiteboard",
-  )}?whiteboardId=${whiteboard._id}`;
-
-  const handleDelete = async () => {
-    await deleteWhiteboard({ _id: whiteboard._id });
-    onDelete?.(whiteboard._id);
-  };
-
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  // A social post's own publish date, not when we happened to save the link.
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
   return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full min-h-[200px]">
+    <Card
+      onDoubleClick={open}
+      className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
+    >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-lg font-semibold text-foreground line-clamp-2">
-            <HighlightText
-              text={whiteboard.title || "Untitled whiteboard"}
-              query={searchQuery}
-            />
-          </CardTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            aria-label="delete-whiteboard"
-            onClick={() => void handleDelete()}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          {isSocialLink ? (
+            <div className="flex min-w-0 items-start gap-2.5">
+              <LinkAuthorAvatar
+                avatarUrl={link?.metadata?.authorAvatarUrl}
+                authorName={authorName || details.title}
+                className="mt-0.5 h-9 w-9"
+              />
+              <div className="min-w-0">
+                <CardTitle className="line-clamp-1 max-w-full break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">
+                  <HighlightText
+                    text={authorName || details.title}
+                    query={searchQuery}
+                  />
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {authorHandle}
+                  {authorHandle && postDate ? " · " : ""}
+                  {postDate ? formatLongDateTime(postDate) : null}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
+              <HighlightText text={details.title} query={searchQuery} />
+            </CardTitle>
+          )}
+          <div onDoubleClick={(e) => e.stopPropagation()}>
+            <WorkspaceItemSettings item={item} onDelete={onDelete} />
+          </div>
         </div>
+        {item.kind !== "link" && (
+          <p className="text-xs text-muted-foreground">
+            Created {formatLongDate(item.createdAt)} · Last updated{" "}
+            {formatLongDate(item.updatedAt)}
+          </p>
+        )}
       </CardHeader>
-      <CardContent className="flex-grow flex-1">
-        <WhiteboardPreview preview={whiteboard.preview} />
+      <CardContent className="flex flex-1 flex-col gap-3">
+        {isSocialLink ? (
+          <>
+            <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
+              <HighlightText
+                text={link?.metadata?.description || ""}
+                query={searchQuery}
+              />
+            </p>
+            {link?.metadata?.thumbnailUrl && (
+              <LinkThumbnail link={link} showFaviconBadge />
+            )}
+          </>
+        ) : (
+          <>
+            <WorkspaceItemThumbnail item={item} />
+            <p className="line-clamp-2 text-sm text-muted-foreground">
+              <HighlightText text={details.subtitle} query={searchQuery} />
+            </p>
+          </>
+        )}
       </CardContent>
-      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          <span>{new Date(whiteboard.updatedAt).toLocaleDateString()}</span>
-        </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="h-9 px-6 text-xs"
-          aria-label="open-whiteboard"
-        >
-          <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
-        </Button>
-      </CardFooter>
     </Card>
   );
 });
 
-const WhiteboardListCard = memo(function WhiteboardListCard({
-  whiteboard,
+const WorkspaceListCard = memo(function WorkspaceListCard({
+  item,
+  workspaceId,
   onDelete,
   searchQuery,
-}: WhiteboardCardProps) {
-  const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
-  const whiteboardHref = `/home/${whiteboard.workingSpaceId}/whiteboard/${generateSlug(
-    whiteboard.title || "untitled-whiteboard",
-  )}?whiteboardId=${whiteboard._id}`;
-
-  const handleDelete = async () => {
-    await deleteWhiteboard({ _id: whiteboard._id });
-    onDelete?.(whiteboard._id);
-  };
-
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
   return (
-    <Card className="relative flex min-h-[100px] items-center border border-border bg-card">
+    <Card
+      onDoubleClick={open}
+      className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
+    >
       <CardContent className="flex w-full items-center gap-4 p-3">
-        <div className="h-10 w-10 shrink-0 overflow-hidden">
-          <WhiteboardPreview preview={undefined} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold text-foreground line-clamp-1">
+        {isSocialLink ? (
+          <LinkAuthorAvatar
+            avatarUrl={link?.metadata?.authorAvatarUrl}
+            className="h-10 w-10"
+          />
+        ) : (
+          <WorkspaceItemThumbnail item={item} compact />
+        )}
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
             <HighlightText
-              text={whiteboard.title || "Untitled whiteboard"}
+              text={isSocialLink ? authorName || details.title : details.title}
               query={searchQuery}
             />
           </h3>
-          <p className="text-sm text-muted-foreground">
-            {whiteboard.preview || "Empty canvas"}
+          <p className="text-xs text-muted-foreground">
+            {isSocialLink ? (
+              <>
+                {authorHandle}
+                {authorHandle && postDate ? " · " : ""}
+                {postDate ? formatLongDateTime(postDate) : null}
+              </>
+            ) : item.kind === "link" ? (
+              formatLongDate(item.updatedAt)
+            ) : (
+              <>
+                Created {formatLongDate(item.createdAt)} · Last updated{" "}
+                {formatLongDate(item.updatedAt)}
+              </>
+            )}
+          </p>
+          <p className="line-clamp-1 text-sm text-muted-foreground">
+            <HighlightText text={details.subtitle} query={searchQuery} />
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            {new Date(whiteboard.updatedAt).toLocaleDateString()}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-            aria-label="delete-whiteboard"
-            onClick={() => void handleDelete()}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button
-            size="sm"
-            asChild
-            variant="revDefault"
-            className="h-8 px-3 text-xs"
-            aria-label="open-whiteboard"
-          >
-            <IntentPrefetchLink href={whiteboardHref}>Open</IntentPrefetchLink>
-          </Button>
+        <div onDoubleClick={(e) => e.stopPropagation()}>
+          <WorkspaceItemSettings item={item} onDelete={onDelete} />
         </div>
       </CardContent>
     </Card>
   );
 });
+
+function WhiteboardPreview({
+  snapshot,
+  preview,
+}: {
+  snapshot?: string;
+  preview?: string;
+}) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!snapshot) {
+      setThumbnailUrl(null);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    const renderThumbnail = async () => {
+      try {
+        const scene = JSON.parse(snapshot);
+        if (!Array.isArray(scene.elements) || scene.elements.length === 0) {
+          if (!cancelled) setThumbnailUrl(null);
+          return;
+        }
+        const { exportToSvg } = await import("@excalidraw/excalidraw");
+        const svg = await exportToSvg({
+          elements: scene.elements,
+          appState: scene.appState,
+          files: scene.files,
+          exportPadding: 24,
+        } as any);
+        objectUrl = URL.createObjectURL(
+          new Blob([new XMLSerializer().serializeToString(svg)], {
+            type: "image/svg+xml",
+          }),
+        );
+        if (!cancelled) setThumbnailUrl(objectUrl);
+      } catch {
+        if (!cancelled) setThumbnailUrl(null);
+      }
+    };
+
+    void renderThumbnail();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [snapshot]);
+
+  return (
+    <div className="relative flex h-52 w-full items-center justify-center overflow-hidden border border-border">
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=" Whiteboard thumbnail"
+          draggable={false}
+          className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
+        />
+      ) : (
+        <>
+          <PanelTop className="h-8 w-8 text-primary/70" />
+          <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {preview || "Empty canvas"}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Matches "Jul 28, 2026" - used for note created/updated labels and post dates.
+function formatLongDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Matches "Jun 25, 2026, 5:36 PM" - used for social post timestamps.
+function formatLongDateTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
 
 function getLinkFaviconUrl(url: string): string | null {
   try {
@@ -3639,7 +3302,15 @@ function getLinkFaviconUrl(url: string): string | null {
   }
 }
 
-function LinkFavicon({ url, className }: { url: string; className?: string }) {
+function LinkFavicon({
+  url,
+  className,
+  grayscale = true,
+}: {
+  url: string;
+  className?: string;
+  grayscale?: boolean;
+}) {
   const [errored, setErrored] = useState(false);
   const faviconUrl = getLinkFaviconUrl(url);
 
@@ -3653,7 +3324,8 @@ function LinkFavicon({ url, className }: { url: string; className?: string }) {
       alt=""
       draggable={false}
       className={cn(
-        "object-contain grayscale contrast-125 saturate-0 select-none [-webkit-user-drag:none]",
+        "object-contain select-none [-webkit-user-drag:none]",
+        grayscale && "grayscale",
         className,
       )}
       onError={() => setErrored(true)}
@@ -3664,9 +3336,11 @@ function LinkFavicon({ url, className }: { url: string; className?: string }) {
 function LinkFaviconBadge({
   url,
   className,
+  grayscale = true,
 }: {
   url: string;
   className?: string;
+  grayscale?: boolean;
 }) {
   return (
     <div
@@ -3675,16 +3349,24 @@ function LinkFaviconBadge({
         className,
       )}
     >
-      <LinkFavicon url={url} className="h-[100%] w-[100%]" />
+      <LinkFavicon
+        url={url}
+        className="h-[100%] w-[100%]"
+        grayscale={grayscale}
+      />
     </div>
   );
 }
 
-function LinkThumbnail({ link }: { link: LinkItem }) {
+function LinkThumbnail({
+  link,
+  showFaviconBadge = false,
+}: {
+  link: LinkItem;
+  showFaviconBadge?: boolean;
+}) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const thumbnailUrl = link.metadata?.thumbnailUrl;
-  // No `metadata` object yet usually means the OG scrape hasn't resolved -
-  // keep the skeleton up rather than jumping straight to the favicon fallback.
   const isPending = link.metadata === undefined;
   const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
 
@@ -3698,7 +3380,7 @@ function LinkThumbnail({ link }: { link: LinkItem }) {
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgLoaded(false)}
           className={cn(
-            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300 ",
             imgLoaded ? "opacity-100" : "opacity-0",
           )}
         />
@@ -3714,190 +3396,57 @@ function LinkThumbnail({ link }: { link: LinkItem }) {
           <span>{platformLabel(link.platform) || "Link"}</span>
         </div>
       )}
-    </div>
-  );
-}
 
-const LinkGridCard = memo(function LinkGridCard({
-  link,
-  onDelete,
-  searchQuery,
-}: LinkCardProps) {
-  const displayTitle =
-    link.title ||
-    link.metadata?.authorName ||
-    link.metadata?.siteName ||
-    link.url;
-
-  return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-start gap-2 min-w-0">
-            <LinkFaviconBadge url={link.url} className="h-6 w-6 mt-0.5" />
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
-              title={link.url}
-            >
-              <HighlightText text={displayTitle} query={searchQuery} />
-            </CardTitle>
-          </div>
-          <LinkSettings
-            linkId={link._id}
-            linkUrl={link.url}
-            linkTitle={displayTitle}
-            favorite={link.favorite}
-            createdAt={link.createdAt}
-            updatedAt={link.updatedAt}
-            iconVariant="vertical_icon"
-            dropdownMenuContentAlign="start"
-            tooltipContentAlign="start"
-            onDelete={onDelete}
-            btnClassName="pt-0"
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        <LinkThumbnail link={link} />
-      </CardContent>
-
-      <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="h-9 px-6 text-xs"
-          aria-label="open-link"
-        >
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
-            Open
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-});
-
-function LinkListThumbnail({ link }: { link: LinkItem }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const thumbnailUrl = link.metadata?.thumbnailUrl;
-  const isPending = link.metadata === undefined;
-  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
-
-  return (
-    <div className="relative h-10 w-10 flex items-center justify-center flex-shrink-0">
-      {thumbnailUrl && (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          draggable={false}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => setImgLoaded(false)}
-          className={cn(
-            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
-            imgLoaded ? "opacity-100" : "opacity-0",
-          )}
+      {showFaviconBadge && thumbnailUrl && imgLoaded && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 h-8 w-8"
         />
       )}
-
-      {showSkeleton && (
-        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
-      )}
-
-      {!isPending && !thumbnailUrl && (
-        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-          <Link2 className="h-5 w-5 text-muted-foreground" />
-        </div>
-      )}
-
-      <LinkFaviconBadge
-        url={link.url}
-        className="absolute -bottom-1 -right-1 h-[18px] w-[18px]"
-      />
     </div>
   );
 }
 
-const LinkListCard = memo(function LinkListCard({
-  link,
-  onDelete,
-  searchQuery,
-}: LinkCardProps) {
-  const displayTitle =
-    link.title ||
-    link.metadata?.authorName ||
-    link.metadata?.siteName ||
-    link.url;
-
+function LinkAuthorAvatar({
+  avatarUrl,
+  authorName,
+  className,
+}: {
+  avatarUrl?: string;
+  authorName?: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (!avatarUrl || errored) {
+    const initial = authorName?.trim().charAt(0).toUpperCase();
+    return (
+      <div
+        className={cn(
+          "rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm font-medium text-muted-foreground",
+          className,
+        )}
+      >
+        {initial ? (
+          initial
+        ) : (
+          <Link2 className="h-1/2 w-1/2 text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
   return (
-    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <LinkListThumbnail link={link} />
-          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            <h3
-              className="text-lg font-semibold text-foreground line-clamp-2 flex-1 w-fit"
-              title={link.url}
-            >
-              <HighlightText text={displayTitle} query={searchQuery} />
-            </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {platformLabel(link.platform)}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <LinkSettings
-              linkId={link._id}
-              linkUrl={link.url}
-              linkTitle={displayTitle}
-              favorite={link.favorite}
-              createdAt={link.createdAt}
-              updatedAt={link.updatedAt}
-              iconVariant="horizontal_icon"
-              btnClassName="mr-10 mt-1.5"
-              dropdownMenuContentAlign="end"
-              tooltipContentAlign="end"
-              onDelete={onDelete}
-            />
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-            >
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="open-link"
-              >
-                Open
-              </a>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <img
+      src={avatarUrl}
+      alt={authorName || ""}
+      draggable={false}
+      onError={() => setErrored(true)}
+      className={cn(
+        "rounded-full object-cover flex-shrink-0 select-none [-webkit-user-drag:none]",
+        className,
+      )}
+    />
   );
-});
+}
 
 function EmptySearchResults({
   searchQuery,
@@ -3914,7 +3463,7 @@ function EmptySearchResults({
             No results found
           </h3>
           <p className="text-muted-foreground mb-6">
-            No notes or uploads found for "{searchQuery}"
+            No items found for "{searchQuery}"
           </p>
           <Button
             variant="outline"
