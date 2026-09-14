@@ -554,7 +554,9 @@ async function fetchLinkedInMetadata(
           if (!description) description = title;
         }
       } else {
-        const profileMatch = title.match(/^(.+?)\s+-\s+(.*?)\s*\|\s*LinkedIn$/i);
+        const profileMatch = title.match(
+          /^(.+?)\s+-\s+(.*?)\s*\|\s*LinkedIn$/i,
+        );
         if (profileMatch) {
           if (!authorName) authorName = profileMatch[1].trim();
         }
@@ -595,8 +597,7 @@ async function fetchLinkedInMetadata(
 
     return {
       title:
-        title ||
-        (authorName ? `${authorName} on LinkedIn` : "LinkedIn Post"),
+        title || (authorName ? `${authorName} on LinkedIn` : "LinkedIn Post"),
       metadata: {
         thumbnailUrl: og.image,
         authorName,
@@ -718,7 +719,8 @@ async function runChannelInfoBackfill(
       scanned += 1;
       try {
         const result = await fetcher(link.url);
-        const { authorName, authorHandle, authorAvatarUrl, description } = result.metadata;
+        const { authorName, authorHandle, authorAvatarUrl, description } =
+          result.metadata;
         if (authorName || authorHandle || authorAvatarUrl) {
           await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
             _id: link._id,
@@ -791,5 +793,81 @@ export const backfillLinkedInChannelInfo = action({
   returns: v.object({ scanned: v.number(), updated: v.number() }),
   handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
     return await runChannelInfoBackfill(ctx, "linkedin", fetchLinkedInMetadata);
+  },
+});
+
+// --- Force refresh: re-fetches and overwrites EVERY link for a platform,
+// regardless of what's already stored. Use this instead of the
+// "backfill*" actions above when old links have stale data (not missing
+// data) that needs to be replaced with the current fetch logic's output.
+async function runForceRefresh(
+  ctx: { runQuery: any; runMutation: any },
+  platform: "youtube" | "x" | "instagram" | "linkedin",
+  fetcher: (url: string) => Promise<FetchedLinkMetadata>,
+): Promise<{ scanned: number; updated: number }> {
+  let cursor: string | null = null;
+  let scanned = 0;
+  let updated = 0;
+
+  while (true) {
+    const page: any = await ctx.runQuery(
+      internal.links.internalGetLinksByPlatform,
+      { platform, paginationOpts: { numItems: 25, cursor } },
+    );
+
+    for (const link of page.page) {
+      scanned += 1;
+      try {
+        const result = await fetcher(link.url);
+        await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
+          _id: link._id,
+          title: result.title ?? link.title,
+          metadata: result.metadata,
+        });
+        updated += 1;
+      } catch (error) {
+        console.error(
+          `Force refresh failed for ${platform} link ${link._id}:`,
+          error,
+        );
+      }
+    }
+
+    if (page.isDone) break;
+    cursor = page.continueCursor;
+  }
+
+  return { scanned, updated };
+}
+
+export const forceRefreshYoutubeMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "youtube", fetchYoutubeMetadata);
+  },
+});
+
+export const forceRefreshXMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "x", fetchXMetadata);
+  },
+});
+
+export const forceRefreshInstagramMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "instagram", fetchInstagramMetadata);
+  },
+});
+
+export const forceRefreshLinkedInMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "linkedin", fetchLinkedInMetadata);
   },
 });
