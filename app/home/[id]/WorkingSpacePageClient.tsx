@@ -2937,8 +2937,7 @@ function getWorkspaceItemDetails(
         link.metadata?.authorName ||
         link.metadata?.siteName ||
         link.url,
-      subtitle:
-        link.metadata?.description || platformLabel(link.platform) || link.url,
+      subtitle: link.metadata ? link.metadata.description : " ",
       href: link.url,
     };
   }
@@ -3122,7 +3121,10 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           <>
             <WorkspaceItemThumbnail item={item} />
             <p className="line-clamp-2 text-sm text-muted-foreground">
-              <HighlightText text={details.subtitle} query={searchQuery} />
+              <HighlightText
+                text={details.subtitle || ""}
+                query={searchQuery}
+              />
             </p>
           </>
         )}
@@ -3191,7 +3193,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
             )}
           </p>
           <p className="line-clamp-1 text-sm text-muted-foreground">
-            <HighlightText text={details.subtitle} query={searchQuery} />
+            <HighlightText text={details.subtitle || ""} query={searchQuery} />
           </p>
         </div>
         <div onDoubleClick={(e) => e.stopPropagation()}>
