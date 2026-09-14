@@ -182,7 +182,7 @@ export default function MovePdfDialog({
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`}
+              href={`/home/${result.workingSpaceId}/${pdfSlug}?pdfId=${pdf._id}`}
               className="flex justify-center items-center gap-2"
             >
               <FileSymlink size={16} />

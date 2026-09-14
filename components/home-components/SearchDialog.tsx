@@ -167,7 +167,8 @@ function PdfItem({
   onIntentPrefetch,
   indented = false,
 }: any) {
-  const href = `/home/${pdf.workingSpaceId}/pdf/${pdf.slug}?pdfId=${pdf._id}`;
+  const pdfSlug = pdf.slug ? (pdf.slug.startsWith("/") ? pdf.slug : `/${pdf.slug}`) : "";
+  const href = `/home/${pdf.workingSpaceId}${pdfSlug}?pdfId=${pdf._id}`;
   return (
     <div
       onClick={onClick}
@@ -559,10 +560,11 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
     const href =
       note.kind === "pdf"
-        ? `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`
-        : `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+        ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
+        : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
     prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
@@ -580,6 +582,7 @@ export default function SearchDialog({
       window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
     if (note.kind === "pdf") {
       if (event.button === 0 && event.altKey) {
         event.preventDefault();
@@ -590,7 +593,7 @@ export default function SearchDialog({
         });
       } else {
         router.push(
-          `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`,
+          `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`,
         );
       }
       return;

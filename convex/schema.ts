@@ -81,6 +81,7 @@ export default defineSchema({
     // canvas available wherever the owner signs in.
     snapshot: v.optional(v.string()),
     preview: v.optional(v.string()),
+    favorite: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })

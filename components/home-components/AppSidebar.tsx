@@ -847,7 +847,7 @@ const PinnedUploadItem = memo(
     const inputRef = useRef<HTMLInputElement>(null);
 
     const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-    const pdfPath = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}`;
+    const pdfPath = `/home/${pdf.workingSpaceId}/${pdfSlug}`;
     const pdfHref = `${pdfPath}?pdfId=${pdf._id}`;
     const isActive = pathname === pdfPath;
 

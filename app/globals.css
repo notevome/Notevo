@@ -633,13 +633,6 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   scrollbar-gutter: stable;
 }
 
-.frosted-area {
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  -webkit-mask-image: linear-gradient(to top, black 10%, black 5%, black 3%, black 0%, transparent 100%);
-  mask-image: linear-gradient(to top, black 10%, black 5%, black 3%, black 0%, transparent 100%);
-}
-
 .cursor-blink {
   animation: blink 1s step-end infinite;
 }
