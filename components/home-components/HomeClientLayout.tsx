@@ -70,10 +70,6 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const noteTitle = parseSlug(`${pathSegments[2]}`);
   const isPdfRoute = Boolean(pdfId);
   const isWhiteboardRoute = Boolean(whiteboardId);
-  const currentPdf = useQuery(
-    api.pdfs.getPdfById,
-    pdfId ? { _id: pdfId } : "skip",
-  );
 
   const showTopFade = scrollTop > 0;
 
@@ -83,7 +79,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     !isWhiteboardRoute;
   const isPastFadeGrowThreshold = scrollTop > 180;
   const fadeHeight =
-    isNoteDetailRoute && isPastFadeGrowThreshold ? "6rem" : "16rem";
+    !isNoteDetailRoute && isPastFadeGrowThreshold ? "16rem" : "6rem";
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
