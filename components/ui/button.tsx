@@ -6,12 +6,10 @@ import { cn } from "../../lib/utils";
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap app-radius-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 outline-none ring-0 select-none",
   {
-    // transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:rounded-md hover:shadow-[4px_4px_0px_black] active:translate-x-[0px] active:translate-y-[0px] active:rounded-2xl active:shadow-none
     variants: {
       variant: {
         default:
-          "relative bg-primary/90 hover:bg-primary transition-all duration-200 text-primary-foreground disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80 before:content-[''] before:backdrop-blur before:absolute before:-z-10 before:inset-[-3px] before:app-radius-lg before:bg-gradient-to-br before:from-primary/60 before:via-border before:to-muted-foreground/70 disabled:before:opacity-40",
-        revDefault: "bg-primary/90 text-primary-foreground hover:bg-primary",
+          "variant-default | relative bg-primary text-primary-foreground shadow-[inset_0_3px_0_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.4)] hover:brightness-110 disabled:active:scale-100 duration-150",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
