@@ -574,7 +574,6 @@ export default function WorkingspaceNewDropdownBtn({
           </div>
           <DialogFooter className=" flex-row-reverse w-full gap-2 pt-2.5">
             <Button
-              variant="revDefault"
               onClick={() => void handleInsertLink()}
               disabled={isInsertingLink || !linkUrl.trim()}
               className=" h-8 !app-radius-none"

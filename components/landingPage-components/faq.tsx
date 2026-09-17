@@ -11,7 +11,7 @@ export default function FAQ() {
   return (
     <section
       id="faq"
-      className="relative pt-12 sm:pt-16 md:pt-20 Desktop:pt-24 "
+      className="relative py-12 sm:py-16 md:py-20 Desktop:py-24 "
     >
       <MaxWContainer className="md:flex justify-between items-start !max-w-[1300px] ">
         <div className="md:sticky top-24 md:max-w-lg">

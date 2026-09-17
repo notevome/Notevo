@@ -370,9 +370,8 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             </div>
           ))
         : createNoteWorkspace && (
-            <div className="flex h-[42px] p-[3px] bg-gradient-to-br from-primary/60 via-border to-muted-foreground/70 w-full items-center app-radius-lg overflow-hidden ">
+            <div className="flex p-[3px] w-full items-center overflow-hidden ">
               <Button
-                variant="revDefault"
                 className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 disabled={loading}
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
@@ -388,7 +387,6 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="revDefault"
                     className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                     disabled={loading}
                     aria-label="select-create-note-workspace"

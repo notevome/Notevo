@@ -349,7 +349,7 @@ function Slider({ children }: { children: React.ReactNode }) {
         <div className="z-10 absolute -bottom-1 right-0 flex justify-center items-center gap-2">
           <Button
             size="icon"
-            variant={canScrollLeft ? "revDefault" : "outline"}
+            variant={canScrollLeft ? "default" : "outline"}
             className="h-9 w-8"
             onClick={() => scroll("left")}
           >
@@ -357,7 +357,7 @@ function Slider({ children }: { children: React.ReactNode }) {
           </Button>
           <Button
             size="icon"
-            variant={canScrollRight ? "revDefault" : "outline"}
+            variant={canScrollRight ? "default" : "outline"}
             className="h-9 w-8 !app-radius-none"
             onClick={() => scroll("right")}
           >
@@ -502,12 +502,7 @@ function WorkspaceCard({
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="h-8 px-6 text-xs"
-        >
+        <Button size="sm" asChild className="h-8 px-6 text-xs">
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
           </IntentPrefetchLink>
