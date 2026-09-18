@@ -1152,7 +1152,6 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [isMouseDown, setIsMouseDown] = useState(false);
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
