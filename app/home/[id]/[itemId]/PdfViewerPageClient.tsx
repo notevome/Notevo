@@ -586,12 +586,12 @@ function PdfViewerContent({
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "h-8 w-8 border border-border",
+                  "h-8 w-8 border border-border px-2",
                   renderedInPane || (isMobile && "!app-radius-none"),
                 )}
                 aria-label="show-search-panel"
               >
-                <SidebarTrigger />
+                <SidebarTrigger className=" h-[22] w-[22]" />
               </Button>
             )}
             {!renderedInPane && (

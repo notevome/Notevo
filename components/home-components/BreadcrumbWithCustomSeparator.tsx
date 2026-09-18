@@ -50,9 +50,9 @@ export default function BreadcrumbWithCustomSeparator() {
   };
 
   return (
-    <div className="py-1.5">
+    <div className="py-2">
       <Breadcrumb className=" *:select-none">
-        <BreadcrumbList className="flex flex-nowrap overflow-x-auto whitespace-nowrap text-primary !gap-0.5 scrollbar-none">
+        <BreadcrumbList className="flex flex-nowrap overflow-hidden whitespace-nowrap text-primary !gap-0.5 scrollbar-none">
           {pathSegments.map((segment, index) => {
             const pathToSegment =
               "/" + pathSegments.slice(0, index + 1).join("/");
