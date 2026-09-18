@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           title = `${note.title.trim()} - Notevo`;
         }
         if (note.preview && note.preview.trim()) {
-          description = note.preview.slice(0, 110).trim() + "...";
+          description = note.preview.slice(0, 70).trim() + "...";
         }
       }
     }

@@ -133,9 +133,10 @@ export function renderOGCard({ title, preview }: OGCardData) {
           flexDirection: "column",
           backgroundColor: "#e7e3d9",
           borderRadius: "0",
-          transform: "rotate(-2.5deg)",
+          transform: "rotate(-1deg)",
           overflow: "hidden",
           zIndex: 3,
+          border: "1px solid #644A40",
           marginRight: "70px",
           marginBottom: "30px",
         }}
@@ -156,18 +157,6 @@ export function renderOGCard({ title, preview }: OGCardData) {
             zIndex: 5,
           }}
         />
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, transparent, transparent 79px, #4a372f 80px)",
-            backgroundPosition: "0",
-          }}
-        />
 
         <div
           style={{
@@ -175,17 +164,6 @@ export function renderOGCard({ title, preview }: OGCardData) {
             top: 0,
             bottom: 0,
             left: "30px",
-            width: "2px",
-            backgroundColor: "rgba(234, 50, 49, 0.65)",
-          }}
-        />
-
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            right: "30px",
             width: "2px",
             backgroundColor: "rgba(234, 50, 49, 0.65)",
           }}
@@ -204,25 +182,26 @@ export function renderOGCard({ title, preview }: OGCardData) {
           <p
             style={{
               position: "relative",
-              fontSize: 32,
-              lineHeight: 1.35,
+              fontSize: 44,
+              lineHeight: 0.3,
               fontWeight: 700,
               color: "#644A40",
               letterSpacing: "-0.5px",
-              marginLeft: "45px",
+              marginLeft: "65px",
+              marginBottom: "60px",
             }}
           >
             <span
               style={{
                 position: "absolute",
-                left: "-45px",
-                top: "3px",
+                left: "-65px",
+                top: "-24px",
               }}
             >
               <svg
-                width="85"
-                height="85"
-                viewBox="0 0 100 100"
+                width="100"
+                height="100"
+                viewBox="0 0 80 80"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -252,12 +231,25 @@ export function renderOGCard({ title, preview }: OGCardData) {
             </span>
             Notevo.me
           </p>
+          <p
+            style={{
+              position: "absolute",
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#4a372f",
+              left: "44px",
+              bottom: "0px",
+            }}
+          >
+            Copyright © 2025-{new Date().getFullYear()} Notevo. All rights
+            reserved.
+          </p>
 
           <div
             style={{
-              fontSize: title.length > 40 ? 50 : 60,
+              fontSize: title.length > 40 ? 52 : 60,
               fontWeight: 700,
-              lineHeight: title.length > 40 ? 1.55 : 1.25,
+              lineHeight: 1,
               color: "#4a372f",
               letterSpacing: "-1px",
               display: "-webkit-box",
@@ -281,6 +273,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
+              marginLeft: "6px",
               maxWidth: "600px",
             }}
           >

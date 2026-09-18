@@ -46,7 +46,7 @@ export default async function Image({ params }: Props) {
         }
 
         if (note.preview && note.preview.trim()) {
-          preview = note.preview.slice(0, 110).trim() + "...";
+          preview = note.preview.slice(0, 70).trim() + "...";
         }
       }
     }
