@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
               title = note.title.trim();
             }
             if (note.preview && note.preview.trim()) {
-              preview = note.preview.slice(0, 120).trim() + "...";
+              preview = note.preview.slice(0, 110).trim() + "...";
             }
           }
         } catch (err) {

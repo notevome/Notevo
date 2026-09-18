@@ -42,13 +42,10 @@ export default function PublicNote({
   noteTitle,
   BtnClassName,
 }: PublicNoteProp) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
   const isMobile = useMediaQuery({ maxWidth: 640 });
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [ogImageLoaded, setOgImageLoaded] = useState(false);
   const tooltip = useHoverTooltip(100);
   const copyTooltip = useHoverTooltip(100);
 
@@ -147,21 +144,35 @@ export default function PublicNote({
             <header className="w-full text-start flex flex-col justify-center items-start gap-3">
               <span className="px-1 space-y-2">
                 <h1 className="flex justify-start items-center gap-2 text-base text-foreground font-bold">
-                  <CheckSquare
-                    size={16}
-                    className="text-muted-foreground mt-px"
-                  />
                   Published to the web
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground">
                   Copy the link, share notes with the world
                 </p>
               </span>
+              <div className="relative w-full h-60 border border-border aspect-video app-radius-md overflow-hidden bg-muted">
+                <img
+                  src={`https://notevo.me/api/og?id=${noteId}`}
+                  alt="Open Graph Image"
+                  draggable={false}
+                  onLoad={() => setOgImageLoaded(true)}
+                  onError={() => setOgImageLoaded(false)}
+                  className={cn(
+                    "w-full h-60 object-fill select-none [-webkit-user-drag:none] transition-opacity duration-300",
+                    ogImageLoaded ? "opacity-100" : "opacity-0",
+                  )}
+                />
+                {!ogImageLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                    <Globe2Icon size={20} className="text-muted-foreground" />
+                  </div>
+                )}
+              </div>
               <span className="w-full relative">
                 <Input
                   type="text"
                   value={`https://notevo.me/public/document/${noteId}`}
-                  className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-85% to-transparent to-80% text-transparent bg-clip-text"
+                  className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-70% via-transparent via-90% to-transparent to-95% text-transparent bg-clip-text"
                   disabled
                 />
                 <Tooltip open={copyTooltip.open}>
@@ -217,10 +228,6 @@ export default function PublicNote({
             <header className="w-full text-start flex flex-col justify-center items-center gap-6">
               <span className="px-1 space-y-2">
                 <h1 className="flex justify-start items-center gap-2 text-base text-foreground font-bold">
-                  <Globe2Icon
-                    size={16}
-                    className="text-muted-foreground mt-px"
-                  />
                   Publish to the web
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground">

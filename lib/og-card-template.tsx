@@ -204,8 +204,8 @@ export function renderOGCard({ title, preview }: OGCardData) {
           <p
             style={{
               position: "relative",
-              fontSize: 28,
-              lineHeight: 1.5,
+              fontSize: 32,
+              lineHeight: 1.35,
               fontWeight: 700,
               color: "#644A40",
               letterSpacing: "-0.5px",
@@ -215,14 +215,14 @@ export function renderOGCard({ title, preview }: OGCardData) {
             <span
               style={{
                 position: "absolute",
-                left: "-40px",
-                top: "6px",
+                left: "-45px",
+                top: "3px",
               }}
             >
               <svg
                 width="85"
                 height="85"
-                viewBox="0 0 120 120"
+                viewBox="0 0 100 100"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
@@ -264,7 +264,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
               overflow: "hidden",
-              marginBottom: "28px",
+              marginBottom: "16px",
               maxWidth: "900px",
             }}
           >
@@ -273,8 +273,8 @@ export function renderOGCard({ title, preview }: OGCardData) {
 
           <div
             style={{
-              fontSize: 24,
-              lineHeight: 1.5,
+              fontSize: 32,
+              lineHeight: 1.35,
               fontWeight: 400,
               color: "#3a2a24",
               display: "-webkit-box",
