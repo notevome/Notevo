@@ -3259,7 +3259,7 @@ function WhiteboardPreview({
   }, [snapshot]);
 
   return (
-    <div className="relative flex h-52 w-full items-center justify-center overflow-hidden border border-border">
+    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden border border-border">
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
