@@ -79,7 +79,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     !isWhiteboardRoute;
   const isPastFadeGrowThreshold = scrollTop > 180;
   const fadeHeight =
-    !isNoteDetailRoute && isPastFadeGrowThreshold ? "16rem" : "6rem";
+    !isNoteDetailRoute && isPastFadeGrowThreshold ? "12rem" : "6rem";
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
