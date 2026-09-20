@@ -74,7 +74,7 @@ export default function MoveNoteDialog({
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const moveTargets = useQuery(api.notes.getWorkspaceTree, {
+  const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
@@ -87,7 +87,7 @@ export default function MoveNoteDialog({
       if (!currentNote) return;
 
       const targets =
-        local.getQuery(api.notes.getWorkspaceTree, {
+        local.getQuery(api.notes.getWorkspaceTreeForMove, {
           searchQuery: undefined,
         }) ?? [];
       const targetWorkspace = targets.find(
@@ -254,7 +254,7 @@ export default function MoveNoteDialog({
           </Button>
         </div>
 
-        <div className="min-h-[320px] max-h-[350px] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-3 bg-card">
+        <div className="min-h-[320px] max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3 bg-card">
           {moveTargets === undefined ? (
             <div className="space-y-2 p-2">
               {Array.from({ length: 6 }).map((_, index) => (

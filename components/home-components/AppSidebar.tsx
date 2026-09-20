@@ -1,6 +1,7 @@
 "use client";
 import {
   Notebook,
+  Folders,
   Plus,
   Pin,
   FileText,
@@ -14,6 +15,12 @@ import {
   FolderOpen,
   Globe,
   Pickaxe,
+  Scale,
+  Gavel,
+  FolderPlus,
+  SquarePen,
+  PanelRightOpen,
+  ExternalLink,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -57,19 +64,23 @@ import { redirect, usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import type { Id } from "@hello-pangea/dnd";
 import {
+  cn,
   formatWorkspaceName,
   formatUserName,
   formatUserEmail,
+  formatWorkspaceNameForCreateSideBarBtn,
 } from "@/lib/utils";
 import { Doc } from "@/convex/_generated/dataModel";
 import { Input } from "../ui/input";
 import NoteSettingsSidbar from "./NoteSettingsSidbar";
 import PdfSettingsSidebar from "./PdfSettingsSidebar";
+import LinkSettingsSidebar from "./LinkSettingsSidebar";
 import WorkingSpaceSettingsSidbar from "./WorkingSpaceSettingsSidbar";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
 import Feedback from "./Feedback";
+import AccountSettingsDialog from "./AccountSettingsDialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -79,6 +90,9 @@ import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
 import NoteContextMenu from "./NoteContextMenu";
 import { FaGithub } from "react-icons/fa6";
+import { useHomePane } from "./HomePaneDrawer";
+import { ShortcutBadge } from "../ui/shortcut-badge";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
@@ -98,15 +112,55 @@ const workspaceNameSchema = z
 const noteTitleSchema = z
   .string()
   .min(1, "Title cannot be empty")
-  .max(55, "Title must be 55 characters or less");
+  .max(60, "Title must be 60 characters or less");
 
-type PreferredAction = "note" | "DiffNote";
-
-const STORAGE_KEY = "notevo_create_note_action";
+const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "notevo_create_note_workspace_id";
 const PINNED_NOTES_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_notes_expanded";
 const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_uploads_expanded";
+const PINNED_LINKS_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_links_expanded";
+
+function OpenInPaneButton({
+  label,
+  onOpen,
+}: {
+  label: string;
+  onOpen: () => void;
+}) {
+  const tooltip = useHoverTooltip(100);
+
+  return (
+    <Tooltip open={tooltip.open}>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="SidebarMenuButton"
+          className="px-1.5 h-7 hover:bg-card text-muted-foreground"
+          aria-label={label}
+          onClick={(event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            onOpen();
+            tooltip.hide();
+          }}
+          {...tooltip.triggerProps}
+        >
+          <PanelRightOpen size={16} />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="right"
+        sideOffset={5}
+        className="flex justify-center items-center gap-2 !app-radius-none"
+      >
+        Open in Pane
+        <ShortcutBadge keys="Alt + Click" />
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function useStoredExpandedState(storageKey: string, defaultValue = true) {
   const [isExpanded, setIsExpanded] = useState(defaultValue);
@@ -147,98 +201,250 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   handleCreateWorkingSpace,
   loading,
 }: SidebarHeaderSectionProps) {
+  const [canScrollBottom, setCanScrollBottom] = useState(false);
+  const [canScrollTop, setCanScrollTop] = useState(false);
+  const scrollElementRef = useRef<HTMLDivElement | null>(null);
+
+  const handleSidebarScroll = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+
+    const scrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const clientHeight = el.clientHeight;
+    setCanScrollBottom(scrollHeight - scrollTop - clientHeight > 1);
+
+    setCanScrollTop(scrollTop > 1);
+  }, []);
+
+  const setContainerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      scrollElementRef.current = el;
+      if (!el) return;
+
+      handleSidebarScroll(el);
+
+      const observer = new ResizeObserver(() => {
+        handleSidebarScroll(el);
+      });
+      observer.observe(el);
+
+      (el as any)._cleanupObserver = () => observer.disconnect();
+    },
+    [handleSidebarScroll],
+  );
+  useEffect(() => {
+    return () => {
+      if (
+        scrollElementRef.current &&
+        (scrollElementRef.current as any)._cleanupObserver
+      ) {
+        (scrollElementRef.current as any)._cleanupObserver();
+      }
+    };
+  }, []);
+
+  const [savedWorkspaceId, setSavedWorkspaceId] = useState<
+    string | null | undefined
+  >(undefined);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setSavedWorkspaceId(
+      window.localStorage.getItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY),
+    );
+  }, []);
+
+  const savedWorkspace = useMemo(() => {
+    if (!savedWorkspaceId) return undefined;
+    return getWorkingSpaces?.find(
+      (workingSpace) => String(workingSpace._id) === savedWorkspaceId,
+    );
+  }, [getWorkingSpaces, savedWorkspaceId]);
+
+  const firstCreatedWorkspace = useMemo(() => {
+    return getWorkingSpaces?.reduce<Doc<"workingSpaces"> | undefined>(
+      (oldestWorkspace, workingSpace) => {
+        if (!oldestWorkspace) return workingSpace;
+
+        const oldestCreatedAt =
+          oldestWorkspace.createdAt ?? oldestWorkspace._creationTime;
+        const workingSpaceCreatedAt =
+          workingSpace.createdAt ?? workingSpace._creationTime;
+
+        return workingSpaceCreatedAt < oldestCreatedAt
+          ? workingSpace
+          : oldestWorkspace;
+      },
+      undefined,
+    );
+  }, [getWorkingSpaces]);
+
+  const createNoteWorkspace = savedWorkspace ?? firstCreatedWorkspace;
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !savedWorkspaceId ||
+      getWorkingSpaces === undefined ||
+      savedWorkspace
+    ) {
+      return;
+    }
+
+    window.localStorage.removeItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY);
+    setSavedWorkspaceId(null);
+  }, [getWorkingSpaces, savedWorkspace, savedWorkspaceId]);
+
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      savedWorkspaceId !== null ||
+      !firstCreatedWorkspace
+    ) {
+      return;
+    }
+
+    const workspaceId = String(firstCreatedWorkspace._id);
+    window.localStorage.setItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY, workspaceId);
+    setSavedWorkspaceId(workspaceId);
+  }, [firstCreatedWorkspace, savedWorkspaceId]);
+
+  const createNoteInWorkspace = useCallback(
+    async (workingSpace: Doc<"workingSpaces">) => {
+      const workspaceId = String(workingSpace._id);
+
+      setSavedWorkspaceId(workspaceId);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(
+          CREATE_NOTE_WORKSPACE_STORAGE_KEY,
+          workspaceId,
+        );
+      }
+
+      await handleCreateNote(
+        workingSpace._id as any,
+        workingSpace.slug as string,
+      );
+    },
+    [handleCreateNote],
+  );
+
   return (
     <SidebarHeader className=" text-foreground">
-      <div className="flex items-center justify-between p-1.5">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between p-1">
+        <div className="flex items-center gap-1">
           <span className="font-semibold text-primary">Notevo</span>
-          <Badge variant="secondary" className="text-[0.6rem]">
+          <Badge variant="secondary" className="text-[0.5rem] px-1 py-px">
             BETA
           </Badge>
         </div>
         <SidebarTrigger />
       </div>
       {getWorkingSpaces?.length === 0 && (
-        <Button
-          className="font-medium w-full h-9 flex justify-start items-center gap-2"
-          onClick={handleCreateWorkingSpace}
-        >
-          <Plus size={16} /> Create Workspace
-        </Button>
-      )}
-      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0 ? (
-        getWorkingSpaces.map((workingSpace) => (
+        <div className="flex h-[42px] p-[3px] w-full items-center overflow-hidden ">
           <Button
-            key={workingSpace._id}
-            className="font-medium w-full h-9 flex justify-start items-center gap-2"
-            disabled={loading}
-            onMouseDown={() =>
-              handleCreateNote(
-                workingSpace._id as any,
-                workingSpace.slug as string,
-              )
-            }
+            className="font-medium w-full h-9 flex justify-start items-center gap-1.5"
+            onClick={handleCreateWorkingSpace}
           >
-            {loading ? (
-              <>
-                <LoadingAnimation className=" h-3 w-3" />
-                redirecting...
-              </>
-            ) : (
-              <>
-                {" "}
-                <Plus size={16} className="font-bold" />
-                Create Note
-              </>
-            )}
+            <FolderPlus size={16} /> Create Workspace
           </Button>
-        ))
-      ) : (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              className="font-medium w-full h-9 flex justify-between items-center gap-1"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  redirecting...
-                  <LoadingAnimation className=" h-3 w-3" />
-                </>
-              ) : (
-                <>
-                  {" "}
-                  Create Note
-                  <TbSelector size={16} className="font-bold" />
-                </>
-              )}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            side="bottom"
-            className="app-radius-lg m-2 p-1.5 bg-background/90 backdrop-blur border border-solid border-border w-[--radix-popper-anchor-width]"
-          >
-            <DropdownMenuGroup className="flex-col">
-              {getWorkingSpaces?.map((workingSpace) => (
-                <DropdownMenuItem
-                  key={workingSpace._id}
-                  className="relative flex-1 px-2 py-1.5 data-[highlighted]:bg-foreground app-radius-lg"
-                  onSelect={() =>
-                    handleCreateNote(
-                      workingSpace._id as any,
-                      workingSpace.slug as string,
-                    )
-                  }
-                  disabled={loading}
-                >
-                  <FolderClosed size="16" className="mr-2" />
-                  <span>{formatWorkspaceName(workingSpace.name)}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
       )}
+      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
+        ? getWorkingSpaces.map((workingSpace) => (
+            <div className="flex h-[42px] p-[3px] w-full items-center overflow-hidden ">
+              <Button
+                key={workingSpace._id}
+                className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
+                disabled={loading}
+                onMouseDown={() => void createNoteInWorkspace(workingSpace)}
+              >
+                {loading ? (
+                  <>redirecting...</>
+                ) : (
+                  <>
+                    <SquarePen size={16} className=" mt-px" /> New Note
+                  </>
+                )}
+              </Button>
+            </div>
+          ))
+        : createNoteWorkspace && (
+            <div className="flex p-[3px] w-full items-center overflow-hidden ">
+              <Button
+                className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                disabled={loading}
+                onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
+              >
+                {loading ? (
+                  <>redirecting...</>
+                ) : (
+                  <>
+                    <SquarePen size={16} className=" mt-px" /> New Note
+                  </>
+                )}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                    disabled={loading}
+                    aria-label="select-create-note-workspace"
+                  >
+                    <ChevronDown size={16} className="font-bold" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="bottom"
+                  align="end"
+                  className="!app-radius-none p-1 bg-background w-52 max-h-36 relative overflow-hidden z-[90000]"
+                >
+                  <DropdownMenuGroup className="relative flex-col ">
+                    <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
+                      <Folders size={14} className=" mb-0.5" />
+                      Workspaces
+                    </DropdownMenuLabel>
+                    <div
+                      className={`absolute top-[21px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                        canScrollTop ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    <div
+                      ref={setContainerRef}
+                      onScroll={(e) => handleSidebarScroll(e.currentTarget)}
+                      className={`overflow-y-auto max-h-[105px] transition-all duration-150 [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border ${
+                        canScrollBottom || canScrollTop ? "pr-1 pb-0.5" : "p-0"
+                      }`}
+                    >
+                      {getWorkingSpaces?.map((workingSpace) => (
+                        <DropdownMenuItem
+                          key={workingSpace._id}
+                          className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !app-radius-none"
+                          onSelect={() =>
+                            void createNoteInWorkspace(workingSpace)
+                          }
+                          disabled={loading}
+                        >
+                          <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
+                          <FolderClosed size="16" />
+                          <span>
+                            {formatWorkspaceNameForCreateSideBarBtn(
+                              workingSpace.name,
+                            )}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                    <div
+                      className={`absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-t from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
+                        canScrollBottom ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          )}
     </SidebarHeader>
   );
 });
@@ -298,7 +504,8 @@ interface PinnedNoteItemProps {
 
 const PinnedNoteItem = memo(
   function PinnedNoteItem({ note, pathname, open }: PinnedNoteItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
@@ -398,12 +605,12 @@ const PinnedNoteItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
 
     const content = (
       <SidebarGroupContent
-        className="relative w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
@@ -417,7 +624,7 @@ const PinnedNoteItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned note title"
-                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -434,6 +641,17 @@ const PinnedNoteItem = memo(
                     <IntentPrefetchLink
                       href={noteHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "note",
+                            id: note._id,
+                            title: note.title || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <ChevronRight
@@ -452,7 +670,11 @@ const PinnedNoteItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className="!app-radius-none py-[5px]"
+                >
                   {note.title || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -460,8 +682,19 @@ const PinnedNoteItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
+          <OpenInPaneButton
+            label="open-note-in-pane"
+            onOpen={() =>
+              openPane({
+                type: "note",
+                id: note._id,
+                title: note.title || "Untitled",
+              })
+            }
+          />
           <NoteSettingsSidbar
             noteId={note._id}
             noteTitle={note.title}
@@ -570,7 +803,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
             variant="SidebarMenuButton"
             size="sm"
             onClick={() => loadMore(5)}
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <ChevronDown size="16" className=" text-muted-foreground" />
             Show More
@@ -584,7 +817,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
             variant="SidebarMenuButton"
             size="sm"
             disabled
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <LoadingAnimation className="h-3 w-3" />
             Loading...
@@ -603,7 +836,8 @@ interface PinnedUploadItemProps {
 
 const PinnedUploadItem = memo(
   function PinnedUploadItem({ pdf, pathname, open }: PinnedUploadItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
@@ -611,7 +845,7 @@ const PinnedUploadItem = memo(
     const inputRef = useRef<HTMLInputElement>(null);
 
     const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-    const pdfPath = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}`;
+    const pdfPath = `/home/${pdf.workingSpaceId}/${pdfSlug}`;
     const pdfHref = `${pdfPath}?pdfId=${pdf._id}`;
     const isActive = pathname === pdfPath;
 
@@ -683,12 +917,11 @@ const PinnedUploadItem = memo(
     );
 
     const textClassName = isHovered
-      ? "truncate flex-grow bg-gradient-to-r from-foreground from-50% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
-
     return (
       <SidebarGroupContent
-        className="relative w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
@@ -702,7 +935,7 @@ const PinnedUploadItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="pinned upload title"
-                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -719,6 +952,17 @@ const PinnedUploadItem = memo(
                     <IntentPrefetchLink
                       href={pdfHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "pdf",
+                            id: pdf._id,
+                            title: pdf.title || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <ChevronRight
@@ -737,7 +981,11 @@ const PinnedUploadItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className=" !app-radius-none py-[5px]"
+                >
                   {pdf.title || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -745,8 +993,19 @@ const PinnedUploadItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
+          <OpenInPaneButton
+            label="open-upload-in-pane"
+            onOpen={() =>
+              openPane({
+                type: "pdf",
+                id: pdf._id,
+                title: pdf.title || "Untitled",
+              })
+            }
+          />
           <PdfSettingsSidebar pdfId={pdf._id} />
         </div>
       </SidebarGroupContent>
@@ -843,7 +1102,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
             variant="SidebarMenuButton"
             size="sm"
             onClick={() => loadMore(5)}
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <ChevronDown size="16" className=" text-muted-foreground" />
             Show More
@@ -857,7 +1116,238 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
             variant="SidebarMenuButton"
             size="sm"
             disabled
-            className="px-2 my-0.5 h-8 group flex-1"
+            className="px-2 my-0.5 h-7 group flex-1"
+          >
+            <LoadingAnimation className="h-3 w-3" />
+            Loading...
+          </Button>
+        </SidebarGroupContent>
+      )}
+    </SidebarGroup>
+  );
+});
+
+interface PinnedLinkItemProps {
+  link: Doc<"links">;
+  open: boolean;
+}
+
+function getSidebarLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function SidebarLinkFavicon({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = getSidebarLinkFaviconUrl(url);
+
+  if (!faviconUrl || errored) {
+    return <Globe className={cn("text-muted-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+const PinnedLinkItem = memo(
+  function PinnedLinkItem({ link, open }: PinnedLinkItemProps) {
+    const titleTooltip = useHoverTooltip(400);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const displayTitle =
+      link.title ||
+      link.metadata?.authorName ||
+      link.metadata?.siteName ||
+      link.url;
+
+    const handleContentMouseEnter = useCallback(() => {
+      setIsHovered(true);
+    }, []);
+
+    const handleContentMouseLeave = useCallback(() => {
+      setIsHovered(false);
+    }, []);
+
+    const textClassName = isHovered
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-60% via-transparent via-75% to-transparent to-100% text-transparent bg-clip-text"
+      : "truncate flex-grow";
+
+    return (
+      <SidebarGroupContent
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
+      >
+        <SidebarMenu className="flex-1">
+          <SidebarMenuItem>
+            <Tooltip open={titleTooltip.open}>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="SidebarMenuButton"
+                  className="px-2 my-0.5 h-8 group flex-1"
+                  asChild
+                  {...titleTooltip.triggerProps}
+                >
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 flex-grow min-w-0"
+                  >
+                    {isHovered ? (
+                      <ExternalLink
+                        size="16"
+                        className="text-muted-foreground flex-shrink-0"
+                      />
+                    ) : (
+                      <SidebarLinkFavicon
+                        url={link.url}
+                        className="h-4 w-4 flex-shrink-0"
+                      />
+                    )}
+                    <span className={textClassName}>
+                      {formatWorkspaceName(displayTitle)}
+                    </span>
+                  </a>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                sideOffset={5}
+                className=" !app-radius-none py-[5px]"
+              >
+                {displayTitle}
+              </TooltipContent>
+            </Tooltip>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div
+          className={`absolute right-0 flex items-center ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
+        >
+          <LinkSettingsSidebar linkId={link._id} />
+        </div>
+      </SidebarGroupContent>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.link.favorite === nextProps.link.favorite &&
+      prevProps.link.title === nextProps.link.title &&
+      prevProps.link.url === nextProps.link.url &&
+      prevProps.open === nextProps.open
+    );
+  },
+);
+
+interface PinnedLinksListProps {
+  favoriteLinks: Doc<"links">[];
+  open: boolean;
+  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  loadMore: (numItems: number) => void;
+}
+
+const PinnedLinksList = memo(function PinnedLinksList({
+  favoriteLinks,
+  open,
+  status,
+  loadMore,
+}: PinnedLinksListProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_LINKS_EXPANDED_STORAGE_KEY,
+  );
+
+  if (status === "LoadingFirstPage") {
+    return (
+      <SidebarGroup>
+        <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+          <span>Pinned Links</span>
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  if (favoriteLinks.length === 0) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>
+        <Button
+          variant="Trigger"
+          size="sm"
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
+          className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
+        >
+          <span>Pinned Links</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
+        </Button>
+      </SidebarGroupLabel>
+      {isExpanded &&
+        favoriteLinks.map((link) => (
+          <PinnedLinkItem key={link._id} link={link} open={open} />
+        ))}
+
+      {isExpanded && favoriteLinks.length > 4 && status === "CanLoadMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            onClick={() => loadMore(5)}
+            className="px-2 my-0.5 h-7 group flex-1"
+          >
+            <ChevronDown size="16" className=" text-muted-foreground" />
+            Show More
+          </Button>
+        </SidebarGroupContent>
+      )}
+
+      {isExpanded && favoriteLinks.length > 4 && status === "LoadingMore" && (
+        <SidebarGroupContent>
+          <Button
+            variant="SidebarMenuButton"
+            size="sm"
+            disabled
+            className="px-2 my-0.5 h-7 group flex-1"
           >
             <LoadingAnimation className="h-3 w-3" />
             Loading...
@@ -876,7 +1366,8 @@ interface WorkspaceItemProps {
 
 const WorkspaceItem = memo(
   function WorkspaceItem({ workingSpace, pathname, open }: WorkspaceItemProps) {
-    const titleTooltip = useHoverTooltip(300);
+    const titleTooltip = useHoverTooltip(400);
+    const { openPane } = useHomePane();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedName, setEditedName] = useState(
@@ -1006,7 +1497,7 @@ const WorkspaceItem = memo(
 
     return (
       <SidebarGroupContent
-        className="relative w-full flex justify-between items-center overflow-hidden group/item"
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
@@ -1020,7 +1511,7 @@ const WorkspaceItem = memo(
                 onBlur={handleInputBlur}
                 onKeyDown={handleInputKeyPress}
                 aria-label="work space name"
-                className="flex-1 h-9 pl-7 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
               />
             ) : (
               <Tooltip open={titleTooltip.open}>
@@ -1055,7 +1546,11 @@ const WorkspaceItem = memo(
                     </IntentPrefetchLink>
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right" sideOffset={5}>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className="!app-radius-none py-[5px]"
+                >
                   {workingSpace.name || "Untitled"}
                 </TooltipContent>
               </Tooltip>
@@ -1063,7 +1558,8 @@ const WorkspaceItem = memo(
           </SidebarMenuItem>
         </SidebarMenu>
         <div
-          className={`absolute right-0 ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
         >
           <WorkingSpaceSettingsSidbar
             workingSpaceId={workingSpace._id}
@@ -1097,7 +1593,7 @@ const WorkspacesList = memo(function WorkspacesList({
   pathname,
   open,
 }: WorkspacesListProps) {
-  const addWorkspaceTooltip = useHoverTooltip(300);
+  const addWorkspaceTooltip = useHoverTooltip(400);
 
   return (
     <SidebarGroup>
@@ -1109,12 +1605,17 @@ const WorkspacesList = memo(function WorkspacesList({
           <SidebarGroupAction
             onClick={handleCreateWorkingSpace}
             {...addWorkspaceTooltip.triggerProps}
+            className=" !app-radius-none"
           >
             <Plus size={16} className=" text-muted-foreground" />{" "}
             <span className="sr-only">Add Workspace</span>
           </SidebarGroupAction>
         </TooltipTrigger>
-        <TooltipContent side="right" sideOffset={5}>
+        <TooltipContent
+          side="right"
+          sideOffset={5}
+          className=" text-xs py-0.5 px-1.5 !app-radius-none"
+        >
           Add Workspace
         </TooltipContent>
       </Tooltip>
@@ -1145,9 +1646,15 @@ const UserAccountSection = memo(function UserAccountSection({
 }: UserAccountSectionProps) {
   const settingsHref = "/home/settings/profile";
   const isSettingsActive = pathname === settingsHref;
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
 
   return (
     <SidebarFooter className=" z-50 text-foreground">
+      <AccountSettingsDialog
+        open={isAccountSettingsOpen}
+        onOpenChange={setIsAccountSettingsOpen}
+        user={User}
+      />
       <SidebarMenu>
         <SidebarMenuItem>
           <DropdownMenu>
@@ -1196,11 +1703,13 @@ const UserAccountSection = memo(function UserAccountSection({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               side="top"
-              className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width]"
+              className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width] z-[90000]"
             >
               <DropdownMenuItem
-                className=" cursor-default hover:bg-transparent"
-                onClick={(e) => e.preventDefault()}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setIsAccountSettingsOpen(true);
+                }}
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
@@ -1242,23 +1751,40 @@ const UserAccountSection = memo(function UserAccountSection({
                 Sign out
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <div className="px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap space-y-1 *:text-muted-foreground/80">
-                <Link
-                  href="https://github.com/notevome"
-                  target="_blank"
-                  className=" flex justify-start items-center gap-1 hover:underline"
-                >
-                  <FaGithub size={12} className="inline mt-px" />
-                  Version {process.env.NEXT_PUBLIC_APP_VERSION}
-                </Link>
-                <Link
-                  href="https://www.mohammedh.dev/"
-                  target="_blank"
-                  className=" flex justify-start items-center gap-1 hover:underline"
-                >
-                  <Pickaxe size={12} className="inline mt-px" />
-                  @Mohammed H.
-                </Link>
+              <div className=" flex flex-col gap-px justify-center items-start px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap *:text-muted-foreground/80">
+                <span className=" w-full flex justify-between items-center">
+                  <Link
+                    href="https://github.com/notevome/Notevo"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    {process.env.NEXT_PUBLIC_APP_VERSION}
+                  </Link>
+                  <Link
+                    href="https://www.mohammedh.dev/"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    @Mohammed H.
+                  </Link>
+                </span>
+
+                <span className=" w-full flex justify-between items-center">
+                  <Link
+                    href="/terms-of-service"
+                    target="_blank"
+                    className=" hover:underline"
+                  >
+                    Terms of Service
+                  </Link>
+                  <Link
+                    href="mailto:support@notevo.me"
+                    target="_blank"
+                    className=" hover:underline"
+                  >
+                    Help & Support
+                  </Link>
+                </span>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1342,6 +1868,11 @@ const AppSidebar = React.memo(function AppSidebar() {
     status: favoritePdfsStatus,
     loadMore: loadMorePdfs,
   } = usePaginatedQuery(api.pdfs.getFavPdfs, {}, { initialNumItems: 5 });
+  const {
+    results: favoriteLinks,
+    status: favoriteLinksStatus,
+    loadMore: loadMoreLinks,
+  } = usePaginatedQuery(api.links.getFavLinks, {}, { initialNumItems: 5 });
   const createTable = useMutation(
     api.notesTables.createTable,
   ).withOptimisticUpdate((local, args) => {
@@ -1374,34 +1905,86 @@ const AppSidebar = React.memo(function AppSidebar() {
 
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [loading, setLoading] = useState(false);
-  const sidebarContentRef = useRef<HTMLDivElement>(null);
+
+  // Scroll-fade tracking
+  const sidebarContentRef = useRef<HTMLDivElement | null>(null);
+  const sidebarInnerRef = useRef<HTMLDivElement | null>(null);
+
   const [scrollTop, setScrollTop] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
 
-  const handleSidebarScroll = useCallback(() => {
+  const recalcSidebarScroll = useCallback(() => {
     const el = sidebarContentRef.current;
     if (!el) return;
-    setScrollTop(el.scrollTop);
-    const overflow = el.scrollHeight > el.clientHeight;
+
+    const currentScrollTop = el.scrollTop;
+    const scrollHeight = el.scrollHeight;
+    const clientHeight = el.clientHeight;
+    const overflow = scrollHeight - clientHeight > 1;
+
+    setScrollTop(currentScrollTop);
     setCanScroll(overflow);
     setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
+      overflow && scrollHeight - currentScrollTop - clientHeight > 1,
     );
   }, []);
 
-  const ishome = useMemo(() => pathname === "/home", [pathname]);
+  const handleSidebarScroll = recalcSidebarScroll;
+
+  const setSidebarContentRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (
+        sidebarContentRef.current &&
+        (sidebarContentRef.current as any)._cleanupOuter
+      ) {
+        (sidebarContentRef.current as any)._cleanupOuter();
+      }
+      sidebarContentRef.current = el;
+      if (!el) return;
+
+      recalcSidebarScroll();
+
+      const ro = new ResizeObserver(() => recalcSidebarScroll());
+      ro.observe(el);
+      (el as any)._cleanupOuter = () => ro.disconnect();
+    },
+    [recalcSidebarScroll],
+  );
+
+  const setSidebarInnerRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      if (
+        sidebarInnerRef.current &&
+        (sidebarInnerRef.current as any)._cleanupInner
+      ) {
+        (sidebarInnerRef.current as any)._cleanupInner();
+      }
+      sidebarInnerRef.current = el;
+      if (!el) return;
+
+      recalcSidebarScroll();
+
+      const ro = new ResizeObserver(() => recalcSidebarScroll());
+      ro.observe(el);
+      (el as any)._cleanupInner = () => ro.disconnect();
+    },
+    [recalcSidebarScroll],
+  );
 
   useEffect(() => {
-    const el = sidebarContentRef.current;
-    if (!el) return;
-    const overflow = el.scrollHeight > el.clientHeight;
-    setCanScroll(overflow);
-    setScrollTop(el.scrollTop);
-    setHasMoreBelow(
-      overflow && el.scrollTop + el.clientHeight < el.scrollHeight - 8,
-    );
-  }, [results?.length, favoritePdfs?.length, getWorkingSpaces?.length]);
+    return () => {
+      (sidebarContentRef.current as any)?._cleanupOuter?.();
+      (sidebarInnerRef.current as any)?._cleanupInner?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("resize", recalcSidebarScroll);
+    return () => window.removeEventListener("resize", recalcSidebarScroll);
+  }, [recalcSidebarScroll]);
+
+  const ishome = useMemo(() => pathname === "/home", [pathname]);
 
   const isSidebarLoading = useMemo(
     () => getWorkingSpaces === undefined || User === undefined,
@@ -1482,48 +2065,56 @@ const AppSidebar = React.memo(function AppSidebar() {
       <div className="relative flex min-h-0 flex-1 flex-col">
         {canScroll && scrollTop > 8 && (
           <div
-            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-20 bg-gradient-to-b from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-32 bg-gradient-to-b from-muted from-5% to-100% to-transparent"
             aria-hidden
           />
         )}
         {canScroll && hasMoreBelow && (
           <div
-            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-20 bg-gradient-to-t from-muted from-20% to-transparent"
+            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-32 bg-gradient-to-t from-muted from-5% to-100% to-transparent"
             aria-hidden
           />
         )}
         <SidebarContent
-          ref={sidebarContentRef}
+          ref={setSidebarContentRef}
           onScroll={handleSidebarScroll}
-          className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out scrollbar-thin scrollbar-thumb-transparent scrollbar-track-transparent group-hover:scrollbar-thumb-border"
+          className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border"
         >
-          <SidebarNavigation
-            pathname={pathname}
-            ishome={ishome}
-            isMobile={isMobile}
-            open={open}
-          />
+          <div ref={setSidebarInnerRef}>
+            <SidebarNavigation
+              pathname={pathname}
+              ishome={ishome}
+              isMobile={isMobile}
+              open={open}
+            />
 
-          <PinnedNotesList
-            favoriteNotes={results}
-            pathname={pathname}
-            open={open}
-            status={status}
-            loadMore={loadMore}
-          />
-          <PinnedUploadsList
-            favoritePdfs={favoritePdfs}
-            pathname={pathname}
-            open={open}
-            status={favoritePdfsStatus}
-            loadMore={loadMorePdfs}
-          />
-          <WorkspacesList
-            getWorkingSpaces={getWorkingSpaces}
-            handleCreateWorkingSpace={handleCreateWorkingSpace}
-            pathname={pathname}
-            open={open}
-          />
+            <PinnedNotesList
+              favoriteNotes={results}
+              pathname={pathname}
+              open={open}
+              status={status}
+              loadMore={loadMore}
+            />
+            <PinnedUploadsList
+              favoritePdfs={favoritePdfs}
+              pathname={pathname}
+              open={open}
+              status={favoritePdfsStatus}
+              loadMore={loadMorePdfs}
+            />
+            <PinnedLinksList
+              favoriteLinks={favoriteLinks}
+              open={open}
+              status={favoriteLinksStatus}
+              loadMore={loadMoreLinks}
+            />
+            <WorkspacesList
+              getWorkingSpaces={getWorkingSpaces}
+              handleCreateWorkingSpace={handleCreateWorkingSpace}
+              pathname={pathname}
+              open={open}
+            />
+          </div>
         </SidebarContent>
       </div>
       <UserAccountSection

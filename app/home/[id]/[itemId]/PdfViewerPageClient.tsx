@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   calculateHighlightRects,
   CanvasLayer,
@@ -18,7 +18,6 @@ import {
 import { GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
 import "pdfjs-dist/web/pdf_viewer.css";
 import {
-  ArrowUpRight,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -26,13 +25,11 @@ import {
   FileText,
   Search,
   X,
-  Plus,
-  Minus,
 } from "lucide-react";
+import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import MaxWContainer from "@/components/ui/MaxWContainer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -42,7 +39,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -52,12 +48,19 @@ import {
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
+import { useDebouncedCallback } from "use-debounce";
+import { useToast } from "@/hooks/use-toast";
+import z from "zod";
+import { generateSlug } from "@/lib/generateSlug";
 
 GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/legacy/build/pdf.worker.mjs",
   import.meta.url,
 ).toString();
+const pdfTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(60, "Title must be 60 characters or less");
 
 type LectorSearchResult = {
   pageNumber: number;
@@ -229,7 +232,7 @@ function SearchPanel({
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="scrollbar-gutter-stable flex-1 overflow-y-auto p-2 transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent">
         {!query.trim() ? (
           <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
             <FileSearch className="h-8 w-8 text-muted-foreground" />
@@ -255,7 +258,7 @@ function SearchPanel({
                   type="button"
                   onClick={() => void handleResultClick(result)}
                   className={cn(
-                    "w-full rounded-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
+                    "w-full app-radius-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
                     activeKey === itemKey && "border-muted-foreground bg-muted",
                   )}
                 >
@@ -301,7 +304,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
       </div>
       <div
         ref={panelRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+        className="scrollbar-gutter-stable flex-1 overflow-y-auto overflow-x-hidden px-3 py-3 [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
       >
         <div className="flex flex-col items-center gap-2">
           {Array.from({ length: totalPages }, (_, index) => {
@@ -321,7 +324,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
                   <Thumbnail
                     pageNumber={pageNumber}
                     className={cn(
-                      "w-[88px] rounded-[14px] bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
+                      "w-[88px] app-radius-lg bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
                       isActive &&
                         "border-muted-foreground outline-muted-foreground",
                     )}
@@ -347,7 +350,7 @@ function ZoomDropdown() {
         <Button
           type="button"
           variant="outline"
-          className="h-8 gap-2 border-border !border-l-0 !rounded-none"
+          className="h-8 gap-2 border-border !border-l-0 !app-radius-none"
         >
           <span>{Math.round(zoom * 100)}%</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground " />
@@ -363,7 +366,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev - 0.1).toFixed(2)))
               }
@@ -374,7 +377,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev + 0.1).toFixed(2)))
               }
@@ -424,7 +427,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
@@ -460,7 +463,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handleNextPage}
         disabled={currentPage >= pages}
         aria-label="next-page"
@@ -476,18 +479,90 @@ function PdfViewerContent({
   title,
   pdfId,
   pdftitle,
+  renderedInPane,
 }: {
   fileUrl: string;
   title: string;
   pdfId: Id<"pdfs">;
   pdftitle: string;
+  renderedInPane?: boolean;
 }) {
   const { open, isMobile } = useSidebar();
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
   const searchTooltip = useHoverTooltip(100);
   const thumbnailsTooltip = useHoverTooltip(100);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(pdftitle || "");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const updatePdf = useMutation(api.pdfs.updatePdf);
 
+  const handleNameDoubleClick = useCallback(() => {
+    setEditedName(pdftitle || "");
+    setIsEditingName(true);
+  }, [pdftitle]);
+
+  useEffect(() => {
+    if (isEditingName) {
+      nameInputRef.current?.focus();
+      nameInputRef.current?.select();
+    }
+  }, [isEditingName]);
+
+  const handleNameKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        setIsEditingName(false);
+      } else if (e.key === "Escape") {
+        setIsEditingName(false);
+        setEditedName(pdftitle || "");
+      }
+    },
+    [pdftitle],
+  );
+
+  const debouncedUpdatePdfTitle = useDebouncedCallback((newTitle: string) => {
+    const currentTitle = pdftitle || "";
+    const result = pdfTitleSchema.safeParse(newTitle);
+
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      if (issue.code === "too_small") {
+        toast({
+          title: "Naming failed",
+          description: "Title cannot be empty.",
+          variant: "destructive",
+        });
+      } else if (issue.code === "too_big") {
+        setEditedName(pdftitle);
+        toast({
+          title: "Naming failed",
+          description: "Title must be 60 characters or less.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    if (newTitle !== currentTitle) {
+      try {
+        void updatePdf({ _id: pdfId, title: newTitle });
+        if (renderedInPane) {
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set("paneTitle", generateSlug(newTitle));
+          window.history.replaceState({}, "", currentUrl.href);
+        }
+      } catch (error) {
+        console.error("Error updating PDF title:", error);
+        toast({
+          title: "Naming failed",
+          description: "Could not update the PDF title.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, 300);
   return (
     <LectorSearch
       loading={
@@ -497,79 +572,143 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className=" pointer-events-none absolute inset-x-0 top-1 z-50">
+        <div
+          className={` pointer-events-none absolute inset-x-0 ${isMobile ? "top-0" : "top-1"} z-20`}
+        >
           <div
-            className={`pointer-events-auto mx-auto flex w-fit flex-nowrap items-center justify-between gap-1 ${open && !isMobile ? ` app-radius-lg` : null} border border-border bg-card/95 px-0.5 py-0.5 backdrop-blur-xl`}
+            className={cn(
+              "pointer-events-auto mx-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
+              !renderedInPane || (isMobile && "app-radius-lg"),
+            )}
           >
-            <div className="flex items-center gap-0">
-              <Tooltip open={searchTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border border-border"
-                    onClick={() =>
-                      setPanelMode((current) =>
-                        current === "search" ? null : "search",
-                      )
-                    }
-                    aria-label="show-search-panel"
-                    aria-pressed={panelMode === "search"}
-                    {...searchTooltip.triggerProps}
-                  >
-                    {panelMode === "search" ? (
-                      <X size={16} />
-                    ) : (
-                      <FileSearch size={16} />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className=" text-xs px-1.5 py-1">
-                  {panelMode === "search" ? "Close Search" : "Open Search"}
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip open={thumbnailsTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-y !border-l-0 border-border !rounded-none"
-                    onClick={() =>
-                      setPanelMode((current) =>
-                        current === "thumbnails" ? null : "thumbnails",
-                      )
-                    }
-                    aria-label="show-thumbnails-panel"
-                    aria-pressed={panelMode === "thumbnails"}
-                    {...thumbnailsTooltip.triggerProps}
-                  >
-                    {panelMode === "thumbnails" ? (
-                      <X size={16} />
-                    ) : (
-                      <span className="text-[11px] font-semibold">Pg</span>
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className=" text-xs px-1.5 py-1">
-                  {panelMode === "thumbnails"
-                    ? "Close Thumbnails"
-                    : "Open Thumbnails"}
-                </TooltipContent>
-              </Tooltip>
-              <ZoomDropdown />
+            {(!open || isMobile) && (
+              <Button
+                variant="outline"
+                size="icon"
+                className={cn(
+                  "h-8 w-8 border border-border px-2",
+                  renderedInPane || (isMobile && "!app-radius-none"),
+                )}
+                aria-label="show-search-panel"
+              >
+                <SidebarTrigger className=" h-[22] w-[22]" />
+              </Button>
+            )}
+            {!renderedInPane && (
+              <div
+                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
+              >
+                <h1
+                  onDoubleClick={handleNameDoubleClick}
+                  title="Double-click to rename"
+                  className=" flex-1 text-lg cursor-text flex justify-start items-center min-w-[20rem] overflow-hidden "
+                >
+                  {isEditingName ? (
+                    <Input
+                      ref={nameInputRef as any}
+                      value={editedName}
+                      onChange={(e: any) => {
+                        setEditedName(e.target.value);
+                        debouncedUpdatePdfTitle(e.target.value.trim());
+                      }}
+                      onKeyDown={handleNameKeyDown}
+                      onBlur={() => {
+                        setIsEditingName(false);
+                      }}
+                      placeholder="Untitled PDF"
+                      className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                    />
+                  ) : (
+                    <span className=" w-full overflow-hidden text-nowrap">
+                      {pdftitle || "Untitled PDF"}
+                    </span>
+                  )}
+                </h1>
+              </div>
+            )}
+            <div className=" w-full flex items-center justify-between gap-0">
+              <span>
+                <div className="flex items-center gap-0">
+                  <Tooltip open={searchTooltip.open}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border border-border !app-radius-none"
+                        onClick={() =>
+                          setPanelMode((current) =>
+                            current === "search" ? null : "search",
+                          )
+                        }
+                        aria-label="show-search-panel"
+                        aria-pressed={panelMode === "search"}
+                        {...searchTooltip.triggerProps}
+                      >
+                        {panelMode === "search" ? (
+                          <X size={16} />
+                        ) : (
+                          <FileSearch size={16} />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className=" text-xs px-1.5 py-1"
+                    >
+                      {panelMode === "search" ? "Close Search" : "Open Search"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip open={thumbnailsTooltip.open}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8 border-y !border-l-0 border-border !app-radius-none"
+                        onClick={() =>
+                          setPanelMode((current) =>
+                            current === "thumbnails" ? null : "thumbnails",
+                          )
+                        }
+                        aria-label="show-thumbnails-panel"
+                        aria-pressed={panelMode === "thumbnails"}
+                        {...thumbnailsTooltip.triggerProps}
+                      >
+                        {panelMode === "thumbnails" ? (
+                          <X size={16} />
+                        ) : (
+                          <span className="text-[11px] font-semibold">Pg</span>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className=" text-xs px-1.5 py-1"
+                    >
+                      {panelMode === "thumbnails"
+                        ? "Close Thumbnails"
+                        : "Open Thumbnails"}
+                    </TooltipContent>
+                  </Tooltip>
+                  <ZoomDropdown />
+                </div>
+              </span>
+              <span className="flex items-center gap-0">
+                <PageNavigator />
+                {!renderedInPane && (
+                  <PdfSettings
+                    pdfId={pdfId}
+                    pdfTitle={pdftitle}
+                    iconVariant="horizontal_icon"
+                    dropdownMenuContentAlign="end"
+                    tooltipContentAlign="end"
+                    btnVariant="outline"
+                    btnClassName="h-8 w-8 m-0 px-1 border-border !app-radius-none"
+                  />
+                )}
+              </span>
             </div>
-            <PageNavigator />
-            <PdfSettings
-              pdfId={pdfId}
-              pdfTitle={pdftitle}
-              iconVariant="horizontal_icon"
-              dropdownMenuContentAlign="end"
-              tooltipContentAlign="end"
-              btnVariant="outline"
-              btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
-            />
           </div>
         </div>
 
@@ -590,8 +729,8 @@ function PdfViewerContent({
           </div>
         ) : null}
 
-        <div className=" absolute inset-y-0 right-0 z-30 flex h-screen w-full items-center justify-center border-b border-border bg-background">
-          <Pages className="h-full min-h-0 w-full transition-all scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+        <div className=" absolute inset-y-0 right-0 z-10 flex h-screen w-full items-center justify-center border-b border-border bg-background">
+          <Pages className="scrollbar-gutter-stable [&::-webkit-scrollbar-track]:bg-transparent h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border">
             <Page>
               <CanvasLayer />
               <TextLayer />
@@ -609,11 +748,13 @@ function PdfViewerShell({
   title,
   pdfId,
   pdftitle,
+  renderedInPane,
 }: {
   fileUrl: string;
   title: string;
   pdfId: Id<"pdfs">;
   pdftitle: string;
+  renderedInPane?: boolean;
 }) {
   const { open, isMobile } = useSidebar();
 
@@ -621,7 +762,10 @@ function PdfViewerShell({
     <Root
       source={fileUrl}
       isZoomFitWidth
-      className={`${open && !isMobile ? `app-radius-lg` : null} pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch`}
+      className={cn(
+        "pdf-viewer-shell relative h-full w-full overflow-hidden app-radius-none border-0 bg-background flex flex-col justify-stretch",
+        open && !isMobile && !renderedInPane && "app-radius-lg",
+      )}
       loader={
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
           Loading PDF...
@@ -637,16 +781,53 @@ function PdfViewerShell({
         title={title}
         pdfId={pdfId}
         pdftitle={pdftitle}
+        renderedInPane={renderedInPane}
       />
     </Root>
   );
 }
 
-export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
+export default function PdfViewerPageClient({
+  pdfId,
+  renderedInPane = false,
+}: {
+  pdfId: Id<"pdfs">;
+  renderedInPane?: boolean;
+}) {
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!pdf?.title) return;
+
+    const originalTitle = document.title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const originalContent = metaDescription?.getAttribute("content");
+    const pdfTitle = pdf.title || "Untitled PDF";
+
+    document.title = `${pdfTitle} - Notevo PDF`;
+    const descriptionContent = `${pdfTitle} PDF.`;
+
+    if (metaDescription) {
+      metaDescription.setAttribute("content", descriptionContent);
+    } else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "description";
+      newMeta.content = descriptionContent;
+      document.head.appendChild(newMeta);
+    }
+
+    return () => {
+      document.title = originalTitle;
+      if (metaDescription && originalContent) {
+        metaDescription.setAttribute("content", originalContent);
+      } else if (!metaDescription) {
+        document.querySelector('meta[name="description"]')?.remove();
+      }
+    };
+  }, [pdf?.title]);
 
   useEffect(() => {
     setIsViewerReady(false);
@@ -697,7 +878,7 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
   if (pdf === undefined) {
     return (
       <div className="flex h-full max-w-full min-h-0 flex-col px-0 py-0 mx-0">
-        <div className="flex-1 rounded-none border border-border bg-card animate-pulse" />
+        <div className="flex-1 app-radius-none border-none bg-transparent animate-pulse" />
       </div>
     );
   }
@@ -733,6 +914,7 @@ export default function PdfViewerPageClient({ pdfId }: { pdfId: Id<"pdfs"> }) {
           title={pdf.title || "Untitled PDF"}
           pdfId={pdf._id}
           pdftitle={pdf.title || "Untitled PDF"}
+          renderedInPane={renderedInPane}
         />
       ) : (
         <div className="flex-1 bg-card animate-pulse" />

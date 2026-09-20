@@ -15,7 +15,7 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  - [x] optimistic update layer
  - [x] caching
  - [ ] speech to text and text to speech
- - [ ] i might add AI 🤞🙂
+ - [ ] i might add AI
  - [x] fix the code Highlight in the editer
  - [X] add the feedback menu item in the user dropdown menu in the sidebar
  - [x] Redesigning for the home 
@@ -26,13 +26,12 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  
  ## Features
  
- - 📝 **Notion style editor** powered by TipTap
- - 🤖 **AI-powered autocompletion** with OpenAI integration
- - 🔄 **Real-time updates**
- - 📂 **Cloud storage support with Convex**
- - 🔐 **Authentication with Convex**
- - 🚀 **Optimized performance** with Convex
- - 🌍 **Deployed on Vercel** for seamless access
+ -  **Notion style editor** powered by TipTap
+ -  **AI-powered autocompletion** with OpenAI integration
+ -  **Real-time updates**
+ -  **Cloud storage support with Convex**
+ -  **Authentication with Convex**
+ -  **Optimized performance** with Convex
  
  ## Tech Stack
  
@@ -52,7 +51,7 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  
  ### Installation
  ```bash
- git clone https://github.com/imohammedh/Notevo.git
+ git clone https://github.com/YOUR_USERNAME/Notevo.git
  cd Notevo
  pnpm install  # or npm install
  ```

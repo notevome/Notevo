@@ -13,7 +13,12 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "./ui/button";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface TableControlsProps {
   editor: Editor;
 }
@@ -49,7 +54,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
 
   const menuRef = useRef<HTMLDivElement>(null);
   const pillRef = useRef<HTMLDivElement>(null);
-
+  const tooltip = useHoverTooltip(100);
   const focusCell = useCallback(
     (cell: HTMLElement) => {
       try {
@@ -231,37 +236,59 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const pill = (
     <div
       ref={pillRef}
-      className="fixed flex items-center gap-0.5 bg-muted border border-border rounded-tl-md shadow-md px-0.5 py-0.5 z-[9998]"
+      className="fixed flex items-center gap-0.5 bg-muted border border-border app-radius-lg shadow-md px-0.5 py-0.5 z-[9998]"
       style={{ left: pillX, top: pillY }}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      <Button
-        variant="ghost"
-        title="Add row below"
-        aria-label="Add row below"
-        onClick={quickAdd}
-        className=" w-6 h-6 "
-        size="icon"
-      >
-        <Plus className="w-3.5 h-3.5 " />
-      </Button>
-      <Button
-        variant="ghost"
-        title="Cell options"
-        aria-label="Cell options"
-        onClick={openMenu}
-        className=" w-6 h-6"
-        size="icon"
-      >
-        <ChevronDown className="w-3.5 h-3.5" />
-      </Button>
+      <Tooltip disableHoverableContent delayDuration={100}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            aria-label="Add row below"
+            onClick={quickAdd}
+            className=" w-6 h-6 "
+            size="icon"
+          >
+            <Plus className="w-3.5 h-3.5 " />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          alignOffset={0}
+          align="end"
+          className=" text-xs py-0.5 px-1.5"
+        >
+          Add row below
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip disableHoverableContent delayDuration={100}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            aria-label="Cell options"
+            onClick={openMenu}
+            className=" w-6 h-6 !app-radius-none"
+            size="icon"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="bottom"
+          alignOffset={0}
+          align="end"
+          className=" text-xs py-0.5 px-1.5"
+        >
+          Cell options
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 
   const fullMenu = menu.show && (
     <div
       ref={menuRef}
-      className="fixed bg-muted border border-border rounded-tl-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
+      className="fixed bg-muted border border-border app-radius-lg py-2 px-1 w-[270px] z-[9999] shadow-xl animate-in fade-in-0 zoom-in-95 overflow-y-auto max-h-[80vh] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent scrollbar-gutter-stable"
       style={{ left: menu.x, top: menu.y }}
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
@@ -365,7 +392,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
             <button
               key={color.name}
               title={color.name}
-              className="w-6 h-6 rounded border border-border hover:scale-110 transition-transform"
+              className="w-6 h-6 app-radius-md border border-border hover:scale-110 transition-transform"
               style={{
                 backgroundColor: color.value || "transparent",
                 borderColor: color.value ? "transparent" : "#888",

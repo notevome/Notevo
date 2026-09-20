@@ -139,7 +139,7 @@ export default function Feedback() {
               />
               <DialogFooter className=" pb-6 relative">
                 <Button
-                  className=" absolute -bottom-6 -right-6"
+                  className=" absolute -bottom-6 -right-6 before:bg-gradient-to-br before:from-primary/60 before:via-transparent before:to-transparent"
                   type="submit"
                   disabled={loading}
                 >

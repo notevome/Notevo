@@ -8,26 +8,43 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  Link2,
+  PanelTop,
   X,
+  Filter,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+  Fragment,
+  memo,
+} from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { z } from "zod";
+import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
 import NoteSettings from "@/components/home-components/NoteSettings";
+import LinkSettings from "@/components/home-components/LinkSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -42,7 +59,18 @@ import {
   Popover,
   PopoverAnchor,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -59,13 +87,30 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, formatTableName } from "@/lib/utils";
+import { cn, formatTableName, formatWorkspaceName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
 } from "@/lib/parse-tiptap-content";
 import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { useDebouncedCallback } from "use-debounce";
+import { Separator } from "@/components/ui/separator";
+
+function getMediaQuery() {
+  const isMobile = useMediaQuery({ maxWidth: 640 });
+  return isMobile;
+}
+
+function useGridColumnCount(enabled: boolean) {
+  const isMdUp = useMediaQuery({ minWidth: 768 });
+  const isSmUp = useMediaQuery({ minWidth: 640 });
+  if (!enabled) return 1;
+  if (isMdUp) return 3;
+  if (isSmUp) return 2;
+  return 1;
+}
+
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -85,7 +130,7 @@ const workspaceNameSchema = z
 const noteTitleSchema = z
   .string()
   .min(1, "Title cannot be empty")
-  .max(55, "Title must be 55 characters or less");
+  .max(60, "Title must be 60 characters or less");
 
 const tableNameSchema = z
   .string()
@@ -98,8 +143,180 @@ const workspacePageMemoryCache = new Map<
 >();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
+const tablePdfsMemoryCache = new Map<string, any[]>();
+const tableLinksMemoryCache = new Map<string, any[]>();
+const tableWhiteboardsMemoryCache = new Map<string, any[]>();
 
-type ViewMode = "grid" | "list";
+type ViewMode = "grid" | "list" | "calendar";
+type CalendarZoom = "week" | "month" | "quarter" | "year";
+type ContentFilter =
+  | "all"
+  | "note"
+  | "pdf"
+  | "whiteboard"
+  | "youtube"
+  | "x"
+  | "instagram"
+  | "linkedin"
+  | "link";
+
+type FilterIconComponent = (props: { className?: string }) => any;
+
+const CONTENT_FILTER_OPTIONS: {
+  value: ContentFilter;
+  label: string;
+}[] = [
+  { value: "all", label: "All" },
+  { value: "note", label: "Notes" },
+  { value: "pdf", label: "PDFs" },
+  { value: "whiteboard", label: "Whiteboards" },
+  { value: "youtube", label: "YouTube" },
+  { value: "x", label: "X" },
+  { value: "instagram", label: "Instagram" },
+  { value: "linkedin", label: "LinkedIn" },
+  { value: "link", label: "Link" },
+];
+
+const GROUPABLE_LINK_FILTERS = new Set<ContentFilter>([
+  "youtube",
+  "x",
+  "instagram",
+  "linkedin",
+  "link",
+]);
+
+function isGenericLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  if (!platform) return true;
+  const p = String(platform).toLowerCase();
+  return !(
+    p.includes("youtube") ||
+    p === "yt" ||
+    p === "x" ||
+    p.includes("twitter") ||
+    p.includes("instagram") ||
+    p === "ig" ||
+    p.includes("linkedin")
+  );
+}
+
+// A "social" link is one from a platform we can render as an authored post
+// (avatar + name + handle + post content). Anything else is treated as a
+// plain website link (title + Open Graph image).
+function isSocialLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  return !isGenericLinkPlatform(platform);
+}
+
+function matchesLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+  filter: ContentFilter,
+): boolean {
+  const p = String(platform ?? "").toLowerCase();
+  switch (filter) {
+    case "youtube":
+      return p.includes("youtube") || p === "yt";
+    case "x":
+      return p === "x" || p.includes("twitter");
+    case "instagram":
+      return p.includes("instagram") || p === "ig";
+    case "linkedin":
+      return p.includes("linkedin");
+    case "link":
+      return isGenericLinkPlatform(platform);
+    default:
+      return false;
+  }
+}
+
+function getLinkGroupKey(link: LinkItem, filter: ContentFilter): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "").toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+  const handle = link.metadata?.authorHandle?.trim();
+  const name = link.metadata?.authorName?.trim();
+  return (handle || name || null)?.toLowerCase() ?? null;
+}
+
+// Human-readable label for a group key (see getLinkGroupKey).
+function getLinkGroupLabel(
+  link: LinkItem,
+  filter: ContentFilter,
+): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  }
+  return (
+    link.metadata?.authorName?.trim() ||
+    link.metadata?.authorHandle?.trim() ||
+    null
+  );
+}
+
+interface LinkFilterGroup {
+  key: string;
+  label: string;
+  handle?: string;
+  avatarUrl?: string;
+  sampleUrl?: string;
+  count: number;
+}
+
+// Normalizes a raw handle into "@handle" display form.
+function formatHandle(handle?: string | null): string | null {
+  const trimmed = handle?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+function GroupAvatar({
+  avatarUrl,
+  label,
+  className,
+}: {
+  avatarUrl?: string;
+  label: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const src = avatarUrl && !errored ? avatarUrl : null;
+
+  if (!src) {
+    return (
+      <div
+        className={cn(
+          "h-6 w-6 app-radius-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0",
+          className,
+        )}
+      >
+        {label.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      key={src}
+      src={src}
+      alt=""
+      draggable={false}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      className={cn("h-6 w-6 app-radius-full object-cover shrink-0", className)}
+      onError={() => setErrored(true)}
+    />
+  );
+}
 
 interface Note {
   _id: Id<"notes">;
@@ -132,7 +349,54 @@ interface PdfItem {
   kind: "pdf";
 }
 
-type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem;
+interface LinkItem {
+  _id: Id<"links">;
+  url: string;
+  platform: LinkPlatform;
+  metadata?: {
+    description?: string;
+    thumbnailUrl?: string;
+    authorName?: string;
+    authorHandle?: string;
+    authorAvatarUrl?: string;
+    publishedAt?: number;
+    viewCount?: string;
+    likeCount?: number;
+    repostCount?: number;
+    commentCount?: number;
+    duration?: string;
+    embedVideoId?: string;
+    siteName?: string;
+  };
+  title?: string;
+  favorite?: boolean;
+  userId?: Id<"users">;
+  workingSpaceId?: Id<"workingSpaces">;
+  notesTableId?: Id<"notesTables">;
+  createdAt: number;
+  updatedAt: number;
+  kind: "link";
+}
+
+interface WhiteboardItem {
+  _id: Id<"whiteboards">;
+  title: string;
+  favorite?: boolean;
+  snapshot?: string;
+  preview?: string;
+  userId: Id<"users">;
+  workingSpaceId: Id<"workingSpaces">;
+  notesTableId: Id<"notesTables">;
+  createdAt: number;
+  updatedAt: number;
+  kind: "whiteboard";
+}
+
+type WorkspaceEntry =
+  | (Note & { kind: "note" })
+  | PdfItem
+  | LinkItem
+  | WhiteboardItem;
 
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
@@ -146,17 +410,30 @@ interface NotesDroppableContainerProps {
   setViewMode: (mode: ViewMode) => void;
 }
 
-interface NoteCardProps {
-  note: Note;
-  workspaceId?: Id<"workingSpaces">;
-  onDelete?: (noteId: Id<"notes">) => void;
-}
+function HighlightText({ text, query }: { text: string; query?: string }) {
+  const trimmedQuery = query?.trim();
+  if (!trimmedQuery) return <>{text}</>;
 
-interface PdfCardProps {
-  pdf: PdfItem;
-  onDelete?: (pdfId: Id<"pdfs">) => void;
-}
+  const escaped = trimmedQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const parts = text.split(new RegExp(`(${escaped})`, "gi"));
 
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === trimmedQuery.toLowerCase() ? (
+          <mark
+            key={i}
+            className="text-secondary bg-secondary-foreground app-radius-sm px-0.5"
+          >
+            {part}
+          </mark>
+        ) : (
+          <Fragment key={i}>{part}</Fragment>
+        ),
+      )}
+    </>
+  );
+}
 interface EmptySearchResultsProps {
   searchQuery: string;
   onClearSearch: () => void;
@@ -171,6 +448,210 @@ interface EmptyTableStateProps {
 const STORAGE_KEYS = {
   VIEW_MODE: "notevo_view_mode",
   ACTIVE_TABLE: "notevo_active_table",
+  CALENDAR_ZOOM: "notevo_calendar_zoom",
+  CUSTOM_ORDER_PREFIX: "notevo_custom_order_",
+};
+
+type DropTarget = { id: string; position: "before" | "after" };
+
+function useClientSideOrder<T extends { _id: string }>(
+  storageKey: string,
+  items: T[],
+  options?: { newItemPosition?: "start" | "end" },
+) {
+  const newItemPosition = options?.newItemPosition ?? "end";
+  const [sessionOrder, setSessionOrder] = useState<string[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggedSize, setDraggedSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const justDraggedRef = useRef(false);
+  const clearJustDraggedTimeoutRef =
+    useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setSessionOrder(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setSessionOrder([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    setSessionOrder((prev) => {
+      const known = new Set(prev);
+      const newIds = items
+        .map((item) => item._id)
+        .filter((id) => !known.has(id));
+      if (newIds.length === 0) return prev;
+      return newItemPosition === "start"
+        ? [...newIds, ...prev]
+        : [...prev, ...newIds];
+    });
+  }, [items, newItemPosition]);
+
+  const persist = useCallback(
+    (ids: string[]) => {
+      setSessionOrder(ids);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+      } catch {
+        // won't survive a refresh.
+      }
+    },
+    [storageKey],
+  );
+
+  const orderedItems = useMemo(() => {
+    const itemById = new Map(items.map((item) => [item._id, item]));
+    const known = sessionOrder
+      .map((id) => itemById.get(id))
+      .filter((item): item is T => Boolean(item));
+    const knownIds = new Set(known.map((item) => item._id));
+    const fresh = items.filter((item) => !knownIds.has(item._id));
+    return [...known, ...fresh];
+  }, [items, sessionOrder]);
+
+  const handleDragStart = useCallback(
+    (id: string, rect?: { width: number; height: number }) => {
+      setDraggingId(id);
+      setDropTarget(null);
+      setDraggedSize(rect ?? null);
+      justDraggedRef.current = true;
+      if (clearJustDraggedTimeoutRef.current) {
+        clearTimeout(clearJustDraggedTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleDragOverItem = useCallback(
+    (
+      e: {
+        clientY: number;
+        currentTarget: HTMLElement;
+        preventDefault: () => void;
+      },
+      id: string,
+    ) => {
+      e.preventDefault();
+      if (!draggingId || draggingId === id) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const isBefore = e.clientY < rect.top + rect.height / 2;
+      setDropTarget((prev) =>
+        prev?.id === id && prev.position === (isBefore ? "before" : "after")
+          ? prev
+          : { id, position: isBefore ? "before" : "after" },
+      );
+    },
+    [draggingId],
+  );
+
+  const scheduleClearJustDragged = useCallback(() => {
+    if (clearJustDraggedTimeoutRef.current) {
+      clearTimeout(clearJustDraggedTimeoutRef.current);
+    }
+    clearJustDraggedTimeoutRef.current = setTimeout(() => {
+      justDraggedRef.current = false;
+    }, 300);
+  }, []);
+
+  const handleDrop = useCallback(() => {
+    if (draggingId && dropTarget && dropTarget.id !== draggingId) {
+      const ids = orderedItems.map((item) => item._id);
+      const withoutDragged = ids.filter((id) => id !== draggingId);
+      const targetIndex = withoutDragged.indexOf(dropTarget.id);
+      const insertAt =
+        dropTarget.position === "before" ? targetIndex : targetIndex + 1;
+      withoutDragged.splice(insertAt, 0, draggingId);
+      persist(withoutDragged);
+    }
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+    scheduleClearJustDragged();
+  }, [draggingId, dropTarget, orderedItems, persist, scheduleClearJustDragged]);
+
+  const handleDragEnd = useCallback(() => {
+    // Fallback cleanup in case the drop lands outside a valid target.
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+    scheduleClearJustDragged();
+  }, [scheduleClearJustDragged]);
+
+  return {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    justDraggedRef,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  };
+}
+
+const DAY_MS = 86400000;
+const MONTH_LABELS = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
+
+function startOfDay(value: Date | number) {
+  const date = new Date(value);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function daysBetween(a: Date, b: Date) {
+  return Math.round(
+    (startOfDay(b).getTime() - startOfDay(a).getTime()) / DAY_MS,
+  );
+}
+
+const CALENDAR_ZOOM_CONFIG: Record<
+  CalendarZoom,
+  { pxPerDay: number; tickStepDays: number; label: string; shortcut: string }
+> = {
+  week: { pxPerDay: 120, tickStepDays: 1, label: "Week", shortcut: "W" },
+  month: { pxPerDay: 40, tickStepDays: 2, label: "Month", shortcut: "M" },
+  quarter: { pxPerDay: 16, tickStepDays: 7, label: "Quarter", shortcut: "Q" },
+  year: { pxPerDay: 6, tickStepDays: 14, label: "Year", shortcut: "Y" },
+};
+
+const CALENDAR_ZOOM_ORDER: CalendarZoom[] = [
+  "year",
+  "quarter",
+  "month",
+  "week",
+];
+
+const CALENDAR_ZOOM_PADDING_DAYS: Record<CalendarZoom, number> = {
+  week: 10,
+  month: 20,
+  quarter: 45,
+  year: 150,
 };
 
 function TableTab({ table }: { table: any }) {
@@ -320,95 +801,75 @@ function TableTab({ table }: { table: any }) {
 
   return (
     <>
-      <Popover
-        open={isRenameOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            setIsRenameOpen(true);
-            return;
-          }
-          handleRenameCancel();
-        }}
+      <div
+        className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
       >
-        <PopoverAnchor asChild>
-          <div
-            className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
-            onMouseEnter={handleContentMouseEnter}
-            onMouseLeave={handleContentMouseLeave}
-          >
-            <TabsTrigger
-              value={table._id}
-              data-tab-id={table._id}
-              className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
-              onDoubleClick={handleDoubleClick}
-              aria-label="rename-table"
-            >
-              <p className={cn(textClassName, "w-full")}>
-                {formatTableName(table.name)}
-              </p>
-            </TabsTrigger>
-            <div
-              className={cn(
-                "absolute inset-y-0 right-2 flex items-center",
-                isHovered ? "opacity-100 " : "opacity-0 pointer-events-none",
-              )}
-            >
-              <Tooltip open={deleteTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setIsDeleteAlertOpen(true);
-                    }}
-                    className=" px-1 h-6 text-foreground hover:text-destructive"
-                    aria-label="delete-table"
-                    {...deleteTooltip.triggerProps}
-                  >
-                    <X size={16} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  className=" px-1.5"
-                  side="bottom"
-                  sideOffset={5}
-                >
-                  Delete table
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-        </PopoverAnchor>
-        <PopoverContent
-          align="start"
-          side="bottom"
-          sideOffset={3}
-          className="w-52 border-0 bg-transparent p-0"
-        >
-          <div className=" relative flex items-center gap-2">
+        {isRenameOpen ? (
+          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg w-full border-2 border-border border-b-0 bg-card">
             <Input
               ref={inputRef as any}
               value={editedName}
               onChange={(e) => setEditedName(e.target.value)}
               onKeyDown={handleKeyDown}
+              onBlur={() => void handleRenameSave()}
               placeholder="Rename table"
-              className="h-8 border-border bg-background px-1 py-1"
+              aria-label="rename-table-input"
+              className="h-6 flex-grow border-none bg-transparent px-1 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
-            <Button
-              variant="ghost"
-              type="button"
-              size="icon"
-              onClick={() => void handleRenameSave()}
-              className=" absolute top-1/2 -translate-y-1/2 right-1 h-6 w-6 shrink-0 bg-primary text-primary-foreground hover:text-primary-foreground hover:bg-primary/80"
-              aria-label="save-table-name"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
           </div>
-        </PopoverContent>
-      </Popover>
+        ) : (
+          <TabsTrigger
+            value={table._id}
+            data-tab-id={table._id}
+            className=" px-4 py-2.5 app-radius-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+            onDoubleClick={handleDoubleClick}
+            aria-label="rename-table"
+          >
+            <p className={cn(textClassName, "w-full")}>
+              {formatTableName(table.name)}
+            </p>
+          </TabsTrigger>
+        )}
+        <div
+          className={cn(
+            "absolute inset-y-0 right-2 flex items-center",
+            isHovered && !isRenameOpen
+              ? "opacity-100 "
+              : "opacity-0 pointer-events-none",
+          )}
+        >
+          <Tooltip open={deleteTooltip.open}>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={(e) => {
+                  if (e.button === 0 && e.shiftKey) {
+                    e.preventDefault();
+                    handleDelete();
+                  } else {
+                    setIsDeleteAlertOpen(true);
+                  }
+                }}
+                className=" px-1.5 h-7 text-foreground hover:text-destructive"
+                aria-label="delete-table"
+                {...deleteTooltip.triggerProps}
+              >
+                <X size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              className=" !app-radius-none"
+              side="right"
+              sideOffset={5}
+            >
+              Delete table
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
@@ -419,6 +880,13 @@ function TableTab({ table }: { table: any }) {
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel
@@ -429,7 +897,7 @@ function TableTab({ table }: { table: any }) {
             >
               Delete
             </AlertDialogAction>
-          </AlertDialogFooter>
+          </AlertDialogFooter>{" "}
         </AlertDialogContent>
       </AlertDialog>
     </>
@@ -440,12 +908,14 @@ interface SliderTabsListProps {
   tables: any[];
   activeTableId: string;
   onTabChange: (id: string) => void;
+  workingSpaceId: string;
 }
 
 function SliderTabsList({
   tables,
   activeTableId,
   onTabChange,
+  workingSpaceId,
 }: SliderTabsListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -503,6 +973,20 @@ function SliderTabsList({
     });
   };
 
+  const {
+    orderedItems: orderedTables,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}tabs_${workingSpaceId}`,
+    tables,
+  );
+
   return (
     <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
@@ -512,7 +996,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -527,7 +1011,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -554,7 +1038,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !app-radius-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
@@ -569,12 +1053,57 @@ function SliderTabsList({
               } as React.CSSProperties
             }
           >
-            {tables.map((table) => (
-              <TableTab
-                key={table._id}
-                data-table-id={table._id}
-                table={table}
-              />
+            {orderedTables.map((table) => (
+              <Fragment key={table._id}>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "before" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+                <div
+                  draggable
+                  onDragStart={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    handleDragStart(table._id, {
+                      width: rect.width,
+                      height: rect.height,
+                    });
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => handleDragOverItem(e, table._id)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop();
+                  }}
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    "cursor-grab active:cursor-grabbing",
+                    draggingId === table._id &&
+                      "opacity-40 scale-[0.98] transition-transform",
+                  )}
+                >
+                  <TableTab data-table-id={table._id} table={table} />
+                </div>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "after" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+              </Fragment>
             ))}
           </div>
         </TabsList>
@@ -585,25 +1114,29 @@ function SliderTabsList({
 
 export default function WorkingSpacePageClient({
   workingSpaceId,
+  renderedInPane = false,
 }: {
   workingSpaceId: Id<"workingSpaces">;
+  renderedInPane?: boolean;
 }) {
   const cached = workspacePageMemoryCache.get(
     workingSpaceId as unknown as string,
   );
-  const workspaceQuery = useQuery(api.workingSpaces.getWorkingSpaceById, {
-    _id: workingSpaceId,
-  }) as any;
-  const tablesQuery = useQuery(api.notesTables.getTables, {
-    workingSpaceId,
-  }) as any;
+  const workspaceQuery = useQuery(
+    api.workingSpaces.getWorkingSpaceById,
+    workingSpaceId ? { _id: workingSpaceId } : "skip",
+  ) as any;
+  const tablesQuery = useQuery(
+    api.notesTables.getTables,
+    workingSpaceId ? { workingSpaceId } : "skip",
+  ) as any;
 
   const workspace = workspaceQuery ?? cached?.workspace;
   const workingSpacesSlug: string | undefined =
     workspace && (workspace.slug as string);
 
   const tables = tablesQuery !== undefined ? tablesQuery : cached?.tables;
-
+  const { toast } = useToast();
   useEffect(() => {
     const key = workingSpaceId as unknown as string;
     const prev = workspacePageMemoryCache.get(key) ?? {};
@@ -619,7 +1152,6 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
@@ -651,33 +1183,18 @@ export default function WorkingSpacePageClient({
     setEditedName(workspace.name || "Untitled");
     setIsEditingName(true);
     requestAnimationFrame(() => {
-      nameInputRef.current?.focus();
-      nameInputRef.current?.select();
+      const inputRef = nameInputRef.current;
+      if (!inputRef) return;
+      inputRef.focus();
+      inputRef.select();
+      inputRef.scrollLeft = 0;
     });
   }, [workspace]);
-
-  const handleNameBlur = useCallback(async () => {
-    const result = workspaceNameSchema.safeParse(editedName.trim());
-    if (!result.success) {
-      setIsEditingName(false);
-      setEditedName(workspace?.name || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (workspace?.name || "Untitled")) {
-      try {
-        await updateWorkingSpace({ _id: workingSpaceId, name: trimmed });
-      } catch (error) {
-        console.error("Error updating workspace name:", error);
-      }
-    }
-    setIsEditingName(false);
-  }, [editedName, workspace?.name, workingSpaceId, updateWorkingSpace]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        nameInputRef.current?.blur();
+        setIsEditingName(false);
       } else if (e.key === "Escape") {
         setIsEditingName(false);
         setEditedName(workspace?.name || "Untitled");
@@ -686,10 +1203,56 @@ export default function WorkingSpacePageClient({
     [workspace?.name],
   );
 
+  const debouncedUpdateWorkSpaceName = useDebouncedCallback(
+    (workspaceName: string) => {
+      const currentTitle = workspace?.name || "";
+      const result = workspaceNameSchema.safeParse(workspaceName);
+
+      if (!result.success) {
+        const issue = result.error.issues[0];
+        if (issue.code === "too_small") {
+          setEditedName("");
+          toast({
+            title: "Naming failed",
+            description: "Name must not be empty.",
+            variant: "destructive",
+          });
+        } else if (issue.code === "too_big") {
+          setEditedName(workspace?.name || "Untitled");
+          toast({
+            title: "Naming failed",
+            description: "Name must be 30 characters or less ",
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (workspaceName !== currentTitle) {
+        try {
+          updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
+          if (renderedInPane) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set(
+              "paneTitle",
+              generateSlug(workspaceName),
+            );
+            window.history.replaceState({}, "", currentUrl.href);
+          }
+        } catch (error) {
+          console.error("Error updating workspace name:", error);
+        }
+      }
+    },
+    100,
+  );
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(STORAGE_KEYS.VIEW_MODE);
-      return stored === "list" || stored === "grid" ? stored : "grid";
+      return stored === "list" || stored === "grid" || stored === "calendar"
+        ? stored
+        : "grid";
     }
     return "grid";
   });
@@ -765,30 +1328,46 @@ export default function WorkingSpacePageClient({
     };
   }, [workspace?.name, tables?.length]);
 
+  const isMobile = getMediaQuery();
+
+  useEffect(() => {
+    if (isMobile && viewMode === "grid") {
+      setViewMode("list");
+    }
+  }, [isMobile, viewMode]);
+
   return (
-    <MaxWContainer className="my-5">
+    <MaxWContainer className="grid grid-cols-1">
       <header>
-        <div className=" relative flex justify-between items-end w-full">
-          <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">
-            <h1 className="text-3xl md:text-5xl font-bol my-4 h-[3rem]">
+        <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
+          <div className="flex-1 px-1.5">
+            <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[4rem] ">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
                 <Input
                   ref={nameInputRef as any}
                   value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  onBlur={handleNameBlur}
+                  onChange={(e: any) => {
+                    setEditedName(e.target.value);
+                    debouncedUpdateWorkSpaceName(e.target.value.trim());
+                  }}
                   onKeyDown={handleNameKeyDown}
-                  className="min-w-fit max-w-2xl border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  onBlur={() => {
+                    setEditedName(editedName);
+                    setIsEditingName(false);
+                  }}
+                  placeholder="Untitled WorkSpace"
+                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[4rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
-                  title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
                 >
-                  {workspace.name}
+                  {workspace.name.length > 20 && isMobile
+                    ? `${workspace.name.slice(0, 17)}...`
+                    : workspace.name}
                 </span>
               )}
             </h1>
@@ -797,7 +1376,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" z-10 absolute -bottom-[0.04rem] right-0 h-9 rounded-tr-none rounded-b-none hover:translate-x-[-2px] hover:translate-y-[-2px] hover:rounded-b-none hover:rounded-tr-none hover:shadow-[2px_2px_0px]"
+              className=" h-9 app-radius-none "
               aria-label="create-table"
             />
           )}
@@ -816,6 +1395,7 @@ export default function WorkingSpacePageClient({
                 tables={tables}
                 activeTableId={defaultTableId ?? ""}
                 onTabChange={handleTabChange}
+                workingSpaceId={workingSpaceId as unknown as string}
               />
             </div>
 
@@ -855,63 +1435,328 @@ export function NotesDroppableContainer({
   tables,
   setViewMode,
 }: NotesDroppableContainerProps) {
-  const { results, status, loadMore } = usePaginatedQuery(
+  const {
+    results: noteResults,
+    status: notesStatus,
+    loadMore: loadMoreNotes,
+  } = usePaginatedQuery(
     api.notes.getNotesByTableId,
     { notesTableId: tableId },
     { initialNumItems: 5 },
   );
-  const pdfs = useQuery(api.pdfs.getPdfsByTableId, {
-    notesTableId: tableId,
-  }) as
-    | Array<
-        Omit<PdfItem, "kind"> & {
-          fileUrl?: string | null;
-        }
-      >
-    | undefined;
+  const {
+    results: pdfResults,
+    status: pdfsStatus,
+    loadMore: loadMorePdfs,
+  } = usePaginatedQuery(
+    api.pdfs.getPdfsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<PdfItem, "kind"> & { fileUrl?: string | null }>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
+  const {
+    results: linkResults,
+    status: linksStatus,
+    loadMore: loadMoreLinks,
+  } = usePaginatedQuery(
+    api.links.getLinksByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<LinkItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
+  const {
+    results: whiteboardResults,
+    status: whiteboardsStatus,
+    loadMore: loadMoreWhiteboards,
+  } = usePaginatedQuery(
+    api.whiteboards.getWhiteboardsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<WhiteboardItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
-    if (status !== "LoadingFirstPage") {
-      tableNotesMemoryCache.set(tableId as unknown as string, results);
+    if (notesStatus !== "LoadingFirstPage") {
+      tableNotesMemoryCache.set(tableId as unknown as string, noteResults);
     }
-  }, [results, status, tableId]);
-
+  }, [noteResults, notesStatus, tableId]);
   const stableResults =
-    status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
+    notesStatus === "LoadingFirstPage" && cachedNotes
+      ? cachedNotes
+      : noteResults;
+
+  const cachedPdfs = tablePdfsMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (pdfsStatus !== "LoadingFirstPage") {
+      tablePdfsMemoryCache.set(tableId as unknown as string, pdfResults);
+    }
+  }, [pdfResults, pdfsStatus, tableId]);
+  const stablePdfs =
+    pdfsStatus === "LoadingFirstPage" && cachedPdfs ? cachedPdfs : pdfResults;
+
+  const cachedLinks = tableLinksMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (linksStatus !== "LoadingFirstPage") {
+      tableLinksMemoryCache.set(tableId as unknown as string, linkResults);
+    }
+  }, [linkResults, linksStatus, tableId]);
+  const stableLinks =
+    linksStatus === "LoadingFirstPage" && cachedLinks
+      ? cachedLinks
+      : linkResults;
+
+  const cachedWhiteboards = tableWhiteboardsMemoryCache.get(
+    tableId as unknown as string,
+  );
+  useEffect(() => {
+    if (whiteboardsStatus !== "LoadingFirstPage") {
+      tableWhiteboardsMemoryCache.set(
+        tableId as unknown as string,
+        whiteboardResults,
+      );
+    }
+  }, [tableId, whiteboardResults, whiteboardsStatus]);
+  const stableWhiteboards =
+    whiteboardsStatus === "LoadingFirstPage" && cachedWhiteboards
+      ? cachedWhiteboards
+      : whiteboardResults;
+
+  // Single combined pagination state driving one "Show More" button for
+  // notes + pdfs + links + whiteboards together.
+  const aggregateStatus:
+    | "LoadingFirstPage"
+    | "CanLoadMore"
+    | "LoadingMore"
+    | "Exhausted" =
+    notesStatus === "LoadingFirstPage" &&
+    !cachedNotes &&
+    pdfsStatus === "LoadingFirstPage" &&
+    !cachedPdfs &&
+    linksStatus === "LoadingFirstPage" &&
+    !cachedLinks &&
+    whiteboardsStatus === "LoadingFirstPage" &&
+    !cachedWhiteboards
+      ? "LoadingFirstPage"
+      : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
+            (s) => s === "CanLoadMore",
+          )
+        ? "CanLoadMore"
+        : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
+              (s) => s === "LoadingMore",
+            )
+          ? "LoadingMore"
+          : "Exhausted";
+
+  const handleLoadMore = useCallback(() => {
+    if (notesStatus === "CanLoadMore") loadMoreNotes(15);
+    if (pdfsStatus === "CanLoadMore") loadMorePdfs(15);
+    if (linksStatus === "CanLoadMore") loadMoreLinks(15);
+    if (whiteboardsStatus === "CanLoadMore") loadMoreWhiteboards(15);
+  }, [
+    notesStatus,
+    pdfsStatus,
+    linksStatus,
+    loadMoreNotes,
+    loadMorePdfs,
+    loadMoreLinks,
+    loadMoreWhiteboards,
+    whiteboardsStatus,
+  ]);
+
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (viewMode === "calendar") return;
+    if (aggregateStatus !== "CanLoadMore") return;
+
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [viewMode, aggregateStatus, handleLoadMore]);
 
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
+  const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
+  const [subFilterValue, setSubFilterValue] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        target?.isContentEditable ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey;
+
+      if (isTyping) return;
+
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     setDeletedItemIds(new Set());
+    setContentFilter("all");
+    setSubFilterValue(null);
   }, [tableId]);
+
+  const linkGroupsByFilter = useMemo(() => {
+    const map: Partial<Record<ContentFilter, LinkFilterGroup[]>> = {};
+
+    GROUPABLE_LINK_FILTERS.forEach((filter) => {
+      const matched = stableLinks.filter((link) =>
+        matchesLinkPlatform((link as LinkItem).platform, filter),
+      );
+
+      const counts = new Map<
+        string,
+        {
+          label: string;
+          handle?: string;
+          avatarUrl?: string;
+          sampleUrl: string;
+          count: number;
+        }
+      >();
+
+      matched.forEach((rawLink) => {
+        const link = rawLink as LinkItem;
+        const key = getLinkGroupKey(link, filter);
+        if (!key) return;
+        const label = getLinkGroupLabel(link, filter) ?? key;
+        const existing = counts.get(key);
+        if (existing) {
+          existing.count += 1;
+          if (!existing.avatarUrl && link.metadata?.authorAvatarUrl) {
+            existing.avatarUrl = link.metadata.authorAvatarUrl;
+          }
+          if (!existing.handle && link.metadata?.authorHandle) {
+            existing.handle = link.metadata.authorHandle;
+          }
+        } else {
+          counts.set(key, {
+            label,
+            handle: filter === "link" ? undefined : link.metadata?.authorHandle,
+            avatarUrl:
+              filter === "link" ? undefined : link.metadata?.authorAvatarUrl,
+            sampleUrl: link.url,
+            count: 1,
+          });
+        }
+      });
+
+      const groups = Array.from(counts.entries())
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+      if (groups.length > 1) {
+        map[filter] = groups;
+      }
+    });
+
+    return map;
+  }, [stableLinks]);
 
   const filteredItems = useMemo(() => {
     const noteItems = stableResults.map(
       (note) => ({ ...note, kind: "note" }) as WorkspaceEntry,
     );
-    const pdfItems = (pdfs ?? []).map(
+    const pdfItems = stablePdfs.map(
       (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
     );
-    const notDeletedItems = [...noteItems, ...pdfItems]
+    const linkItems = stableLinks.map(
+      (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
+    );
+    const whiteboardItems = stableWhiteboards.map(
+      (whiteboard) => ({ ...whiteboard, kind: "whiteboard" }) as WorkspaceEntry,
+    );
+    let items = [...noteItems, ...pdfItems, ...linkItems, ...whiteboardItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
-      .sort((a, b) => {
-        const aPinned = a.favorite ? 1 : 0;
-        const bPinned = b.favorite ? 1 : 0;
-        if (aPinned !== bPinned) return bPinned - aPinned;
-        return b.updatedAt - a.updatedAt;
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+
+    if (contentFilter !== "all") {
+      items = items.filter((item) => {
+        if (contentFilter === "note") return item.kind === "note";
+        if (contentFilter === "pdf") return item.kind === "pdf";
+        if (contentFilter === "whiteboard") return item.kind === "whiteboard";
+        if (item.kind !== "link") return false;
+        return matchesLinkPlatform(item.platform, contentFilter);
       });
 
-    if (!searchQuery.trim()) return notDeletedItems;
+      if (subFilterValue && GROUPABLE_LINK_FILTERS.has(contentFilter)) {
+        items = items.filter(
+          (item) =>
+            item.kind === "link" &&
+            getLinkGroupKey(item as LinkItem, contentFilter) === subFilterValue,
+        );
+      }
+    }
+
+    if (!searchQuery.trim()) return items;
     const q = searchQuery.toLowerCase();
-    return notDeletedItems.filter((item) => {
+    return items.filter((item) => {
       const titleMatches = item.title?.toLowerCase().includes(q);
       if (item.kind === "pdf") return titleMatches;
+      if (item.kind === "whiteboard") {
+        return titleMatches || item.preview?.toLowerCase().includes(q);
+      }
+      if (item.kind === "link") {
+        if (titleMatches || item.url.toLowerCase().includes(q)) return true;
+        const metadata = item.metadata;
+        if (!metadata) return false;
+        return (
+          metadata.authorName?.toLowerCase().includes(q) ||
+          metadata.authorHandle?.toLowerCase().includes(q) ||
+          metadata.siteName?.toLowerCase().includes(q) ||
+          metadata.description?.toLowerCase().includes(q) ||
+          false
+        );
+      }
 
       const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
       return titleMatches || searchableText.includes(q);
     });
-  }, [deletedItemIds, pdfs, searchQuery, stableResults]);
+  }, [
+    contentFilter,
+    subFilterValue,
+    deletedItemIds,
+    stableLinks,
+    stablePdfs,
+    stableWhiteboards,
+    searchQuery,
+    stableResults,
+  ]);
 
   const handleItemDelete = useCallback((itemId: string) => {
     setDeletedItemIds((prev) => {
@@ -920,51 +1765,98 @@ export function NotesDroppableContainer({
       return newSet;
     });
   }, []);
-  const isMobile = useMediaQuery({ maxWidth: 640 });
+  const isMobile = getMediaQuery();
+  const isGridLayout = viewMode === "grid" || isMobile;
+  const numColumns = useGridColumnCount(isGridLayout);
+
+  const {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    justDraggedRef,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}${tableId}`,
+    filteredItems,
+    { newItemPosition: "start" },
+  );
+  const displayItems =
+    searchQuery.trim() || contentFilter !== "all" || subFilterValue
+      ? filteredItems
+      : orderedItems;
 
   return (
-    <div className="space-y-6">
-      <div className="flex gap-4 items-start sm:items-center justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <div className="relative flex-1 md:max-w-md">
+    <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-5 z-30">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
             <Input
+              ref={searchInputRef as any}
               type="text"
               placeholder="Search notes and uploads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-border h-9 mt-0.5"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              className="pl-10 pr-9 border-border h-[37px] my-0 !app-radius-none bg-background"
               aria-label="search-notes"
             />
+            {!isSearchFocused && !searchQuery && (
+              <kbd className="pointer-events-none leading-4 absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center app-radius-md border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+                /
+              </kbd>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+          <div className="flex h-9 items-center border border-border app-radius-none overflow-hidden">
+            {!isMobile && (
+              <Button
+                variant="SidebarMenuButton"
+                size="sm"
+                className={cn(
+                  "!app-radius-none bg-background hover:bg-muted",
+                  viewMode === "grid" && "bg-muted",
+                )}
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid
+                  className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
+                />
+              </Button>
+            )}
             <Button
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
-                viewMode === "grid" && "bg-muted",
+                "!app-radius-none bg-background hover:bg-muted",
+                !isMobile && "border border-l-border border-r-border",
+                viewMode === "list" && "bg-muted",
               )}
-              onClick={() => setViewMode("grid")}
+              onClick={() => setViewMode("list")}
             >
-              <LayoutGrid
-                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
+              <List
+                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-foreground"}`}
               />
             </Button>
             <Button
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
-                viewMode === "list" && "bg-muted",
+                "!app-radius-none bg-background hover:bg-muted",
+                viewMode === "calendar" && "bg-muted",
               )}
-              onClick={() => setViewMode("list")}
+              onClick={() => setViewMode("calendar")}
+              aria-label="calendar-view"
             >
-              <List
-                className={`h-3.5 w-3.5 ${viewMode === "list" && !isMobile && "text-foreground"}`}
+              <Calendar
+                className={`h-3.5 w-3.5 ${viewMode === "calendar" && "text-foreground"}`}
               />
             </Button>
           </div>
@@ -973,6 +1865,141 @@ export function NotesDroppableContainer({
             workingSpacesSlug={workspaceSlug}
             CNBP_notesTableId={tableId}
           />
+          <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-9 shrink-0 border-border gap-1.5 !app-radius-none",
+                  contentFilter !== "all" && "bg-muted",
+                )}
+                aria-label="filter-content"
+              >
+                <Filter className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline truncate max-w-[9rem] items-center gap-1.5 ">
+                  <span className="truncate">
+                    {CONTENT_FILTER_OPTIONS.find(
+                      (o) => o.value === contentFilter,
+                    )?.label ?? "All"}
+                    {subFilterValue
+                      ? ` · ${
+                          linkGroupsByFilter[contentFilter]?.find(
+                            (g) => g.key === subFilterValue,
+                          )?.label ?? subFilterValue
+                        }`
+                      : ""}
+                  </span>
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {CONTENT_FILTER_OPTIONS.map((option) => {
+                const groups = linkGroupsByFilter[option.value];
+                const hasGroups = Boolean(groups && groups.length > 0);
+                const isActiveCategory = contentFilter === option.value;
+
+                if (!hasGroups) {
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                      onSelect={() => {
+                        setContentFilter(option.value);
+                        setSubFilterValue(null);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isActiveCategory && !subFilterValue ? (
+                        <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  );
+                }
+
+                return (
+                  <DropdownMenuSub key={option.value}>
+                    <DropdownMenuSubTrigger
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                    >
+                      <span className="truncate">{option.label}</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-64 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border">
+                      <DropdownMenuItem
+                        className={cn(
+                          "gap-2",
+                          isActiveCategory && !subFilterValue && "bg-muted",
+                        )}
+                        onSelect={() => {
+                          setContentFilter(option.value);
+                          setSubFilterValue(null);
+                        }}
+                      >
+                        <span className="truncate">All {option.label}</span>
+                        {isActiveCategory && !subFilterValue ? (
+                          <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                        ) : null}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {groups!.map((group) => {
+                        const isActiveGroup =
+                          isActiveCategory && subFilterValue === group.key;
+                        return (
+                          <DropdownMenuItem
+                            key={group.key}
+                            className={cn(
+                              "gap-2 py-1.5",
+                              isActiveGroup && "bg-muted",
+                            )}
+                            onSelect={() => {
+                              setContentFilter(option.value);
+                              setSubFilterValue(group.key);
+                            }}
+                          >
+                            {option.value === "link" ? (
+                              <LinkFaviconBadge
+                                url={group.sampleUrl ?? ""}
+                                className="h-6 w-6 shrink-0"
+                              />
+                            ) : (
+                              <GroupAvatar
+                                avatarUrl={group.avatarUrl}
+                                label={group.label}
+                              />
+                            )}
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <span className="text-xs font-medium truncate w-full text-left">
+                                {group.label}
+                              </span>
+                              {option.value !== "link" &&
+                              formatHandle(group.handle) ? (
+                                <span className="text-[10px] text-muted-foreground truncate w-full text-left">
+                                  {formatHandle(group.handle)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0 pl-1">
+                              {group.count}
+                            </span>
+                            {isActiveGroup ? (
+                              <Check className="h-3 w-3 shrink-0" />
+                            ) : null}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <TableSettings
             notesTableId={tableId}
             tableName={tables?.find((t) => t._id === tableId)?.name}
@@ -980,12 +2007,27 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {status === "LoadingFirstPage" && !cachedNotes && pdfs === undefined ? (
+      {aggregateStatus === "LoadingFirstPage" ? (
         <NotesSkeleton viewMode={viewMode} />
-      ) : searchQuery && filteredItems.length === 0 ? (
+      ) : (searchQuery || contentFilter !== "all") &&
+        filteredItems.length === 0 ? (
         <EmptySearchResults
-          searchQuery={searchQuery}
-          onClearSearch={() => setSearchQuery("")}
+          searchQuery={
+            searchQuery.trim()
+              ? searchQuery
+              : (subFilterValue &&
+                  linkGroupsByFilter[contentFilter]?.find(
+                    (g) => g.key === subFilterValue,
+                  )?.label) ||
+                (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
+                  ?.label ??
+                  "filter")
+          }
+          onClearSearch={() => {
+            setSearchQuery("");
+            setContentFilter("all");
+            setSubFilterValue(null);
+          }}
         />
       ) : filteredItems.length === 0 ? (
         <EmptyTableState
@@ -995,598 +2037,1420 @@ export function NotesDroppableContainer({
         />
       ) : (
         <>
-          <div
-            className={
-              viewMode === "grid"
-                ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
-                : "flex flex-col gap-3"
-            }
-          >
-            {filteredItems.map((item) => (
-              <div key={item._id}>
-                {item.kind === "pdf" ? (
-                  viewMode === "grid" || isMobile ? (
-                    <PdfGridCard
-                      pdf={item}
-                      onDelete={(pdfId) => handleItemDelete(pdfId)}
-                    />
-                  ) : (
-                    <PdfListCard
-                      pdf={item}
-                      onDelete={(pdfId) => handleItemDelete(pdfId)}
-                    />
-                  )
-                ) : viewMode === "grid" || isMobile ? (
-                  <GridNoteCard
-                    note={item}
-                    workspaceId={workspaceId}
-                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
-                  />
-                ) : (
-                  <ListNoteCard
-                    note={item}
-                    workspaceId={workspaceId}
-                    onDelete={handleItemDelete as (noteId: Id<"notes">) => void}
-                  />
+          {viewMode === "calendar" ? (
+            <CalendarTimelineView
+              items={filteredItems}
+              workspaceId={workspaceId}
+              paginationStatus={aggregateStatus}
+              onLoadMore={handleLoadMore}
+            />
+          ) : (
+            (() => {
+              const renderItem = (item: (typeof displayItems)[number]) => {
+                const draggableEnabled =
+                  !searchQuery.trim() && contentFilter === "all";
+                return (
+                  <Fragment key={item._id}>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "before" && (
+                        <div
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                    <div
+                      draggable={draggableEnabled}
+                      onDragStart={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        handleDragStart(item._id, {
+                          width: rect.width,
+                          height: rect.height,
+                        });
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragOver={(e) => handleDragOverItem(e, item._id)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                      onDragEnd={handleDragEnd}
+                      onClickCapture={(e) => {
+                        // Some browsers fire a stray click/dblclick right
+                        // after a drop lands - don't let that also open the
+                        // card that was just being reordered.
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      onDoubleClickCapture={(e) => {
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      className={cn(
+                        draggableEnabled &&
+                          "cursor-grab active:cursor-grabbing",
+                        draggingId === item._id &&
+                          "opacity-40 scale-[0.98] transition-transform",
+                      )}
+                    >
+                      {isGridLayout ? (
+                        <WorkspaceGridCard
+                          item={item}
+                          workspaceId={workspaceId}
+                          onDelete={handleItemDelete}
+                          searchQuery={searchQuery}
+                        />
+                      ) : (
+                        <WorkspaceListCard
+                          item={item}
+                          workspaceId={workspaceId}
+                          onDelete={handleItemDelete}
+                          searchQuery={searchQuery}
+                        />
+                      )}
+                    </div>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "after" && (
+                        <div
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                  </Fragment>
+                );
+              };
+
+              if (!isGridLayout) {
+                return (
+                  <div className="flex flex-col gap-3">
+                    {displayItems.map((item) => renderItem(item))}
+                  </div>
+                );
+              }
+
+              const columnItems: (typeof displayItems)[number][][] = Array.from(
+                { length: numColumns },
+                () => [],
+              );
+              displayItems.forEach((item, index) => {
+                columnItems[index % numColumns].push(item);
+              });
+
+              return (
+                <div className="flex gap-4 items-start w-full max-w-full">
+                  {columnItems.map((column, colIndex) => (
+                    <div
+                      key={colIndex}
+                      className="flex flex-col gap-4 flex-1 min-w-0"
+                    >
+                      {column.map((item) => renderItem(item))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
+          )}
+
+          {viewMode !== "calendar" &&
+            (aggregateStatus === "CanLoadMore" ||
+              aggregateStatus === "LoadingMore") && (
+              <div
+                ref={loadMoreSentinelRef}
+                className="flex justify-center mt-6 h-9"
+                aria-label="load-more-items"
+              >
+                {aggregateStatus === "LoadingMore" && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <LoadingAnimation className="h-4 w-4" />
+                    Loading...
+                  </div>
                 )}
               </div>
-            ))}
-          </div>
-
-          {status === "CanLoadMore" && (
-            <div className="flex justify-center mt-6">
-              <Button
-                variant="outline"
-                onClick={() => loadMore(15)}
-                className="border-border"
-                aria-label="load-more-notes"
-              >
-                Show More
-              </Button>
-            </div>
-          )}
-
-          {status === "LoadingMore" && (
-            <div className="flex justify-center mt-6">
-              <Button variant="outline" disabled className="border-border">
-                <LoadingAnimation className="h-4 w-4 mr-2" />
-                Loading...
-              </Button>
-            </div>
-          )}
+            )}
         </>
       )}
     </div>
   );
 }
 
-function GridNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
+const CALENDAR_CARD_WIDTH = 168;
+const CALENDAR_CLUSTER_GAP = 14;
+const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
+const CALENDAR_GAP_MARKER_WIDTH = 28; // matches the w-7 marker button
+const CALENDAR_GAP_MIN_SAVINGS = 80; // px a gap must save to be worth collapsing
 
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
+function CalendarTimelineView({
+  items,
+  workspaceId,
+  paginationStatus,
+  onLoadMore,
+}: {
+  items: WorkspaceEntry[];
+  workspaceId?: Id<"workingSpaces">;
+  paginationStatus: string;
+  onLoadMore: () => void;
+}) {
+  const [zoom, setZoom] = useState<CalendarZoom>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem(STORAGE_KEYS.CALENDAR_ZOOM);
+      if (
+        stored === "week" ||
+        stored === "month" ||
+        stored === "quarter" ||
+        stored === "year"
+      ) {
+        return stored;
       }
-    },
+    }
+    return "year";
+  });
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [openClusterId, setOpenClusterId] = useState<string | null>(null);
+  const [expandedGapIds, setExpandedGapIds] = useState<Set<string>>(
+    () => new Set(),
   );
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const hasScrolledOnceRef = useRef(false);
 
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.CALENDAR_ZOOM, zoom);
+    }
+  }, [zoom]);
+
+  const config = CALENDAR_ZOOM_CONFIG[zoom];
+  const today = useMemo(() => startOfDay(Date.now()), []);
+
+  const { startDate, endDate } = useMemo(() => {
+    const pad = CALENDAR_ZOOM_PADDING_DAYS[zoom];
+    let earliest = today;
+    let latest = today;
+    for (const item of items) {
+      const d = startOfDay(item.createdAt);
+      if (d.getTime() < earliest.getTime()) earliest = d;
+      if (d.getTime() > latest.getTime()) latest = d;
+    }
+    const rangeStart = addDays(
+      earliest.getTime() < today.getTime() ? earliest : today,
+      -pad,
+    );
+    const rangeEnd = addDays(
+      latest.getTime() > today.getTime() ? latest : today,
+      pad,
+    );
+    return { startDate: rangeStart, endDate: rangeEnd };
+  }, [items, today, zoom]);
+
+  const totalDays = Math.max(1, daysBetween(startDate, endDate));
+  const timelineScale = useMemo(() => {
+    const todayDayOffset = daysBetween(startDate, today);
+    const itemDayOffsets = Array.from(
+      new Set(
+        [
+          ...items.map((item) =>
+            daysBetween(startDate, startOfDay(item.createdAt)),
+          ),
+          todayDayOffset,
+        ].filter((offset) => offset >= 0 && offset <= totalDays),
+      ),
+    ).sort((a, b) => a - b);
+
+    const collapsedGapWidth = Math.max(
+      CALENDAR_CARD_WIDTH +
+        CALENDAR_CLUSTER_GAP * 2 +
+        CALENDAR_GAP_MARKER_WIDTH,
+      config.pxPerDay * 2,
+    );
+
+    const largeGaps = itemDayOffsets.flatMap((startDay, index) => {
+      const endDay = itemDayOffsets[index + 1];
+      if (endDay === undefined) return [];
+      const emptyDays = endDay - startDay - 1;
+      if (emptyDays < CALENDAR_COLLAPSE_EMPTY_DAYS) return [];
+      const naturalWidth = emptyDays * config.pxPerDay;
+      if (naturalWidth <= collapsedGapWidth + CALENDAR_GAP_MIN_SAVINGS) {
+        return [];
+      }
+      const id = `${startDay}-${endDay}`;
+      return [
+        {
+          id,
+          startDay,
+          endDay,
+          emptyDays,
+          startDate: addDays(startDate, startDay + 1),
+          endDate: addDays(startDate, endDay - 1),
+          expanded: expandedGapIds.has(id),
+        },
+      ];
     });
-  }, [note.title]);
 
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
+    const collapsedGapsByStart = new Map(
+      largeGaps
+        .filter((gap) => !gap.expanded)
+        .map((gap) => [gap.startDay, gap]),
+    );
+    const dayX = new Map<number, number>();
+    let x = 0;
+    let day = 0;
+    while (day <= totalDays) {
+      dayX.set(day, x);
+      const collapsedGap = collapsedGapsByStart.get(day);
+      if (collapsedGap) {
+        x += collapsedGapWidth;
+        day = collapsedGap.endDay;
+        dayX.set(day, x);
+        continue;
+      }
+      if (day < totalDays) x += config.pxPerDay;
+      day += 1;
     }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        setEditedTitle(note.title || "Untitled");
+
+    const xForDay = (dayOffset: number) => {
+      const rounded = Math.max(0, Math.min(totalDays, Math.round(dayOffset)));
+      return dayX.get(rounded) ?? null;
+    };
+
+    const gapMarkers = largeGaps.map((gap) => {
+      const startX = xForDay(gap.startDay) ?? 0;
+      const endX = xForDay(gap.endDay) ?? startX;
+      return {
+        ...gap,
+        x: startX + (endX - startX) / 2,
+      };
+    });
+
+    return {
+      totalWidth: Math.max(x, 640),
+      xForDay,
+      gapMarkers,
+    };
+  }, [config.pxPerDay, expandedGapIds, items, startDate, today, totalDays]);
+  const totalWidth = timelineScale.totalWidth;
+  const todayOffset = timelineScale.xForDay(daysBetween(startDate, today)) ?? 0;
+
+  const dateTicks = useMemo(() => {
+    const ticks: { date: Date; x: number; isToday: boolean }[] = [];
+    for (let i = 0; i <= totalDays; i += config.tickStepDays) {
+      const x = timelineScale.xForDay(i);
+      if (x === null) continue;
+      const d = addDays(startDate, i);
+      ticks.push({
+        date: d,
+        x,
+        isToday: daysBetween(d, today) === 0,
+      });
+    }
+    return ticks;
+  }, [startDate, totalDays, config, today, timelineScale]);
+
+  const monthMarkers = useMemo(() => {
+    const markers: { label: string; x: number }[] = [];
+    let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    while (cursor.getTime() <= endDate.getTime()) {
+      const x = timelineScale.xForDay(
+        Math.max(0, daysBetween(startDate, cursor)),
+      );
+      if (x === null) {
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+        continue;
+      }
+      const label =
+        cursor.getMonth() === 0
+          ? `${MONTH_LABELS[cursor.getMonth()]} ${cursor.getFullYear()}`
+          : MONTH_LABELS[cursor.getMonth()];
+      markers.push({ label, x });
+      cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+    }
+    return markers;
+  }, [startDate, endDate, timelineScale]);
+
+  const clusters = useMemo(() => {
+    const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt);
+    const minClusterSpacing = CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP;
+    const result: {
+      id: string;
+      x: number;
+      dayOffset: number;
+      entries: WorkspaceEntry[];
+    }[] = [];
+    for (const item of sorted) {
+      const dayOffset = daysBetween(startDate, startOfDay(item.createdAt));
+      const x = timelineScale.xForDay(dayOffset) ?? 0;
+      const last = result[result.length - 1];
+      if (last && x - last.x <= minClusterSpacing) {
+        last.entries.push(item);
+      } else {
+        result.push({
+          id: String(item._id),
+          x,
+          dayOffset,
+          entries: [item],
+        });
       }
     }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
+    return result;
+  }, [items, startDate, timelineScale]);
 
-  const handleTitleKeyDown = useCallback(
-    (e: any) => {
-      if (e.key === "Enter") {
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
+  const scrollToToday = useCallback(
+    (behavior: ScrollBehavior = "smooth") => {
+      const el = scrollRef.current;
+      if (!el) return;
+      const target = Math.max(0, todayOffset - el.clientWidth * 0.35);
+      el.scrollTo({ left: target, behavior });
     },
-    [note.title],
+    [todayOffset],
   );
+
+  const checkTimelineScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkTimelineScroll();
+    el.addEventListener("scroll", checkTimelineScroll, { passive: true });
+    const ro = new ResizeObserver(checkTimelineScroll);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener("scroll", checkTimelineScroll);
+      ro.disconnect();
+    };
+  }, [checkTimelineScroll, totalWidth]);
+
+  const scrollTimeline = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: el.clientWidth * (direction === "left" ? -0.65 : 0.65),
+      behavior: "smooth",
+    });
+  }, []);
+
+  const toggleGap = useCallback((gapId: string) => {
+    setExpandedGapIds((current) => {
+      const next = new Set(current);
+      if (next.has(gapId)) next.delete(gapId);
+      else next.add(gapId);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      scrollToToday(hasScrolledOnceRef.current ? "smooth" : "auto");
+      hasScrolledOnceRef.current = true;
+      checkTimelineScroll();
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom, totalWidth]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      const key = e.key.toLowerCase();
+      if (key === "y") setZoom("year");
+      else if (key === "q") setZoom("quarter");
+      else if (key === "m") setZoom("month");
+      else if (key === "w") setZoom("week");
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
-    <Card
-      className={cn(
-        "group relative overflow-hidden bg-card border flex flex-col min-h-[230px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-          ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
+    <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
+      <div className="relative min-w-0 w-full max-w-full">
+        <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
+          {paginationStatus === "CanLoadMore" && (
+            <Button
+              variant="Trigger"
+              size="sm"
+              onClick={onLoadMore}
+              className="h-8 border-border text-xs px-1.5"
+              aria-label="load-more-notes"
             >
-              {note.title || "Untitled"}
-            </CardTitle>
+              Show More
+            </Button>
           )}
-          <NoteSettings
-            noteId={note._id}
-            noteTitle={note.title}
-            ShowWidthOp={false}
-            IconVariant="vertical_icon"
-            DropdownMenuContentAlign="start"
-            TooltipContentAlign="start"
-            onDelete={onDelete}
-            BtnClassName="pt-0"
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className=" flex-grow flex-1">
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {previewText}
-        </p>
-      </CardContent>
-
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground ">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
+          {paginationStatus === "LoadingMore" && (
+            <Button
+              variant="Trigger"
+              size="sm"
+              disabled
+              className="h-8 border-border text-xs px-1.5"
+              aria-label="loading-more-notes"
+            >
+              <LoadingAnimation className="h-3.5 w-3.5 mr-1.5" />
+              Loading
+            </Button>
           )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px]  absolute bottom-0 right-0 h-9 px-2 text-xs"
-          aria-label="open-note"
-        >
-          <IntentPrefetchLink
-            href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
+          <Button
+            variant="Trigger"
+            size="sm"
+            onClick={() => scrollToToday()}
+            className="h-8 border-border text-xs px-1.5"
+            aria-label="scroll-to-today"
           >
-            Open
-          </IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-function ListNoteCard({ note, workspaceId, onDelete }: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
-      }
-    },
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [note.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating note title:", error);
-        setEditedTitle(note.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
-    },
-    [note.title],
-  );
-
-  return (
-    <Card
-      className={cn(
-        "group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border transition-all duration-300 w-full min-h-[100px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
-    >
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className=" relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <>
-                <Input
-                  ref={titleInputRef as any}
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={handleTitleKeyDown}
-                  className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </>
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
+            Today
+          </Button>
+          <Popover open={isZoomOpen} onOpenChange={setIsZoomOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="Trigger"
+                size="sm"
+                className="h-8 border-border text-xs px-1.5 gap-1 !app-radius-none"
+                aria-label="calendar-zoom-level"
               >
-                {note.title || "Untitled"}
-              </h3>
-            )}
-            {
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {previewText}
-              </p>
-            }
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className=" relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <NoteSettings
-              noteId={note._id}
-              noteTitle={note.title}
-              ShowWidthOp={false}
-              IconVariant="vertical_icon"
-              DropdownMenuContentAlign="start"
-              TooltipContentAlign="start"
-              onDelete={onDelete}
-              BtnClassName="pt-0 mr-10 mt-1.5"
-            />
-            <Button
-              size="sm"
-              asChild
-              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
+                {config.label}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="bottom"
+              sideOffset={4}
+              className="w-32 p-1 border-border"
             >
-              <IntentPrefetchLink
-                href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
-              >
-                <span aria-label="open-note">Open</span>
-              </IntentPrefetchLink>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PdfGridCard({ pdf, onDelete }: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
-
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
-  );
-
-  return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col min-h-[230px]">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-          ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
-              {pdf.title || "Untitled"}
-            </CardTitle>
-          )}
-          <PdfSettings
-            pdfId={pdf._id}
-            pdfTitle={pdf.title}
-            iconVariant="vertical_icon"
-            dropdownMenuContentAlign="start"
-            tooltipContentAlign="start"
-            onDelete={onDelete}
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <FileText className="h-5 w-5 text-primary" />
-          <span>PDF upload</span>
-        </div>
-      </CardContent>
-
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
+              {CALENDAR_ZOOM_ORDER.map((z) => (
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => {
+                    setZoom(z);
+                    setIsZoomOpen(false);
+                  }}
+                  className="w-full flex items-center justify-between px-2 py-1.5 text-sm app-radius-md hover:bg-muted"
+                >
+                  <span className="flex items-center gap-2">
+                    {CALENDAR_ZOOM_CONFIG[z].label}
+                    {zoom === z ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <span className="w-3.5" />
+                    )}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {CALENDAR_ZOOM_CONFIG[z].shortcut}
+                  </span>
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
         </div>
         <Button
-          size="sm"
-          asChild
-          className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute bottom-0 right-0 h-9 px-2 text-xs"
-          aria-label="open-upload"
+          variant="Trigger"
+          size="icon"
+          onClick={() => scrollTimeline("left")}
+          aria-label="scroll-calendar-left"
+          className={cn(
+            "absolute left-2 top-36 z-30 h-8 w-8 ",
+            canScrollLeft
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
+          )}
         >
-          <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
+          <ChevronLeft className="h-4 w-4" />
         </Button>
-      </CardFooter>
-    </Card>
+        <Button
+          variant="Trigger"
+          size="icon"
+          onClick={() => scrollTimeline("right")}
+          aria-label="scroll-calendar-right"
+          className={cn(
+            "absolute right-2 top-36 z-30 h-8 w-8 ",
+            canScrollRight
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
+          )}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <div
+          className="absolute left-0 top-0 bottom-2 z-20 w-28 pointer-events-none transition-opacity duration-200"
+          style={{
+            opacity: canScrollLeft ? 1 : 0,
+            background:
+              "linear-gradient(to right, hsl(var(--background)) 10%, transparent)",
+          }}
+        />
+        <div
+          className="absolute right-0 top-0 bottom-2 z-20 w-28 pointer-events-none transition-opacity duration-200"
+          style={{
+            opacity: canScrollRight ? 1 : 0,
+            background:
+              "linear-gradient(to left, hsl(var(--background)) 10%, transparent)",
+          }}
+        />
+        <div
+          className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
+          ref={scrollRef}
+        >
+          <div className="relative" style={{ width: totalWidth, height: 300 }}>
+            <div className="relative h-7 border-b border-border">
+              {monthMarkers.map((m, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-7 flex items-center text-[11px] font-semibold tracking-wide text-muted-foreground"
+                  style={{ left: m.x + 8 }}
+                >
+                  {m.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="relative h-8 border-b border-border">
+              {dateTicks.map((t, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-full"
+                  style={{ left: t.x }}
+                >
+                  <span
+                    className={cn(
+                      "absolute top-1 left-1.5 text-[11px] whitespace-nowrap",
+                      t.isToday
+                        ? "text-primary-foreground bg-primary px-1.5 py-0.5 app-radius-md"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {t.date.getDate()}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {dateTicks.map((t, i) => (
+              <div
+                key={`line-${i}`}
+                className="absolute w-px bg-border/40"
+                style={{ left: t.x, top: 60, bottom: 0 }}
+              />
+            ))}
+
+            <div
+              className="absolute inset-0 w-px bg-primary z-10"
+              style={{ left: todayOffset }}
+            >
+              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 app-radius-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
+                Today
+              </div>
+            </div>
+
+            {timelineScale.gapMarkers.map((gap) => (
+              <CalendarGapMarker
+                key={gap.id}
+                gap={gap}
+                onToggle={() => toggleGap(gap.id)}
+              />
+            ))}
+
+            <div className="absolute left-0 right-0" style={{ top: 64 }}>
+              {clusters.map((cluster) => (
+                <div
+                  key={cluster.id}
+                  className="absolute"
+                  style={{ left: cluster.x, transform: "translateX(-50%)" }}
+                >
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={cn(
+                        "h-2.5 w-2.5 app-radius-full border-2 border-card",
+                        cluster.entries.length > 1
+                          ? "bg-primary"
+                          : "bg-muted-foreground/60",
+                      )}
+                    />
+                    <div className="w-px h-3 bg-border" />
+                    {cluster.entries.length === 1 ? (
+                      <TimelineMiniCard
+                        item={cluster.entries[0]}
+                        workspaceId={workspaceId}
+                      />
+                    ) : (
+                      <Popover
+                        open={openClusterId === cluster.id}
+                        onOpenChange={(open) =>
+                          setOpenClusterId(open ? cluster.id : null)
+                        }
+                      >
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            type="button"
+                            className="h-8 px-3 flex items-center gap-1.5  text-xs text-foreground"
+                            aria-label="expand-clustered-items"
+                          >
+                            {cluster.entries.length} items
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="center"
+                          side="bottom"
+                          sideOffset={6}
+                          className="w-64 p-0.5 border-border max-h-72 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-card"
+                        >
+                          {cluster.entries.map((entry) => (
+                            <TimelineMiniCard
+                              key={entry._id}
+                              item={entry}
+                              workspaceId={workspaceId}
+                              inPopover
+                            />
+                          ))}
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function PdfListCard({ pdf, onDelete }: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
+function CalendarGapMarker({
+  gap,
+  onToggle,
+}: {
+  gap: {
+    emptyDays: number;
+    expanded: boolean;
+    startDate: Date;
+    endDate: Date;
+    x: number;
+  };
+  onToggle: () => void;
+}) {
+  const gapTooltip = useHoverTooltip(100);
+  const hiddenDaysLabel = `${gap.emptyDays} hidden day${
+    gap.emptyDays === 1 ? "" : "s"
+  }`;
+  const dateRangeLabel = `${gap.startDate.toLocaleDateString()} - ${gap.endDate.toLocaleDateString()}`;
 
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
+  return (
+    <Tooltip open={gapTooltip.open}>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={onToggle}
+          className={cn(
+            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !app-radius-none",
+            gap.expanded ? "top-20" : "top-16",
+          )}
+          style={{ left: gap.x }}
+          aria-label={
+            gap.expanded ? "collapse-calendar-gap" : "expand-calendar-gap"
+          }
+          {...gapTooltip.triggerProps}
+        >
+          <span className="leading-none">.</span>
+          <span className="leading-none">.</span>
+          <span className="leading-none">.</span>
+          <span className="[writing-mode:vertical-rl]">
+            {gap.expanded ? "hide" : `${gap.emptyDays}d`}
+          </span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="top" sideOffset={6} className="text-xs px-1.5 py-1">
+        <div className="grid gap-0.5">
+          <span>{hiddenDaysLabel}</span>
+          <span className="text-muted-foreground">{dateRangeLabel}</span>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
+function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
+  const thumbnailUrl = isLink
+    ? (item as LinkItem).metadata?.thumbnailUrl
+    : undefined;
+  const isPending = isLink && (item as LinkItem).metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
 
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
+  if (!isLink) {
+    return (
+      <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
+        {isWhiteboard ? (
+          <PanelTop className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
 
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
+  return (
+    <div className="relative h-9 w-9 flex items-center justify-center flex-shrink-0">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
 
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
+      {showSkeleton && (
+        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+          <Link2 className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+
+      <LinkFaviconBadge
+        url={(item as LinkItem).url}
+        className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
+      />
+    </div>
+  );
+}
+
+function TimelineMiniCard({
+  item,
+  workspaceId,
+  inPopover,
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  inPopover?: boolean;
+}) {
+  const isPdf = item.kind === "pdf";
+  const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
+  const href = isWhiteboard
+    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${generateSlug(
+        (item as WhiteboardItem).title || "untitled-whiteboard",
+      )}?whiteboardId=${item._id}`
+    : isPdf
+      ? `/home/${(item as PdfItem).workingSpaceId}/${generateSlug(
+          (item as PdfItem).title || "untitled-pdf",
+        )}?pdfId=${item._id}`
+      : isLink
+        ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
+            (item as LinkItem).title ||
+              (item as LinkItem).metadata?.authorName ||
+              "link",
+          )}?linkId=${item._id}`
+        : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+
+  const createdDate = new Date(item.createdAt);
+  const isDifferentYear =
+    createdDate.getFullYear() !== new Date().getFullYear();
+
+  const cardClassName = cn(
+    "group flex items-center gap-2 border border-border bg-card hover:border-primary/20 hover:bg-muted/40 transition-colors app-radius-md px-2.5 py-2",
+    inPopover ? "w-full" : "w-[168px]",
+  );
+
+  const cardContent = (
+    <>
+      <TimelineMiniThumbnail item={item} />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
+          {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
+        </p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {createdDate.toLocaleDateString(undefined, {
+            month: "short",
+            day: "numeric",
+            year: isDifferentYear ? "numeric" : undefined,
+          })}
+        </p>
+      </div>
+    </>
   );
 
   return (
-    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-[100px]">
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <Input
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
-              >
-                {pdf.title || "Untitled"}
-              </h3>
-            )}
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              PDF upload
-            </p>
-          </div>
+    <IntentPrefetchLink href={href} className={cardClassName}>
+      {cardContent}
+    </IntentPrefetchLink>
+  );
+}
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
+function getWorkspaceItemDetails(
+  item: WorkspaceEntry,
+  workspaceId?: Id<"workingSpaces">,
+) {
+  if (item.kind === "whiteboard") {
+    const board = item as WhiteboardItem;
+    return {
+      title: board.title || "Untitled whiteboard",
+      subtitle: "",
+      href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+    };
+  }
+  if (item.kind === "pdf") {
+    const pdf = item as PdfItem;
+    return {
+      title: pdf.title || "Untitled PDF",
+      subtitle: "PDF upload",
+      href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+    };
+  }
+  if (item.kind === "link") {
+    const link = item as LinkItem;
+    return {
+      title:
+        link.title ||
+        link.metadata?.authorName ||
+        link.metadata?.siteName ||
+        link.url,
+      subtitle: link.metadata ? link.metadata.description : " ",
+      href: link.url,
+    };
+  }
+  const note = item as Note;
+  return {
+    title: note.title || "Untitled",
+    subtitle: note.preview
+      ? parseTiptapContentTruncateText(note.preview, 80)
+      : getContentPreviewFromBody(note.body),
+    href: `/home/${workspaceId}/${note.slug}?id=${note._id}`,
+  };
+}
+
+function WorkspaceItemSettings({
+  item,
+  onDelete,
+}: {
+  item: WorkspaceEntry;
+  onDelete?: (id: any) => void;
+}) {
+  if (item.kind === "whiteboard")
+    return (
+      <WhiteboardSettings
+        whiteboard={item as WhiteboardItem}
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "pdf")
+    return (
+      <PdfSettings
+        pdfId={item._id as Id<"pdfs">}
+        pdfTitle={(item as PdfItem).title}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "link")
+    return (
+      <LinkSettings
+        linkId={item._id as Id<"links">}
+        linkUrl={(item as LinkItem).url}
+        linkTitle={(item as LinkItem).title}
+        favorite={(item as LinkItem).favorite}
+        createdAt={item.createdAt}
+        updatedAt={item.updatedAt}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  const note = item as Note;
+  return (
+    <NoteSettings
+      noteId={note._id}
+      noteTitle={note.title}
+      ShowWidthOp={false}
+      IconVariant="vertical_icon"
+      DropdownMenuContentAlign="start"
+      TooltipContentAlign="start"
+      onDelete={onDelete}
+      BtnClassName="pt-0"
+    />
+  );
+}
+
+function WorkspaceItemThumbnail({
+  item,
+  compact = false,
+}: {
+  item: WorkspaceEntry;
+  compact?: boolean;
+}) {
+  const size = compact ? " w-10" : "w-full";
+  if (item.kind === "whiteboard")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <WhiteboardPreview
+          snapshot={(item as WhiteboardItem).snapshot}
+          preview={(item as WhiteboardItem).preview}
+        />
+      </div>
+    );
+  if (item.kind === "link")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <LinkThumbnail link={item as LinkItem} showFaviconBadge />
+      </div>
+    );
+  if ((item.kind === "note" || item.kind === "pdf") && !compact) return null;
+  return (
+    <div className={`${size} flex shrink-0 items-center justify-center`}>
+      <FileText className="h-6 w-6 text-primary" />
+    </div>
+  );
+}
+
+const WorkspaceGridCard = memo(function WorkspaceGridCard({
+  item,
+  workspaceId,
+  onDelete,
+  searchQuery,
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  // A social post's own publish date, not when we happened to save the link.
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
+  return (
+    <Card
+      onDoubleClick={open}
+      className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
+    >
+      <CardHeader className="pb-3">
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          {isSocialLink ? (
+            <div className="flex min-w-0 items-start gap-2.5">
+              <LinkAuthorAvatar
+                avatarUrl={link?.metadata?.authorAvatarUrl}
+                authorName={authorName || details.title}
+                className="mt-0.5 h-9 w-9"
+              />
+              <div className="min-w-0">
+                <CardTitle className="line-clamp-1 max-w-full break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">
+                  <HighlightText
+                    text={authorName || details.title}
+                    query={searchQuery}
+                  />
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {authorHandle}
+                  {authorHandle && postDate ? " · " : ""}
+                  {postDate ? formatLongDateTime(postDate) : null}
+                </span>
+              </div>
             </div>
-            <PdfSettings
-              pdfId={pdf._id}
-              pdfTitle={pdf.title}
-              iconVariant="vertical_icon"
-              dropdownMenuContentAlign="start"
-              tooltipContentAlign="start"
-              onDelete={onDelete}
-              btnClassName="pt-0 mr-10 mt-1.5"
-            />
-            <Button
-              size="sm"
-              asChild
-              className="hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[2px_2px_0px] absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-            >
-              <IntentPrefetchLink href={pdfHref}>
-                <span aria-label="open-upload">Open</span>
-              </IntentPrefetchLink>
-            </Button>
+          ) : (
+            <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
+              <HighlightText text={details.title} query={searchQuery} />
+            </CardTitle>
+          )}
+          <div onDoubleClick={(e) => e.stopPropagation()}>
+            <WorkspaceItemSettings item={item} onDelete={onDelete} />
           </div>
+        </div>
+        {item.kind !== "link" && (
+          <p className="text-xs text-muted-foreground">
+            Created {formatLongDate(item.createdAt)} · Last updated{" "}
+            {formatLongDate(item.updatedAt)}
+          </p>
+        )}
+      </CardHeader>
+      <CardContent className="flex flex-1 flex-col gap-3">
+        {isSocialLink ? (
+          <>
+            <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
+              <HighlightText
+                text={link?.metadata?.description || ""}
+                query={searchQuery}
+              />
+            </p>
+            {link?.metadata?.thumbnailUrl && (
+              <LinkThumbnail link={link} showFaviconBadge />
+            )}
+          </>
+        ) : (
+          <>
+            <WorkspaceItemThumbnail item={item} />
+            <p className="line-clamp-2 text-sm text-muted-foreground">
+              <HighlightText
+                text={details.subtitle || ""}
+                query={searchQuery}
+              />
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
+
+const WorkspaceListCard = memo(function WorkspaceListCard({
+  item,
+  workspaceId,
+  onDelete,
+  searchQuery,
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
+  return (
+    <Card
+      onDoubleClick={open}
+      className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
+    >
+      <CardContent className="flex w-full items-center gap-4 p-3">
+        {isSocialLink ? (
+          <LinkAuthorAvatar
+            avatarUrl={link?.metadata?.authorAvatarUrl}
+            className="h-10 w-10"
+          />
+        ) : (
+          <WorkspaceItemThumbnail item={item} compact />
+        )}
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+            <HighlightText
+              text={isSocialLink ? authorName || details.title : details.title}
+              query={searchQuery}
+            />
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {isSocialLink ? (
+              <>
+                {authorHandle}
+                {authorHandle && postDate ? " · " : ""}
+                {postDate ? formatLongDateTime(postDate) : null}
+              </>
+            ) : item.kind === "link" ? (
+              formatLongDate(item.updatedAt)
+            ) : (
+              <>
+                Created {formatLongDate(item.createdAt)} · Last updated{" "}
+                {formatLongDate(item.updatedAt)}
+              </>
+            )}
+          </p>
+          <p className="line-clamp-1 text-sm text-muted-foreground">
+            <HighlightText text={details.subtitle || ""} query={searchQuery} />
+          </p>
+        </div>
+        <div onDoubleClick={(e) => e.stopPropagation()}>
+          <WorkspaceItemSettings item={item} onDelete={onDelete} />
         </div>
       </CardContent>
     </Card>
+  );
+});
+
+function WhiteboardPreview({
+  snapshot,
+  preview,
+}: {
+  snapshot?: string;
+  preview?: string;
+}) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!snapshot) {
+      setThumbnailUrl(null);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    const renderThumbnail = async () => {
+      try {
+        const scene = JSON.parse(snapshot);
+        if (!Array.isArray(scene.elements) || scene.elements.length === 0) {
+          if (!cancelled) setThumbnailUrl(null);
+          return;
+        }
+        const { exportToSvg } = await import("@excalidraw/excalidraw");
+        const svg = await exportToSvg({
+          elements: scene.elements,
+          appState: scene.appState,
+          files: scene.files,
+          exportPadding: 24,
+        } as any);
+        objectUrl = URL.createObjectURL(
+          new Blob([new XMLSerializer().serializeToString(svg)], {
+            type: "image/svg+xml",
+          }),
+        );
+        if (!cancelled) setThumbnailUrl(objectUrl);
+      } catch {
+        if (!cancelled) setThumbnailUrl(null);
+      }
+    };
+
+    void renderThumbnail();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [snapshot]);
+
+  return (
+    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden border border-border">
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=" Whiteboard thumbnail"
+          draggable={false}
+          className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
+        />
+      ) : (
+        <>
+          <PanelTop className="h-8 w-8 text-primary/70" />
+          <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {preview || "Empty canvas"}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Matches "Jul 28, 2026" - used for note created/updated labels and post dates.
+function formatLongDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Matches "Jun 25, 2026, 5:36 PM" - used for social post timestamps.
+function formatLongDateTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function LinkFavicon({
+  url,
+  className,
+  grayscale = true,
+}: {
+  url: string;
+  className?: string;
+  grayscale?: boolean;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = getLinkFaviconUrl(url);
+
+  if (!faviconUrl || errored) {
+    return <Link2 className={cn("text-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      draggable={false}
+      className={cn(
+        "object-contain select-none [-webkit-user-drag:none]",
+        grayscale && "grayscale",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+function LinkFaviconBadge({
+  url,
+  className,
+  grayscale = true,
+}: {
+  url: string;
+  className?: string;
+  grayscale?: boolean;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-center overflow-hidden",
+        className,
+      )}
+    >
+      <LinkFavicon
+        url={url}
+        className="h-[100%] w-[100%]"
+        grayscale={grayscale}
+      />
+    </div>
+  );
+}
+
+function LinkThumbnail({
+  link,
+  showFaviconBadge = false,
+}: {
+  link: LinkItem;
+  showFaviconBadge?: boolean;
+}) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const thumbnailUrl = link.metadata?.thumbnailUrl;
+  const isPending = link.metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+  return (
+    <div className="relative w-full aspect-video app-radius-md overflow-hidden bg-muted">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300 ",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
+          <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
+          <span>{platformLabel(link.platform) || "Link"}</span>
+        </div>
+      )}
+
+      {showFaviconBadge && thumbnailUrl && imgLoaded && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 h-8 w-8"
+        />
+      )}
+    </div>
+  );
+}
+
+function LinkAuthorAvatar({
+  avatarUrl,
+  authorName,
+  className,
+}: {
+  avatarUrl?: string;
+  authorName?: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (!avatarUrl || errored) {
+    const initial = authorName?.trim().charAt(0).toUpperCase();
+    return (
+      <div
+        className={cn(
+          "rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm font-medium text-muted-foreground",
+          className,
+        )}
+      >
+        {initial ? (
+          initial
+        ) : (
+          <Link2 className="h-1/2 w-1/2 text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={avatarUrl}
+      alt={authorName || ""}
+      draggable={false}
+      onError={() => setErrored(true)}
+      className={cn(
+        "rounded-full object-cover flex-shrink-0 select-none [-webkit-user-drag:none]",
+        className,
+      )}
+    />
   );
 }
 
@@ -1595,7 +3459,7 @@ function EmptySearchResults({
   onClearSearch,
 }: EmptySearchResultsProps) {
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-border">
+    <Card className="bg-transparent  border-0">
       <CardContent className="pt-12 pb-12 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="h-10 w-10 flex items-center justify-center mb-4">
@@ -1605,7 +3469,7 @@ function EmptySearchResults({
             No results found
           </h3>
           <p className="text-muted-foreground mb-6">
-            No notes or uploads found for "{searchQuery}"
+            No items found for "{searchQuery}"
           </p>
           <Button
             variant="outline"
@@ -1651,30 +3515,97 @@ function EmptyTableState({
 }
 
 function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
+  if (viewMode === "calendar") {
+    return (
+      <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
+        <div className="relative min-w-0 w-full max-w-full">
+          <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
+            <div className="h-8 w-16 bg-border app-radius-md animate-pulse" />
+            <div className="h-8 w-20 bg-border app-radius-md animate-pulse" />
+          </div>
+          <div className="min-w-0 w-full max-w-full overflow-hidden">
+            <div className="relative w-full" style={{ height: 300 }}>
+              <div className="relative h-7 border-b border-border">
+                {[2, 34, 66].map((left, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-0 h-7 flex items-center"
+                    style={{ left: `${left}%` }}
+                  >
+                    <div className="h-2.5 w-14 bg-border app-radius-md animate-pulse" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="relative h-8 border-b border-border">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute top-1"
+                    style={{ left: `${i * 12.5 + 1}%` }}
+                  >
+                    <div className="h-2.5 w-4 bg-border app-radius-md animate-pulse" />
+                  </div>
+                ))}
+              </div>
+
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={`line-${i}`}
+                  className="absolute w-px bg-border/40"
+                  style={{ left: `${i * 12.5 + 1}%`, top: 60, bottom: 0 }}
+                />
+              ))}
+
+              <div className="absolute left-0 right-0" style={{ top: 64 }}>
+                {[8, 24, 42, 58, 74, 90].map((left, index) => (
+                  <div
+                    key={index}
+                    className="absolute"
+                    style={{ left: `${left}%`, transform: "translateX(-50%)" }}
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className="h-2.5 w-2.5 app-radius-full bg-border animate-pulse" />
+                      <div className="w-px h-3 bg-border" />
+                      <div className="w-[168px] border border-border bg-card app-radius-md px-2.5 py-2 space-y-1.5">
+                        <div className="h-3 w-3/4 bg-border app-radius-md animate-pulse" />
+                        <div className="h-2.5 w-1/2 bg-border app-radius-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (viewMode === "grid") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
         {Array.from({ length: 5 }).map((_, index) => (
           <Card
             key={index}
-            className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px]"
+            className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px] w-full mb-4 break-inside-avoid"
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
               </div>
             </CardHeader>
             <CardContent className="flex-grow flex-1">
               <div className="space-y-2">
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
-                <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
               </div>
             </CardContent>
-            <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-              <div className="h-4 w-24 bg-border rounded animate-pulse" />
-              <div className="h-9 w-12 bg-border rounded animate-pulse" />
+            <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
+              <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+              <div className="h-9 w-16 bg-border app-radius-md animate-pulse" />
             </CardFooter>
           </Card>
         ))}
@@ -1690,13 +3621,13 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 app-radius-md bg-border animate-pulse flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="h-5 w-2/3 bg-border rounded animate-pulse" />
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
+                <div className="h-5 w-2/3 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
-                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
               </div>
             </div>
           </CardContent>
@@ -1708,23 +3639,70 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
 
 function TablesSkeleton() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {Array.from({ length: 8 }).map((_, index) => (
-        <Card key={index} className="bg-card/50 backdrop-blur-sm border-border">
-          <CardHeader className="pb-3">
-            <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-          </CardHeader>
-          <CardContent className="pb-3">
-            <div className="space-y-2">
-              <div className="h-4 w-full bg-border rounded animate-pulse" />
-              <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
+    <div>
+      {/* Tab bar: simple flow layout sized to match the real ~44px tab strip */}
+      <div className="sticky top-0 left-0 mb-6 z-40">
+        <div className="flex items-center gap-1 px-1 pt-2 bg-muted border border-border border-b-0">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div
+              key={i}
+              className={`px-4 py-2.5 min-w-[110px] app-radius-lg border-2 border-b-0 ${
+                i === 0 ? "border-border bg-card" : "border-transparent"
+              }`}
+            >
+              <div className="h-4 w-16 bg-border app-radius-md animate-pulse" />
             </div>
-          </CardContent>
-          <CardFooter className="pt-3 border-t border-border">
-            <div className="h-4 w-24 bg-border rounded animate-pulse" />
-          </CardFooter>
-        </Card>
-      ))}
+          ))}
+        </div>
+        <div className="h-[2px] bg-border" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+        <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="relative flex-1 min-w-0 md:max-w-md">
+              <div className="h-9 w-full bg-border app-radius-md animate-pulse" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-auto justify-end">
+            <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+              <div className="h-9 w-10 bg-border animate-pulse" />
+              <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
+              <div className="h-9 w-10 bg-border animate-pulse" />
+            </div>
+            <div className="h-9 w-28 bg-border app-radius-lg animate-pulse" />
+            <div className="h-9 w-9 bg-border app-radius-lg animate-pulse" />
+          </div>
+        </div>
+
+        <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Card
+              key={index}
+              className="bg-card/90 backdrop-blur-sm border-border flex flex-col min-h-[230px] w-full mb-4 break-inside-avoid"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                  <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow flex-1">
+                <div className="space-y-2">
+                  <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
+                </div>
+              </CardContent>
+              <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

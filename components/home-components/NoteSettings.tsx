@@ -86,7 +86,7 @@ export default function NoteSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(100);
 
   const { noteWidth, toggleWidth } = useNoteWidth();
 
@@ -178,9 +178,14 @@ export default function NoteSettings({
     setInputValue(trimmedValue);
   };
 
-  const initiateDelete = () => {
-    setOpen(false);
-    setIsAlertOpen(true);
+  const initiateDelete = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (e.button === 0 && e.shiftKey) {
+      e.preventDefault();
+      handleDelete(e as React.MouseEvent<HTMLButtonElement>);
+    } else {
+      setOpen(false);
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -213,7 +218,6 @@ export default function NoteSettings({
     setOpen(false);
     setIsMoveDialogOpen(true);
   };
-
   return (
     <>
       <DropdownMenu
@@ -228,7 +232,7 @@ export default function NoteSettings({
             <TooltipTrigger asChild>
               <Button
                 variant="Trigger"
-                className={cn("px-0.5 h-8 mt-0.5", BtnClassName)}
+                className={cn("px-0.5 h-8", BtnClassName)}
                 {...tooltip.triggerProps}
                 aria-label="note-options"
               >
@@ -362,7 +366,7 @@ export default function NoteSettings({
             <DropdownMenuSeparator />
             <Button
               variant="SidebarMenuButton_destructive"
-              className="w-full h-8 px-2 text-sm"
+              className="w-full h-8 px-2 text-sm text-foreground"
               onClick={initiateDelete}
               aria-label="delete-note"
             >
@@ -388,6 +392,14 @@ export default function NoteSettings({
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
+
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

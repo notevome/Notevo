@@ -51,6 +51,10 @@ export function useNoteDownload({
       return;
     }
 
+    if (!noteTitle) {
+      alert("No Title available for this note to download.");
+      return;
+    }
     let parsedBody: any;
     try {
       parsedBody = JSON.parse(noteBody);
@@ -70,7 +74,7 @@ export function useNoteDownload({
       Image.configure({
         inline: false,
         allowBase64: true,
-        HTMLAttributes: { class: "rounded-lg border border-muted" },
+        HTMLAttributes: { class: "app-radius-lg border border-muted" },
       }),
       Link.configure({
         HTMLAttributes: {
@@ -101,7 +105,7 @@ export function useNoteDownload({
     let ext!: string;
     const filename = `${noteTitle || "note"}`;
 
-    // ── PDF Helper ──────────────────────────────────────────────
+    //  PDF Helper
     const createReadableExportElement = () => {
       const tempDiv = document.createElement("div");
       tempDiv.style.color = "#000000";
@@ -202,7 +206,9 @@ export function useNoteDownload({
 
     switch (format) {
       case "json":
-        content = JSON.stringify(parsedBody, null, 2);
+        // Include the note title alongside the parsed body so the
+        // exported JSON is self-describing, just like the PDF/DOCX/MD exports.
+        content = JSON.stringify({ title: noteTitle, ...parsedBody }, null, 2);
         type = "application/json";
         ext = "json";
         break;
@@ -224,12 +230,14 @@ export function useNoteDownload({
               filter: ["mark"],
               replacement: (c: any) => `==${c}==`,
             });
-          content = turndown.turndown(html);
+          // Prepend the title as an H1 so it shows up in the exported content,
+          // not just the filename.
+          content = `# ${noteTitle}\n\n${turndown.turndown(html)}`;
           type = "text/markdown";
           ext = "md";
         } catch (err) {
           console.warn("Markdown failed:", err);
-          content = generateText(parsedBody, extensions);
+          content = `${noteTitle}\n\n${generateText(parsedBody, extensions)}`;
           ext = "txt";
         }
         break;
@@ -240,7 +248,14 @@ export function useNoteDownload({
             sections: [
               {
                 properties: {},
-                children: parseTiptapToDocx(parsedBody.content || []),
+                children: [
+                  // Title paragraph, mirroring the title heading rendered in the PDF export.
+                  new Paragraph({
+                    text: noteTitle,
+                    heading: HeadingLevel.TITLE,
+                  }),
+                  ...parseTiptapToDocx(parsedBody.content || []),
+                ],
               },
             ],
           });
@@ -250,7 +265,7 @@ export function useNoteDownload({
         } catch (err) {
           console.error("DOCX generation failed:", err);
           alert("DOCX export failed falling back to text.");
-          content = generateText(parsedBody, extensions);
+          content = `${noteTitle}\n\n${generateText(parsedBody, extensions)}`;
           type = "text/plain";
           ext = "txt";
         }
@@ -272,7 +287,15 @@ export function useNoteDownload({
           const maxWidth = pageWidth - 2 * margin;
           const lineHeight = 7;
           let yPosition = margin;
-
+          pdf.setFontSize(24);
+          pdf.setFont("helvetica", "bold");
+          pdf.setTextColor(0, 0, 0);
+          const titleLines = pdf.splitTextToSize(noteTitle, maxWidth);
+          titleLines.forEach((line: string) => {
+            pdf.text(line, margin, yPosition, { baseline: "top" });
+            yPosition += 10;
+          });
+          yPosition += 6; // spacing after title
           const checkAndAddPage = (requiredSpace = lineHeight) => {
             if (yPosition + requiredSpace > pageHeight - margin) {
               pdf.addPage();
@@ -350,7 +373,11 @@ export function useNoteDownload({
                   );
                   lines.forEach((line: string, idx: number) => {
                     checkAndAddPage();
-                    pdf.text(line, idx === 0 ? margin + 5 : margin + 10, yPosition);
+                    pdf.text(
+                      line,
+                      idx === 0 ? margin + 5 : margin + 10,
+                      yPosition,
+                    );
                     yPosition += lineHeight;
                   });
                 });
@@ -374,7 +401,13 @@ export function useNoteDownload({
                     yPosition = margin;
                   }
                   pdf.setFillColor(248, 249, 250);
-                  pdf.rect(margin - 2, yPosition - 3.5, maxWidth + 4, codeLineHeight, "F");
+                  pdf.rect(
+                    margin - 2,
+                    yPosition - 3.5,
+                    maxWidth + 4,
+                    codeLineHeight,
+                    "F",
+                  );
                   pdf.setTextColor(40, 40, 40);
                   let xPos = margin + 1;
                   const charWidth = 1.4;
@@ -407,13 +440,21 @@ export function useNoteDownload({
                 const quoteStartY = yPosition;
                 pdf.setFontSize(10);
                 pdf.setFont("helvetica", "italic");
-                const quoteLines = pdf.splitTextToSize(quoteText, maxWidth - 15);
+                const quoteLines = pdf.splitTextToSize(
+                  quoteText,
+                  maxWidth - 15,
+                );
                 quoteLines.forEach((line: string) => {
                   checkAndAddPage();
                   pdf.text(line, margin + 10, yPosition);
                   yPosition += lineHeight;
                 });
-                pdf.line(margin + 2, quoteStartY - 2, margin + 2, yPosition - lineHeight + 2);
+                pdf.line(
+                  margin + 2,
+                  quoteStartY - 2,
+                  margin + 2,
+                  yPosition - lineHeight + 2,
+                );
                 yPosition += lineHeight * 0.3;
                 break;
               }
@@ -507,7 +548,7 @@ export function useNoteDownload({
 
   return { handleDownload };
 
-  // ── Parse Tiptap JSON → docx children ──────────────────────────
+  // Parse Tiptap JSON → docx children
   function parseTiptapToDocx(nodes: any[]): (Paragraph | any)[] {
     const children: (Paragraph | any)[] = [];
 
@@ -664,9 +705,7 @@ export function useNoteDownload({
         );
 
         if (itemNode.content?.length > 1) {
-          listItemsParsed.push(
-            ...parseTiptapToDocx(itemNode.content.slice(1)),
-          );
+          listItemsParsed.push(...parseTiptapToDocx(itemNode.content.slice(1)));
         }
       }
     });

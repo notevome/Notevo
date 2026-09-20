@@ -23,7 +23,7 @@ type HoveredLinkState = {
   left: number;
 };
 
-const HIDE_DELAY_MS = 120;
+const HIDE_DELAY_MS = 0;
 const COPY_FEEDBACK_MS = 1600;
 const CARD_WIDTH_PX = 320;
 
@@ -38,6 +38,7 @@ export function LinkHoverCard({
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
+  const isPinnedRef = useRef(false);
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
@@ -54,12 +55,14 @@ export function LinkHoverCard({
 
   const hideCard = useCallback(() => {
     clearHideTimer();
+    isPinnedRef.current = false;
     hoveredAnchorRef.current = null;
     setCopied(false);
     setHoveredLink(null);
   }, [clearHideTimer]);
 
   const scheduleHide = useCallback(() => {
+    if (isPinnedRef.current) return;
     clearHideTimer();
     hideTimerRef.current = window.setTimeout(() => {
       hoveredAnchorRef.current = null;
@@ -143,9 +146,42 @@ export function LinkHoverCard({
       scheduleHide();
     };
 
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const anchor = target.closest("a.novel-link");
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+
+      clearHideTimer();
+      isPinnedRef.current = true;
+      hoveredAnchorRef.current = anchor;
+      updateCardPosition(anchor);
+    };
+
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      if (!isPinnedRef.current) return;
+
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      if (popoverRef.current?.contains(target)) return;
+      if (hoveredAnchorRef.current?.contains(target)) return;
+
+      hideCard();
+    };
+
     const handleViewportChange = () => {
       if (!hoveredAnchorRef.current) return;
       updateCardPosition(hoveredAnchorRef.current);
+    };
+
+    const handleScroll = () => {
+      if (isPinnedRef.current) {
+        hideCard();
+        return;
+      }
+      handleViewportChange();
     };
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -156,14 +192,18 @@ export function LinkHoverCard({
 
     editorElement.addEventListener("mouseover", handleMouseOver);
     editorElement.addEventListener("mouseout", handleMouseOut);
-    window.addEventListener("scroll", handleViewportChange, true);
+    editorElement.addEventListener("click", handleClick);
+    document.addEventListener("mousedown", handleDocumentMouseDown, true);
+    window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", handleViewportChange);
     window.addEventListener("keydown", handleEscape);
 
     return () => {
       editorElement.removeEventListener("mouseover", handleMouseOver);
       editorElement.removeEventListener("mouseout", handleMouseOut);
-      window.removeEventListener("scroll", handleViewportChange, true);
+      editorElement.removeEventListener("click", handleClick);
+      document.removeEventListener("mousedown", handleDocumentMouseDown, true);
+      window.removeEventListener("scroll", handleScroll, true);
       window.removeEventListener("resize", handleViewportChange);
       window.removeEventListener("keydown", handleEscape);
       clearHideTimer();
@@ -201,7 +241,7 @@ export function LinkHoverCard({
         align="start"
         side="bottom"
         sideOffset={0}
-        className="z-[10002] flex w-[300px] items-center rounded-tl-xl border-border bg-muted p-0 text-popover-foreground"
+        className="z-[10002] flex w-[300px] items-center app-radius-xl border-border bg-muted p-0 text-popover-foreground"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onMouseEnter={clearHideTimer}
@@ -211,7 +251,7 @@ export function LinkHoverCard({
           href={hoveredLink.href}
           target="_blank"
           rel="noreferrer noopener"
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-tl-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex min-w-0 flex-1 items-center gap-1.5 app-radius-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
           onMouseDown={(event) => event.stopPropagation()}
         >
           <Globe className="h-3.5 w-3.5 shrink-0" />
@@ -235,7 +275,7 @@ export function LinkHoverCard({
           type="button"
           size="sm"
           variant="ghost"
-          className="h-8 px-2 text-xs !rounded-none"
+          className="h-8 px-2 text-xs !app-radius-none"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             if (!editor || !hoveredAnchorRef.current) return;

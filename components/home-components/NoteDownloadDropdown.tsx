@@ -19,9 +19,7 @@ import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 interface NoteDownloadDropdownProps {
   noteBody: string | undefined | null;
   noteTitle: string;
-  /** Alignment of the dropdown menu relative to its trigger. Defaults to "end". */
   align?: "end" | "start" | "center";
-  /** Extra class names for the trigger button. */
   className?: string;
 }
 
@@ -67,7 +65,7 @@ export default function NoteDownloadDropdown({
         <DropdownMenuTrigger asChild>
           <TooltipTrigger asChild>
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               className={`w-8 h-8 pt-0.5 ${className ?? ""}`}
               {...tooltip.triggerProps}
@@ -77,7 +75,11 @@ export default function NoteDownloadDropdown({
             </Button>
           </TooltipTrigger>
         </DropdownMenuTrigger>
-        <TooltipContent align="end" side="bottom">
+        <TooltipContent
+          align="end"
+          side="bottom"
+          className=" text-xs py-0.5 px-1.5"
+        >
           Download note
         </TooltipContent>
       </Tooltip>

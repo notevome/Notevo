@@ -8,8 +8,8 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
-import { insertAtTop, useMutation } from "convex/react";
-import { ChevronDown, FileUp, FileText } from "lucide-react";
+import { insertAtTop, useAction, useMutation } from "convex/react";
+import { ChevronDown, FileUp, FileText, Link2, PanelTop } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,72 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  FaYoutube,
+  FaXTwitter,
+  FaLinkedin,
+  FaInstagram,
+  FaLink,
+} from "react-icons/fa6";
 
-type PreferredAction = "note" | "upload";
+import {
+  detectLinkPlatform,
+  normalizeLinkUrl,
+  type LinkPlatform,
+} from "@/lib/link-platform";
+
+type PreferredAction = "note" | "upload" | "link" | "whiteboard";
 
 const STORAGE_KEY = "notevo_workspace_primary_create_action";
+
+const PLATFORM_LABELS: Record<LinkPlatform, string> = {
+  youtube: "YouTube",
+  x: "X (Twitter)",
+  linkedin: "LinkedIn",
+  instagram: "Instagram",
+  generic: "Link",
+};
+
+const PLATFORM_COLORS: Record<LinkPlatform, string> = {
+  youtube: "text-[#FF0000]",
+  x: "text-foreground",
+  linkedin: "text-[#0A66C2]",
+  instagram: "text-[#E4405F]",
+  generic: "text-muted-foreground",
+};
+
+function PlatformIcon({
+  platform,
+  className,
+}: {
+  platform: LinkPlatform;
+  className?: string;
+}) {
+  const colorClass = PLATFORM_COLORS[platform];
+  switch (platform) {
+    case "youtube":
+      return <FaYoutube className={cn(colorClass, className)} />;
+    case "x":
+      return <FaXTwitter className={cn(colorClass, className)} />;
+    case "linkedin":
+      return <FaLinkedin className={cn(colorClass, className)} />;
+    case "instagram":
+      return <FaInstagram className={cn(colorClass, className)} />;
+    default:
+      return <FaLink className={cn(colorClass, className)} />;
+  }
+}
 
 interface WorkingspaceNewDropdownBtnProps {
   notesTableId?: Id<"notesTables">;
@@ -44,11 +104,30 @@ export default function WorkingspaceNewDropdownBtn({
   const [preferredAction, setPreferredAction] =
     useState<PreferredAction>("note");
   const [isUploading, setIsUploading] = useState(false);
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [isInsertingLink, setIsInsertingLink] = useState(false);
+  const linkInputRef = useRef<HTMLInputElement>(null);
+
+  const detectedPlatform = useMemo(() => {
+    if (!linkUrl.trim()) return null;
+    // Only detect if it looks like a URL
+    if (!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
+      return null;
+    }
+    return detectLinkPlatform(linkUrl);
+  }, [linkUrl]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const savedAction = window.localStorage.getItem(STORAGE_KEY);
-    if (savedAction === "note" || savedAction === "upload") {
+    if (
+      savedAction === "note" ||
+      savedAction === "upload" ||
+      savedAction === "link" ||
+      savedAction === "whiteboard"
+    ) {
       setPreferredAction(savedAction);
     }
   }, []);
@@ -97,6 +176,9 @@ export default function WorkingspaceNewDropdownBtn({
 
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
+  const createLink = useMutation(api.links.createLink);
+  const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
+  const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
   const isDisabled = useMemo(
     () => !notesTableId || !workingSpaceId || !workingSpacesSlug || isUploading,
@@ -122,6 +204,24 @@ export default function WorkingspaceNewDropdownBtn({
       });
     }
   }, [createNote, notesTableId, toast, workingSpaceId, workingSpacesSlug]);
+
+  const handleCreateWhiteboard = useCallback(async () => {
+    if (!notesTableId || !workingSpaceId) return;
+    try {
+      await createWhiteboard({
+        title: "Untitled whiteboard",
+        notesTableId,
+        workingSpaceId,
+      });
+    } catch (error) {
+      console.error("Failed to create whiteboard:", error);
+      toast({
+        title: "Could not create whiteboard",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [createWhiteboard, notesTableId, toast, workingSpaceId]);
 
   const uploadPdfFile = useCallback(
     async (file: File) => {
@@ -175,14 +275,109 @@ export default function WorkingspaceNewDropdownBtn({
     [generateUploadUrl, notesTableId, sendPdf, toast, workingSpaceId],
   );
 
+  const handleInsertLink = useCallback(async () => {
+    if (!notesTableId || !workingSpaceId) return;
+
+    const trimmedUrl = linkUrl.trim();
+    if (!trimmedUrl) {
+      toast({
+        title: "URL required",
+        description: "Please enter a valid URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Basic URL validation
+    const finalUrl = normalizeLinkUrl(trimmedUrl);
+
+    try {
+      new URL(finalUrl);
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const platform = detectLinkPlatform(finalUrl);
+    const userTitle = linkTitle.trim() || undefined;
+
+    setIsInsertingLink(true);
+    try {
+      let fetchedTitle: string | undefined;
+      let metadata:
+        | Awaited<ReturnType<typeof fetchLinkMetadata>>["metadata"]
+        | any = undefined;
+      try {
+        const preview = await fetchLinkMetadata({ url: finalUrl, platform });
+        fetchedTitle = preview.title;
+        metadata = preview.metadata;
+      } catch (metadataError) {
+        console.error("Failed to fetch link preview:", metadataError);
+      }
+
+      await createLink({
+        url: finalUrl,
+        platform,
+        metadata,
+        title: userTitle ?? fetchedTitle,
+        workingSpaceId,
+        notesTableId,
+      });
+      setLinkUrl("");
+      setLinkTitle("");
+      setIsLinkDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to insert link:", error);
+      toast({
+        title: "Could not insert link",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInsertingLink(false);
+    }
+  }, [
+    createLink,
+    fetchLinkMetadata,
+    linkTitle,
+    linkUrl,
+    notesTableId,
+    toast,
+    workingSpaceId,
+  ]);
+
+  const handleSelectInsertLink = useCallback(() => {
+    persistPreferredAction("link");
+    setLinkUrl("");
+    setLinkTitle("");
+    setIsLinkDialogOpen(true);
+    setTimeout(() => {
+      linkInputRef.current?.focus();
+    }, 100);
+  }, [persistPreferredAction]);
+
   const handlePrimaryAction = useCallback(async () => {
     if (preferredAction === "upload") {
       fileInputRef.current?.click();
       return;
     }
 
+    if (preferredAction === "link") {
+      handleSelectInsertLink();
+      return;
+    }
+
+    if (preferredAction === "whiteboard") {
+      await handleCreateWhiteboard();
+      return;
+    }
+
     await handleCreateNote();
-  }, [handleCreateNote, preferredAction]);
+  }, [handleCreateNote, handleSelectInsertLink, preferredAction]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -204,6 +399,53 @@ export default function WorkingspaceNewDropdownBtn({
     fileInputRef.current?.click();
   }, [persistPreferredAction]);
 
+  const handleSelectWhiteboard = useCallback(async () => {
+    persistPreferredAction("whiteboard");
+    await handleCreateWhiteboard();
+  }, [handleCreateWhiteboard, persistPreferredAction]);
+
+  useEffect(() => {
+    const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "o"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCreateNote();
+      }
+    };
+    window.addEventListener("keydown", handlerCreateNoteShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerCreateNoteShortcut);
+  }, [handleCreateNote]);
+
+  useEffect(() => {
+    const handlerInsertLinkShortcut = (e: KeyboardEvent) => {
+      if (
+        e.shiftKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "l"
+      ) {
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const isEditableTarget =
+          tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+        if (isEditableTarget) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        handleSelectInsertLink();
+      }
+    };
+    window.addEventListener("keydown", handlerInsertLinkShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerInsertLinkShortcut);
+  }, [handleSelectInsertLink]);
+
   return (
     <>
       <input
@@ -216,7 +458,7 @@ export default function WorkingspaceNewDropdownBtn({
 
       <div
         className={cn(
-          "flex h-9 items-center overflow-hidden app-radius-lg",
+          "flex h-9 items-center overflow-hidden !app-radius-none",
           className,
         )}
       >
@@ -225,7 +467,7 @@ export default function WorkingspaceNewDropdownBtn({
           variant="outline"
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className="h-9 "
+          className="h-9 !app-radius-none"
         >
           {isUploading ? "Uploading..." : "New"}
         </Button>
@@ -236,24 +478,118 @@ export default function WorkingspaceNewDropdownBtn({
               type="button"
               variant="outline"
               disabled={isDisabled}
-              className="h-9 px-1 border-l-0 !rounded-none"
+              className="h-9 px-1 border-l-0 !app-radius-none"
               aria-label="open-create-menu"
             >
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => void handleSelectNote()}>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              New note
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={() => void handleSelectNote()}
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                New Note
+              </span>
+              <span className="inline-flex gap-0.5">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">Ctrl + Shift</span>
+                </kbd>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">O</span>
+                </kbd>
+              </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleSelectUpload}>
               <FileUp className="h-4 w-4 text-muted-foreground" />
               Upload PDF
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void handleSelectWhiteboard()}>
+              <PanelTop className="h-4 w-4 text-muted-foreground" />
+              New Whiteboard
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={handleSelectInsertLink}
+            >
+              <span className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-muted-foreground" />
+                Insert Link
+              </span>
+              <span className="inline-flex gap-0.5">
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">Shift</span>
+                </kbd>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">L</span>
+                </kbd>
+              </span>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Insert Link Dialog */}
+      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border px-4 pt-4 pb-2.5">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-primary" />
+              Insert Link
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Paste a link from YouTube, X, LinkedIn, Instagram, or any website.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-foreground">
+              URL <span className="text-destructive">*</span>
+            </label>
+            <Input
+              ref={linkInputRef}
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isInsertingLink) {
+                  e.preventDefault();
+                  void handleInsertLink();
+                }
+              }}
+              placeholder="https://youtube.com/watch?v=..."
+              className="border-border h-8"
+            />
+            {detectedPlatform && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 px-1">
+                <PlatformIcon platform={detectedPlatform} className="h-4 w-4" />
+                <span>
+                  Detected:{" "}
+                  <span className="text-foreground font-medium">
+                    {PLATFORM_LABELS[detectedPlatform]}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
+          <DialogFooter className=" flex-row-reverse w-full gap-2 pt-2.5">
+            <Button
+              onClick={() => void handleInsertLink()}
+              disabled={isInsertingLink || !linkUrl.trim()}
+              className=" h-8 !app-radius-none"
+            >
+              {isInsertingLink ? "Inserting..." : "Insert Link"}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setIsLinkDialogOpen(false)}
+              className="border-border h-8"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

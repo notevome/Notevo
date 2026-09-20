@@ -33,6 +33,7 @@ import Heading from "@tiptap/extension-heading";
 import { ReactNodeViewRenderer } from "@tiptap/react";
 import { CodeBlockComponent } from "./code-block-component";
 import TextAlign from "@tiptap/extension-text-align";
+import { ToggleAction } from "./toggle-action-node";
 
 const aiHighlight = AIHighlight;
 
@@ -49,7 +50,7 @@ const image = UpdatedImage.extend({
   addProseMirrorPlugins() {
     return [
       UploadImagesPlugin({
-        imageClass: cx("opacity-40 rounded-lg border border-stone-200"),
+        imageClass: cx("opacity-40 app-radius-lg border border-stone-200"),
       }),
     ];
   },
@@ -57,7 +58,7 @@ const image = UpdatedImage.extend({
   allowBase64: true,
   HTMLAttributes: {
     class: cx(
-      "rounded-lg border border-muted cursor-zoom-in transition-shadow duration-200",
+      "app-radius-lg border border-muted cursor-zoom-in transition-shadow duration-200",
     ),
   },
 });
@@ -134,7 +135,7 @@ const starterKit = StarterKit.configure({
   code: {
     HTMLAttributes: {
       class: cx(
-        "rounded-sm text-secondary-foreground bg-secondary px-1.5 py-0.5 font-mono text-[0.875em]",
+        "app-radius-sm text-secondary-foreground bg-secondary px-1.5 py-0.5 font-mono text-[0.875em]",
       ),
       spellcheck: "false",
     },
@@ -163,7 +164,7 @@ const customCodeBlock = CodeBlockLowlight.extend({
 
 const youtube = Youtube.configure({
   HTMLAttributes: {
-    class: cx("rounded-lg border border-muted my-4"),
+    class: cx("app-radius-lg border border-muted my-4"),
   },
   inline: false,
   width: 640,
@@ -259,4 +260,5 @@ export const defaultExtensions = [
   TipTapExtensionTableCell,
   TipTapExtensionTableHeader,
   textAlign,
+  ToggleAction,
 ];

@@ -36,10 +36,7 @@ export const sendPdf = mutation({
         throw new Error("Table not found");
       }
 
-      if (
-        args.workingSpaceId &&
-        table.workingSpaceId !== args.workingSpaceId
-      ) {
+      if (args.workingSpaceId && table.workingSpaceId !== args.workingSpaceId) {
         throw new Error("Table does not belong to the provided workspace");
       }
     }
@@ -62,6 +59,7 @@ export const sendPdf = mutation({
 export const getPdfsByTableId = query({
   args: {
     notesTableId: v.id("notesTables"),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -79,20 +77,22 @@ export const getPdfsByTableId = query({
       throw new Error("Workspace not found or not authorized");
     }
 
-    const pdfs = await ctx.db
+    const result = await ctx.db
       .query("pdfs")
       .withIndex("by_notesTableId", (q) =>
         q.eq("notesTableId", args.notesTableId),
       )
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
 
-    return Promise.all(
-      pdfs.map(async (pdf) => ({
+    const page = await Promise.all(
+      result.page.map(async (pdf) => ({
         ...pdf,
         fileUrl: await ctx.storage.getUrl(pdf.storageId),
       })),
     );
+
+    return { ...result, page };
   },
 });
 

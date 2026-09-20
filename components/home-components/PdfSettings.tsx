@@ -89,7 +89,7 @@ export default function PdfSettings({
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(100);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
@@ -141,6 +141,19 @@ export default function PdfSettings({
     }
   }, [deletePdf, onDelete, pdfId]);
 
+  const initiateDelete = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      if (event.button === 0 && event.shiftKey) {
+        event.preventDefault();
+        void handleDelete();
+      } else {
+        setOpen(false);
+        setIsAlertOpen(true);
+      }
+    },
+    [handleDelete],
+  );
+
   const handleFavoritePin = useCallback(async () => {
     if (!pdf) return;
     await updatePdf({
@@ -181,7 +194,7 @@ export default function PdfSettings({
             <TooltipTrigger asChild>
               <Button
                 variant={btnVariant || "Trigger"}
-                className={cn("px-0.5 h-8 mt-0.5", btnClassName)}
+                className={cn("px-0.5 h-8", btnClassName)}
                 size="icon"
                 {...tooltip.triggerProps}
                 aria-label="upload-options"
@@ -292,11 +305,8 @@ export default function PdfSettings({
             <DropdownMenuSeparator />
             <Button
               variant="SidebarMenuButton_destructive"
-              className="w-full h-8 px-2 text-sm"
-              onClick={() => {
-                setOpen(false);
-                setIsAlertOpen(true);
-              }}
+              className="w-full h-8 px-2 text-sm text-foreground"
+              onClick={initiateDelete}
               aria-label="delete-upload"
             >
               <FaRegTrashCan size={14} className="text-muted-foreground" />
@@ -321,6 +331,13 @@ export default function PdfSettings({
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

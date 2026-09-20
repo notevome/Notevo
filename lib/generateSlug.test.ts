@@ -2,15 +2,20 @@ import { describe, expect, it } from "vitest";
 import { generateSlug } from "./generateSlug";
 
 describe("generateSlug", () => {
-  it("lowercases and replaces non-alphanumerics with hyphens", () => {
-    expect(generateSlug("Hello, World!")).toBe("hello-world");
-    expect(generateSlug("  Hello   World  ")).toBe("hello-world");
-    expect(generateSlug("A_B+C")).toBe("a-b-c");
+  it.each([
+    ["Hello, World!", "hello-world"],
+    ["  Hello   World  ", "hello-world"],
+    ["A_B+C", "a-b-c"],
+    ["Release Notes 2026", "release-notes-2026"],
+  ])("normalizes %s into a URL slug", (input, expected) => {
+    expect(generateSlug(input)).toBe(expected);
   });
 
-  it("trims leading/trailing hyphens", () => {
-    expect(generateSlug("---Hello---")).toBe("hello");
-    expect(generateSlug("   ")).toBe("");
+  it.each([
+    ["---Hello---", "hello"],
+    ["   ", ""],
+    ["!!!", ""],
+  ])("trims generated separators for %s", (input, expected) => {
+    expect(generateSlug(input)).toBe(expected);
   });
 });
-

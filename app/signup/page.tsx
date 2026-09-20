@@ -25,6 +25,8 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
+import NotevoLogo from "@/public/Notevo-logo.svg";
+import NoteImage from "@/public/LightModeImage.svg";
 function SignInWithMagicLink({
   handleLinkSent,
 }: {
@@ -34,7 +36,6 @@ function SignInWithMagicLink({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Zod schema for email
   const emailSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address." }),
   });
@@ -85,7 +86,7 @@ function SignInWithMagicLink({
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={loading} className="mt-3">
+        <Button type="submit" disabled={loading} className="mt-3 ">
           {loading ? (
             <>
               <LoadingAnimation className="mx-2 w-4 h-4" /> Sending...
@@ -101,11 +102,8 @@ function SignInWithMagicLink({
 
 export default function SignInPage() {
   const [step, setStep] = useState<"signIn" | "linkSent">("signIn");
-  const [Timage, setTimage] = useState<string>("/NotevoLightNotePic.svg");
-  const [IconImage, setIconImage] = useState<string>("/Notevo-logo.svg");
   return (
     <div className=" force-light relative flex min-h-svh flex-col items-center justify-center p-6 md:p-10 overflow-hidden">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
       <div
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0"
@@ -129,7 +127,7 @@ export default function SignInPage() {
           }}
         />
       </div>
-      <div className="w-full relative max-w-sm Desktop:max-w-[53rem]  rounded-lg">
+      <div className="w-full relative max-w-sm Desktop:max-w-[53rem]  app-radius-lg">
         <motion.svg
           className="absolute z-[2] Desktop:-top-16 -top-14 Desktop:-left-16 -left-12 w-40 h-40 md:w-48 md:h-48 text-primary/80"
           viewBox="0 0 120 120"
@@ -152,8 +150,8 @@ export default function SignInPage() {
             }}
           />
         </motion.svg>
-        <div className="flex flex-col gap-4">
-          <span className=" w-full flex justify-start items-center px-1 ">
+        <div className="flex flex-col gap-2">
+          <span className=" w-full flex justify-start items-center ">
             <Badge variant="secondary" className="text-xs w-fit">
               BETA
             </Badge>
@@ -165,7 +163,7 @@ export default function SignInPage() {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center mb-2 text-center">
                     <Image
-                      src={IconImage}
+                      src={NotevoLogo}
                       alt="log Image"
                       width={45}
                       height={45}
@@ -190,7 +188,7 @@ export default function SignInPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-2 gap-2">
                         <SignInWithGitHub />
                         <SignInWithGoogle />
                       </div>
@@ -215,17 +213,17 @@ export default function SignInPage() {
               </div>
               <div className="relative hidden bg-card/60 backdrop-blur-md md:block">
                 <Image
-                  src={Timage}
+                  src={NoteImage}
                   alt="login Image"
                   width={800}
                   height={600}
                   className="absolute blur-sm opacity-60 inset-0 h-full w-full object-cover"
                 />
                 <Image
-                  src={IconImage}
+                  src={NotevoLogo}
                   alt="log Image"
-                  width={75}
-                  height={75}
+                  width={65}
+                  height={65}
                   className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0 object-cover"
                 />
               </div>
@@ -253,7 +251,7 @@ function SignInWithGitHub() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1"
+      className="w-full flex-1 "
       variant="outline"
       type="button"
       onClick={() => {
@@ -282,7 +280,7 @@ function SignInWithGoogle() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1"
+      className="w-full flex-1 !app-radius-none"
       variant="outline"
       type="button"
       onClick={() => {

@@ -3,17 +3,11 @@ import { NOISE_PNG } from "@/lib/data";
 import { cn } from "@/lib/utils";
 export default function MoreAboutMe() {
   return (
-    <section
-      id="about"
-      className={cn(
-        "px-4 sm:px-6 md:px-8",
-        "py-12 sm:py-16 md:py-20 Desktop:py-24",
-      )}
-    >
-      <MaxWContainer>
+    <section id="about" className="py-12 sm:py-16 md:py-20 Desktop:py-24">
+      <MaxWContainer className=" !max-w-[1300px]">
         <div className="relative pt-10">
-          <div className="absolute inset-x-0 bottom-0 top-4 rounded-sm bg-primary" />
-          <div className="absolute inset-x-0 bottom-0 top-2 rounded-sm bg-primary/90" />
+          <div className="absolute inset-x-0 bottom-0 top-4 app-radius-sm bg-primary" />
+          <div className="absolute inset-x-0 bottom-0 top-2 app-radius-sm bg-primary/90" />
 
           {/* Main paper */}
           <div
@@ -40,13 +34,13 @@ export default function MoreAboutMe() {
                 zIndex: 5,
               }}
             />
-            <div className="absolute top-0 bottom-0 left-16 w-px bg-[#f5a0a07d]" />
+            <div className="absolute top-0 bottom-0 left-10 md:left-16 w-px bg-[#f5a0a07d]" />
 
             <div
               className="w-full border border-border flex flex-col sm:flex-row items-center gap-6 sm:gap-10 px-6 sm:px-10"
               style={{ paddingTop: "9px", paddingBottom: "9px" }}
             >
-              <div className="flex flex-col justify-between py-6 pl-12 gap-3 w-full sm:w-2/3">
+              <div className="flex flex-col justify-between py-6 pl-6 md:pl-12 gap-3 w-full sm:w-2/3">
                 <div className="space-y-0">
                   <p
                     className="text-lg sm:text-xl leading-relaxed text-foreground"

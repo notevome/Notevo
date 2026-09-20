@@ -47,8 +47,8 @@ export default function PdfSettingsSidebar({
     });
   };
 
-  const pinTooltip = useHoverTooltip(200);
-  const deleteTooltip = useHoverTooltip(200);
+  const pinTooltip = useHoverTooltip(100);
+  const deleteTooltip = useHoverTooltip(100);
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
@@ -61,52 +61,65 @@ export default function PdfSettingsSidebar({
     }
   };
 
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setIsAlertOpen(true);
+    }
+  };
+
   return (
     <>
-        <div
-          className={cn(
-            "flex justify-end items-center px-1",
-            containerClassName,
-          )}
-        >
-          <Tooltip open={pinTooltip.open}>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleFavoritePin}
-                variant="SidebarMenuButton"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="pin-upload"
-                {...pinTooltip.triggerProps}
-              >
-                {pdf?.favorite ? (
-                  <PinOff size={16} className="text-muted-foreground" />
-                ) : (
-                  <Pin size={16} className="text-muted-foreground" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              {pdf?.favorite ? "Unpin upload" : "Pin upload"}
-            </TooltipContent>
-          </Tooltip>
+      <div
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          containerClassName,
+        )}
+      >
+        <Tooltip open={pinTooltip.open}>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleFavoritePin}
+              variant="SidebarMenuButton"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              aria-label="pin-upload"
+              {...pinTooltip.triggerProps}
+            >
+              {pdf?.favorite ? (
+                <PinOff size={16} className="text-muted-foreground" />
+              ) : (
+                <Pin size={16} className="text-muted-foreground" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent
+            side="right"
+            sideOffset={5}
+            className=" !app-radius-none"
+          >
+            {pdf?.favorite ? "Unpin upload" : "Pin upload"}
+          </TooltipContent>
+        </Tooltip>
 
-          <Tooltip open={deleteTooltip.open}>
-            <TooltipTrigger asChild>
-              <Button
-                onMouseDown={() => setIsAlertOpen(true)}
-                variant="SidebarMenuButton_destructive"
-                className="px-2 h-7 hover:bg-card"
-                aria-label="delete-upload"
-                {...deleteTooltip.triggerProps}
-              >
-                <X size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Delete upload
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        <Tooltip open={deleteTooltip.open}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="SidebarMenuButton_destructive"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              aria-label="delete-upload"
+              {...deleteTooltip.triggerProps}
+              onMouseDown={initiateDelete}
+            >
+              <X size={16} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+            Delete upload
+          </TooltipContent>
+        </Tooltip>
+      </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
@@ -117,6 +130,13 @@ export default function PdfSettingsSidebar({
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

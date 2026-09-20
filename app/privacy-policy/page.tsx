@@ -2,8 +2,11 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import { NOISE_PNG } from "@/lib/data";
 import { useMediaQuery } from "react-responsive";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 function SubSection({
   title,
   children,
@@ -51,6 +54,7 @@ export default function PrivacyPage() {
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useMediaQuery({ maxWidth: 640 });
 
+  const router = useRouter();
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 80);
@@ -61,26 +65,12 @@ export default function PrivacyPage() {
 
   return (
     <div className=" relative force-light fadeUp bg-background text-foreground flex flex-col min-h-screen">
-      {/* Real PNG grain noise overlay — always light mode, fixed values */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none select-none absolute inset-0 "
-        style={{
-          backgroundImage: `url(${NOISE_PNG})`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.07,
-          mixBlendMode: "multiply",
-          zIndex: 5,
-        }}
-      />
-
       <div className="flex-grow">
         <MaxWContainer className="max-w-[760px] mx-auto px-6 pb-44">
           {/* Hero */}
           <div className="pt-16 pb-10 opacity-0 translate-y-3 animate-[fadeUp_0.4s_0.05s_ease_forwards]">
             <div className="text-[0.68rem] tracking-widest uppercase mb-0.5 opacity-60">
-              <p className="leading-tight text-[0.78rem] font-medium text-primary">
+              <p className="leading-tight text-[0.78rem] font-semibold text-primary">
                 Last Modified: December 2, 2025
               </p>
             </div>
@@ -251,6 +241,24 @@ export default function PrivacyPage() {
               These changes are effective immediately upon posting.
             </SubSection>
           </SectionBlock>
+          <div
+            className={cn(
+              "pointer-events-auto w-full flex items-center justify-center mt-12 py-1.5",
+            )}
+          >
+            <Button
+              aria-label="Home"
+              variant="link"
+              className="cursor-pointer relative group flex justify-center items-center gap-0.5 text-foreground transition-all ease-in-out duration-150 hover:text-primary hover:no-underline"
+              onMouseDown={() => router.push("/")}
+            >
+              <ChevronLeft
+                size={16}
+                className="transition-all ease-in-out duration-150 text-foreground absolute top-3 -left-0.5 group-hover:text-primary group-hover:-left-1.5"
+              />
+              Home
+            </Button>
+          </div>
         </MaxWContainer>
       </div>
     </div>

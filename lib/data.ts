@@ -12,20 +12,30 @@ import {
 } from "lucide-react";
 
 export const NavLinks = [
-  // {
-  //   Name: "Home",
-  //   path: "/",
-  //   clicked: true,
-  // },
   {
     Name: "Features",
     path: "/#features",
     clicked: false,
+    target: "_self",
   },
   {
     Name: "About",
     path: "/#about",
     clicked: false,
+    target: "_self",
+  },
+  {
+    Name: "FAQ",
+    path: "/#faq",
+    clicked: false,
+    target: "_self",
+  },
+
+  {
+    Name: "Give our text editor a try.",
+    path: "https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn",
+    clicked: false,
+    target: "_blank",
   },
   // {
   //     Name:"Pricing",
@@ -34,6 +44,29 @@ export const NavLinks = [
   // },
 ] as const;
 
+export const AccordionData = [
+  {
+    id: "1",
+    itmevalue: "notevosfee",
+    trigger: "is notevo free?",
+    content:
+      "Well, for now and as long as we're still in beta it's free. But as I add real-time collaboration and AI, there will be a fee for that, but it's going to be $8 a month.",
+  },
+  {
+    id: "2",
+    itmevalue: "OSS",
+    trigger: "why is it open source?",
+    content:
+      "I want to create a product that is truly for the users,  Plus, it just feels good to share your work with the world and see how others can build on it.",
+  },
+  {
+    id: "3",
+    itmevalue: "ownership",
+    trigger: "Can I change my email?",
+    content:
+      "no unfortunately, you cannot change your email or transfer ownership of your account. BUT we're wokring on that ",
+  },
+] as const;
 export const HowToStartSteps = [
   {
     id: "1",

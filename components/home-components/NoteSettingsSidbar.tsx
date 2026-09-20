@@ -81,8 +81,13 @@ export default function NoteSettingsSidbar({
   );
   const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
 
-  const initiateDelete = () => {
-    setIsAlertOpen(true);
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -109,20 +114,23 @@ export default function NoteSettingsSidbar({
     });
   };
 
-  const pinTooltip = useHoverTooltip(200);
-  const deleteTooltip = useHoverTooltip(200);
+  const pinTooltip = useHoverTooltip(100);
+  const deleteTooltip = useHoverTooltip(100);
 
   return (
     <>
       <div
-        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          ContainerClassName,
+        )}
       >
         <Tooltip open={pinTooltip.open}>
           <TooltipTrigger asChild>
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-2 h-7 hover:bg-card"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
               aria-label="pin-note"
               {...pinTooltip.triggerProps}
             >
@@ -133,7 +141,7 @@ export default function NoteSettingsSidbar({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             {getNote?.favorite ? "Unpin note" : "Pin note"}
           </TooltipContent>
         </Tooltip>
@@ -141,16 +149,20 @@ export default function NoteSettingsSidbar({
         <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
             <Button
-              onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
-              className="px-2 h-7 hover:bg-card"
+              className="px-1.5 h-7 hover:bg-card !app-radius-none"
               aria-label="delete-note"
               {...deleteTooltip.triggerProps}
+              onMouseDown={initiateDelete}
             >
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
+          <TooltipContent
+            side="right"
+            sideOffset={5}
+            className=" !app-radius-none"
+          >
             Delete note
           </TooltipContent>
         </Tooltip>
@@ -165,6 +177,13 @@ export default function NoteSettingsSidbar({
               undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Folder,
   FolderOpen,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -28,6 +29,8 @@ import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
+import { useHomePane } from "./HomePaneDrawer";
+import { ShortcutBadge } from "../ui/shortcut-badge";
 
 interface SearchDialogProps {
   variant?: "default" | "SidebarMenuButton";
@@ -125,14 +128,12 @@ function NoteItem({
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
-        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
-        <FileText size={14} />
-      </div>
+      <FileText size={14} />
       <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={note.title || "Untitled"} query={query} />
@@ -166,7 +167,8 @@ function PdfItem({
   onIntentPrefetch,
   indented = false,
 }: any) {
-  const href = `/home/${pdf.workingSpaceId}/pdf/${pdf.slug}?pdfId=${pdf._id}`;
+  const pdfSlug = pdf.slug ? (pdf.slug.startsWith("/") ? pdf.slug : `/${pdf.slug}`) : "";
+  const href = `/home/${pdf.workingSpaceId}${pdfSlug}?pdfId=${pdf._id}`;
   return (
     <div
       onClick={onClick}
@@ -175,14 +177,12 @@ function PdfItem({
       onFocus={() => onIntentPrefetch?.(href)}
       onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
-        "flex items-center gap-3 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <div className="border-border bg-muted text-muted-foreground flex h-7 w-7 shrink-0 items-center justify-center app-radius-lg border transition-colors">
-        <File size={14} />
-      </div>
+      <File size={14} />
       <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText text={pdf.title || "Untitled"} query={query} />
@@ -191,6 +191,69 @@ function PdfItem({
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
         <span>{getRelativeTime(new Date(pdf.createdAt))}</span>
+      </div>
+    </div>
+  );
+}
+
+function getSearchLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function SearchLinkFavicon({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = url ? getSearchLinkFaviconUrl(url) : null;
+
+  if (!faviconUrl || errored) {
+    return <Globe className={cn("text-muted-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
+function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
+  return (
+    <div
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        indented && "ml-7",
+        isSelected ? "bg-border" : "hover:bg-border",
+      )}
+    >
+      <SearchLinkFavicon url={link.url} className="h-3.5 w-3.5 shrink-0" />
+      <div className="flex-1 overflow-hidden">
+        <p className="text-sm text-foreground font-medium truncate transition-colors">
+          <HighlightedText
+            text={link.title || link.url || "Untitled"}
+            query={query}
+          />
+        </p>
+      </div>
+      <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        <span>{getRelativeTime(new Date(link.createdAt))}</span>
       </div>
     </div>
   );
@@ -208,6 +271,7 @@ function TableSection({
   const [isExpanded, setIsExpanded] = useState(true);
   const notes: any[] = table.notes ?? [];
   const pdfs: any[] = table.pdfs ?? [];
+  const links: any[] = table.links ?? [];
   const items = [
     ...notes.map((note) => ({ ...note, kind: "note" as const })),
     ...pdfs.map((pdf) => ({
@@ -215,6 +279,7 @@ function TableSection({
       kind: "pdf" as const,
       slug: buildPdfSlug(pdf.title),
     })),
+    ...links.map((link) => ({ ...link, kind: "link" as const })),
   ].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
@@ -243,44 +308,49 @@ function TableSection({
       {isExpanded && (
         <div className=" relative ">
           <div className=" ml-5 absolute top-0 left-0 h-full w-px bg-muted-foreground/30" />
-          {items.length === 0 ? (
-            <p className="text-[11px] text-muted-foreground/40 text-center py-2 ml-6">
-              {query
-                ? `No notes or uploads match "${query}" here.`
-                : "No notes or uploads here."}
-            </p>
-          ) : (
-            items.map((item: any) =>
-              item.kind === "pdf" ? (
-                <PdfItem
-                  key={item._id}
-                  pdf={{
-                    ...item,
-                    workingSpaceName: workspace.name,
-                    tableName: table.name,
-                  }}
-                  onClick={() => onNoteClick(item)}
-                  isSelected={selectedNoteId === String(item._id)}
-                  query={query}
-                  onIntentPrefetch={onIntentPrefetch}
-                  indented
-                />
-              ) : (
-                <NoteItem
-                  key={item._id}
-                  note={{
-                    ...item,
-                    workingSpaceName: workspace.name,
-                    tableName: table.name,
-                  }}
-                  onClick={() => onNoteClick(item)}
-                  isSelected={selectedNoteId === String(item._id)}
-                  query={query}
-                  onIntentPrefetch={onIntentPrefetch}
-                  indented
-                />
-              ),
-            )
+          {items.map((item: any) =>
+            item.kind === "pdf" ? (
+              <PdfItem
+                key={item._id}
+                pdf={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={(e: any) => onNoteClick(item, e)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                onIntentPrefetch={onIntentPrefetch}
+                indented
+              />
+            ) : item.kind === "link" ? (
+              <LinkItem
+                key={item._id}
+                link={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={(e: any) => onNoteClick(item, e)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                indented
+              />
+            ) : (
+              <NoteItem
+                key={item._id}
+                note={{
+                  ...item,
+                  workingSpaceName: workspace.name,
+                  tableName: table.name,
+                }}
+                onClick={(e: any) => onNoteClick(item, e)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                onIntentPrefetch={onIntentPrefetch}
+                indented
+              />
+            ),
           )}
         </div>
       )}
@@ -300,7 +370,7 @@ function WorkspaceTree({
   searchTargets: any[];
   expandedWorkspaceIds: string[];
   toggleWorkspace: (id: string) => void;
-  onNoteClick: (note: any) => void;
+  onNoteClick: (note: any, e: any) => void;
   selectedNoteId?: string;
   query: string;
   onIntentPrefetch: (href: string) => void;
@@ -311,17 +381,14 @@ function WorkspaceTree({
         const workspaceId = String(workspace._id);
         const isExpanded = expandedWorkspaceIds.includes(workspaceId);
         const tables: any[] = workspace.tables ?? [];
-        const totalNotes = tables.reduce(
-          (acc: number, t: any) => acc + (t.notes?.length ?? 0),
-          0,
-        );
+        if (tables.length === 0) return null;
 
         return (
           <div key={workspace._id} className="overflow-hidden app-radius-lg">
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-border/50 hover:border-2 hover:bg-transparent"
+              className="h-8 w-full flex-1 justify-start gap-2 px-2 text-sm font-medium border-0 border-transparent hover:border-2 hover:bg-transparent"
               onClick={() => toggleWorkspace(workspaceId)}
             >
               <ChevronRight
@@ -345,23 +412,17 @@ function WorkspaceTree({
 
             {isExpanded && (
               <div className="space-y-0.5 px-1 py-1">
-                {tables.length === 0 ? (
-                  <p className="text-xs text-muted-foreground/50 text-center py-3">
-                    No tables in this workspace yet.
-                  </p>
-                ) : (
-                  tables.map((table: any) => (
-                    <TableSection
-                      key={table._id}
-                      table={table}
-                      workspace={workspace}
-                      selectedNoteId={selectedNoteId}
-                      query={query}
-                      onNoteClick={onNoteClick}
-                      onIntentPrefetch={onIntentPrefetch}
-                    />
-                  ))
-                )}
+                {tables.map((table: any) => (
+                  <TableSection
+                    key={table._id}
+                    table={table}
+                    workspace={workspace}
+                    selectedNoteId={selectedNoteId}
+                    query={query}
+                    onNoteClick={onNoteClick}
+                    onIntentPrefetch={onIntentPrefetch}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -430,11 +491,17 @@ export default function SearchDialog({
           workingSpaceName: ws.name,
           tableName: t.name,
         })),
+        ...(t.links ?? []).map((link: any) => ({
+          ...link,
+          kind: "link" as const,
+          workingSpaceName: ws.name,
+          tableName: t.name,
+        })),
       ]),
     );
   }, [searchTargets]);
 
-  const hasResults = (searchTargets?.length ?? 0) > 0;
+  const hasResults = allNotes.length > 0;
 
   const handleResultsScroll = useCallback(() => {
     const el = resultsScrollRef.current;
@@ -492,11 +559,12 @@ export default function SearchDialog({
   useEffect(() => {
     if (!open) return;
     const note = allNotes[selectedIndex];
-    if (!note) return;
+    if (!note || note.kind === "link") return;
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
     const href =
       note.kind === "pdf"
-        ? `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`
-        : `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+        ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
+        : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
     prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
@@ -507,14 +575,39 @@ export default function SearchDialog({
         : [...prev, workspaceId],
     );
   };
-
-  const handleNoteClick = (note: any) => {
+  const { openPane } = useHomePane();
+  const handleNoteClick = (note: any, event: any) => {
     setOpen(false);
-    if (note.kind === "pdf") {
-      router.push(`/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`);
+    if (note.kind === "link") {
+      window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
-    router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
+    if (note.kind === "pdf") {
+      if (event.button === 0 && event.altKey) {
+        event.preventDefault();
+        openPane({
+          type: "pdf",
+          id: note._id,
+          title: note.title || "Untitled",
+        });
+      } else {
+        router.push(
+          `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`,
+        );
+      }
+      return;
+    }
+    if (event.button === 0 && event.altKey) {
+      event.preventDefault();
+      openPane({
+        type: "note",
+        id: note._id,
+        title: note.title || "Untitled",
+      });
+    } else {
+      router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -526,7 +619,7 @@ export default function SearchDialog({
       setSelectedIndex((prev) => Math.max(prev - 1, 0));
     } else if (e.key === "Enter" && allNotes[selectedIndex]) {
       e.preventDefault();
-      handleNoteClick(allNotes[selectedIndex]);
+      handleNoteClick(allNotes[selectedIndex], e);
     }
   };
 
@@ -547,10 +640,10 @@ export default function SearchDialog({
               <div className="w-full flex items-center justify-between gap-1">
                 Search
                 <span className="inline-flex gap-1">
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">Ctrl</span>
                   </kbd>
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">K</span>
                   </kbd>
                 </span>
@@ -560,7 +653,7 @@ export default function SearchDialog({
         </DialogTrigger>
       )}
 
-      <DialogContent className="p-0 overflow-hidden bg-card border-border md:min-w-[850px] gap-0 shadow-2xl">
+      <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
         <DialogTitle className="sr-only">Search Notes</DialogTitle>
         <DialogDescription className="sr-only">
           Search across workspaces, tables, and notes, then open the selected
@@ -586,7 +679,7 @@ export default function SearchDialog({
         <div
           ref={resultsScrollRef}
           onScroll={handleResultsScroll}
-          className="min-h-[40vh] max-h-[40vh] overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent p-3"
+          className=" sm:min-h-[50vh] sm:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
         >
           {canScroll && scrollTop > 8 && (
             <div
@@ -646,23 +739,29 @@ export default function SearchDialog({
           <div className="w-full flex justify-between items-center">
             <span className="flex justify-center items-center gap-2 space-x-2">
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <ArrowDownUp size={14} />
                 </kbd>
                 <p className="text-foreground font-mono text-xs">Navigate</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <Undo2 size={14} />
                 </kbd>
-                <p className="text-foreground font-mono text-xs">Open</p>
+                <p className="text-foreground text-xs">Open</p>
+              </span>
+              <span className="flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                  Alt + click
+                </kbd>
+                <p className="text-foreground text-xs">Open in pane</p>
               </span>
             </span>
             <span className="flex justify-center items-center gap-2">
-              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                 ESC
               </kbd>
-              <p className="text-foreground font-mono text-xs">Close</p>
+              <p className="text-foreground  text-xs">Close</p>
             </span>
           </div>
         </DialogFooter>

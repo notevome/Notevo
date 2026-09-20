@@ -62,7 +62,7 @@ export default function WorkingSpaceSettings({
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const tooltip = useHoverTooltip();
+  const tooltip = useHoverTooltip(100);
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input
 
   useEffect(() => {
@@ -186,9 +186,14 @@ export default function WorkingSpaceSettings({
     setOpen(false);
   };
 
-  const initiateDelete = () => {
-    setOpen(false);
-    setIsAlertOpen(true);
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setOpen(false);
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -255,7 +260,7 @@ export default function WorkingSpaceSettings({
           <DropdownMenuGroup>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="w-full h-8 px-2 text-sm"
+              className="w-full h-8 px-2 text-sm text-foreground"
               onClick={initiateDelete}
               disabled={isDeleting}
               aria-label="delete-workspace"
@@ -267,7 +272,8 @@ export default function WorkingSpaceSettings({
                 </>
               ) : (
                 <>
-                  <FaRegTrashCan size={14} className=" text-current" /> Delete
+                  <FaRegTrashCan size={14} className=" text-muted-foreground" />{" "}
+                  Delete
                 </>
               )}
             </Button>
@@ -308,6 +314,13 @@ export default function WorkingSpaceSettings({
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

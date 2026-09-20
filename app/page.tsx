@@ -8,14 +8,13 @@ import Footer from "@/components/landingPage-components/Footer";
 import MoreAboutMe from "@/components/landingPage-components/MoreAboutMe";
 import PricingSection from "@/components/landingPage-components/pricingSection";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
-
+import FAQ from "@/components/landingPage-components/faq";
 export default async function HomePage() {
   if (await isAuthenticatedNextjs()) {
     redirect("/home");
   }
 
   return (
-    // Force light mode for the entire landing page regardless of user theme
     <div className="force-light">
       <div className="relative flex flex-col min-h-screen bg-background text-foreground">
         <div className="absolute inset-0">
@@ -26,8 +25,8 @@ export default async function HomePage() {
           <HowToStartSection />
           <FeaturesSection />
           <MoreAboutMe />
+          <FAQ />
           {/* <PricingSection /> */}
-          <SignUpToday />
         </div>
         <Footer />
       </div>

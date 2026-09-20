@@ -79,7 +79,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
             />
             <Button
               size="icon"
-              className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-none bg-primary text-primary-foreground hover:bg-primary/90"
+              className="absolute right-2 top-1/2 h-6 w-6 -translate-y-1/2 app-radius-full border-none bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => {
                 if (completion)
                   return complete(completion, {

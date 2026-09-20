@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
+import SignUpToday from "./SignUpToday";
 export default function Footer() {
   return (
     <div className="relative w-full overflow-hidden bg-transparent">
@@ -33,7 +34,7 @@ export default function Footer() {
           </defs>
         </svg>
       </div>
-      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 pb-10 bg-[#EFEFEF]">
+      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[20rem] bg-[#EFEFEF]">
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -70,6 +71,15 @@ export default function Footer() {
                 <li>
                   <Link href="/#features" className="hover:underline">
                     Features
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    Give our text editor a try
                   </Link>
                 </li>
               </ul>
@@ -115,6 +125,15 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
+                    href="https://github.com/notevome/Notevo"
+                    target="_blank"
+                    className="hover:underline"
+                  >
+                    {process.env.NEXT_PUBLIC_APP_VERSION}
+                  </Link>
+                </li>
+                <li>
+                  <Link
                     href="mailto:support@notevo.me"
                     className="hover:underline"
                   >
@@ -143,6 +162,14 @@ export default function Footer() {
           </div>
         </div>
       </footer>
+      <h1
+        style={{
+          textShadow: "2vh 2vh 0 #644A40",
+        }}
+        className="z-50 text-primary/30 inline-block text-nowrap text-[60vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-bold tracking-tight leading-[30vh] -indent-[10vh]"
+      >
+        Notevo
+      </h1>
     </div>
   );
 }

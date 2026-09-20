@@ -35,7 +35,7 @@ function ToolbarTooltipButton({
   label: string;
   shortcut: string;
 } & ComponentProps<typeof Button>) {
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(400);
 
   return (
     <Tooltip open={tooltip.open}>
@@ -44,7 +44,7 @@ function ToolbarTooltipButton({
       </TooltipTrigger>
       <TooltipContent
         side="top"
-        className=" flex justify-center items-center px-1.5"
+        className=" flex justify-center items-center gap-2 px-1 py-0.5"
         sideOffset={6}
       >
         <span>{label}</span>
@@ -129,45 +129,21 @@ export const TextButtons = () => {
   ];
 
   return (
-      <div className="flex">
-        {items.map((item) => (
-          <EditorBubbleItem
-            key={item.name}
-            onSelect={(editor) => {
-              item.command(editor);
-            }}
-          >
-            <ToolbarTooltipButton
-              label={item.label}
-              shortcut={item.shortcut}
-              size="sm"
-              className="border-none px-2 h-8"
-              variant="SidebarMenuButton"
-              type="button"
-            >
-              <item.icon
-                className={cn("h-4 w-4", {
-                  "text-primary": item.isActive(editor),
-                  "text-foreground": !item.isActive(editor),
-                })}
-              />
-            </ToolbarTooltipButton>
-          </EditorBubbleItem>
-        ))}
-
-        {alignItems.map((item) => (
+    <div className="flex">
+      {items.map((item) => (
+        <EditorBubbleItem
+          key={item.name}
+          onSelect={(editor) => {
+            item.command(editor);
+          }}
+        >
           <ToolbarTooltipButton
-            key={item.name}
             label={item.label}
             shortcut={item.shortcut}
             size="sm"
-            className="border-none px-2 h-8"
+            className="border-none px-2 h-8 !app-radius-none"
             variant="SidebarMenuButton"
             type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              (editor.commands as any).setTextAlign(item.align);
-            }}
           >
             <item.icon
               className={cn("h-4 w-4", {
@@ -176,7 +152,31 @@ export const TextButtons = () => {
               })}
             />
           </ToolbarTooltipButton>
-        ))}
-      </div>
+        </EditorBubbleItem>
+      ))}
+
+      {alignItems.map((item) => (
+        <ToolbarTooltipButton
+          key={item.name}
+          label={item.label}
+          shortcut={item.shortcut}
+          size="sm"
+          className="border-none px-2 h-8 !app-radius-none"
+          variant="SidebarMenuButton"
+          type="button"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            (editor.commands as any).setTextAlign(item.align);
+          }}
+        >
+          <item.icon
+            className={cn("h-4 w-4", {
+              "text-primary": item.isActive(editor),
+              "text-foreground": !item.isActive(editor),
+            })}
+          />
+        </ToolbarTooltipButton>
+      ))}
+    </div>
   );
 };

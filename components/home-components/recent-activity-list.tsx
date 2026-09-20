@@ -96,7 +96,7 @@ export function RecentActivityList() {
         <div className="space-y-4">
           {activities.map((activity, index) => (
             <div key={index} className="flex items-start gap-4">
-              <div className="rounded-full bg-muted p-2">
+              <div className="app-radius-full bg-muted p-2">
                 {getActivityIcon(activity.type)}
               </div>
               <div className="flex-1 space-y-1">

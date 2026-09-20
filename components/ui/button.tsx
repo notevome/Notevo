@@ -4,17 +4,16 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "../../lib/utils";
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap app-radius-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 outline-none ring-0",
+  "inline-flex items-center justify-center whitespace-nowrap app-radius-lg text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 outline-none ring-0 select-none",
   {
-    // transition-all duration-300 hover:translate-x-[-4px] hover:translate-y-[-4px] hover:rounded-md hover:shadow-[4px_4px_0px_black] active:translate-x-[0px] active:translate-y-[0px] active:rounded-2xl active:shadow-none
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground transition-all duration-300 border-r border-b border-transparent hover:border-muted/50 hover:translate-x-[-3px] hover:translate-y-[-3px] hover:rounded-tl-lg hover:shadow-[3px_3px_0px] hover:shadow-primary active:translate-x-[0px] active:translate-y-[0px]",
+          "variant-default | relative bg-primary text-primary-foreground shadow-[inset_0_3px_0_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.4)] hover:brightness-110 disabled:active:scale-100 duration-150",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-border/80 text-muted-foreground bg-background hover:bg-muted hover:border-border",
+          "border border-border text-muted-foreground bg-background hover:bg-muted",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: " hover:bg-border hover:text-foreground",
@@ -23,7 +22,7 @@ const buttonVariants = cva(
         SidebarMenuButton:
           "flex justify-start items-center gap-2 bg-none w-full text-foreground hover:bg-border",
         SidebarMenuButton_destructive:
-          "flex justify-start items-center gap-2 bg-none w-full text-foreground hover:bg-border hover:text-destructive",
+          "flex justify-start items-center gap-2 bg-none w-full text-muted-foreground hover:bg-border hover:text-destructive",
       },
       size: {
         default: "h-10 px-4 py-2",

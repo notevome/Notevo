@@ -71,8 +71,13 @@ export default function WorkingSpaceSettingsSidbar({
     if (workspace) return;
   });
 
-  const initiateDelete = () => {
-    setIsAlertOpen(true);
+  const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (event.button === 0 && event.shiftKey) {
+      event.preventDefault();
+      void handleDelete(event);
+    } else {
+      setIsAlertOpen(true);
+    }
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -96,26 +101,29 @@ export default function WorkingSpaceSettingsSidbar({
 
   const tableCount = tables?.length || 0;
   const hasContent = tableCount > 0;
-  const deleteTooltip = useHoverTooltip(200);
+  const deleteTooltip = useHoverTooltip(100);
 
   return (
     <>
       <div
-        className={cn("flex justify-end items-center px-1", ContainerClassName)}
+        className={cn(
+          "flex justify-end items-center px-0.5",
+          ContainerClassName,
+        )}
       >
         <Tooltip open={deleteTooltip.open}>
           <TooltipTrigger asChild>
             <Button
-              onMouseDown={initiateDelete}
               variant="SidebarMenuButton_destructive"
-              className="px-2 h-7 hover:bg-card"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-workspace"
               {...deleteTooltip.triggerProps}
+              onMouseDown={initiateDelete}
             >
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5}>
+          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
             Delete workspace
           </TooltipContent>
         </Tooltip>
@@ -149,6 +157,13 @@ export default function WorkingSpaceSettingsSidbar({
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <p>
+            if you don't wanna see again hold
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+              Shift
+            </span>
+            when you delete and it will be deleted without confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel className="bg-transparent border border-border hover:bg-accent">
               Cancel

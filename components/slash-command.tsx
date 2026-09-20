@@ -13,6 +13,7 @@ import {
   TextQuote,
   Youtube,
   Table,
+  ToggleLeft,
 } from "lucide-react";
 import { createSuggestionItems } from "novel";
 import { Command, renderItems } from "novel";
@@ -67,7 +68,7 @@ function YoutubeDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className=" pb-2.5 px-4">
+      <DialogContent className=" px-4 pt-4 pb-2.5">
         <DialogHeader>
           <DialogTitle>Embed YouTube Video</DialogTitle>
           <DialogDescription>
@@ -85,20 +86,21 @@ function YoutubeDialog({
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSubmit();
             }}
-            className={
-              error ? "border-destructive focus-visible:ring-destructive" : ""
-            }
+            className={` h-8
+             ${error ? "border-destructive focus-visible:ring-destructive" : ""} 
+            `}
             autoFocus
           />
           {error && <p className="text-sm text-destructive">{error}</p>}
         </div>
         <div className="flex justify-end gap-2 mt-2">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} className="h-8">
             Cancel
           </Button>
           <Button
             disabled={!youtubeUrlSchema.safeParse(url).success}
             onClick={handleSubmit}
+            className=" h-8 !app-radius-none before:!app-radius-none before:inset-[-2px]"
           >
             Embed
           </Button>
@@ -245,6 +247,31 @@ export const suggestionItems = createSuggestionItems([
         }
       };
       input.click();
+    },
+  },
+  {
+    title: "Toggle Action",
+    description: "Create a collapsible action block.",
+    searchTerms: ["toggle", "collapse", "accordion", "action", "atomic"],
+    icon: <ToggleLeft size={18} />,
+    command: ({ editor, range }) => {
+      editor
+        .chain()
+        .focus()
+        .deleteRange(range)
+        .insertContent({
+          type: "toggleAction",
+          attrs: {
+            title: "toggle action",
+            open: true,
+          },
+          content: [
+            {
+              type: "paragraph",
+            },
+          ],
+        })
+        .run();
     },
   },
   {

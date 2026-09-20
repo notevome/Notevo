@@ -7,16 +7,12 @@ import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotevoLogo from "@/public/Notevo-logo.svg";
-import { useMediaQuery } from "react-responsive";
 
 export default function Navbar() {
   const { scrollY } = useScroll();
   const [inView, setInView] = useState<boolean>(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMobile = useMediaQuery({ maxWidth: 640 });
-
   useMotionValueEvent(scrollY, "change", (latest) => {
-    if (latest > 150) {
+    if (latest > 100) {
       setInView(true);
     } else {
       setInView(false);
@@ -28,11 +24,11 @@ export default function Navbar() {
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ ease: "linear", duration: 0.5 }}
-      className=" sticky top-0 w-full z-50 transition-all"
+      className=" sticky top-2 w-full z-50 transition-all"
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center  p-4 my-2 rounded-tl-2xl transition-all duration-300 bg-transparent",
+          "container mx-auto flex justify-between items-center p-4 my-2 app-radius-lg transition-all duration-300 bg-transparent",
         )}
         transition={{
           ease: "easeInOut",
@@ -40,22 +36,20 @@ export default function Navbar() {
           delay: 0,
         }}
       >
-        {inView && (
-          <div className=" fixed top-0 w-full min-h-[6rem] bg-gradient-to-b from-background via-background/80 from-15% via-40% to-100% to-transparent -z-50 left-0 pointer-events-none" />
-        )}
-        <Link
-          href="/"
-          onClick={() => {
-            if (window.location.pathname === "/") {
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }
-          }}
-          className="flex items-center gap-2 group"
-        >
+        <div
+          className={`fixed top-0 w-full min-h-[6rem] bg-gradient-to-b  ${inView ? "opacity-100" : "opacity-0"} from-background  from-0% to-100% to-transparent -z-50 left-0 pointer-events-none`}
+        />
+
+        <div className="flex justify-start items-center gap-[5.5rem]">
           <motion.div
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
-            className="relative"
+            className="relative "
+            onClick={() => {
+              if (window.location.pathname === "/") {
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }
+            }}
           >
             <Image
               src={NotevoLogo}
@@ -66,104 +60,26 @@ export default function Navbar() {
               height={40}
             />
           </motion.div>
-        </Link>
-        {/* 
-        <div className="flex justify-center items-center gap-4">
-          <nav className="hidden lg:flex items-center gap-3">
+          <nav className="hidden lg:flex justify-center items-center gap-3">
             {NavLinks.map((link, i) => (
-              <Button key={i} variant="ghost" className="px-2 h-8">
+              <Button key={i} variant="link" className="p-2 h-9">
                 <Link
                   href={link.path}
-                  className="relative text-sm font-medium text-foreground transition-colors group"
+                  target={link.target || "_self"}
+                  className="relative text-sm font-medium text-foreground group "
                 >
                   {link.Name}
                 </Link>
               </Button>
             ))}
           </nav>
-        </div> */}
-
-        <Button asChild className="hidden lg:block relative group h-9">
+        </div>
+        <Button asChild className="relative group h-10">
           <Link prefetch={true} href="/signup" className="text-sm font-medium">
             Login Or Create An Account
           </Link>
         </Button>
-
-        <button
-          className="lg:hidden p-2 hover:bg-border app-radius-lg transition-colors relative group"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          <motion.div
-            animate={isMenuOpen ? "open" : "closed"}
-            className="relative w-6 h-6"
-          >
-            <motion.span
-              className="absolute block w-6 h-0.5 bg-primary"
-              variants={{
-                closed: { top: 2, rotate: 0 },
-                open: { top: 10, rotate: 45 },
-              }}
-            />
-            <motion.span
-              className="absolute block w-6 h-0.5 bg-primary"
-              variants={{
-                closed: { top: 10, rotate: 0 },
-                open: { top: 10, rotate: -45 },
-              }}
-            />
-            <motion.span
-              className="absolute block w-6 h-0.5 bg-primary"
-              variants={{
-                closed: { top: 17, rotate: 0 },
-                open: { top: 10, rotate: -45 },
-              }}
-            />
-          </motion.div>
-        </button>
       </motion.div>
-
-      {isMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          className="lg:hidden absolute top-full left-0 right-0 mt-2 mx-4"
-        >
-          <div className="bg-background/95 backdrop-blur-xl border border-border app-radius-xl p-4 shadow-lg">
-            <nav className="flex flex-col gap-2">
-              {NavLinks.map((link, i) => (
-                <Link
-                  key={i}
-                  href={link.path}
-                  className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-border app-radius-md transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.Name}
-                </Link>
-              ))}
-
-              <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-border">
-                <Button
-                  variant="ghost"
-                  asChild
-                  className="w-full justify-center"
-                >
-                  <Link href="/signup" className="text-sm font-medium">
-                    Sign In
-                  </Link>
-                </Button>
-
-                <Button asChild className="w-full justify-center">
-                  <Link href="/signup" className="text-sm font-medium">
-                    Get Started
-                  </Link>
-                </Button>
-              </div>
-            </nav>
-          </div>
-        </motion.div>
-      )}
     </motion.header>
   );
 }
