@@ -279,7 +279,7 @@ export default function PublicNote({
         side="bottom"
         alignOffset={0}
         align="end"
-        className="w-[22rem] sm:w-[24rem] max-w-[calc(100vw-2rem)] px-3 pb-3 pt-2 space-y-4 text-muted-foreground z-[10000]"
+        className=" min-w-[18.5rem] max-w-[25rem] px-3 pb-3 pt-2 space-y-4 text-muted-foreground z-[10000]"
       >
         <DropdownMenuGroup className="relative">
           {getNote?.published ? (
@@ -329,32 +329,6 @@ export default function PublicNote({
                         )}
                       />
                       WhatsApp
-                    </TabsTrigger>{" "}
-                    <TabsTrigger
-                      value="slack"
-                      className="text-[11px] px-2 py-1 gap-1 h-6 shrink-0"
-                    >
-                      <SlackIcon className="w-3 h-3 text-[#E01E5A]" />
-                      Slack
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="whatsapp"
-                      className="text-[11px] px-2 py-1 gap-1 h-6 shrink-0"
-                    >
-                      <WhatsAppIcon
-                        className={cn(
-                          "w-3 h-3",
-                          isDark ? "text-[#25D366]" : "text-[#128C7E]",
-                        )}
-                      />
-                      WhatsApp
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="linkedin"
-                      className="text-[11px] px-2 py-1 gap-1 h-6 shrink-0"
-                    >
-                      <LinkedInIcon className="w-3 h-3 text-[#0A66C2]" />
-                      LinkedIn
                     </TabsTrigger>
                     <TabsTrigger
                       value="twitter"
@@ -362,6 +336,13 @@ export default function PublicNote({
                     >
                       <XIcon className="w-3 h-3 text-foreground" />
                       Twitter / X
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="linkedin"
+                      className="text-[11px] px-2 py-1 gap-1 h-6 shrink-0"
+                    >
+                      <LinkedInIcon className="w-3 h-3 text-[#0A66C2]" />
+                      LinkedIn
                     </TabsTrigger>
                   </TabsList>
                 </TabSlider>
@@ -398,7 +379,7 @@ export default function PublicNote({
                 {/* Facebook Card Preview */}
                 <TabsContent value="facebook" className="mt-0">
                   <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-44 bg-muted overflow-hidden">
+                    <div className="relative w-full h-48 bg-muted overflow-hidden">
                       <Image
                         src={`/api/og?id=${noteId}`}
                         alt="Facebook OG Preview"
@@ -428,7 +409,7 @@ export default function PublicNote({
                 {/* LinkedIn Card Preview */}
                 <TabsContent value="linkedin" className="mt-0">
                   <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-44 bg-muted overflow-hidden">
+                    <div className="relative w-full h-48 bg-muted overflow-hidden">
                       <Image
                         src={`/api/og?id=${noteId}`}
                         alt="LinkedIn OG Preview"
@@ -454,7 +435,7 @@ export default function PublicNote({
                 {/* Twitter / X Card Preview */}
                 <TabsContent value="twitter" className="mt-0">
                   <div className="w-full border border-border rounded-xl overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-44 bg-muted overflow-hidden">
+                    <div className="relative w-full h-48 bg-muted overflow-hidden">
                       <Image
                         src={`/api/og?id=${noteId}`}
                         alt="Twitter X OG Preview"
@@ -496,7 +477,7 @@ export default function PublicNote({
                         {getNote?.preview?.trim() ||
                           "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
                       </p>
-                      <div className="mt-2 relative w-full h-44 rounded-md border border-border overflow-hidden bg-muted">
+                      <div className="mt-2 relative w-full h-48 rounded-md border border-border overflow-hidden bg-muted">
                         <Image
                           src={`/api/og?id=${noteId}`}
                           alt="Slack OG Preview"
@@ -521,7 +502,7 @@ export default function PublicNote({
                         : "bg-[#ebf7ee] border-[#128c7e]/20",
                     )}
                   >
-                    <div className="relative w-full h-44 bg-muted overflow-hidden">
+                    <div className="relative w-full h-48 bg-muted overflow-hidden">
                       <Image
                         src={`/api/og?id=${noteId}`}
                         alt="WhatsApp OG Preview"
