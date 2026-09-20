@@ -7,14 +7,10 @@ import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import NotevoLogo from "@/public/Notevo-logo.svg";
-import { useMediaQuery } from "react-responsive";
 
 export default function Navbar() {
   const { scrollY } = useScroll();
   const [inView, setInView] = useState<boolean>(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMobile = useMediaQuery({ maxWidth: 640 });
-
   useMotionValueEvent(scrollY, "change", (latest) => {
     if (latest > 100) {
       setInView(true);
@@ -32,7 +28,7 @@ export default function Navbar() {
     >
       <motion.div
         className={cn(
-          "container mx-auto flex justify-between items-center  p-4 my-2 app-radius-lg transition-all duration-300 bg-transparent",
+          "container mx-auto flex justify-between items-center p-4 my-2 app-radius-lg transition-all duration-300 bg-transparent",
         )}
         transition={{
           ease: "easeInOut",
@@ -40,11 +36,11 @@ export default function Navbar() {
           delay: 0,
         }}
       >
-        {inView && (
-          <div className=" fixed top-0 w-full min-h-[5rem] bg-gradient-to-b from-background from-10% to-100% to-transparent -z-50 left-0 pointer-events-none" />
-        )}
+        <div
+          className={`fixed top-0 w-full min-h-[6rem] bg-gradient-to-b  ${inView ? "opacity-100" : "opacity-0"} from-background  from-0% to-100% to-transparent -z-50 left-0 pointer-events-none`}
+        />
 
-        <div className="flex justify-start items-center gap-20">
+        <div className="flex justify-start items-center gap-[5.5rem]">
           <motion.div
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
@@ -78,7 +74,7 @@ export default function Navbar() {
             ))}
           </nav>
         </div>
-        <Button asChild className="relative group h-9">
+        <Button asChild className="relative group h-10">
           <Link prefetch={true} href="/signup" className="text-sm font-medium">
             Login Or Create An Account
           </Link>

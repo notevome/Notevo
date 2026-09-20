@@ -150,8 +150,8 @@ export default function SignInPage() {
             }}
           />
         </motion.svg>
-        <div className="flex flex-col gap-4">
-          <span className=" w-full flex justify-start items-center px-1 ">
+        <div className="flex flex-col gap-2">
+          <span className=" w-full flex justify-start items-center ">
             <Badge variant="secondary" className="text-xs w-fit">
               BETA
             </Badge>
