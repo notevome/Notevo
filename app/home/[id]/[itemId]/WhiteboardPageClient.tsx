@@ -180,7 +180,7 @@ export default function WhiteboardPageClient({
   }, [saveScene]);
 
   if (whiteboard === undefined) {
-    return <div className="h-full min-h-[60vh] animate-pulse bg-card" />;
+    return <div className="h-full min-h-[60vh] w-full animate-pulse bg-card" />;
   }
 
   return (
