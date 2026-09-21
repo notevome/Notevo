@@ -17,7 +17,8 @@ const buttonVariants = cva(
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: " hover:bg-border hover:text-foreground",
-        Trigger: "bg-none text-foreground/70 hover:text-foreground",
+        Trigger:
+          "bg-none text-foreground/70 hover:text-foreground !outline-none !ring-0 focus:!outline-none focus:!ring-0",
         link: "text-primary underline-offset-4 hover:underline",
         SidebarMenuButton:
           "flex justify-start items-center gap-2 bg-none w-full text-foreground hover:bg-border",
