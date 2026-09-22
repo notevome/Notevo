@@ -251,7 +251,7 @@ export default function PublicNote({
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
-              className={cn("h-8 px-2 text-sm mt-0.5 gap-1", BtnClassName)}
+              className={cn("h-8 px-2 text-sm gap-1", BtnClassName)}
               {...tooltip.triggerProps}
             >
               {getNote?.published ? (

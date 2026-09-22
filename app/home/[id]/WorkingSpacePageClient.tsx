@@ -3054,10 +3054,19 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
 }) {
   const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const didPrefetch = useRef(false);
+  const prefetchOnce = useCallback(() => {
+    if (item.kind === "link") return;
+    if (didPrefetch.current) return;
+    didPrefetch.current = true;
+    router.prefetch(details.href);
+  }, [router, details.href, item.kind]);
+
   const open = () =>
     item.kind === "link"
       ? window.open(details.href, "_blank", "noopener,noreferrer")
       : router.push(details.href);
+
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
@@ -3067,6 +3076,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   return (
     <Card
       onDoubleClick={open}
+      onPointerEnter={prefetchOnce}
+      onMouseEnter={prefetchOnce}
+      onFocus={prefetchOnce}
+      onTouchStart={prefetchOnce}
+      onPointerDown={prefetchOnce}
       className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
     >
       <CardHeader className="pb-3">
@@ -3108,7 +3122,9 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           </p>
         )}
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-3">
+      <CardContent
+        className={`flex flex-1 flex-col ${isSocialLink && "gap-2"} `}
+      >
         {isSocialLink ? (
           <>
             <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
@@ -3124,7 +3140,9 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
         ) : (
           <>
             <WorkspaceItemThumbnail item={item} />
-            <p className="line-clamp-2 text-sm text-muted-foreground">
+            <p
+              className={`line-clamp-2 text-sm text-muted-foreground ${details.subtitle && "mt-2"}`}
+            >
               <HighlightText
                 text={details.subtitle || ""}
                 query={searchQuery}
@@ -3150,10 +3168,19 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
 }) {
   const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const didPrefetch = useRef(false);
+  const prefetchOnce = useCallback(() => {
+    if (item.kind === "link") return;
+    if (didPrefetch.current) return;
+    didPrefetch.current = true;
+    router.prefetch(details.href);
+  }, [router, details.href, item.kind]);
+
   const open = () =>
     item.kind === "link"
       ? window.open(details.href, "_blank", "noopener,noreferrer")
       : router.push(details.href);
+
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
@@ -3162,6 +3189,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   return (
     <Card
       onDoubleClick={open}
+      onPointerEnter={prefetchOnce}
+      onMouseEnter={prefetchOnce}
+      onFocus={prefetchOnce}
+      onTouchStart={prefetchOnce}
+      onPointerDown={prefetchOnce}
       className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
     >
       <CardContent className="flex w-full items-center gap-4 p-3">
@@ -3268,12 +3300,12 @@ function WhiteboardPreview({
           className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
         />
       ) : (
-        <>
+        <div className=" min-h-48 w-full flex justify-center items-center">
           <PanelTop className="h-8 w-8 text-primary/70" />
           <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {preview || "Empty canvas"}
           </span>
-        </>
+        </div>
       )}
     </div>
   );
@@ -3381,7 +3413,7 @@ function LinkThumbnail({
       {thumbnailUrl && (
         <img
           src={thumbnailUrl}
-          alt=""
+          alt="thumbnail url"
           draggable={false}
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgLoaded(false)}

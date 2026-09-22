@@ -15,6 +15,7 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  - [x] optimistic update layer
  - [x] caching
  - [ ] speech to text and text to speech
+ - [x] whiteboard
  - [ ] i might add AI
  - [x] fix the code Highlight in the editer
  - [X] add the feedback menu item in the user dropdown menu in the sidebar

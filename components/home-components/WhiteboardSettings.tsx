@@ -67,7 +67,7 @@ interface WhiteboardSettingsProps {
     createdAt: number;
     updatedAt: number;
   };
-  IconVariant: "vertical_icon" | "horizontal_icon";
+  IconVariant?: "vertical_icon" | "horizontal_icon";
   onDelete?: (id: Id<"whiteboards">) => void;
   className?: string;
 }

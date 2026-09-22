@@ -541,8 +541,6 @@ function NoteCard({ note }: { note: Note }) {
     }
   };
 
-  // `note.preview` is already plain text (computed server-side). `note.body` is
-  // the heavy TipTap JSON string (only present in some contexts).
   const previewText = note.preview
     ? parseTiptapContentTruncateText(note.preview, 80)
     : getContentPreviewFromBody(note.body);
@@ -550,6 +548,12 @@ function NoteCard({ note }: { note: Note }) {
   const isEmpty = !(note.preview || note.body);
   const router = useRouter();
   const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+  const didPrefetch = useRef(false);
+  const prefetchOnce = useCallback(() => {
+    if (didPrefetch.current) return;
+    didPrefetch.current = true;
+    router.prefetch(href);
+  }, [router, href]);
 
   const handleOpen = useCallback(() => {
     router.push(href);
@@ -558,6 +562,11 @@ function NoteCard({ note }: { note: Note }) {
   return (
     <Card
       onDoubleClick={handleOpen}
+      onPointerEnter={prefetchOnce}
+      onMouseEnter={prefetchOnce}
+      onFocus={prefetchOnce}
+      onTouchStart={prefetchOnce}
+      onPointerDown={prefetchOnce}
       className={cn(
         "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none",
         isEmpty
