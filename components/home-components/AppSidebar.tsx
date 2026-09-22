@@ -352,7 +352,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
       )}
       {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
         ? getWorkingSpaces.map((workingSpace) => (
-            <div className="flex h-[42px] p-[3px] w-full items-center overflow-hidden ">
+            <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden ">
               <Button
                 key={workingSpace._id}
                 className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
@@ -370,7 +370,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             </div>
           ))
         : createNoteWorkspace && (
-            <div className="flex p-[3px] w-full items-center overflow-hidden ">
+            <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden ">
               <Button
                 className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 disabled={loading}
