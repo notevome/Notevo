@@ -28,7 +28,11 @@ export default function FAQ() {
           className="max-w-2xl mx-auto md:mx-0 min-h-[500px] flex-1"
         >
           {AccordionData.map((item, index) => (
-            <AccordionItem key={index} value={item.itmevalue} className="mb-4">
+            <AccordionItem
+              key={index}
+              value={item.itmevalue}
+              className="mb-3.5 shadow-[inset_0_2px_0_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.1)]"
+            >
               <AccordionTrigger className="animated-highlight-container text-2xl font-medium">
                 {" "}
                 <span className="animated-highlight">{item.trigger}</span>{" "}

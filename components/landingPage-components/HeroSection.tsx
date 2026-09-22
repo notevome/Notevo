@@ -139,9 +139,9 @@ export default function HeroSection() {
           >
             <h1
               style={{
-                textShadow: "-5px -5px 0 #644A40",
+                textShadow: "-0.5vh -0.5vh 0 #644A40",
               }}
-              className="text-primary/30 leading-[50px] md:leading-[110px] md:text-[130px] text-[46px] font-bold tracking-tight"
+              className="text-primary/30 leading-[70px] md:leading-[110px] md:text-[130px] text-[75px] font-bold tracking-tight"
             >
               <span>Simple, Structured</span>
               <br />
@@ -173,7 +173,7 @@ export default function HeroSection() {
             </h1>
           </motion.div>
           <motion.p
-            className="text-start max-w-2xl text-lg md:text-3xl text-muted-foreground font-bold"
+            className="text-start max-w-2xl text-xl md:text-3xl md:leading-12 leading-6 text-muted-foreground font-bold md:py-0 py-3"
             initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
             transition={{ duration: 0.45, delay: 0.2 }}
