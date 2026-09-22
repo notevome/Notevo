@@ -3054,10 +3054,19 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
 }) {
   const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const didPrefetch = useRef(false);
+  const prefetchOnce = useCallback(() => {
+    if (item.kind === "link") return;
+    if (didPrefetch.current) return;
+    didPrefetch.current = true;
+    router.prefetch(details.href);
+  }, [router, details.href, item.kind]);
+
   const open = () =>
     item.kind === "link"
       ? window.open(details.href, "_blank", "noopener,noreferrer")
       : router.push(details.href);
+
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
@@ -3067,6 +3076,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   return (
     <Card
       onDoubleClick={open}
+      onPointerEnter={prefetchOnce}
+      onMouseEnter={prefetchOnce}
+      onFocus={prefetchOnce}
+      onTouchStart={prefetchOnce}
+      onPointerDown={prefetchOnce}
       className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
     >
       <CardHeader className="pb-3">
@@ -3154,10 +3168,19 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
 }) {
   const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const didPrefetch = useRef(false);
+  const prefetchOnce = useCallback(() => {
+    if (item.kind === "link") return;
+    if (didPrefetch.current) return;
+    didPrefetch.current = true;
+    router.prefetch(details.href);
+  }, [router, details.href, item.kind]);
+
   const open = () =>
     item.kind === "link"
       ? window.open(details.href, "_blank", "noopener,noreferrer")
       : router.push(details.href);
+
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
@@ -3166,6 +3189,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   return (
     <Card
       onDoubleClick={open}
+      onPointerEnter={prefetchOnce}
+      onMouseEnter={prefetchOnce}
+      onFocus={prefetchOnce}
+      onTouchStart={prefetchOnce}
+      onPointerDown={prefetchOnce}
       className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
     >
       <CardContent className="flex w-full items-center gap-4 p-3">
