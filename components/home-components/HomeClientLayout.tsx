@@ -18,8 +18,9 @@ import GlobalFolderDropUpload from "@/components/home-components/GlobalFolderDro
 import { MobileWarning } from "@/components/ui/mobile-warning";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import PdfSettings from "@/components/home-components/PdfSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import SearchDialog from "@/components/home-components/SearchDialog";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
 import { useQuery } from "@/cache/useQuery";
@@ -104,7 +105,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         } app-radius-none`}
       >
         <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
-          <div className="flex justify-between items-center w-full px-4 py-1 ">
+          <div className="flex justify-between items-center w-full px-3.5 py-0.5 ">
             <div className="flex justify-start items-center gap-2">
               {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
               {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
@@ -122,6 +123,13 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
                     TooltipContentAlign="end"
                   />
                 </span>
+              )}
+              {whiteboardId && (
+                <WhiteboardSettings
+                  whiteboardId={whiteboardId}
+                  IconVariant="horizontal_icon"
+                  className={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"}  right-2`}
+                />
               )}
             </div>
           </div>
