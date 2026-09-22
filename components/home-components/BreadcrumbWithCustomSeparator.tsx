@@ -1,7 +1,7 @@
 "use client";
 import { ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
+import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -86,12 +86,12 @@ export default function BreadcrumbWithCustomSeparator() {
                     </BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink asChild>
-                      <Link
+                      <IntentPrefetchLink
                         href={pathToSegment}
                         className="text-muted-foreground hover:text-primary transition-colors"
                       >
                         {displayName}
-                      </Link>
+                      </IntentPrefetchLink>
                     </BreadcrumbLink>
                   )}
                 </BreadcrumbItem>

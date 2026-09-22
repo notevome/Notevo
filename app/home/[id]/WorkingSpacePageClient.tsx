@@ -3052,37 +3052,19 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {
-  const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
-  const didPrefetch = useRef(false);
-  const prefetchOnce = useCallback(() => {
-    if (item.kind === "link") return;
-    if (didPrefetch.current) return;
-    didPrefetch.current = true;
-    router.prefetch(details.href);
-  }, [router, details.href, item.kind]);
-
-  const open = () =>
-    item.kind === "link"
-      ? window.open(details.href, "_blank", "noopener,noreferrer")
-      : router.push(details.href);
 
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
-  // A social post's own publish date, not when we happened to save the link.
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
-  return (
-    <Card
-      onDoubleClick={open}
-      onPointerEnter={prefetchOnce}
-      onMouseEnter={prefetchOnce}
-      onFocus={prefetchOnce}
-      onTouchStart={prefetchOnce}
-      onPointerDown={prefetchOnce}
-      className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
-    >
+
+  const cardStyles =
+    "group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg border bg-card text-card-foreground";
+
+  const cardInnerContent = (
+    <>
       <CardHeader className="pb-3">
         <div className="flex min-w-0 items-start justify-between gap-2">
           {isSocialLink ? (
@@ -3111,7 +3093,12 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
               <HighlightText text={details.title} query={searchQuery} />
             </CardTitle>
           )}
-          <div onDoubleClick={(e) => e.stopPropagation()}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onDoubleClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <WorkspaceItemSettings item={item} onDelete={onDelete} />
           </div>
         </div>
@@ -3151,7 +3138,25 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           </>
         )}
       </CardContent>
-    </Card>
+    </>
+  );
+
+  if (item.kind === "link") {
+    return (
+      <div
+        onClick={() =>
+          window.open(details.href, "_blank", "noopener,noreferrer")
+        }
+        className={cardStyles}
+      >
+        {cardInnerContent}
+      </div>
+    );
+  }
+  return (
+    <IntentPrefetchLink href={details.href} className={cardStyles}>
+      {cardInnerContent}
+    </IntentPrefetchLink>
   );
 });
 
@@ -3166,77 +3171,83 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {
-  const router = useRouter();
   const details = getWorkspaceItemDetails(item, workspaceId);
-  const didPrefetch = useRef(false);
-  const prefetchOnce = useCallback(() => {
-    if (item.kind === "link") return;
-    if (didPrefetch.current) return;
-    didPrefetch.current = true;
-    router.prefetch(details.href);
-  }, [router, details.href, item.kind]);
-
-  const open = () =>
-    item.kind === "link"
-      ? window.open(details.href, "_blank", "noopener,noreferrer")
-      : router.push(details.href);
 
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
   const authorName = link?.metadata?.authorName?.trim();
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
-  return (
-    <Card
-      onDoubleClick={open}
-      onPointerEnter={prefetchOnce}
-      onMouseEnter={prefetchOnce}
-      onFocus={prefetchOnce}
-      onTouchStart={prefetchOnce}
-      onPointerDown={prefetchOnce}
-      className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
-    >
-      <CardContent className="flex w-full items-center gap-4 p-3">
-        {isSocialLink ? (
-          <LinkAuthorAvatar
-            avatarUrl={link?.metadata?.authorAvatarUrl}
-            className="h-10 w-10"
+
+  const cardStyles =
+    "group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 rounded-xl text-card-foreground shadow";
+
+  const cardInnerContent = (
+    <CardContent className="flex w-full items-center gap-4 p-3">
+      {isSocialLink ? (
+        <LinkAuthorAvatar
+          avatarUrl={link?.metadata?.authorAvatarUrl}
+          className="h-10 w-10"
+        />
+      ) : (
+        <WorkspaceItemThumbnail item={item} compact />
+      )}
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+          <HighlightText
+            text={isSocialLink ? authorName || details.title : details.title}
+            query={searchQuery}
           />
-        ) : (
-          <WorkspaceItemThumbnail item={item} compact />
-        )}
-        <div className="min-w-0 flex-1 overflow-hidden">
-          <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
-            <HighlightText
-              text={isSocialLink ? authorName || details.title : details.title}
-              query={searchQuery}
-            />
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {isSocialLink ? (
-              <>
-                {authorHandle}
-                {authorHandle && postDate ? " · " : ""}
-                {postDate ? formatLongDateTime(postDate) : null}
-              </>
-            ) : item.kind === "link" ? (
-              formatLongDate(item.updatedAt)
-            ) : (
-              <>
-                Created {formatLongDate(item.createdAt)} · Last updated{" "}
-                {formatLongDate(item.updatedAt)}
-              </>
-            )}
-          </p>
-          <p className="line-clamp-1 text-sm text-muted-foreground">
-            <HighlightText text={details.subtitle || ""} query={searchQuery} />
-          </p>
-        </div>
-        <div onDoubleClick={(e) => e.stopPropagation()}>
-          <WorkspaceItemSettings item={item} onDelete={onDelete} />
-        </div>
-      </CardContent>
-    </Card>
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          {isSocialLink ? (
+            <>
+              {authorHandle}
+              {authorHandle && postDate ? " · " : ""}
+              {postDate ? formatLongDateTime(postDate) : null}
+            </>
+          ) : item.kind === "link" ? (
+            formatLongDate(item.updatedAt)
+          ) : (
+            <>
+              Created {formatLongDate(item.createdAt)} · Last updated{" "}
+              {formatLongDate(item.updatedAt)}
+            </>
+          )}
+        </p>
+        <p className="line-clamp-1 text-sm text-muted-foreground">
+          <HighlightText text={details.subtitle || ""} query={searchQuery} />
+        </p>
+      </div>
+
+      <div
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <WorkspaceItemSettings item={item} onDelete={onDelete} />
+      </div>
+    </CardContent>
+  );
+
+  if (item.kind === "link") {
+    return (
+      <div
+        onClick={() =>
+          window.open(details.href, "_blank", "noopener,noreferrer")
+        }
+        className={cardStyles}
+      >
+        {cardInnerContent}
+      </div>
+    );
+  }
+
+  return (
+    <IntentPrefetchLink href={details.href} className={cardStyles}>
+      {cardInnerContent}
+    </IntentPrefetchLink>
   );
 });
 
