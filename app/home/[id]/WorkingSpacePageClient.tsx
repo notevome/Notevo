@@ -3126,7 +3126,9 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
         ) : (
           <>
             <WorkspaceItemThumbnail item={item} />
-            <p className="line-clamp-2 text-sm text-muted-foreground">
+            <p
+              className={`line-clamp-2 text-sm text-muted-foreground ${details.subtitle && "mt-2"}`}
+            >
               <HighlightText
                 text={details.subtitle || ""}
                 query={searchQuery}
@@ -3383,7 +3385,7 @@ function LinkThumbnail({
       {thumbnailUrl && (
         <img
           src={thumbnailUrl}
-          alt=""
+          alt="thumbnail url"
           draggable={false}
           onLoad={() => setImgLoaded(true)}
           onError={() => setImgLoaded(false)}
