@@ -74,7 +74,7 @@ export function useNoteDownload({
       Image.configure({
         inline: false,
         allowBase64: true,
-        HTMLAttributes: { class: "rounded-lg border border-muted" },
+        HTMLAttributes: { class: "app-radius-lg border border-muted" },
       }),
       Link.configure({
         HTMLAttributes: {

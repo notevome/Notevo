@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
+import { FileOutput } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
@@ -32,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import MoveTableDialog from "./MoveTableDialog";
 interface TableSettingsProps {
   notesTableId: Id<"notesTables"> | any; // Strongly typed Id
   tableName: string | any;
@@ -58,6 +60,7 @@ export default function TableSettings({
   const [inputValue, setInputValue] = useState(tableName);
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert Dialog State
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const table = useQuery(api.notesTables.getTableById, { _id: notesTableId });
   const updateTable = useMutation(
@@ -65,9 +68,6 @@ export default function TableSettings({
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
 
-    // Try to find the table in cached queries to get workingSpaceId
-    // This is a best-effort optimization - server will sync correctly regardless
-    // We search through common workspace queries
     const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
@@ -185,7 +185,12 @@ export default function TableSettings({
       setIsAlertOpen(false); // Close Alert after deletion
     }
   };
-  const tooltip = useHoverTooltip(300);
+  const handleMoveDialogOpen = () => {
+    setOpen(false);
+    setIsMoveDialogOpen(true);
+  };
+
+  const tooltip = useHoverTooltip(100);
   const createdAtText = formatTimestamp(table?.createdAt);
   const updatedAtText = formatTimestamp(table?.updatedAt);
   return (
@@ -201,8 +206,8 @@ export default function TableSettings({
           <DropdownMenuTrigger asChild>
             <TooltipTrigger asChild>
               <Button
-                variant="Trigger"
-                className="pl-0.5 pr-0 h-9 mb-0.5 opacity-80"
+                variant="outline"
+                className="h-9 px-0.5  !app-radius-none bg-background"
                 {...tooltip.triggerProps}
                 aria-label="table-options"
               >
@@ -229,8 +234,19 @@ export default function TableSettings({
             </DropdownMenuGroup>
             <DropdownMenuGroup>
               <Button
-                variant="SidebarMenuButton_destructive"
+                variant="SidebarMenuButton"
                 className="w-full h-8 px-2 text-sm"
+                onClick={handleMoveDialogOpen}
+                aria-label="move-table"
+              >
+                <FileOutput size={14} className="text-muted-foreground" />
+                Move Table
+              </Button>
+
+              <DropdownMenuSeparator />
+              <Button
+                variant="SidebarMenuButton_destructive"
+                className="w-full h-8 px-2 text-sm text-foreground"
                 onClick={initiateDelete}
                 aria-label="delete-table"
               >
@@ -245,7 +261,7 @@ export default function TableSettings({
             </DropdownMenuGroup>
           </DropdownMenuContent>
           <TooltipContent side="bottom" alignOffset={1} align="end">
-            Rename , Delete
+            Rename, Move, Delete
           </TooltipContent>
         </Tooltip>
       </DropdownMenu>
@@ -261,7 +277,7 @@ export default function TableSettings({
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.
@@ -279,6 +295,18 @@ export default function TableSettings({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {table && (
+        <MoveTableDialog
+          open={isMoveDialogOpen}
+          onOpenChange={setIsMoveDialogOpen}
+          table={{
+            _id: notesTableId,
+            name: table.name,
+            workingSpaceId: table.workingSpaceId,
+          }}
+        />
+      )}
     </>
   );
 }

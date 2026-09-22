@@ -1,5 +1,5 @@
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
 import { v } from "convex/values";
 import { linkPlatformValidator, linkMetadataFields } from "./linkValidators";
 import {
@@ -18,10 +18,12 @@ type FetchedLinkMetadata = {
     thumbnailUrl?: string;
     authorName?: string;
     authorHandle?: string;
+    authorAvatarUrl?: string;
     publishedAt?: number;
     duration?: string;
     embedVideoId?: string;
     siteName?: string;
+    description?: string;
   };
 };
 
@@ -117,6 +119,10 @@ async function fetchOgTags(url: string) {
       extractTitleTag(html),
     image: extractMeta(html, "og:image") ?? extractMeta(html, "twitter:image"),
     siteName: extractMeta(html, "og:site_name"),
+    description:
+      extractMeta(html, "og:description") ??
+      extractMeta(html, "twitter:description") ??
+      extractMeta(html, "description"),
     author:
       extractMeta(html, "twitter:creator") ??
       extractMeta(html, "article:author") ??
@@ -124,11 +130,140 @@ async function fetchOgTags(url: string) {
   };
 }
 
+async function fetchYoutubeChannelInfoViaApi(videoId: string): Promise<{
+  avatarUrl?: string;
+  handle?: string;
+  channelName?: string;
+  videoDescription?: string;
+}> {
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if (!apiKey) return {};
+
+  try {
+    const videoRes = await fetchWithTimeout(
+      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${encodeURIComponent(
+        videoId,
+      )}&key=${apiKey}`,
+    );
+    if (!videoRes.ok) {
+      console.error(
+        `YouTube Data API videos.list failed: ${videoRes.status} ${await videoRes.text().catch(() => "")}`,
+      );
+      return {};
+    }
+    const videoData = (await videoRes.json()) as {
+      items?: { snippet?: { channelId?: string; description?: string } }[];
+    };
+    const videoSnippet = videoData.items?.[0]?.snippet;
+    const channelId = videoSnippet?.channelId;
+    const videoDescription = videoSnippet?.description?.trim() || undefined;
+    if (!channelId) return { videoDescription };
+
+    const channelRes = await fetchWithTimeout(
+      `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${encodeURIComponent(
+        channelId,
+      )}&key=${apiKey}`,
+    );
+    if (!channelRes.ok) {
+      console.error(
+        `YouTube Data API channels.list failed: ${channelRes.status} ${await channelRes.text().catch(() => "")}`,
+      );
+      return { videoDescription };
+    }
+    const channelData = (await channelRes.json()) as {
+      items?: {
+        snippet?: {
+          title?: string;
+          customUrl?: string;
+          thumbnails?: {
+            default?: { url?: string };
+            medium?: { url?: string };
+          };
+        };
+      }[];
+    };
+    const snippet = channelData.items?.[0]?.snippet;
+    if (!snippet) return { videoDescription };
+
+    const rawHandle = snippet.customUrl;
+    return {
+      avatarUrl:
+        snippet.thumbnails?.medium?.url ?? snippet.thumbnails?.default?.url,
+      handle: rawHandle
+        ? rawHandle.startsWith("@")
+          ? rawHandle
+          : `@${rawHandle}`
+        : undefined,
+      channelName: snippet.title,
+      videoDescription,
+    };
+  } catch (error) {
+    console.error("YouTube Data API channel lookup failed:", error);
+    return {};
+  }
+}
+
+function extractYoutubeHandleFromHtml(html: string): string | undefined {
+  const vanityMatch = html.match(/"vanityChannelUrl":"[^"]*\/(@[^"\\]+)"/);
+  if (vanityMatch?.[1]) return vanityMatch[1];
+
+  const canonicalBaseMatch = html.match(/"canonicalBaseUrl":"\\?\/(@[^"\\]+)"/);
+  if (canonicalBaseMatch?.[1]) return canonicalBaseMatch[1];
+
+  const itemPropMatch = html.match(
+    /<link[^>]+itemprop=["']url["'][^>]*href=["']https?:\/\/(?:www\.)?youtube\.com\/(@[^"'/?]+)["']/i,
+  );
+  if (itemPropMatch?.[1]) return itemPropMatch[1];
+
+  const canonicalMatch = html.match(
+    /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
+  );
+  if (canonicalMatch?.[1]) {
+    try {
+      const path = new URL(canonicalMatch[1]).pathname;
+      const segment = path.split("/").filter(Boolean).pop();
+      if (segment?.startsWith("@")) return segment;
+    } catch {
+      // Malformed canonical URL — nothing to extract.
+    }
+  }
+
+  return undefined;
+}
+
+async function fetchYoutubeChannelExtras(
+  channelUrl: string,
+): Promise<{ avatarUrl?: string; handle?: string }> {
+  try {
+    const response = await fetchWithTimeout(channelUrl, {
+      headers: {
+        // Bypasses the EU cookie-consent interstitial that would otherwise
+        // replace the real channel page with a consent screen.
+        Cookie: "CONSENT=YES+1",
+      },
+    });
+    if (!response.ok) return {};
+
+    const rawHtml = await response.text();
+    const html = rawHtml.slice(0, MAX_HTML_LENGTH);
+
+    const avatarUrl =
+      extractMeta(html, "og:image") ?? extractMeta(html, "twitter:image");
+    const handle = extractYoutubeHandleFromHtml(html);
+
+    return { avatarUrl, handle };
+  } catch (error) {
+    console.error("YouTube channel page fetch failed:", error);
+    return {};
+  }
+}
+
 async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
   const videoId = extractYoutubeVideoId(url) ?? undefined;
 
   let title: string | undefined;
   let authorName: string | undefined;
+  let authorUrl: string | undefined;
   let thumbnailUrl: string | undefined = videoId
     ? youtubeThumbnailUrl(videoId)
     : undefined;
@@ -144,15 +279,51 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
       const data = (await response.json()) as {
         title?: string;
         author_name?: string;
+        author_url?: string;
         thumbnail_url?: string;
       };
       title = data.title;
       authorName = data.author_name;
+      authorUrl = data.author_url;
       if (data.thumbnail_url) thumbnailUrl = data.thumbnail_url;
     }
   } catch (error) {
     console.error("YouTube oEmbed failed:", error);
   }
+
+  let authorHandle: string | undefined;
+  let authorAvatarUrl: string | undefined;
+  let description: string | undefined;
+
+  if (videoId) {
+    const apiInfo = await fetchYoutubeChannelInfoViaApi(videoId);
+    authorAvatarUrl = apiInfo.avatarUrl;
+    authorHandle = apiInfo.handle;
+    description = apiInfo.videoDescription;
+    if (!authorName && apiInfo.channelName) authorName = apiInfo.channelName;
+    console.log("[yt-metadata] Data API result", {
+      videoId,
+      avatarUrl: apiInfo.avatarUrl,
+      handle: apiInfo.handle,
+    });
+  }
+
+  if ((!authorAvatarUrl || !authorHandle) && authorUrl) {
+    const extras = await fetchYoutubeChannelExtras(authorUrl);
+    console.log("[yt-metadata] HTML scrape fallback result", {
+      authorUrl,
+      avatarUrl: extras.avatarUrl,
+      handle: extras.handle,
+    });
+    authorAvatarUrl = authorAvatarUrl ?? extras.avatarUrl;
+    authorHandle = authorHandle ?? extras.handle;
+  }
+
+  console.log("[yt-metadata] final", {
+    videoId,
+    authorHandle,
+    authorAvatarUrl,
+  });
 
   if (!videoId) {
     return {
@@ -160,7 +331,10 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
       metadata: {
         thumbnailUrl,
         authorName,
+        authorHandle,
+        authorAvatarUrl,
         siteName: "YouTube",
+        description,
       },
     };
   }
@@ -169,18 +343,45 @@ async function fetchYoutubeMetadata(url: string): Promise<FetchedLinkMetadata> {
     metadata: {
       thumbnailUrl,
       authorName,
+      authorHandle,
+      authorAvatarUrl,
       publishedAt,
       duration,
       siteName: "YouTube",
       embedVideoId: videoId,
+      description,
     },
   };
+}
+
+function extractOembedTweetText(html?: string): string | undefined {
+  if (!html) return undefined;
+  const paragraphMatch = html.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+  if (!paragraphMatch?.[1]) return undefined;
+  const withoutTags = paragraphMatch[1].replace(/<[^>]+>/g, "");
+  const decoded = decodeHtmlEntities(withoutTags).trim();
+  return decoded || undefined;
+}
+
+async function fetchXProfileAvatar(
+  handle: string,
+): Promise<string | undefined> {
+  try {
+    const profileUrl = `https://x.com/${encodeURIComponent(handle)}`;
+    const og = await fetchOgTags(profileUrl);
+    return og.image;
+  } catch (error) {
+    console.error("X profile avatar fetch failed:", error);
+    return undefined;
+  }
 }
 
 async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
   let authorName: string | undefined;
   let authorHandle: string | undefined;
   let thumbnailUrl: string | undefined;
+  let authorAvatarUrl: string | undefined;
+  let description: string | undefined;
 
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(
@@ -195,6 +396,7 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
       };
       authorName = data.author_name;
       authorHandle = data.author_url?.split("/").filter(Boolean).pop();
+      description = extractOembedTweetText(data.html);
     }
   } catch (error) {
     console.error("X oEmbed failed:", error);
@@ -204,17 +406,33 @@ async function fetchXMetadata(url: string): Promise<FetchedLinkMetadata> {
     const og = await fetchOgTags(url);
     thumbnailUrl = og.image;
     if (!authorName && og.author) authorName = og.author.replace(/^@/, "");
+    if (!description && og.description) {
+      description = decodeHtmlEntities(og.description);
+    }
   } catch (error) {
     console.error("X OG failed:", error);
   }
+
+  if (authorHandle) {
+    authorAvatarUrl = await fetchXProfileAvatar(authorHandle);
+  }
+
+  console.log("[x-metadata] result", {
+    url,
+    authorHandle,
+    authorName,
+    authorAvatarUrl,
+  });
 
   return {
     title: authorName ? `${authorName} on X` : undefined,
     metadata: {
       thumbnailUrl,
+      authorAvatarUrl,
       authorName,
       authorHandle,
       siteName: "X",
+      description,
     },
   };
 }
@@ -226,6 +444,7 @@ async function fetchInstagramMetadata(
     const og = await fetchOgTags(url);
     let authorName: string | undefined;
     let authorHandle: string | undefined;
+    let caption: string | undefined;
     if (og.title) {
       const titleDecoded = decodeHtmlEntities(og.title);
       const onIg = titleDecoded.match(
@@ -234,6 +453,7 @@ async function fetchInstagramMetadata(
       if (onIg) {
         authorName = onIg[1].trim();
         authorHandle = onIg[1].trim();
+        caption = onIg[2]?.trim() || undefined;
       }
     }
 
@@ -244,6 +464,9 @@ async function fetchInstagramMetadata(
         authorName,
         authorHandle,
         siteName: og.siteName ?? "Instagram",
+        description:
+          caption ||
+          (og.description ? decodeHtmlEntities(og.description) : undefined),
       },
     };
   } catch (error) {
@@ -257,12 +480,132 @@ async function fetchLinkedInMetadata(
 ): Promise<FetchedLinkMetadata> {
   try {
     const og = await fetchOgTags(url);
+    const html = og.html ?? "";
+
+    let authorName: string | undefined = og.author;
+    let authorHandle: string | undefined;
+    let authorAvatarUrl: string | undefined;
+    let description: string | undefined = og.description
+      ? decodeHtmlEntities(og.description)
+      : undefined;
+    let publishedAt: number | undefined;
+    let title: string | undefined = og.title
+      ? decodeHtmlEntities(og.title)
+      : undefined;
+
+    // 1. Extract from JSON-LD structured data in HTML
+    try {
+      const jsonLdMatches = html.matchAll(
+        /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+      );
+      for (const match of jsonLdMatches) {
+        try {
+          const data = JSON.parse(match[1].trim());
+          const items = Array.isArray(data) ? data : [data];
+          for (const item of items) {
+            const author = item?.author || item?.creator;
+            if (author) {
+              if (typeof author === "string" && !authorName) {
+                authorName = author;
+              } else if (typeof author === "object") {
+                if (author.name && !authorName) {
+                  authorName = author.name;
+                }
+                if (!authorAvatarUrl) {
+                  if (typeof author.image === "string") {
+                    authorAvatarUrl = author.image;
+                  } else if (author.image?.url) {
+                    authorAvatarUrl = author.image.url;
+                  } else if (Array.isArray(author.image) && author.image[0]) {
+                    authorAvatarUrl =
+                      typeof author.image[0] === "string"
+                        ? author.image[0]
+                        : author.image[0]?.url;
+                  }
+                }
+              }
+            }
+            if (item.datePublished && !publishedAt) {
+              const parsed = Date.parse(item.datePublished);
+              if (!Number.isNaN(parsed)) publishedAt = parsed;
+            }
+            if ((item.articleBody || item.text) && !description) {
+              description = decodeHtmlEntities(item.articleBody || item.text);
+            }
+          }
+        } catch {
+          // Ignore JSON-LD parse errors
+        }
+      }
+    } catch {
+      // Ignore regex match errors
+    }
+
+    // 2. Parse og:title / title for "Author Name on LinkedIn: Post Snippet"
+    if (title) {
+      const onLinkedinMatch = title.match(
+        /^(.+?)\s+(?:on|posted on)\s+LinkedIn\s*:?\s*(.*)$/i,
+      );
+      if (onLinkedinMatch) {
+        if (!authorName) authorName = onLinkedinMatch[1].trim();
+        const postSnippet = onLinkedinMatch[2]?.trim();
+        if (postSnippet && postSnippet.length > 0) {
+          title = postSnippet.replace(/^["'“\s]+|["'”\s]+$/g, "");
+          if (!description) description = title;
+        }
+      } else {
+        const profileMatch = title.match(
+          /^(.+?)\s+-\s+(.*?)\s*\|\s*LinkedIn$/i,
+        );
+        if (profileMatch) {
+          if (!authorName) authorName = profileMatch[1].trim();
+        }
+      }
+    }
+
+    // 3. Extract handle from URL or authorName
+    try {
+      const parsedUrl = new URL(url);
+      const pathnameSegments = parsedUrl.pathname.split("/").filter(Boolean);
+      if (pathnameSegments[0] === "in" && pathnameSegments[1]) {
+        authorHandle = `@${pathnameSegments[1]}`;
+      } else if (pathnameSegments[0] === "posts" && pathnameSegments[1]) {
+        const slugPart = pathnameSegments[1].split("-")[0];
+        if (slugPart) authorHandle = `@${slugPart}`;
+      } else if (pathnameSegments[0] === "company" && pathnameSegments[1]) {
+        authorHandle = `@${pathnameSegments[1]}`;
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
+
+    if (!authorHandle && authorName) {
+      const cleanHandle = authorName.toLowerCase().replace(/[^a-z0-9]+/g, "");
+      if (cleanHandle) authorHandle = `@${cleanHandle}`;
+    }
+
+    // 4. Fallback profile photo from og:image
+    if (
+      !authorAvatarUrl &&
+      og.image &&
+      (og.image.includes("profile-displayphoto") ||
+        og.image.includes("shrink_") ||
+        og.image.includes("dms/image"))
+    ) {
+      authorAvatarUrl = og.image;
+    }
+
     return {
-      title: og.title ? decodeHtmlEntities(og.title) : undefined,
+      title:
+        title || (authorName ? `${authorName} on LinkedIn` : "LinkedIn Post"),
       metadata: {
         thumbnailUrl: og.image,
-        authorName: og.author,
+        authorName,
+        authorHandle,
+        authorAvatarUrl,
+        publishedAt,
         siteName: og.siteName ?? "LinkedIn",
+        description,
       },
     };
   } catch (error) {
@@ -281,6 +624,9 @@ async function fetchGenericOgMetadata(
       thumbnailUrl: og.image,
       authorName: og.author,
       siteName: og.siteName,
+      description: og.description
+        ? decodeHtmlEntities(og.description)
+        : undefined,
     },
   };
 }
@@ -351,5 +697,177 @@ export const fetchLinkMetadata = action({
       console.error("fetchLinkMetadata failed:", error);
       return { metadata: {} };
     }
+  },
+});
+
+async function runChannelInfoBackfill(
+  ctx: { runQuery: any; runMutation: any },
+  platform: "youtube" | "x" | "instagram" | "linkedin",
+  fetcher: (url: string) => Promise<FetchedLinkMetadata>,
+): Promise<{ scanned: number; updated: number }> {
+  let cursor: string | null = null;
+  let scanned = 0;
+  let updated = 0;
+
+  while (true) {
+    const page: any = await ctx.runQuery(
+      internal.links.internalGetLinksMissingChannelInfo,
+      { platform, paginationOpts: { numItems: 25, cursor } },
+    );
+
+    for (const link of page.page) {
+      scanned += 1;
+      try {
+        const result = await fetcher(link.url);
+        const { authorName, authorHandle, authorAvatarUrl, description } =
+          result.metadata;
+        if (authorName || authorHandle || authorAvatarUrl) {
+          await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
+            _id: link._id,
+            title: result.title ?? link.title,
+            metadata: {
+              authorName: authorName ?? link.metadata?.authorName,
+              authorHandle: authorHandle ?? link.metadata?.authorHandle,
+              authorAvatarUrl:
+                authorAvatarUrl ?? link.metadata?.authorAvatarUrl,
+              description: description ?? link.metadata?.description,
+            },
+          });
+          updated += 1;
+        }
+      } catch (error) {
+        console.error(
+          `Backfill failed for ${platform} link ${link._id}:`,
+          error,
+        );
+      }
+    }
+
+    if (page.isDone) break;
+    cursor = page.continueCursor;
+  }
+
+  return { scanned, updated };
+}
+
+export const backfillYoutubeChannelInfo = action({
+  args: {},
+  returns: v.object({
+    scanned: v.number(),
+    updated: v.number(),
+    usingApiKey: v.boolean(),
+  }),
+  handler: async (
+    ctx,
+  ): Promise<{ scanned: number; updated: number; usingApiKey: boolean }> => {
+    const usingApiKey = Boolean(process.env.YOUTUBE_API_KEY);
+    if (!usingApiKey) {
+      console.warn(
+        "YOUTUBE_API_KEY is not set — falling back to HTML scraping, " +
+          "which YouTube frequently blocks from server IPs. Results may " +
+          "come back mostly empty. Set YOUTUBE_API_KEY in the Convex " +
+          "dashboard (Settings > Environment Variables) for reliable results.",
+      );
+    }
+
+    const { scanned, updated } = await runChannelInfoBackfill(
+      ctx,
+      "youtube",
+      fetchYoutubeMetadata,
+    );
+
+    return { scanned, updated, usingApiKey };
+  },
+});
+
+export const backfillXChannelInfo = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runChannelInfoBackfill(ctx, "x", fetchXMetadata);
+  },
+});
+
+export const backfillLinkedInChannelInfo = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runChannelInfoBackfill(ctx, "linkedin", fetchLinkedInMetadata);
+  },
+});
+
+// --- Force refresh: re-fetches and overwrites EVERY link for a platform,
+// regardless of what's already stored. Use this instead of the
+// "backfill*" actions above when old links have stale data (not missing
+// data) that needs to be replaced with the current fetch logic's output.
+async function runForceRefresh(
+  ctx: { runQuery: any; runMutation: any },
+  platform: "youtube" | "x" | "instagram" | "linkedin",
+  fetcher: (url: string) => Promise<FetchedLinkMetadata>,
+): Promise<{ scanned: number; updated: number }> {
+  let cursor: string | null = null;
+  let scanned = 0;
+  let updated = 0;
+
+  while (true) {
+    const page: any = await ctx.runQuery(
+      internal.links.internalGetLinksByPlatform,
+      { platform, paginationOpts: { numItems: 25, cursor } },
+    );
+
+    for (const link of page.page) {
+      scanned += 1;
+      try {
+        const result = await fetcher(link.url);
+        await ctx.runMutation(internal.links.internalUpdateLinkMetadata, {
+          _id: link._id,
+          title: result.title ?? link.title,
+          metadata: result.metadata,
+        });
+        updated += 1;
+      } catch (error) {
+        console.error(
+          `Force refresh failed for ${platform} link ${link._id}:`,
+          error,
+        );
+      }
+    }
+
+    if (page.isDone) break;
+    cursor = page.continueCursor;
+  }
+
+  return { scanned, updated };
+}
+
+export const forceRefreshYoutubeMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "youtube", fetchYoutubeMetadata);
+  },
+});
+
+export const forceRefreshXMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "x", fetchXMetadata);
+  },
+});
+
+export const forceRefreshInstagramMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "instagram", fetchInstagramMetadata);
+  },
+});
+
+export const forceRefreshLinkedInMetadata = action({
+  args: {},
+  returns: v.object({ scanned: v.number(), updated: v.number() }),
+  handler: async (ctx): Promise<{ scanned: number; updated: number }> => {
+    return await runForceRefresh(ctx, "linkedin", fetchLinkedInMetadata);
   },
 });

@@ -82,7 +82,7 @@ function hexToRgba(hex: string, opacityPercent: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-const MAX_BG_OPACITY = 70;
+const MAX_BG_OPACITY = 30;
 
 function getReadableTextColor(
   hex: string,
@@ -140,7 +140,7 @@ function ColorRow({
           aria-label="No color"
           onClick={() => onChange(null)}
           className={cn(
-            "h-5 w-5 !rounded text-muted-foreground hover:bg-transparent hover:text-foreground",
+            "h-5 w-5 app-radius-md text-muted-foreground hover:bg-transparent hover:text-foreground",
             value === null && "outline-1 outline-muted-foreground",
           )}
         >
@@ -156,7 +156,7 @@ function ColorRow({
             onClick={() => onChange(swatch.name)}
             style={{ backgroundColor: isDark ? swatch.dark : swatch.light }}
             className={cn(
-              "h-5 w-5 !rounded p-0 transition-transform hover:scale-110",
+              "h-5 w-5 app-radius-md p-0 transition-transform hover:scale-110",
               value === swatch.name && " outline-1 outline-muted-foreground",
             )}
           />
@@ -178,9 +178,9 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     setDraftTitle(title);
   }, [title]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const titleTooltip = useHoverTooltip(300);
-  const toggleTooltip = useHoverTooltip(300);
-  const customTooltip = useHoverTooltip(300);
+  const titleTooltip = useHoverTooltip(100);
+  const toggleTooltip = useHoverTooltip(100);
+  const customTooltip = useHoverTooltip(100);
   const isDark = useIsDarkMode();
 
   const [style, setStyle] = useState<ToggleStyle>(DEFAULT_STYLE);
@@ -257,11 +257,11 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
     <NodeViewWrapper
       data-toggle-action
       style={wrapperStyle}
-      className="my-2 text-foreground bg-muted/50 rounded transition-colors group"
+      className="my-2 text-foreground bg-muted/50 app-radius-md transition-colors group"
     >
       <div
         contentEditable={false}
-        className="flex min-h-10 items-center gap-0 px-2 py-1.5"
+        className="flex min-h-10 items-center gap-0 px-1.5 py-1.5"
       >
         <Tooltip open={toggleTooltip.open} disableHoverableContent>
           <TooltipTrigger asChild>
@@ -269,7 +269,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               type="button"
               variant="Trigger"
               size="icon"
-              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground mt-px"
+              className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
               style={contrastStyle}
               onClick={() => {
                 updateAttributes({ open: !isOpen });
@@ -289,8 +289,8 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
           <TooltipContent
             side="bottom"
             align="start"
-            sideOffset={10}
-            className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+            sideOffset={5}
+            className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
           >
             <p>{isOpen ? "Collapse toggle action" : "Expand toggle action"}</p>
           </TooltipContent>
@@ -320,7 +320,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               titleTooltip.hide();
             }}
             style={contrastStyle}
-            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none"
+            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !app-radius-none"
           />
         ) : (
           <Tooltip open={titleTooltip.open} disableHoverableContent>
@@ -328,7 +328,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               <button
                 type="button"
                 style={contrastStyle}
-                className="min-w-0 truncate text-left text-sm cursor-text font-medium text-muted-foreground"
+                className="min-w-0 truncate text-left text-sm cursor-text font-medium text--foreground"
                 onDoubleClick={handleDoubleClick}
                 aria-label="Double click to rename"
                 {...titleTooltip.triggerProps}
@@ -340,8 +340,8 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
             <TooltipContent
               side="bottom"
               align="start"
-              sideOffset={10}
-              className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+              sideOffset={5}
+              className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
             >
               <p>Double click to rename</p>
             </TooltipContent>
@@ -370,7 +370,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
                 side="bottom"
                 align="center"
                 sideOffset={5}
-                className="text-xs font-bold py-0.5 px-1.5 !rounded-none"
+                className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
               >
                 <p>Customize toggle appearance</p>
               </TooltipContent>

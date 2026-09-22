@@ -74,7 +74,7 @@ export default function MoveNoteDialog({
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const moveTargets = useQuery(api.notes.getWorkspaceTree, {
+  const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
@@ -87,7 +87,7 @@ export default function MoveNoteDialog({
       if (!currentNote) return;
 
       const targets =
-        local.getQuery(api.notes.getWorkspaceTree, {
+        local.getQuery(api.notes.getWorkspaceTreeForMove, {
           searchQuery: undefined,
         }) ?? [];
       const targetWorkspace = targets.find(

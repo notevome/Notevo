@@ -12,8 +12,8 @@ import {
   useState,
 } from "react";
 import { PanelRightClose, X } from "lucide-react";
-import NotePageClient from "@/app/home/[id]/[slug]/NotePageClient";
-import PdfViewerPageClient from "@/app/home/[id]/pdf/[pdfId]/PdfViewerPageClient";
+import NotePageClient from "@/app/home/[id]/[itemId]/NotePageClient";
+import PdfViewerPageClient from "@/app/home/[id]/[itemId]/PdfViewerPageClient";
 import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
 import { Button } from "@/components/ui/button";
 import {
@@ -105,7 +105,7 @@ function HomePaneDrawer({
   const startXRef = useRef(0);
   const startWidthRef = useRef(DEFAULT_PANE_WIDTH);
   const rafRef = useRef<number>(0);
-  const closeTooltip = useHoverTooltip(300);
+  const closeTooltip = useHoverTooltip(400);
 
   useEffect(() => {
     const savedWidth = window.localStorage.getItem(PANE_WIDTH_STORAGE_KEY);

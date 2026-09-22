@@ -10,6 +10,7 @@ import {
   Pin,
   FolderPlus,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -142,9 +143,9 @@ export default function HomePageClient() {
   return (
     <MaxWContainer className="relative">
       {/* Hero Section */}
-      <div className="overflow-hidden border border-border app-radius-2xl bg-gradient-to-br from-muted from-20% via-transparent via-70% to-muted p-8 mb-8">
-        <header className="relative max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
+      <div className="overflow-hidden py-2 mb-14">
+        <header className="flex flex-col justify-center items-start gap-2 relative">
+          <h1 className="text-3xl sm:text-5xl font-bold text-primary">
             {viewer?.name ? (
               <>
                 Hello,{" "}
@@ -159,19 +160,22 @@ export default function HomePageClient() {
                 }`}
               </>
             ) : (
-              <SkeletonTextAnimation className="w-full h-10" />
+              <span className="flex justify-center items-center gap-0.5">
+                <SkeletonTextAnimation className=" mx-0 min-w-20 h-10" />
+                ,
+                <SkeletonTextAnimation className="!app-radius-none mx-2 min-w-60 h-10" />
+              </span>
             )}
           </h1>
-          <p className="text-white/90 text-md max-w-2xl mx-auto mb-6">
-            Organize your thoughts, manage your workspaces, and boost your
-            productivity with Notevo.
+          <p className="text-white/90 text-md ">
+            Organize your thoughts , and manage your workspaces,
           </p>
         </header>
       </div>
 
       {/* Workspaces Slider */}
-      <div className="mb-12">
-        <div className="mb-6 flex justify-between items-center">
+      <div className="mb-8">
+        <div className="mb-4 flex justify-between items-center">
           <h2 className="text-foreground text-xl font-semibold">
             Your Workspaces
           </h2>
@@ -208,26 +212,10 @@ export default function HomePageClient() {
         )}
       </div>
 
-      {/* Pinned Notes Slider */}
-      {pinnedNotes.length > 0 && (
-        <div className="mb-12">
-          <div className="mb-6">
-            <h2 className="text-foreground text-xl font-semibold">
-              Pinned Notes
-            </h2>
-          </div>
-          <Slider>
-            {pinnedNotes.map((note) => (
-              <NoteCard key={note._id} note={note} />
-            ))}
-          </Slider>
-        </div>
-      )}
-
       {/* Recent Notes Slider */}
       {recentNotes.length !== 0 && (
-        <div className="mb-12">
-          <div className="mb-6">
+        <div className="mb-8">
+          <div className="mb-4">
             <h2 className="text-foreground text-xl font-semibold">
               Recent Notes
             </h2>
@@ -255,9 +243,9 @@ function WorkspaceCardSkeleton() {
           <Skeleton className="h-8 w-8 app-radius-md" />
         </div>
       </CardContent>
-      <CardFooter className="py-4 flex justify-between items-center border-t border-border">
+      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-12" />
+        <Skeleton className="h-9 w-16" />
       </CardFooter>
     </Card>
   );
@@ -279,9 +267,9 @@ function NoteCardSkeleton() {
         <Skeleton className="h-3 w-5/6" />
         <Skeleton className="h-3 w-4/6" />
       </CardContent>
-      <CardFooter className="py-4 flex justify-between items-center border-t border-border mt-auto">
+      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border mt-auto">
         <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-12" />
+        <Skeleton className="h-9 w-16" />
       </CardFooter>
     </Card>
   );
@@ -297,11 +285,11 @@ function Slider({ children }: { children: React.ReactNode }) {
     const container = scrollContainerRef.current;
     if (!container) return;
     const hasOverflow = container.scrollWidth > container.clientWidth;
-    setCanScrollLeft(container.scrollLeft > 10);
+    setCanScrollLeft(container.scrollLeft > 0.2);
     setCanScrollRight(
       hasOverflow &&
         container.scrollLeft <
-          container.scrollWidth - container.clientWidth - 10,
+          container.scrollWidth - container.clientWidth - 0.2,
     );
   };
 
@@ -358,10 +346,10 @@ function Slider({ children }: { children: React.ReactNode }) {
       )}
 
       {(canScrollRight || canScrollLeft) && (
-        <div className="z-10 absolute -bottom-8 right-0 flex justify-center items-center gap-2">
+        <div className="z-10 absolute -bottom-1 right-0 flex justify-center items-center gap-2">
           <Button
             size="icon"
-            variant={canScrollLeft ? "revDefault" : "outline"}
+            variant={canScrollLeft ? "default" : "outline"}
             className="h-9 w-8"
             onClick={() => scroll("left")}
           >
@@ -369,8 +357,8 @@ function Slider({ children }: { children: React.ReactNode }) {
           </Button>
           <Button
             size="icon"
-            variant={canScrollRight ? "revDefault" : "outline"}
-            className="h-9 w-8 !rounded-none"
+            variant={canScrollRight ? "default" : "outline"}
+            className="h-9 w-8 !app-radius-none"
             onClick={() => scroll("right")}
           >
             <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -472,7 +460,7 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[230px] ">
+    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[200px] ">
       <CardHeader className="pb-3 relative">
         {isEditingName ? (
           <div className="flex flex-col gap-1 pr-8 max-w-sm">
@@ -487,14 +475,13 @@ function WorkspaceCard({
           </div>
         ) : (
           <CardTitle
-            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
+            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50"
             onDoubleClick={handleNameDoubleClick}
-            title="Double-click to rename"
           >
             {workspace.name || "Untitled"}
           </CardTitle>
         )}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-1.5 right-2">
           <WorkingSpaceSettings
             workingSpaceId={workspace._id}
             workingspaceName={workspace.name}
@@ -506,7 +493,7 @@ function WorkspaceCard({
           <FolderClosed className=" h-10 w-full text-primary text-center" />
         </span>
       </CardContent>
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
+      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
@@ -515,11 +502,7 @@ function WorkspaceCard({
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button
-          size="sm"
-          asChild
-          className=" absolute bottom-0 right-0 h-9 px-2 text-xs"
-        >
+        <Button size="sm" asChild className="h-8 px-6 text-xs">
           <IntentPrefetchLink href={`/home/${workspace._id}`}>
             Open
           </IntentPrefetchLink>
@@ -565,12 +548,21 @@ function NoteCard({ note }: { note: Note }) {
     : getContentPreviewFromBody(note.body);
 
   const isEmpty = !(note.preview || note.body);
+  const router = useRouter();
+  const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+
+  const handleOpen = useCallback(() => {
+    router.push(href);
+  }, [router, href]);
 
   return (
     <Card
+      onDoubleClick={handleOpen}
       className={cn(
-        "group relative overflow-hidden bg-card border transition-all duration-300 flex-shrink-0 w-[330px] h-[230px] flex flex-col",
-        isEmpty ? "border-dashed border-border" : "border-border",
+        "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none",
+        isEmpty
+          ? "border-dashed border-border hover:border-muted-foreground/50"
+          : "border-border hover:border-muted-foreground/50",
       )}
     >
       <CardHeader className="pb-2">
@@ -597,8 +589,8 @@ function NoteCard({ note }: { note: Note }) {
         </p>
       </CardContent>
 
-      <CardFooter className=" relative py-4 flex justify-between items-center text-xs text-muted-foreground border-t border-border">
-        <div className="flex items-center gap-1.5">
+      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Clock className="h-3.5 w-3.5" />
           {typeof window !== "undefined" ? (
             <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
@@ -606,17 +598,6 @@ function NoteCard({ note }: { note: Note }) {
             <SkeletonTextAnimation className="w-20" />
           )}
         </div>
-        <Button
-          size="sm"
-          asChild
-          className="absolute bottom-0 right-0 h-9 px-2 text-xs"
-        >
-          <IntentPrefetchLink
-            href={`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`}
-          >
-            Open
-          </IntentPrefetchLink>
-        </Button>
       </CardFooter>
     </Card>
   );

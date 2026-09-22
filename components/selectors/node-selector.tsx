@@ -110,7 +110,7 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
         <Button
           size="sm"
           variant="SidebarMenuButton"
-          className="gap-2 border-none rounded-r-none px-2 h-8"
+          className="gap-2 border-none app-radius-none px-2 h-8"
         >
           <span className="whitespace-nowrap text-sm">{activeItem.name}</span>
           <ChevronDown className="h-4 w-4" />
@@ -128,7 +128,7 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
               item.command(editor);
               onOpenChange(false);
             }}
-            className="flex cursor-pointer items-center justify-between rounded-tl-lg px-2 py-1 text-sm text-foreground hover:bg-border"
+            className="flex cursor-pointer items-center justify-between app-radius-lg px-2 py-1 text-sm text-foreground hover:bg-border"
           >
             <div className="flex items-center text-foreground space-x-2">
               <item.icon className="h-4 w-4 text-muted-foreground" />

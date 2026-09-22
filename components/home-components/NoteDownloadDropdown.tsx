@@ -30,7 +30,7 @@ export default function NoteDownloadDropdown({
   className,
 }: NoteDownloadDropdownProps) {
   const { handleDownload } = useNoteDownload({ noteBody, noteTitle });
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(100);
 
   const formats: {
     label: string;

@@ -9,7 +9,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { insertAtTop, useAction, useMutation } from "convex/react";
-import { ChevronDown, FileUp, FileText, Link2 } from "lucide-react";
+import { ChevronDown, FileUp, FileText, Link2, PanelTop } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -44,7 +44,7 @@ import {
   type LinkPlatform,
 } from "@/lib/link-platform";
 
-type PreferredAction = "note" | "upload" | "link";
+type PreferredAction = "note" | "upload" | "link" | "whiteboard";
 
 const STORAGE_KEY = "notevo_workspace_primary_create_action";
 
@@ -125,7 +125,8 @@ export default function WorkingspaceNewDropdownBtn({
     if (
       savedAction === "note" ||
       savedAction === "upload" ||
-      savedAction === "link"
+      savedAction === "link" ||
+      savedAction === "whiteboard"
     ) {
       setPreferredAction(savedAction);
     }
@@ -176,6 +177,7 @@ export default function WorkingspaceNewDropdownBtn({
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
   const createLink = useMutation(api.links.createLink);
+  const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
   const isDisabled = useMemo(
@@ -202,6 +204,24 @@ export default function WorkingspaceNewDropdownBtn({
       });
     }
   }, [createNote, notesTableId, toast, workingSpaceId, workingSpacesSlug]);
+
+  const handleCreateWhiteboard = useCallback(async () => {
+    if (!notesTableId || !workingSpaceId) return;
+    try {
+      await createWhiteboard({
+        title: "Untitled whiteboard",
+        notesTableId,
+        workingSpaceId,
+      });
+    } catch (error) {
+      console.error("Failed to create whiteboard:", error);
+      toast({
+        title: "Could not create whiteboard",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    }
+  }, [createWhiteboard, notesTableId, toast, workingSpaceId]);
 
   const uploadPdfFile = useCallback(
     async (file: File) => {
@@ -351,6 +371,11 @@ export default function WorkingspaceNewDropdownBtn({
       return;
     }
 
+    if (preferredAction === "whiteboard") {
+      await handleCreateWhiteboard();
+      return;
+    }
+
     await handleCreateNote();
   }, [handleCreateNote, handleSelectInsertLink, preferredAction]);
 
@@ -373,6 +398,11 @@ export default function WorkingspaceNewDropdownBtn({
     persistPreferredAction("upload");
     fileInputRef.current?.click();
   }, [persistPreferredAction]);
+
+  const handleSelectWhiteboard = useCallback(async () => {
+    persistPreferredAction("whiteboard");
+    await handleCreateWhiteboard();
+  }, [handleCreateWhiteboard, persistPreferredAction]);
 
   useEffect(() => {
     const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
@@ -428,7 +458,7 @@ export default function WorkingspaceNewDropdownBtn({
 
       <div
         className={cn(
-          "flex h-9 items-center overflow-hidden !rounded-none",
+          "flex h-9 items-center overflow-hidden !app-radius-none",
           className,
         )}
       >
@@ -437,7 +467,7 @@ export default function WorkingspaceNewDropdownBtn({
           variant="outline"
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className="h-9 !rounded-none"
+          className="h-9 !app-radius-none"
         >
           {isUploading ? "Uploading..." : "New"}
         </Button>
@@ -448,22 +478,27 @@ export default function WorkingspaceNewDropdownBtn({
               type="button"
               variant="outline"
               disabled={isDisabled}
-              className="h-9 px-1 border-l-0 !rounded-none"
+              className="h-9 px-1 border-l-0 !app-radius-none"
               aria-label="open-create-menu"
             >
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-fit">
-            <DropdownMenuItem onClick={() => void handleSelectNote()}>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              New note
+          <DropdownMenuContent align="end" className="w-60">
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={() => void handleSelectNote()}
+            >
+              <span className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                New Note
+              </span>
               <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">Ctrl + Shift</span>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">Ctrl + Shift</span>
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">O</span>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">O</span>
                 </kbd>
               </span>
             </DropdownMenuItem>
@@ -471,15 +506,24 @@ export default function WorkingspaceNewDropdownBtn({
               <FileUp className="h-4 w-4 text-muted-foreground" />
               Upload PDF
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSelectInsertLink}>
-              <Link2 className="h-4 w-4 text-muted-foreground" />
-              Insert Link
+            <DropdownMenuItem onClick={() => void handleSelectWhiteboard()}>
+              <PanelTop className="h-4 w-4 text-muted-foreground" />
+              New Whiteboard
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="justify-between"
+              onClick={handleSelectInsertLink}
+            >
+              <span className="flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-muted-foreground" />
+                Insert Link
+              </span>
               <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">Shift</span>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">Shift</span>
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-xs">L</span>
+                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[10px]">L</span>
                 </kbd>
               </span>
             </DropdownMenuItem>
@@ -530,10 +574,9 @@ export default function WorkingspaceNewDropdownBtn({
           </div>
           <DialogFooter className=" flex-row-reverse w-full gap-2 pt-2.5">
             <Button
-              variant="revDefault"
               onClick={() => void handleInsertLink()}
               disabled={isInsertingLink || !linkUrl.trim()}
-              className=" h-8 !rounded-none"
+              className=" h-8 !app-radius-none"
             >
               {isInsertingLink ? "Inserting..." : "Insert Link"}
             </Button>

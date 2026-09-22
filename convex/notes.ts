@@ -410,7 +410,69 @@ export const getFavNotes = query({
     };
   },
 });
+export const getWorkspaceTreeForMove = query({
+  args: {
+    searchQuery: v.optional(v.string()),
+  },
+  handler: async (ctx, { searchQuery }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
 
+    const normalizedQuery = normalizeSearchText(searchQuery?.trim());
+    const isSearching = normalizedQuery.length > 0;
+
+    const workspaces = await ctx.db
+      .query("workingSpaces")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    const targets = await Promise.all(
+      workspaces.map(async (workspace) => {
+        const allTables = await ctx.db
+          .query("notesTables")
+          .withIndex("by_workingSpaceId", (q) =>
+            q.eq("workingSpaceId", workspace._id),
+          )
+          .collect();
+
+        const sortedTables = allTables.sort(
+          (a, b) => b.updatedAt - a.updatedAt,
+        );
+
+        if (!isSearching) {
+          // No filtering here: every workspace and every table is a valid
+          // move destination, whether or not it has content yet.
+          return { ...workspace, tables: sortedTables };
+        }
+
+        const workspaceMatches = normalizeSearchText(workspace.name).includes(
+          normalizedQuery,
+        );
+
+        // Workspace name matched: keep all its tables so the user can
+        // still pick any of them, not just ones whose name also matched.
+        if (workspaceMatches) {
+          return { ...workspace, tables: sortedTables };
+        }
+
+        const matchingTables = sortedTables.filter((table) =>
+          normalizeSearchText(table.name).includes(normalizedQuery),
+        );
+
+        if (matchingTables.length > 0) {
+          return { ...workspace, tables: matchingTables };
+        }
+
+        return null;
+      }),
+    );
+
+    return targets.filter(Boolean) as NonNullable<(typeof targets)[number]>[];
+  },
+});
 export const getWorkspaceTree = query({
   args: {
     searchQuery: v.optional(v.string()),
@@ -471,12 +533,20 @@ export const getWorkspaceTree = query({
                 )
                 .order("desc")
                 .collect();
+              const allWhiteboards = await ctx.db
+                .query("whiteboards")
+                .withIndex("by_notesTableId", (q) =>
+                  q.eq("notesTableId", table._id),
+                )
+                .order("desc")
+                .collect();
 
               return {
                 ...table,
                 notes: allNotes.map(({ body, ...rest }) => rest),
                 pdfs: allPdfs,
                 links: allLinks,
+                whiteboards: allWhiteboards,
               };
             }
 
@@ -501,12 +571,20 @@ export const getWorkspaceTree = query({
               )
               .order("desc")
               .take(TREE_NOTES_PER_TABLE);
+            const firstWhiteboards = await ctx.db
+              .query("whiteboards")
+              .withIndex("by_notesTableId", (q) =>
+                q.eq("notesTableId", table._id),
+              )
+              .order("desc")
+              .take(TREE_NOTES_PER_TABLE);
 
             return {
               ...table,
               notes: firstNotes.map(({ body, ...rest }) => rest),
               pdfs: firstPdfs,
               links: firstLinks,
+              whiteboards: firstWhiteboards,
             };
           }),
         );
@@ -516,7 +594,8 @@ export const getWorkspaceTree = query({
           (table) =>
             table.notes.length > 0 ||
             table.pdfs.length > 0 ||
-            (table.links?.length ?? 0) > 0,
+            (table.links?.length ?? 0) > 0 ||
+            (table.whiteboards?.length ?? 0) > 0,
         );
 
         // Drop workspace entirely if it has no non-empty tables
@@ -545,18 +624,24 @@ export const getWorkspaceTree = query({
             const matchingLinks = (table.links ?? []).filter((link: any) =>
               normalizeSearchText(link.title).includes(normalizedQuery),
             );
+            const matchingWhiteboards = (table.whiteboards ?? []).filter(
+              (whiteboard: any) =>
+                normalizeSearchText(whiteboard.title).includes(normalizedQuery),
+            );
 
             if (tableMatches) return table;
             if (
               matchingNotes.length > 0 ||
               matchingPdfs.length > 0 ||
-              matchingLinks.length > 0
+              matchingLinks.length > 0 ||
+              matchingWhiteboards.length > 0
             )
               return {
                 ...table,
                 notes: matchingNotes,
                 pdfs: matchingPdfs,
                 links: matchingLinks,
+                whiteboards: matchingWhiteboards,
               };
 
             return null;

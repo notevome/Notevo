@@ -99,6 +99,10 @@ function extractFromNodes(nodes: any[]): string {
         return node.text;
       }
 
+      if (node.type === "listItem") {
+        return node.content ? `- ${extractFromNodes(node.content)}` : "";
+      }
+
       if (node.content && Array.isArray(node.content)) {
         return extractFromNodes(node.content);
       }
@@ -118,8 +122,6 @@ function extractFromNodes(nodes: any[]): string {
           case "bulletList":
           case "orderedList":
             return node.content ? extractFromNodes(node.content) : "";
-          case "listItem":
-            return node.content ? `- ${extractFromNodes(node.content)}` : "";
           default:
             return node.content ? extractFromNodes(node.content) : "";
         }

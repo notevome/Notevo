@@ -76,7 +76,7 @@ export function QuickActions({
             onClick={action.onClick}
           >
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-brand_tertiary/5 flex items-center justify-center group-hover:bg-brand_tertiary/10 transition-colors">
+              <div className="h-10 w-10 app-radius-full bg-brand_tertiary/5 flex items-center justify-center group-hover:bg-brand_tertiary/10 transition-colors">
                 {action.loading ? <LoadingAnimation /> : action.icon}
               </div>
               <div>

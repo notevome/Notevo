@@ -10,10 +10,11 @@ import {
   ChevronRight,
   ChevronDown,
   Link2,
-  Trash2,
+  PanelTop,
   X,
   Filter,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
 import {
   useState,
@@ -22,6 +23,7 @@ import {
   useCallback,
   useRef,
   Fragment,
+  memo,
 } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -36,6 +38,8 @@ import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
 import NoteSettings from "@/components/home-components/NoteSettings";
+import LinkSettings from "@/components/home-components/LinkSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -57,6 +61,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -73,7 +87,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, formatTableName } from "@/lib/utils";
+import { cn, formatTableName, formatWorkspaceName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
@@ -82,6 +96,21 @@ import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useDebouncedCallback } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
+
+function getMediaQuery() {
+  const isMobile = useMediaQuery({ maxWidth: 640 });
+  return isMobile;
+}
+
+function useGridColumnCount(enabled: boolean) {
+  const isMdUp = useMediaQuery({ minWidth: 768 });
+  const isSmUp = useMediaQuery({ minWidth: 640 });
+  if (!enabled) return 1;
+  if (isMdUp) return 3;
+  if (isSmUp) return 2;
+  return 1;
+}
+
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return "No content yet. Click to start writing...";
   try {
@@ -114,6 +143,9 @@ const workspacePageMemoryCache = new Map<
 >();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
+const tablePdfsMemoryCache = new Map<string, any[]>();
+const tableLinksMemoryCache = new Map<string, any[]>();
+const tableWhiteboardsMemoryCache = new Map<string, any[]>();
 
 type ViewMode = "grid" | "list" | "calendar";
 type CalendarZoom = "week" | "month" | "quarter" | "year";
@@ -121,10 +153,14 @@ type ContentFilter =
   | "all"
   | "note"
   | "pdf"
+  | "whiteboard"
   | "youtube"
   | "x"
   | "instagram"
-  | "linkedin";
+  | "linkedin"
+  | "link";
+
+type FilterIconComponent = (props: { className?: string }) => any;
 
 const CONTENT_FILTER_OPTIONS: {
   value: ContentFilter;
@@ -133,18 +169,52 @@ const CONTENT_FILTER_OPTIONS: {
   { value: "all", label: "All" },
   { value: "note", label: "Notes" },
   { value: "pdf", label: "PDFs" },
+  { value: "whiteboard", label: "Whiteboards" },
   { value: "youtube", label: "YouTube" },
   { value: "x", label: "X" },
   { value: "instagram", label: "Instagram" },
   { value: "linkedin", label: "LinkedIn" },
+  { value: "link", label: "Link" },
 ];
+
+const GROUPABLE_LINK_FILTERS = new Set<ContentFilter>([
+  "youtube",
+  "x",
+  "instagram",
+  "linkedin",
+  "link",
+]);
+
+function isGenericLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  if (!platform) return true;
+  const p = String(platform).toLowerCase();
+  return !(
+    p.includes("youtube") ||
+    p === "yt" ||
+    p === "x" ||
+    p.includes("twitter") ||
+    p.includes("instagram") ||
+    p === "ig" ||
+    p.includes("linkedin")
+  );
+}
+
+// A "social" link is one from a platform we can render as an authored post
+// (avatar + name + handle + post content). Anything else is treated as a
+// plain website link (title + Open Graph image).
+function isSocialLinkPlatform(
+  platform: LinkPlatform | string | undefined,
+): boolean {
+  return !isGenericLinkPlatform(platform);
+}
 
 function matchesLinkPlatform(
   platform: LinkPlatform | string | undefined,
   filter: ContentFilter,
 ): boolean {
-  if (!platform) return false;
-  const p = String(platform).toLowerCase();
+  const p = String(platform ?? "").toLowerCase();
   switch (filter) {
     case "youtube":
       return p.includes("youtube") || p === "yt";
@@ -154,9 +224,98 @@ function matchesLinkPlatform(
       return p.includes("instagram") || p === "ig";
     case "linkedin":
       return p.includes("linkedin");
+    case "link":
+      return isGenericLinkPlatform(platform);
     default:
       return false;
   }
+}
+
+function getLinkGroupKey(link: LinkItem, filter: ContentFilter): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "").toLowerCase();
+    } catch {
+      return null;
+    }
+  }
+  const handle = link.metadata?.authorHandle?.trim();
+  const name = link.metadata?.authorName?.trim();
+  return (handle || name || null)?.toLowerCase() ?? null;
+}
+
+// Human-readable label for a group key (see getLinkGroupKey).
+function getLinkGroupLabel(
+  link: LinkItem,
+  filter: ContentFilter,
+): string | null {
+  if (filter === "link") {
+    try {
+      return new URL(link.url).hostname.replace(/^www\./, "");
+    } catch {
+      return null;
+    }
+  }
+  return (
+    link.metadata?.authorName?.trim() ||
+    link.metadata?.authorHandle?.trim() ||
+    null
+  );
+}
+
+interface LinkFilterGroup {
+  key: string;
+  label: string;
+  handle?: string;
+  avatarUrl?: string;
+  sampleUrl?: string;
+  count: number;
+}
+
+// Normalizes a raw handle into "@handle" display form.
+function formatHandle(handle?: string | null): string | null {
+  const trimmed = handle?.trim();
+  if (!trimmed) return null;
+  return trimmed.startsWith("@") ? trimmed : `@${trimmed}`;
+}
+
+function GroupAvatar({
+  avatarUrl,
+  label,
+  className,
+}: {
+  avatarUrl?: string;
+  label: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const src = avatarUrl && !errored ? avatarUrl : null;
+
+  if (!src) {
+    return (
+      <div
+        className={cn(
+          "h-6 w-6 app-radius-full bg-muted flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0",
+          className,
+        )}
+      >
+        {label.charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      key={src}
+      src={src}
+      alt=""
+      draggable={false}
+      referrerPolicy="no-referrer"
+      loading="lazy"
+      className={cn("h-6 w-6 app-radius-full object-cover shrink-0", className)}
+      onError={() => setErrored(true)}
+    />
+  );
 }
 
 interface Note {
@@ -219,7 +378,25 @@ interface LinkItem {
   kind: "link";
 }
 
-type WorkspaceEntry = (Note & { kind: "note" }) | PdfItem | LinkItem;
+interface WhiteboardItem {
+  _id: Id<"whiteboards">;
+  title: string;
+  favorite?: boolean;
+  snapshot?: string;
+  preview?: string;
+  userId: Id<"users">;
+  workingSpaceId: Id<"workingSpaces">;
+  notesTableId: Id<"notesTables">;
+  createdAt: number;
+  updatedAt: number;
+  kind: "whiteboard";
+}
+
+type WorkspaceEntry =
+  | (Note & { kind: "note" })
+  | PdfItem
+  | LinkItem
+  | WhiteboardItem;
 
 interface NotesDroppableContainerProps {
   tableId: Id<"notesTables">;
@@ -246,7 +423,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
         part.toLowerCase() === trimmedQuery.toLowerCase() ? (
           <mark
             key={i}
-            className="bg-secondary text-secondary-foreground rounded-sm px-0.5"
+            className="text-secondary bg-secondary-foreground app-radius-sm px-0.5"
           >
             {part}
           </mark>
@@ -257,26 +434,6 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
     </>
   );
 }
-
-interface NoteCardProps {
-  note: Note;
-  workspaceId?: Id<"workingSpaces">;
-  onDelete?: (noteId: Id<"notes">) => void;
-  searchQuery?: string;
-}
-
-interface PdfCardProps {
-  pdf: PdfItem;
-  onDelete?: (pdfId: Id<"pdfs">) => void;
-  searchQuery?: string;
-}
-
-interface LinkCardProps {
-  link: LinkItem;
-  onDelete?: (linkId: Id<"links">) => void;
-  searchQuery?: string;
-}
-
 interface EmptySearchResultsProps {
   searchQuery: string;
   onClearSearch: () => void;
@@ -292,7 +449,152 @@ const STORAGE_KEYS = {
   VIEW_MODE: "notevo_view_mode",
   ACTIVE_TABLE: "notevo_active_table",
   CALENDAR_ZOOM: "notevo_calendar_zoom",
+  CUSTOM_ORDER_PREFIX: "notevo_custom_order_",
 };
+
+type DropTarget = { id: string; position: "before" | "after" };
+
+function useClientSideOrder<T extends { _id: string }>(
+  storageKey: string,
+  items: T[],
+  options?: { newItemPosition?: "start" | "end" },
+) {
+  const newItemPosition = options?.newItemPosition ?? "end";
+  const [sessionOrder, setSessionOrder] = useState<string[]>([]);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [draggedSize, setDraggedSize] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
+  const justDraggedRef = useRef(false);
+  const clearJustDraggedTimeoutRef =
+    useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      setSessionOrder(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      setSessionOrder([]);
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    setSessionOrder((prev) => {
+      const known = new Set(prev);
+      const newIds = items
+        .map((item) => item._id)
+        .filter((id) => !known.has(id));
+      if (newIds.length === 0) return prev;
+      return newItemPosition === "start"
+        ? [...newIds, ...prev]
+        : [...prev, ...newIds];
+    });
+  }, [items, newItemPosition]);
+
+  const persist = useCallback(
+    (ids: string[]) => {
+      setSessionOrder(ids);
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(ids));
+      } catch {
+        // won't survive a refresh.
+      }
+    },
+    [storageKey],
+  );
+
+  const orderedItems = useMemo(() => {
+    const itemById = new Map(items.map((item) => [item._id, item]));
+    const known = sessionOrder
+      .map((id) => itemById.get(id))
+      .filter((item): item is T => Boolean(item));
+    const knownIds = new Set(known.map((item) => item._id));
+    const fresh = items.filter((item) => !knownIds.has(item._id));
+    return [...known, ...fresh];
+  }, [items, sessionOrder]);
+
+  const handleDragStart = useCallback(
+    (id: string, rect?: { width: number; height: number }) => {
+      setDraggingId(id);
+      setDropTarget(null);
+      setDraggedSize(rect ?? null);
+      justDraggedRef.current = true;
+      if (clearJustDraggedTimeoutRef.current) {
+        clearTimeout(clearJustDraggedTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  const handleDragOverItem = useCallback(
+    (
+      e: {
+        clientY: number;
+        currentTarget: HTMLElement;
+        preventDefault: () => void;
+      },
+      id: string,
+    ) => {
+      e.preventDefault();
+      if (!draggingId || draggingId === id) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const isBefore = e.clientY < rect.top + rect.height / 2;
+      setDropTarget((prev) =>
+        prev?.id === id && prev.position === (isBefore ? "before" : "after")
+          ? prev
+          : { id, position: isBefore ? "before" : "after" },
+      );
+    },
+    [draggingId],
+  );
+
+  const scheduleClearJustDragged = useCallback(() => {
+    if (clearJustDraggedTimeoutRef.current) {
+      clearTimeout(clearJustDraggedTimeoutRef.current);
+    }
+    clearJustDraggedTimeoutRef.current = setTimeout(() => {
+      justDraggedRef.current = false;
+    }, 300);
+  }, []);
+
+  const handleDrop = useCallback(() => {
+    if (draggingId && dropTarget && dropTarget.id !== draggingId) {
+      const ids = orderedItems.map((item) => item._id);
+      const withoutDragged = ids.filter((id) => id !== draggingId);
+      const targetIndex = withoutDragged.indexOf(dropTarget.id);
+      const insertAt =
+        dropTarget.position === "before" ? targetIndex : targetIndex + 1;
+      withoutDragged.splice(insertAt, 0, draggingId);
+      persist(withoutDragged);
+    }
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+    scheduleClearJustDragged();
+  }, [draggingId, dropTarget, orderedItems, persist, scheduleClearJustDragged]);
+
+  const handleDragEnd = useCallback(() => {
+    // Fallback cleanup in case the drop lands outside a valid target.
+    setDraggingId(null);
+    setDropTarget(null);
+    setDraggedSize(null);
+    scheduleClearJustDragged();
+  }, [scheduleClearJustDragged]);
+
+  return {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    justDraggedRef,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  };
+}
 
 const DAY_MS = 86400000;
 const MONTH_LABELS = [
@@ -353,7 +655,7 @@ const CALENDAR_ZOOM_PADDING_DAYS: Record<CalendarZoom, number> = {
 };
 
 function TableTab({ table }: { table: any }) {
-  const deleteTooltip = useHoverTooltip(300);
+  const deleteTooltip = useHoverTooltip(100);
   const [isRenameOpen, setIsRenameOpen] = useState(false);
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
@@ -505,7 +807,7 @@ function TableTab({ table }: { table: any }) {
         onMouseLeave={handleContentMouseLeave}
       >
         {isRenameOpen ? (
-          <div className=" relative flex items-center gap-1.5 px-2 py-2 rounded-none rounded-tl-lg w-full border-2 border-border border-b-0 bg-card">
+          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg w-full border-2 border-border border-b-0 bg-card">
             <Input
               ref={inputRef as any}
               value={editedName}
@@ -521,7 +823,7 @@ function TableTab({ table }: { table: any }) {
           <TabsTrigger
             value={table._id}
             data-tab-id={table._id}
-            className=" px-4 py-2.5 rounded-none rounded-tl-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+            className=" px-4 py-2.5 app-radius-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
             onDoubleClick={handleDoubleClick}
             aria-label="rename-table"
           >
@@ -559,7 +861,7 @@ function TableTab({ table }: { table: any }) {
               </Button>
             </TooltipTrigger>
             <TooltipContent
-              className=" !rounded-none"
+              className=" !app-radius-none"
               side="right"
               sideOffset={5}
             >
@@ -580,7 +882,7 @@ function TableTab({ table }: { table: any }) {
           </AlertDialogHeader>
           <p>
             if you don't wanna see again hold
-            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+            <span className=" mx-1 text-xs pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
               Shift
             </span>
             when you delete and it will be deleted without confirmation.
@@ -606,12 +908,14 @@ interface SliderTabsListProps {
   tables: any[];
   activeTableId: string;
   onTabChange: (id: string) => void;
+  workingSpaceId: string;
 }
 
 function SliderTabsList({
   tables,
   activeTableId,
   onTabChange,
+  workingSpaceId,
 }: SliderTabsListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -669,6 +973,20 @@ function SliderTabsList({
     });
   };
 
+  const {
+    orderedItems: orderedTables,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}tabs_${workingSpaceId}`,
+    tables,
+  );
+
   return (
     <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
@@ -678,7 +996,7 @@ function SliderTabsList({
           onClick={() => scroll("left")}
           aria-label="scroll-tabs-left"
           className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollLeft
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -693,7 +1011,7 @@ function SliderTabsList({
           onClick={() => scroll("right")}
           aria-label="scroll-tabs-right"
           className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !rounded-sm",
+            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
             canScrollRight
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none",
@@ -720,7 +1038,7 @@ function SliderTabsList({
         />
 
         <TabsList
-          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !rounded-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !app-radius-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
@@ -735,12 +1053,57 @@ function SliderTabsList({
               } as React.CSSProperties
             }
           >
-            {tables.map((table) => (
-              <TableTab
-                key={table._id}
-                data-table-id={table._id}
-                table={table}
-              />
+            {orderedTables.map((table) => (
+              <Fragment key={table._id}>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "before" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+                <div
+                  draggable
+                  onDragStart={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    handleDragStart(table._id, {
+                      width: rect.width,
+                      height: rect.height,
+                    });
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
+                  onDragOver={(e) => handleDragOverItem(e, table._id)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop();
+                  }}
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    "cursor-grab active:cursor-grabbing",
+                    draggingId === table._id &&
+                      "opacity-40 scale-[0.98] transition-transform",
+                  )}
+                >
+                  <TableTab data-table-id={table._id} table={table} />
+                </div>
+                {dropTarget?.id === table._id &&
+                  dropTarget?.position === "after" && (
+                    <div
+                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      style={{ width: draggedSize?.width ?? 128 }}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                    />
+                  )}
+              </Fragment>
             ))}
           </div>
         </TabsList>
@@ -759,12 +1122,14 @@ export default function WorkingSpacePageClient({
   const cached = workspacePageMemoryCache.get(
     workingSpaceId as unknown as string,
   );
-  const workspaceQuery = useQuery(api.workingSpaces.getWorkingSpaceById, {
-    _id: workingSpaceId,
-  }) as any;
-  const tablesQuery = useQuery(api.notesTables.getTables, {
-    workingSpaceId,
-  }) as any;
+  const workspaceQuery = useQuery(
+    api.workingSpaces.getWorkingSpaceById,
+    workingSpaceId ? { _id: workingSpaceId } : "skip",
+  ) as any;
+  const tablesQuery = useQuery(
+    api.notesTables.getTables,
+    workingSpaceId ? { workingSpaceId } : "skip",
+  ) as any;
 
   const workspace = workspaceQuery ?? cached?.workspace;
   const workingSpacesSlug: string | undefined =
@@ -787,7 +1152,6 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [isMouseDown, setIsMouseDown] = useState(false);
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
@@ -964,12 +1328,20 @@ export default function WorkingSpacePageClient({
     };
   }, [workspace?.name, tables?.length]);
 
+  const isMobile = getMediaQuery();
+
+  useEffect(() => {
+    if (isMobile && viewMode === "grid") {
+      setViewMode("list");
+    }
+  }, [isMobile, viewMode]);
+
   return (
     <MaxWContainer className="grid grid-cols-1">
       <header>
         <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
-            <h1 className="text-3xl md:text-5xl font-bol my-3 h-[3rem]">
+            <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[4rem] ">
               {!workspace ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
@@ -986,15 +1358,16 @@ export default function WorkingSpacePageClient({
                     setIsEditingName(false);
                   }}
                   placeholder="Untitled WorkSpace"
-                  className="min-w-fit max-w-2xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[3.3rem] text-3xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[4rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
-                  title="Double-click to rename"
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/20"
+                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
                 >
-                  {workspace.name}
+                  {workspace.name.length > 20 && isMobile
+                    ? `${workspace.name.slice(0, 17)}...`
+                    : workspace.name}
                 </span>
               )}
             </h1>
@@ -1003,7 +1376,7 @@ export default function WorkingSpacePageClient({
             <CreateTableBtn
               label="New Table"
               workingSpaceId={workingSpaceId}
-              className=" h-9 rounded-tr-none rounded-b-none "
+              className=" h-9 app-radius-none "
               aria-label="create-table"
             />
           )}
@@ -1022,6 +1395,7 @@ export default function WorkingSpacePageClient({
                 tables={tables}
                 activeTableId={defaultTableId ?? ""}
                 onTabChange={handleTabChange}
+                workingSpaceId={workingSpaceId as unknown as string}
               />
             </div>
 
@@ -1061,69 +1435,292 @@ export function NotesDroppableContainer({
   tables,
   setViewMode,
 }: NotesDroppableContainerProps) {
-  const { results, status, loadMore } = usePaginatedQuery(
+  const {
+    results: noteResults,
+    status: notesStatus,
+    loadMore: loadMoreNotes,
+  } = usePaginatedQuery(
     api.notes.getNotesByTableId,
     { notesTableId: tableId },
     { initialNumItems: 5 },
   );
-  const pdfs = useQuery(api.pdfs.getPdfsByTableId, {
-    notesTableId: tableId,
-  }) as
-    | Array<
-        Omit<PdfItem, "kind"> & {
-          fileUrl?: string | null;
-        }
-      >
-    | undefined;
-  const links = useQuery(api.links.getLinksByTableId, {
-    notesTableId: tableId,
-  }) as Array<Omit<LinkItem, "kind">> | undefined;
+  const {
+    results: pdfResults,
+    status: pdfsStatus,
+    loadMore: loadMorePdfs,
+  } = usePaginatedQuery(
+    api.pdfs.getPdfsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<PdfItem, "kind"> & { fileUrl?: string | null }>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
+  const {
+    results: linkResults,
+    status: linksStatus,
+    loadMore: loadMoreLinks,
+  } = usePaginatedQuery(
+    api.links.getLinksByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<LinkItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
+  const {
+    results: whiteboardResults,
+    status: whiteboardsStatus,
+    loadMore: loadMoreWhiteboards,
+  } = usePaginatedQuery(
+    api.whiteboards.getWhiteboardsByTableId,
+    { notesTableId: tableId },
+    { initialNumItems: 5 },
+  ) as {
+    results: Array<Omit<WhiteboardItem, "kind">>;
+    status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+    loadMore: (numItems: number) => void;
+  };
 
   const cachedNotes = tableNotesMemoryCache.get(tableId as unknown as string);
   useEffect(() => {
-    if (status !== "LoadingFirstPage") {
-      tableNotesMemoryCache.set(tableId as unknown as string, results);
+    if (notesStatus !== "LoadingFirstPage") {
+      tableNotesMemoryCache.set(tableId as unknown as string, noteResults);
     }
-  }, [results, status, tableId]);
-
+  }, [noteResults, notesStatus, tableId]);
   const stableResults =
-    status === "LoadingFirstPage" && cachedNotes ? cachedNotes : results;
+    notesStatus === "LoadingFirstPage" && cachedNotes
+      ? cachedNotes
+      : noteResults;
+
+  const cachedPdfs = tablePdfsMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (pdfsStatus !== "LoadingFirstPage") {
+      tablePdfsMemoryCache.set(tableId as unknown as string, pdfResults);
+    }
+  }, [pdfResults, pdfsStatus, tableId]);
+  const stablePdfs =
+    pdfsStatus === "LoadingFirstPage" && cachedPdfs ? cachedPdfs : pdfResults;
+
+  const cachedLinks = tableLinksMemoryCache.get(tableId as unknown as string);
+  useEffect(() => {
+    if (linksStatus !== "LoadingFirstPage") {
+      tableLinksMemoryCache.set(tableId as unknown as string, linkResults);
+    }
+  }, [linkResults, linksStatus, tableId]);
+  const stableLinks =
+    linksStatus === "LoadingFirstPage" && cachedLinks
+      ? cachedLinks
+      : linkResults;
+
+  const cachedWhiteboards = tableWhiteboardsMemoryCache.get(
+    tableId as unknown as string,
+  );
+  useEffect(() => {
+    if (whiteboardsStatus !== "LoadingFirstPage") {
+      tableWhiteboardsMemoryCache.set(
+        tableId as unknown as string,
+        whiteboardResults,
+      );
+    }
+  }, [tableId, whiteboardResults, whiteboardsStatus]);
+  const stableWhiteboards =
+    whiteboardsStatus === "LoadingFirstPage" && cachedWhiteboards
+      ? cachedWhiteboards
+      : whiteboardResults;
+
+  // Single combined pagination state driving one "Show More" button for
+  // notes + pdfs + links + whiteboards together.
+  const aggregateStatus:
+    | "LoadingFirstPage"
+    | "CanLoadMore"
+    | "LoadingMore"
+    | "Exhausted" =
+    notesStatus === "LoadingFirstPage" &&
+    !cachedNotes &&
+    pdfsStatus === "LoadingFirstPage" &&
+    !cachedPdfs &&
+    linksStatus === "LoadingFirstPage" &&
+    !cachedLinks &&
+    whiteboardsStatus === "LoadingFirstPage" &&
+    !cachedWhiteboards
+      ? "LoadingFirstPage"
+      : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
+            (s) => s === "CanLoadMore",
+          )
+        ? "CanLoadMore"
+        : [notesStatus, pdfsStatus, linksStatus, whiteboardsStatus].some(
+              (s) => s === "LoadingMore",
+            )
+          ? "LoadingMore"
+          : "Exhausted";
+
+  const handleLoadMore = useCallback(() => {
+    if (notesStatus === "CanLoadMore") loadMoreNotes(15);
+    if (pdfsStatus === "CanLoadMore") loadMorePdfs(15);
+    if (linksStatus === "CanLoadMore") loadMoreLinks(15);
+    if (whiteboardsStatus === "CanLoadMore") loadMoreWhiteboards(15);
+  }, [
+    notesStatus,
+    pdfsStatus,
+    linksStatus,
+    loadMoreNotes,
+    loadMorePdfs,
+    loadMoreLinks,
+    loadMoreWhiteboards,
+    whiteboardsStatus,
+  ]);
+
+  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (viewMode === "calendar") return;
+    if (aggregateStatus !== "CanLoadMore") return;
+
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          handleLoadMore();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [viewMode, aggregateStatus, handleLoadMore]);
 
   const [deletedItemIds, setDeletedItemIds] = useState<Set<string>>(new Set());
   const [contentFilter, setContentFilter] = useState<ContentFilter>("all");
+  const [subFilterValue, setSubFilterValue] = useState<string | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      const isTyping =
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        target?.isContentEditable ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey;
+
+      if (isTyping) return;
+
+      e.preventDefault();
+      searchInputRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     setDeletedItemIds(new Set());
     setContentFilter("all");
+    setSubFilterValue(null);
   }, [tableId]);
+
+  const linkGroupsByFilter = useMemo(() => {
+    const map: Partial<Record<ContentFilter, LinkFilterGroup[]>> = {};
+
+    GROUPABLE_LINK_FILTERS.forEach((filter) => {
+      const matched = stableLinks.filter((link) =>
+        matchesLinkPlatform((link as LinkItem).platform, filter),
+      );
+
+      const counts = new Map<
+        string,
+        {
+          label: string;
+          handle?: string;
+          avatarUrl?: string;
+          sampleUrl: string;
+          count: number;
+        }
+      >();
+
+      matched.forEach((rawLink) => {
+        const link = rawLink as LinkItem;
+        const key = getLinkGroupKey(link, filter);
+        if (!key) return;
+        const label = getLinkGroupLabel(link, filter) ?? key;
+        const existing = counts.get(key);
+        if (existing) {
+          existing.count += 1;
+          if (!existing.avatarUrl && link.metadata?.authorAvatarUrl) {
+            existing.avatarUrl = link.metadata.authorAvatarUrl;
+          }
+          if (!existing.handle && link.metadata?.authorHandle) {
+            existing.handle = link.metadata.authorHandle;
+          }
+        } else {
+          counts.set(key, {
+            label,
+            handle: filter === "link" ? undefined : link.metadata?.authorHandle,
+            avatarUrl:
+              filter === "link" ? undefined : link.metadata?.authorAvatarUrl,
+            sampleUrl: link.url,
+            count: 1,
+          });
+        }
+      });
+
+      const groups = Array.from(counts.entries())
+        .map(([key, v]) => ({ key, ...v }))
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+      if (groups.length > 1) {
+        map[filter] = groups;
+      }
+    });
+
+    return map;
+  }, [stableLinks]);
 
   const filteredItems = useMemo(() => {
     const noteItems = stableResults.map(
       (note) => ({ ...note, kind: "note" }) as WorkspaceEntry,
     );
-    const pdfItems = (pdfs ?? []).map(
+    const pdfItems = stablePdfs.map(
       (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
     );
-    const linkItems = (links ?? []).map(
+    const linkItems = stableLinks.map(
       (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
     );
-    let items = [...noteItems, ...pdfItems, ...linkItems]
+    const whiteboardItems = stableWhiteboards.map(
+      (whiteboard) => ({ ...whiteboard, kind: "whiteboard" }) as WorkspaceEntry,
+    );
+    let items = [...noteItems, ...pdfItems, ...linkItems, ...whiteboardItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
-      .sort((a, b) => {
-        const aPinned = a.favorite ? 1 : 0;
-        const bPinned = b.favorite ? 1 : 0;
-        if (aPinned !== bPinned) return bPinned - aPinned;
-        return b.updatedAt - a.updatedAt;
-      });
+      .sort((a, b) => b.updatedAt - a.updatedAt);
 
     if (contentFilter !== "all") {
       items = items.filter((item) => {
         if (contentFilter === "note") return item.kind === "note";
         if (contentFilter === "pdf") return item.kind === "pdf";
+        if (contentFilter === "whiteboard") return item.kind === "whiteboard";
         if (item.kind !== "link") return false;
         return matchesLinkPlatform(item.platform, contentFilter);
       });
+
+      if (subFilterValue && GROUPABLE_LINK_FILTERS.has(contentFilter)) {
+        items = items.filter(
+          (item) =>
+            item.kind === "link" &&
+            getLinkGroupKey(item as LinkItem, contentFilter) === subFilterValue,
+        );
+      }
     }
 
     if (!searchQuery.trim()) return items;
@@ -1131,14 +1728,35 @@ export function NotesDroppableContainer({
     return items.filter((item) => {
       const titleMatches = item.title?.toLowerCase().includes(q);
       if (item.kind === "pdf") return titleMatches;
+      if (item.kind === "whiteboard") {
+        return titleMatches || item.preview?.toLowerCase().includes(q);
+      }
       if (item.kind === "link") {
-        return titleMatches || item.url.toLowerCase().includes(q);
+        if (titleMatches || item.url.toLowerCase().includes(q)) return true;
+        const metadata = item.metadata;
+        if (!metadata) return false;
+        return (
+          metadata.authorName?.toLowerCase().includes(q) ||
+          metadata.authorHandle?.toLowerCase().includes(q) ||
+          metadata.siteName?.toLowerCase().includes(q) ||
+          metadata.description?.toLowerCase().includes(q) ||
+          false
+        );
       }
 
       const searchableText = (item.preview ?? item.body ?? "").toLowerCase();
       return titleMatches || searchableText.includes(q);
     });
-  }, [contentFilter, deletedItemIds, links, pdfs, searchQuery, stableResults]);
+  }, [
+    contentFilter,
+    subFilterValue,
+    deletedItemIds,
+    stableLinks,
+    stablePdfs,
+    stableWhiteboards,
+    searchQuery,
+    stableResults,
+  ]);
 
   const handleItemDelete = useCallback((itemId: string) => {
     setDeletedItemIds((prev) => {
@@ -1147,65 +1765,98 @@ export function NotesDroppableContainer({
       return newSet;
     });
   }, []);
-  const isMobile = useMediaQuery({ maxWidth: 640 });
+  const isMobile = getMediaQuery();
+  const isGridLayout = viewMode === "grid" || isMobile;
+  const numColumns = useGridColumnCount(isGridLayout);
+
+  const {
+    orderedItems,
+    draggingId,
+    dropTarget,
+    draggedSize,
+    justDraggedRef,
+    handleDragStart,
+    handleDragOverItem,
+    handleDrop,
+    handleDragEnd,
+  } = useClientSideOrder(
+    `${STORAGE_KEYS.CUSTOM_ORDER_PREFIX}${tableId}`,
+    filteredItems,
+    { newItemPosition: "start" },
+  );
+  const displayItems =
+    searchQuery.trim() || contentFilter !== "all" || subFilterValue
+      ? filteredItems
+      : orderedItems;
 
   return (
     <div className="grid grid-cols-1 gap-6 w-full max-w-full">
-      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
+      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-5 z-30">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
             <Input
+              ref={searchInputRef as any}
               type="text"
               placeholder="Search notes and uploads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 border-border h-9 mt-0.5"
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setIsSearchFocused(false)}
+              className="pl-10 pr-9 border-border h-[37px] my-0 !app-radius-none bg-background"
               aria-label="search-notes"
             />
+            {!isSearchFocused && !searchQuery && (
+              <kbd className="pointer-events-none leading-4 absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center app-radius-md border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
+                /
+              </kbd>
+            )}
           </div>
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+          <div className="flex h-9 items-center border border-border app-radius-none overflow-hidden">
+            {!isMobile && (
+              <Button
+                variant="SidebarMenuButton"
+                size="sm"
+                className={cn(
+                  "!app-radius-none bg-background hover:bg-muted",
+                  viewMode === "grid" && "bg-muted",
+                )}
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid
+                  className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
+                />
+              </Button>
+            )}
             <Button
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
-                viewMode === "grid" && "bg-muted",
-              )}
-              onClick={() => setViewMode("grid")}
-            >
-              <LayoutGrid
-                className={`h-3.5 w-3.5 ${viewMode === "grid" && "text-foreground"}`}
-              />
-            </Button>
-            <Button
-              variant="SidebarMenuButton"
-              size="sm"
-              className={cn(
-                "!rounded-none hover:bg-muted border border-l-border border-r-border ",
+                "!app-radius-none bg-background hover:bg-muted",
+                !isMobile && "border border-l-border border-r-border",
                 viewMode === "list" && "bg-muted",
               )}
               onClick={() => setViewMode("list")}
             >
               <List
-                className={`h-3.5 w-3.5 ${viewMode === "list" && !isMobile && "text-foreground"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "list" && "text-foreground"}`}
               />
             </Button>
             <Button
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!rounded-none hover:bg-muted",
+                "!app-radius-none bg-background hover:bg-muted",
                 viewMode === "calendar" && "bg-muted",
               )}
               onClick={() => setViewMode("calendar")}
               aria-label="calendar-view"
             >
               <Calendar
-                className={`h-3.5 w-3.5 ${viewMode === "calendar" && !isMobile && "text-foreground"}`}
+                className={`h-3.5 w-3.5 ${viewMode === "calendar" && "text-foreground"}`}
               />
             </Button>
           </div>
@@ -1214,54 +1865,141 @@ export function NotesDroppableContainer({
             workingSpacesSlug={workspaceSlug}
             CNBP_notesTableId={tableId}
           />
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger asChild>
+          <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+            <DropdownMenuTrigger asChild>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-9 shrink-0 border-border gap-1.5 !rounded-none",
+                  "h-9 shrink-0 border-border gap-1.5 !app-radius-none",
                   contentFilter !== "all" && "bg-muted",
                 )}
                 aria-label="filter-content"
               >
                 <Filter className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">
-                  {CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
-                    ?.label ?? "All"}
+                <span className="hidden sm:inline truncate max-w-[9rem] items-center gap-1.5 ">
+                  <span className="truncate">
+                    {CONTENT_FILTER_OPTIONS.find(
+                      (o) => o.value === contentFilter,
+                    )?.label ?? "All"}
+                    {subFilterValue
+                      ? ` · ${
+                          linkGroupsByFilter[contentFilter]?.find(
+                            (g) => g.key === subFilterValue,
+                          )?.label ?? subFilterValue
+                        }`
+                      : ""}
+                  </span>
                 </span>
               </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              className="w-32 p-1 border-border bg-card"
-            >
-              <div className="flex flex-col gap-0.5">
-                {CONTENT_FILTER_OPTIONS.map((option) => (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "justify-start h-8 px-2 font-normal",
-                      contentFilter === option.value && "bg-muted",
-                    )}
-                    onClick={() => {
-                      setContentFilter(option.value);
-                      setIsFilterOpen(false);
-                    }}
-                  >
-                    {option.label}
-                    {contentFilter === option.value ? (
-                      <Check className="ml-auto h-3.5 w-3.5" />
-                    ) : null}
-                  </Button>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {CONTENT_FILTER_OPTIONS.map((option) => {
+                const groups = linkGroupsByFilter[option.value];
+                const hasGroups = Boolean(groups && groups.length > 0);
+                const isActiveCategory = contentFilter === option.value;
+
+                if (!hasGroups) {
+                  return (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                      onSelect={() => {
+                        setContentFilter(option.value);
+                        setSubFilterValue(null);
+                      }}
+                    >
+                      <span className="truncate">{option.label}</span>
+                      {isActiveCategory && !subFilterValue ? (
+                        <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                      ) : null}
+                    </DropdownMenuItem>
+                  );
+                }
+
+                return (
+                  <DropdownMenuSub key={option.value}>
+                    <DropdownMenuSubTrigger
+                      className={cn(
+                        "gap-2",
+                        isActiveCategory && !subFilterValue && "bg-muted",
+                      )}
+                    >
+                      <span className="truncate">{option.label}</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-64 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border">
+                      <DropdownMenuItem
+                        className={cn(
+                          "gap-2",
+                          isActiveCategory && !subFilterValue && "bg-muted",
+                        )}
+                        onSelect={() => {
+                          setContentFilter(option.value);
+                          setSubFilterValue(null);
+                        }}
+                      >
+                        <span className="truncate">All {option.label}</span>
+                        {isActiveCategory && !subFilterValue ? (
+                          <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
+                        ) : null}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {groups!.map((group) => {
+                        const isActiveGroup =
+                          isActiveCategory && subFilterValue === group.key;
+                        return (
+                          <DropdownMenuItem
+                            key={group.key}
+                            className={cn(
+                              "gap-2 py-1.5",
+                              isActiveGroup && "bg-muted",
+                            )}
+                            onSelect={() => {
+                              setContentFilter(option.value);
+                              setSubFilterValue(group.key);
+                            }}
+                          >
+                            {option.value === "link" ? (
+                              <LinkFaviconBadge
+                                url={group.sampleUrl ?? ""}
+                                className="h-6 w-6 shrink-0"
+                              />
+                            ) : (
+                              <GroupAvatar
+                                avatarUrl={group.avatarUrl}
+                                label={group.label}
+                              />
+                            )}
+                            <div className="flex flex-col items-start min-w-0 flex-1">
+                              <span className="text-xs font-medium truncate w-full text-left">
+                                {group.label}
+                              </span>
+                              {option.value !== "link" &&
+                              formatHandle(group.handle) ? (
+                                <span className="text-[10px] text-muted-foreground truncate w-full text-left">
+                                  {formatHandle(group.handle)}
+                                </span>
+                              ) : null}
+                            </div>
+                            <span className="text-[10px] text-muted-foreground shrink-0 pl-1">
+                              {group.count}
+                            </span>
+                            {isActiveGroup ? (
+                              <Check className="h-3 w-3 shrink-0" />
+                            ) : null}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <TableSettings
             notesTableId={tableId}
             tableName={tables?.find((t) => t._id === tableId)?.name}
@@ -1269,10 +2007,7 @@ export function NotesDroppableContainer({
         </div>
       </div>
 
-      {status === "LoadingFirstPage" &&
-      !cachedNotes &&
-      pdfs === undefined &&
-      links === undefined ? (
+      {aggregateStatus === "LoadingFirstPage" ? (
         <NotesSkeleton viewMode={viewMode} />
       ) : (searchQuery || contentFilter !== "all") &&
         filteredItems.length === 0 ? (
@@ -1280,12 +2015,18 @@ export function NotesDroppableContainer({
           searchQuery={
             searchQuery.trim()
               ? searchQuery
-              : (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
-                  ?.label ?? "filter")
+              : (subFilterValue &&
+                  linkGroupsByFilter[contentFilter]?.find(
+                    (g) => g.key === subFilterValue,
+                  )?.label) ||
+                (CONTENT_FILTER_OPTIONS.find((o) => o.value === contentFilter)
+                  ?.label ??
+                  "filter")
           }
           onClearSearch={() => {
             setSearchQuery("");
             setContentFilter("all");
+            setSubFilterValue(null);
           }}
         />
       ) : filteredItems.length === 0 ? (
@@ -1296,103 +2037,149 @@ export function NotesDroppableContainer({
         />
       ) : (
         <>
-          {viewMode === "calendar" && !isMobile ? (
+          {viewMode === "calendar" ? (
             <CalendarTimelineView
               items={filteredItems}
               workspaceId={workspaceId}
-              paginationStatus={status}
-              onLoadMore={() => loadMore(15)}
+              paginationStatus={aggregateStatus}
+              onLoadMore={handleLoadMore}
             />
           ) : (
-            <div
-              className={
-                viewMode === "grid" || isMobile
-                  ? "columns-1 sm:columns-2 md:columns-3 gap-4"
-                  : "flex flex-col gap-3"
+            (() => {
+              const renderItem = (item: (typeof displayItems)[number]) => {
+                const draggableEnabled =
+                  !searchQuery.trim() && contentFilter === "all";
+                return (
+                  <Fragment key={item._id}>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "before" && (
+                        <div
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                    <div
+                      draggable={draggableEnabled}
+                      onDragStart={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        handleDragStart(item._id, {
+                          width: rect.width,
+                          height: rect.height,
+                        });
+                        e.dataTransfer.effectAllowed = "move";
+                      }}
+                      onDragOver={(e) => handleDragOverItem(e, item._id)}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        handleDrop();
+                      }}
+                      onDragEnd={handleDragEnd}
+                      onClickCapture={(e) => {
+                        // Some browsers fire a stray click/dblclick right
+                        // after a drop lands - don't let that also open the
+                        // card that was just being reordered.
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      onDoubleClickCapture={(e) => {
+                        if (justDraggedRef.current) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                      className={cn(
+                        draggableEnabled &&
+                          "cursor-grab active:cursor-grabbing",
+                        draggingId === item._id &&
+                          "opacity-40 scale-[0.98] transition-transform",
+                      )}
+                    >
+                      {isGridLayout ? (
+                        <WorkspaceGridCard
+                          item={item}
+                          workspaceId={workspaceId}
+                          onDelete={handleItemDelete}
+                          searchQuery={searchQuery}
+                        />
+                      ) : (
+                        <WorkspaceListCard
+                          item={item}
+                          workspaceId={workspaceId}
+                          onDelete={handleItemDelete}
+                          searchQuery={searchQuery}
+                        />
+                      )}
+                    </div>
+                    {dropTarget?.id === item._id &&
+                      dropTarget.position === "after" && (
+                        <div
+                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
+                          style={{ height: draggedSize?.height ?? 96 }}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            handleDrop();
+                          }}
+                        />
+                      )}
+                  </Fragment>
+                );
+              };
+
+              if (!isGridLayout) {
+                return (
+                  <div className="flex flex-col gap-3">
+                    {displayItems.map((item) => renderItem(item))}
+                  </div>
+                );
               }
-            >
-              {filteredItems.map((item) => (
-                <div
-                  key={item._id}
-                  className={
-                    viewMode === "grid" || isMobile
-                      ? "mb-4 break-inside-avoid"
-                      : undefined
-                  }
-                >
-                  {item.kind === "pdf" ? (
-                    viewMode === "grid" || isMobile ? (
-                      <PdfGridCard
-                        pdf={item}
-                        onDelete={(pdfId) => handleItemDelete(pdfId)}
-                        searchQuery={searchQuery}
-                      />
-                    ) : (
-                      <PdfListCard
-                        pdf={item}
-                        onDelete={(pdfId) => handleItemDelete(pdfId)}
-                        searchQuery={searchQuery}
-                      />
-                    )
-                  ) : item.kind === "link" ? (
-                    viewMode === "grid" || isMobile ? (
-                      <LinkGridCard
-                        link={item}
-                        onDelete={(linkId) => handleItemDelete(linkId)}
-                        searchQuery={searchQuery}
-                      />
-                    ) : (
-                      <LinkListCard
-                        link={item}
-                        onDelete={(linkId) => handleItemDelete(linkId)}
-                        searchQuery={searchQuery}
-                      />
-                    )
-                  ) : viewMode === "grid" || isMobile ? (
-                    <GridNoteCard
-                      note={item}
-                      workspaceId={workspaceId}
-                      onDelete={
-                        handleItemDelete as (noteId: Id<"notes">) => void
-                      }
-                      searchQuery={searchQuery}
-                    />
-                  ) : (
-                    <ListNoteCard
-                      note={item}
-                      workspaceId={workspaceId}
-                      onDelete={
-                        handleItemDelete as (noteId: Id<"notes">) => void
-                      }
-                      searchQuery={searchQuery}
-                    />
-                  )}
+
+              const columnItems: (typeof displayItems)[number][][] = Array.from(
+                { length: numColumns },
+                () => [],
+              );
+              displayItems.forEach((item, index) => {
+                columnItems[index % numColumns].push(item);
+              });
+
+              return (
+                <div className="flex gap-4 items-start w-full max-w-full">
+                  {columnItems.map((column, colIndex) => (
+                    <div
+                      key={colIndex}
+                      className="flex flex-col gap-4 flex-1 min-w-0"
+                    >
+                      {column.map((item) => renderItem(item))}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              );
+            })()
           )}
 
-          {viewMode !== "calendar" && status === "CanLoadMore" && (
-            <div className="flex justify-center mt-6">
-              <Button
-                variant="outline"
-                onClick={() => loadMore(15)}
-                className="border-border"
-                aria-label="load-more-notes"
+          {viewMode !== "calendar" &&
+            (aggregateStatus === "CanLoadMore" ||
+              aggregateStatus === "LoadingMore") && (
+              <div
+                ref={loadMoreSentinelRef}
+                className="flex justify-center mt-6 h-9"
+                aria-label="load-more-items"
               >
-                Show More
-              </Button>
-            </div>
-          )}
-
-          {viewMode !== "calendar" && status === "LoadingMore" && (
-            <div className="flex justify-center mt-6">
-              <Button variant="outline" disabled className="border-border">
-                <LoadingAnimation className="h-4 w-4 mr-2" />
-                Loading...
-              </Button>
-            </div>
-          )}
+                {aggregateStatus === "LoadingMore" && (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <LoadingAnimation className="h-4 w-4" />
+                    Loading...
+                  </div>
+                )}
+              </div>
+            )}
         </>
       )}
     </div>
@@ -1740,7 +2527,7 @@ function CalendarTimelineView({
               <Button
                 variant="Trigger"
                 size="sm"
-                className="h-8 border-border text-xs px-1.5 gap-1 !rounded-none"
+                className="h-8 border-border text-xs px-1.5 gap-1 !app-radius-none"
                 aria-label="calendar-zoom-level"
               >
                 {config.label}
@@ -1873,7 +2660,7 @@ function CalendarTimelineView({
               className="absolute inset-0 w-px bg-primary z-10"
               style={{ left: todayOffset }}
             >
-              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
+              <div className=" absolute top-0 left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 app-radius-full bg-primary text-primary-foreground text-[10px] font-semibold whitespace-nowrap">
                 Today
               </div>
             </div>
@@ -1896,7 +2683,7 @@ function CalendarTimelineView({
                   <div className="flex flex-col items-center">
                     <div
                       className={cn(
-                        "h-2.5 w-2.5 rounded-full border-2 border-card",
+                        "h-2.5 w-2.5 app-radius-full border-2 border-card",
                         cluster.entries.length > 1
                           ? "bg-primary"
                           : "bg-muted-foreground/60",
@@ -1966,7 +2753,7 @@ function CalendarGapMarker({
   };
   onToggle: () => void;
 }) {
-  const gapTooltip = useHoverTooltip(300);
+  const gapTooltip = useHoverTooltip(100);
   const hiddenDaysLabel = `${gap.emptyDays} hidden day${
     gap.emptyDays === 1 ? "" : "s"
   }`;
@@ -1981,7 +2768,7 @@ function CalendarGapMarker({
           size="sm"
           onClick={onToggle}
           className={cn(
-            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !rounded-none",
+            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !app-radius-none",
             gap.expanded ? "top-20" : "top-16",
           )}
           style={{ left: gap.x }}
@@ -2008,6 +2795,62 @@ function CalendarGapMarker({
   );
 }
 
+function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
+  const thumbnailUrl = isLink
+    ? (item as LinkItem).metadata?.thumbnailUrl
+    : undefined;
+  const isPending = isLink && (item as LinkItem).metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+  if (!isLink) {
+    return (
+      <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
+        {isWhiteboard ? (
+          <PanelTop className="h-4 w-4 text-muted-foreground" />
+        ) : (
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-9 w-9 flex items-center justify-center flex-shrink-0">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+          <Link2 className="h-4 w-4 text-muted-foreground" />
+        </div>
+      )}
+
+      <LinkFaviconBadge
+        url={(item as LinkItem).url}
+        className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
+      />
+    </div>
+  );
+}
+
 function TimelineMiniCard({
   item,
   workspaceId,
@@ -2019,34 +2862,35 @@ function TimelineMiniCard({
 }) {
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
-  const href = isPdf
-    ? `/home/${(item as PdfItem).workingSpaceId}/pdf/${generateSlug(
-        (item as PdfItem).title || "untitled-pdf",
-      )}?pdfId=${item._id}`
-    : isLink
-      ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
-          (item as LinkItem).title ||
-            (item as LinkItem).metadata?.authorName ||
-            "link",
-        )}?linkId=${item._id}`
-      : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+  const isWhiteboard = item.kind === "whiteboard";
+  const href = isWhiteboard
+    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${generateSlug(
+        (item as WhiteboardItem).title || "untitled-whiteboard",
+      )}?whiteboardId=${item._id}`
+    : isPdf
+      ? `/home/${(item as PdfItem).workingSpaceId}/${generateSlug(
+          (item as PdfItem).title || "untitled-pdf",
+        )}?pdfId=${item._id}`
+      : isLink
+        ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
+            (item as LinkItem).title ||
+              (item as LinkItem).metadata?.authorName ||
+              "link",
+          )}?linkId=${item._id}`
+        : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
 
   const createdDate = new Date(item.createdAt);
   const isDifferentYear =
     createdDate.getFullYear() !== new Date().getFullYear();
 
   const cardClassName = cn(
-    "group flex items-start gap-2 border border-border bg-card hover:border-primary/50 hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[2px_2px_0px] shadow-primary transition-all app-radius-md px-2.5 py-2",
+    "group flex items-center gap-2 border border-border bg-card hover:border-primary/20 hover:bg-muted/40 transition-colors app-radius-md px-2.5 py-2",
     inPopover ? "w-full" : "w-[168px]",
   );
 
   const cardContent = (
     <>
-      {isLink ? (
-        <Link2 className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-      ) : (
-        <FileText className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
-      )}
+      <TimelineMiniThumbnail item={item} />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
           {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
@@ -2069,560 +2913,392 @@ function TimelineMiniCard({
   );
 }
 
-function GridNoteCard({
-  note,
+function getWorkspaceItemDetails(
+  item: WorkspaceEntry,
+  workspaceId?: Id<"workingSpaces">,
+) {
+  if (item.kind === "whiteboard") {
+    const board = item as WhiteboardItem;
+    return {
+      title: board.title || "Untitled whiteboard",
+      subtitle: "",
+      href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+    };
+  }
+  if (item.kind === "pdf") {
+    const pdf = item as PdfItem;
+    return {
+      title: pdf.title || "Untitled PDF",
+      subtitle: "PDF upload",
+      href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+    };
+  }
+  if (item.kind === "link") {
+    const link = item as LinkItem;
+    return {
+      title:
+        link.title ||
+        link.metadata?.authorName ||
+        link.metadata?.siteName ||
+        link.url,
+      subtitle: link.metadata ? link.metadata.description : " ",
+      href: link.url,
+    };
+  }
+  const note = item as Note;
+  return {
+    title: note.title || "Untitled",
+    subtitle: note.preview
+      ? parseTiptapContentTruncateText(note.preview, 80)
+      : getContentPreviewFromBody(note.body),
+    href: `/home/${workspaceId}/${note.slug}?id=${note._id}`,
+  };
+}
+
+function WorkspaceItemSettings({
+  item,
+  onDelete,
+}: {
+  item: WorkspaceEntry;
+  onDelete?: (id: any) => void;
+}) {
+  if (item.kind === "whiteboard")
+    return (
+      <WhiteboardSettings
+        whiteboard={item as WhiteboardItem}
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "pdf")
+    return (
+      <PdfSettings
+        pdfId={item._id as Id<"pdfs">}
+        pdfTitle={(item as PdfItem).title}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  if (item.kind === "link")
+    return (
+      <LinkSettings
+        linkId={item._id as Id<"links">}
+        linkUrl={(item as LinkItem).url}
+        linkTitle={(item as LinkItem).title}
+        favorite={(item as LinkItem).favorite}
+        createdAt={item.createdAt}
+        updatedAt={item.updatedAt}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        onDelete={onDelete}
+      />
+    );
+  const note = item as Note;
+  return (
+    <NoteSettings
+      noteId={note._id}
+      noteTitle={note.title}
+      ShowWidthOp={false}
+      IconVariant="vertical_icon"
+      DropdownMenuContentAlign="start"
+      TooltipContentAlign="start"
+      onDelete={onDelete}
+      BtnClassName="pt-0"
+    />
+  );
+}
+
+function WorkspaceItemThumbnail({
+  item,
+  compact = false,
+}: {
+  item: WorkspaceEntry;
+  compact?: boolean;
+}) {
+  const size = compact ? " w-10" : "w-full";
+  if (item.kind === "whiteboard")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <WhiteboardPreview
+          snapshot={(item as WhiteboardItem).snapshot}
+          preview={(item as WhiteboardItem).preview}
+        />
+      </div>
+    );
+  if (item.kind === "link")
+    return (
+      <div className={`${size} shrink-0 overflow-hidden`}>
+        <LinkThumbnail link={item as LinkItem} showFaviconBadge />
+      </div>
+    );
+  if ((item.kind === "note" || item.kind === "pdf") && !compact) return null;
+  return (
+    <div className={`${size} flex shrink-0 items-center justify-center`}>
+      <FileText className="h-6 w-6 text-primary" />
+    </div>
+  );
+}
+
+const WorkspaceGridCard = memo(function WorkspaceGridCard({
+  item,
   workspaceId,
   onDelete,
   searchQuery,
-}: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
-      }
-    },
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [note.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        setEditedTitle(note.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: any) => {
-      if (e.key === "Enter") {
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
-    },
-    [note.title],
-  );
-
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  // A social post's own publish date, not when we happened to save the link.
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
   return (
     <Card
-      className={cn(
-        "group relative overflow-hidden bg-card border flex flex-col w-full min-h-[230px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
+      onDoubleClick={open}
+      className="group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
     >
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
+        <div className="flex min-w-0 items-start justify-between gap-2">
+          {isSocialLink ? (
+            <div className="flex min-w-0 items-start gap-2.5">
+              <LinkAuthorAvatar
+                avatarUrl={link?.metadata?.authorAvatarUrl}
+                authorName={authorName || details.title}
+                className="mt-0.5 h-9 w-9"
               />
+              <div className="min-w-0">
+                <CardTitle className="line-clamp-1 max-w-full break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">
+                  <HighlightText
+                    text={authorName || details.title}
+                    query={searchQuery}
+                  />
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">
+                  {authorHandle}
+                  {authorHandle && postDate ? " · " : ""}
+                  {postDate ? formatLongDateTime(postDate) : null}
+                </span>
+              </div>
             </div>
           ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
-              <HighlightText
-                text={note.title || "Untitled"}
-                query={searchQuery}
-              />
+            <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
+              <HighlightText text={details.title} query={searchQuery} />
             </CardTitle>
           )}
-          <NoteSettings
-            noteId={note._id}
-            noteTitle={note.title}
-            ShowWidthOp={false}
-            IconVariant="vertical_icon"
-            DropdownMenuContentAlign="start"
-            TooltipContentAlign="start"
-            onDelete={onDelete}
-            BtnClassName="pt-0"
-          />
+          <div onDoubleClick={(e) => e.stopPropagation()}>
+            <WorkspaceItemSettings item={item} onDelete={onDelete} />
+          </div>
         </div>
+        {item.kind !== "link" && (
+          <p className="text-xs text-muted-foreground">
+            Created {formatLongDate(item.createdAt)} · Last updated{" "}
+            {formatLongDate(item.updatedAt)}
+          </p>
+        )}
       </CardHeader>
-
-      <CardContent className=" flex-grow flex-1">
-        <p className="text-sm text-muted-foreground line-clamp-3">
-          {previewText}
-        </p>
-      </CardContent>
-
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground overflow-visible ">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          variant="revDefault"
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
-          aria-label="open-note"
-        >
-          <IntentPrefetchLink
-            href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
-          >
-            Open
-          </IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-function ListNoteCard({
-  note,
-  workspaceId,
-  onDelete,
-  searchQuery,
-}: NoteCardProps) {
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, title } = args;
-      const existing = local.getQuery(api.notes.getNoteById, { _id });
-      if (existing) {
-        local.setQuery(
-          api.notes.getNoteById,
-          { _id },
-          {
-            ...existing,
-            title: title ?? existing.title,
-            updatedAt: Date.now(),
-          },
-        );
-      }
-    },
-  );
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(note.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [note.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(note.title || "Untitled");
-      return;
-    }
-    const trimmed = result.data;
-    if (trimmed !== (note.title || "Untitled")) {
-      try {
-        await updateNote({ _id: note._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating note title:", error);
-        setEditedTitle(note.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, note.title, note._id, updateNote]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(note.title || "Untitled");
-      }
-    },
-    [note.title],
-  );
-
-  return (
-    <Card
-      className={cn(
-        "group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border transition-all duration-300 w-full min-h-[100px]",
-        isEmpty
-          ? "border-dashed border-border"
-          : "border-border hover:border-border",
-      )}
-    >
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className=" relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <>
-                <Input
-                  ref={titleInputRef as any}
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  onBlur={handleTitleBlur}
-                  onKeyDown={handleTitleKeyDown}
-                  className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-                />
-              </>
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
-              >
-                <HighlightText
-                  text={note.title || "Untitled"}
-                  query={searchQuery}
-                />
-              </h3>
-            )}
-            {
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {previewText}
-              </p>
-            }
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className=" relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <NoteSettings
-              noteId={note._id}
-              noteTitle={note.title}
-              ShowWidthOp={false}
-              IconVariant="vertical_icon"
-              DropdownMenuContentAlign="start"
-              TooltipContentAlign="start"
-              onDelete={onDelete}
-              BtnClassName="pt-0 mr-10 mt-1.5"
-            />
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-            >
-              <IntentPrefetchLink
-                href={`/home/${workspaceId}/${note.slug}?id=${note._id}`}
-              >
-                <span aria-label="open-note">Open</span>
-              </IntentPrefetchLink>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function PdfGridCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLTextAreaElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
-
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        titleInputRef.current?.blur();
-      } else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
-  );
-
-  return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full min-h-[200px]">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          {isEditingTitle ? (
-            <div className="flex-1 flex flex-col gap-1 overflow-hidden">
-              <Textarea
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                rows={1}
-                style={{ resize: "none", overflow: "hidden" }}
-                className="field-sizing-content min-h-0 min-w-0 w-full max-w-full max-h-14 whitespace-pre-wrap [overflow-wrap:anywhere] border-transparent bg-transparent px-0 py-0 my-0 text-lg font-semibold app-radius-md focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            </div>
-          ) : (
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20"
-              onDoubleClick={handleDoubleClick}
-              title="Double-click to rename"
-            >
+      <CardContent
+        className={`flex flex-1 flex-col ${isSocialLink && "gap-2"} `}
+      >
+        {isSocialLink ? (
+          <>
+            <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
               <HighlightText
-                text={pdf.title || "Untitled"}
+                text={link?.metadata?.description || ""}
                 query={searchQuery}
               />
-            </CardTitle>
-          )}
-          <PdfSettings
-            pdfId={pdf._id}
-            pdfTitle={pdf.title}
-            iconVariant="vertical_icon"
-            dropdownMenuContentAlign="start"
-            tooltipContentAlign="start"
-            onDelete={onDelete}
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <FileText className="h-5 w-5 text-primary" />
-          <span>PDF upload</span>
-        </div>
-      </CardContent>
-
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button
-          size="sm"
-          asChild
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
-          variant="revDefault"
-          aria-label="open-upload"
-        >
-          <IntentPrefetchLink href={pdfHref}>Open</IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
-  );
-}
-
-function PdfListCard({ pdf, onDelete, searchQuery }: PdfCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const updatePdf = useMutation(api.pdfs.updatePdf);
-  const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-  const pdfHref = `/home/${pdf.workingSpaceId}/pdf/${pdfSlug}?pdfId=${pdf._id}`;
-
-  useEffect(() => {
-    setEditedTitle(pdf.title || "Untitled");
-  }, [pdf.title]);
-
-  const handleDoubleClick = useCallback(() => {
-    setEditedTitle(pdf.title || "Untitled");
-    setIsEditingTitle(true);
-    requestAnimationFrame(() => {
-      titleInputRef.current?.focus();
-      titleInputRef.current?.select();
-    });
-  }, [pdf.title]);
-
-  const handleTitleBlur = useCallback(async () => {
-    const result = noteTitleSchema.safeParse(editedTitle.trim());
-    if (!result.success) {
-      setIsEditingTitle(false);
-      setEditedTitle(pdf.title || "Untitled");
-      return;
-    }
-
-    const trimmed = result.data;
-    if (trimmed !== (pdf.title || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdf._id, title: trimmed });
-      } catch (error) {
-        console.error("Error updating PDF title:", error);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    }
-    setIsEditingTitle(false);
-  }, [editedTitle, pdf._id, pdf.title, updatePdf]);
-
-  const handleTitleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") titleInputRef.current?.blur();
-      else if (e.key === "Escape") {
-        setIsEditingTitle(false);
-        setEditedTitle(pdf.title || "Untitled");
-      }
-    },
-    [pdf.title],
-  );
-
-  return (
-    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-[100px]">
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="h-10 w-10 flex items-center justify-center flex-shrink-0">
-            <FileText className="h-5 w-5 text-primary" />
-          </div>
-          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            {isEditingTitle ? (
-              <Input
-                ref={titleInputRef as any}
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                onBlur={handleTitleBlur}
-                onKeyDown={handleTitleKeyDown}
-                className="min-w-fit max-w-md border border-transparent bg-transparent h-[1.8rem] px-0 py-3 !text-lg font-semibold focus-visible:ring-0 focus-visible:ring-offset-0"
-              />
-            ) : (
-              <h3
-                className="text-lg font-semibold text-foreground line-clamp-2 flex-1 cursor-text app-radius-md border border-transparent hover:border-muted-foreground/20 w-fit"
-                onDoubleClick={handleDoubleClick}
-                title="Double-click to rename"
-              >
-                <HighlightText
-                  text={pdf.title || "Untitled"}
-                  query={searchQuery}
-                />
-              </h3>
-            )}
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              PDF upload
             </p>
-          </div>
+            {link?.metadata?.thumbnailUrl && (
+              <LinkThumbnail link={link} showFaviconBadge />
+            )}
+          </>
+        ) : (
+          <>
+            <WorkspaceItemThumbnail item={item} />
+            <p className="line-clamp-2 text-sm text-muted-foreground">
+              <HighlightText
+                text={details.subtitle || ""}
+                query={searchQuery}
+              />
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+});
 
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(pdf.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <PdfSettings
-              pdfId={pdf._id}
-              pdfTitle={pdf.title}
-              iconVariant="vertical_icon"
-              dropdownMenuContentAlign="start"
-              tooltipContentAlign="start"
-              onDelete={onDelete}
-              btnClassName="pt-0 mr-10 mt-1.5"
+const WorkspaceListCard = memo(function WorkspaceListCard({
+  item,
+  workspaceId,
+  onDelete,
+  searchQuery,
+}: {
+  item: WorkspaceEntry;
+  workspaceId?: Id<"workingSpaces">;
+  onDelete?: (id: any) => void;
+  searchQuery: string;
+}) {
+  const router = useRouter();
+  const details = getWorkspaceItemDetails(item, workspaceId);
+  const open = () =>
+    item.kind === "link"
+      ? window.open(details.href, "_blank", "noopener,noreferrer")
+      : router.push(details.href);
+  const link = item.kind === "link" ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
+  const authorName = link?.metadata?.authorName?.trim();
+  const authorHandle = formatHandle(link?.metadata?.authorHandle);
+  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
+  return (
+    <Card
+      onDoubleClick={open}
+      className="group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50"
+    >
+      <CardContent className="flex w-full items-center gap-4 p-3">
+        {isSocialLink ? (
+          <LinkAuthorAvatar
+            avatarUrl={link?.metadata?.authorAvatarUrl}
+            className="h-10 w-10"
+          />
+        ) : (
+          <WorkspaceItemThumbnail item={item} compact />
+        )}
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+            <HighlightText
+              text={isSocialLink ? authorName || details.title : details.title}
+              query={searchQuery}
             />
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-            >
-              <IntentPrefetchLink href={pdfHref}>
-                <span aria-label="open-upload">Open</span>
-              </IntentPrefetchLink>
-            </Button>
-          </div>
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {isSocialLink ? (
+              <>
+                {authorHandle}
+                {authorHandle && postDate ? " · " : ""}
+                {postDate ? formatLongDateTime(postDate) : null}
+              </>
+            ) : item.kind === "link" ? (
+              formatLongDate(item.updatedAt)
+            ) : (
+              <>
+                Created {formatLongDate(item.createdAt)} · Last updated{" "}
+                {formatLongDate(item.updatedAt)}
+              </>
+            )}
+          </p>
+          <p className="line-clamp-1 text-sm text-muted-foreground">
+            <HighlightText text={details.subtitle || ""} query={searchQuery} />
+          </p>
+        </div>
+        <div onDoubleClick={(e) => e.stopPropagation()}>
+          <WorkspaceItemSettings item={item} onDelete={onDelete} />
         </div>
       </CardContent>
     </Card>
   );
+});
+
+function WhiteboardPreview({
+  snapshot,
+  preview,
+}: {
+  snapshot?: string;
+  preview?: string;
+}) {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!snapshot) {
+      setThumbnailUrl(null);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let cancelled = false;
+
+    const renderThumbnail = async () => {
+      try {
+        const scene = JSON.parse(snapshot);
+        if (!Array.isArray(scene.elements) || scene.elements.length === 0) {
+          if (!cancelled) setThumbnailUrl(null);
+          return;
+        }
+        const { exportToSvg } = await import("@excalidraw/excalidraw");
+        const svg = await exportToSvg({
+          elements: scene.elements,
+          appState: scene.appState,
+          files: scene.files,
+          exportPadding: 24,
+        } as any);
+        objectUrl = URL.createObjectURL(
+          new Blob([new XMLSerializer().serializeToString(svg)], {
+            type: "image/svg+xml",
+          }),
+        );
+        if (!cancelled) setThumbnailUrl(objectUrl);
+      } catch {
+        if (!cancelled) setThumbnailUrl(null);
+      }
+    };
+
+    void renderThumbnail();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [snapshot]);
+
+  return (
+    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden border border-border">
+      {thumbnailUrl ? (
+        <img
+          src={thumbnailUrl}
+          alt=" Whiteboard thumbnail"
+          draggable={false}
+          className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
+        />
+      ) : (
+        <div className=" min-h-48 w-full flex justify-center items-center">
+          <PanelTop className="h-8 w-8 text-primary/70" />
+          <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {preview || "Empty canvas"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Matches "Jul 28, 2026" - used for note created/updated labels and post dates.
+function formatLongDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// Matches "Jun 25, 2026, 5:36 PM" - used for social post timestamps.
+function formatLongDateTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function getLinkFaviconUrl(url: string): string | null {
@@ -2634,7 +3310,15 @@ function getLinkFaviconUrl(url: string): string | null {
   }
 }
 
-function LinkFavicon({ url, className }: { url: string; className?: string }) {
+function LinkFavicon({
+  url,
+  className,
+  grayscale = true,
+}: {
+  url: string;
+  className?: string;
+  grayscale?: boolean;
+}) {
   const [errored, setErrored] = useState(false);
   const faviconUrl = getLinkFaviconUrl(url);
 
@@ -2646,8 +3330,10 @@ function LinkFavicon({ url, className }: { url: string; className?: string }) {
     <img
       src={faviconUrl}
       alt=""
+      draggable={false}
       className={cn(
-        "object-contain grayscale contrast-125 saturate-0",
+        "object-contain select-none [-webkit-user-drag:none]",
+        grayscale && "grayscale",
         className,
       )}
       onError={() => setErrored(true)}
@@ -2658,9 +3344,11 @@ function LinkFavicon({ url, className }: { url: string; className?: string }) {
 function LinkFaviconBadge({
   url,
   className,
+  grayscale = true,
 }: {
   url: string;
   className?: string;
+  grayscale?: boolean;
 }) {
   return (
     <div
@@ -2669,193 +3357,102 @@ function LinkFaviconBadge({
         className,
       )}
     >
-      <LinkFavicon url={url} className="h-[100%] w-[100%]" />
+      <LinkFavicon
+        url={url}
+        className="h-[100%] w-[100%]"
+        grayscale={grayscale}
+      />
     </div>
   );
 }
 
-function LinkGridCard({ link, onDelete, searchQuery }: LinkCardProps) {
-  const deleteLink = useMutation(api.links.deleteLink);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const displayTitle =
-    link.title ||
-    link.metadata?.authorName ||
-    link.metadata?.siteName ||
-    link.url;
-
-  const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      await deleteLink({ _id: link._id });
-      onDelete?.(link._id);
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      setIsDeleting(false);
-    }
-  }, [deleteLink, link._id, onDelete]);
+function LinkThumbnail({
+  link,
+  showFaviconBadge = false,
+}: {
+  link: LinkItem;
+  showFaviconBadge?: boolean;
+}) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const thumbnailUrl = link.metadata?.thumbnailUrl;
+  const isPending = link.metadata === undefined;
+  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
 
   return (
-    <Card className="group relative overflow-hidden bg-card border border-border flex flex-col w-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 min-w-0">
-            <LinkFaviconBadge url={link.url} className="h-6 w-6 mt-0.5" />
-            <CardTitle
-              className="text-lg font-semibold text-foreground line-clamp-2 w-fit"
-              title={link.url}
-            >
-              <HighlightText text={displayTitle} query={searchQuery} />
-            </CardTitle>
-          </div>
-          <Button
-            type="button"
-            variant="Trigger"
-            size="icon"
-            onClick={() => void handleDelete()}
-            disabled={isDeleting}
-            aria-label="delete-link"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive flex-shrink-0"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1 flex flex-col justify-between">
-        {link.metadata?.thumbnailUrl ? (
-          <div className="w-full h-full app-radius-md overflow-hidden bg-muted">
-            <img
-              src={link.metadata.thumbnailUrl}
-              alt=""
-              className="w-full h-full object-cover"
-            />
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            <LinkFaviconBadge url={link.url} className="h-10 w-10" />
-            <span>{platformLabel(link.platform) || "Link"}</span>
-          </div>
-        )}
-      </CardContent>
-
-      <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Calendar className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
+    <div className="relative w-full aspect-video app-radius-md overflow-hidden bg-muted">
+      {thumbnailUrl && (
+        <img
+          src={thumbnailUrl}
+          alt=""
+          draggable={false}
+          onLoad={() => setImgLoaded(true)}
+          onError={() => setImgLoaded(false)}
+          className={cn(
+            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300 ",
+            imgLoaded ? "opacity-100" : "opacity-0",
           )}
+        />
+      )}
+
+      {showSkeleton && (
+        <div className="absolute inset-0 bg-border/60 animate-pulse" />
+      )}
+
+      {!isPending && !thumbnailUrl && (
+        <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
+          <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
+          <span>{platformLabel(link.platform) || "Link"}</span>
         </div>
-        <Button
-          size="sm"
-          asChild
-          className="absolute bottom-0 right-0 h-10 px-6 text-xs"
-          variant="revDefault"
-          aria-label="open-link"
-        >
-          <a href={link.url} target="_blank" rel="noopener noreferrer">
-            Open {link.metadata?.siteName}
-          </a>
-        </Button>
-      </CardFooter>
-    </Card>
+      )}
+
+      {showFaviconBadge && thumbnailUrl && imgLoaded && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 h-8 w-8"
+        />
+      )}
+    </div>
   );
 }
 
-function LinkListCard({ link, onDelete, searchQuery }: LinkCardProps) {
-  const deleteLink = useMutation(api.links.deleteLink);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const displayTitle =
-    link.title ||
-    link.metadata?.authorName ||
-    link.metadata?.siteName ||
-    link.url;
-
-  const handleDelete = useCallback(async () => {
-    setIsDeleting(true);
-    try {
-      await deleteLink({ _id: link._id });
-      onDelete?.(link._id);
-    } catch (error) {
-      console.error("Error deleting link:", error);
-      setIsDeleting(false);
-    }
-  }, [deleteLink, link._id, onDelete]);
-
+function LinkAuthorAvatar({
+  avatarUrl,
+  authorName,
+  className,
+}: {
+  avatarUrl?: string;
+  authorName?: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  if (!avatarUrl || errored) {
+    const initial = authorName?.trim().charAt(0).toUpperCase();
+    return (
+      <div
+        className={cn(
+          "rounded-full bg-muted flex items-center justify-center flex-shrink-0 text-sm font-medium text-muted-foreground",
+          className,
+        )}
+      >
+        {initial ? (
+          initial
+        ) : (
+          <Link2 className="h-1/2 w-1/2 text-muted-foreground" />
+        )}
+      </div>
+    );
+  }
   return (
-    <Card className="group relative overflow-hidden flex justify-center items-center bg-card backdrop-blur-sm border border-border transition-all duration-300 w-full min-h-fit">
-      <CardContent className="p-3 flex-1">
-        <div className="flex items-center justify-center gap-4">
-          <div className="relative h-10 w-10 flex items-center justify-center flex-shrink-0">
-            {link.metadata?.thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={link.metadata.thumbnailUrl}
-                alt="link metadata thumbnailUrl"
-                className="h-full w-full object-cover app-radius-md"
-              />
-            ) : (
-              <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-muted-foreground" />
-              </div>
-            )}
-            <LinkFaviconBadge
-              url={link.url}
-              className="absolute -bottom-1 -right-1 h-[18px] w-[18px]"
-            />
-          </div>
-          <div className="relative flex-1 min-w-0 h-[3.5rem] overflow-hidden">
-            <h3
-              className="text-lg font-semibold text-foreground line-clamp-2 flex-1 w-fit"
-              title={link.url}
-            >
-              <HighlightText text={displayTitle} query={searchQuery} />
-            </h3>
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {platformLabel(link.platform)}
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="h-3.5 w-3.5" />
-              {typeof window !== "undefined" ? (
-                <span>{new Date(link.updatedAt).toLocaleDateString()}</span>
-              ) : (
-                <SkeletonTextAnimation className="w-20" />
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => void handleDelete()}
-              disabled={isDeleting}
-              aria-label="delete-link"
-              className="h-7 w-7 pt-0 mr-10 mt-1.5 text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              asChild
-              variant="revDefault"
-              className="absolute right-0 bottom-0 h-4/5 px-2 text-xs"
-            >
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="open-link"
-              >
-                Open
-              </a>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <img
+      src={avatarUrl}
+      alt={authorName || ""}
+      draggable={false}
+      onError={() => setErrored(true)}
+      className={cn(
+        "rounded-full object-cover flex-shrink-0 select-none [-webkit-user-drag:none]",
+        className,
+      )}
+    />
   );
 }
 
@@ -2864,7 +3461,7 @@ function EmptySearchResults({
   onClearSearch,
 }: EmptySearchResultsProps) {
   return (
-    <Card className="bg-card/50 backdrop-blur-sm border-border">
+    <Card className="bg-transparent  border-0">
       <CardContent className="pt-12 pb-12 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="h-10 w-10 flex items-center justify-center mb-4">
@@ -2874,7 +3471,7 @@ function EmptySearchResults({
             No results found
           </h3>
           <p className="text-muted-foreground mb-6">
-            No notes or uploads found for "{searchQuery}"
+            No items found for "{searchQuery}"
           </p>
           <Button
             variant="outline"
@@ -2925,8 +3522,8 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
       <div className="grid grid-cols-1 gap-1.5 w-full max-w-full">
         <div className="relative min-w-0 w-full max-w-full">
           <div className="flex flex-wrap items-center justify-end absolute right-2 top-16 z-30 gap-0.5">
-            <div className="h-8 w-16 bg-border rounded animate-pulse" />
-            <div className="h-8 w-20 bg-border rounded animate-pulse" />
+            <div className="h-8 w-16 bg-border app-radius-md animate-pulse" />
+            <div className="h-8 w-20 bg-border app-radius-md animate-pulse" />
           </div>
           <div className="min-w-0 w-full max-w-full overflow-hidden">
             <div className="relative w-full" style={{ height: 300 }}>
@@ -2937,7 +3534,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     className="absolute top-0 h-7 flex items-center"
                     style={{ left: `${left}%` }}
                   >
-                    <div className="h-2.5 w-14 bg-border rounded animate-pulse" />
+                    <div className="h-2.5 w-14 bg-border app-radius-md animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -2949,7 +3546,7 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     className="absolute top-1"
                     style={{ left: `${i * 12.5 + 1}%` }}
                   >
-                    <div className="h-2.5 w-4 bg-border rounded animate-pulse" />
+                    <div className="h-2.5 w-4 bg-border app-radius-md animate-pulse" />
                   </div>
                 ))}
               </div>
@@ -2970,11 +3567,11 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
                     style={{ left: `${left}%`, transform: "translateX(-50%)" }}
                   >
                     <div className="flex flex-col items-center">
-                      <div className="h-2.5 w-2.5 rounded-full bg-border animate-pulse" />
+                      <div className="h-2.5 w-2.5 app-radius-full bg-border animate-pulse" />
                       <div className="w-px h-3 bg-border" />
                       <div className="w-[168px] border border-border bg-card app-radius-md px-2.5 py-2 space-y-1.5">
-                        <div className="h-3 w-3/4 bg-border rounded animate-pulse" />
-                        <div className="h-2.5 w-1/2 bg-border rounded animate-pulse" />
+                        <div className="h-3 w-3/4 bg-border app-radius-md animate-pulse" />
+                        <div className="h-2.5 w-1/2 bg-border app-radius-md animate-pulse" />
                       </div>
                     </div>
                   </div>
@@ -2997,20 +3594,20 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
           >
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
               </div>
             </CardHeader>
             <CardContent className="flex-grow flex-1">
               <div className="space-y-2">
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
-                <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
               </div>
             </CardContent>
-            <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-              <div className="h-4 w-24 bg-border rounded animate-pulse" />
-              <div className="h-9 w-12 bg-border rounded animate-pulse" />
+            <CardFooter className="py-2 px-3 flex items-center justify-between border-t border-border">
+              <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+              <div className="h-9 w-16 bg-border app-radius-md animate-pulse" />
             </CardFooter>
           </Card>
         ))}
@@ -3026,13 +3623,13 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
             <div className="flex items-center gap-4">
               <div className="h-10 w-10 app-radius-md bg-border animate-pulse flex-shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="h-5 w-2/3 bg-border rounded animate-pulse" />
-                <div className="h-4 w-full bg-border rounded animate-pulse" />
+                <div className="h-5 w-2/3 bg-border app-radius-md animate-pulse" />
+                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
               </div>
               <div className="flex items-center gap-3">
-                <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                <div className="h-5 w-5 bg-border rounded animate-pulse" />
-                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
               </div>
             </div>
           </CardContent>
@@ -3051,11 +3648,11 @@ function TablesSkeleton() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className={`px-4 py-2.5 min-w-[110px] rounded-t-lg border-2 border-b-0 ${
+              className={`px-4 py-2.5 min-w-[110px] app-radius-lg border-2 border-b-0 ${
                 i === 0 ? "border-border bg-card" : "border-transparent"
               }`}
             >
-              <div className="h-4 w-16 bg-border rounded animate-pulse" />
+              <div className="h-4 w-16 bg-border app-radius-md animate-pulse" />
             </div>
           ))}
         </div>
@@ -3066,18 +3663,18 @@ function TablesSkeleton() {
         <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative flex-1 min-w-0 md:max-w-md">
-              <div className="h-9 w-full bg-border rounded animate-pulse" />
+              <div className="h-9 w-full bg-border app-radius-md animate-pulse" />
             </div>
           </div>
 
           <div className="flex items-center gap-2 w-auto justify-end">
-            <div className="hidden sm:flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+            <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
               <div className="h-9 w-10 bg-border animate-pulse" />
               <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
               <div className="h-9 w-10 bg-border animate-pulse" />
             </div>
-            <div className="h-9 w-28 bg-border rounded-lg animate-pulse" />
-            <div className="h-9 w-9 bg-border rounded-lg animate-pulse" />
+            <div className="h-9 w-28 bg-border app-radius-lg animate-pulse" />
+            <div className="h-9 w-9 bg-border app-radius-lg animate-pulse" />
           </div>
         </div>
 
@@ -3089,20 +3686,20 @@ function TablesSkeleton() {
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                  <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                  <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                  <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
                 </div>
               </CardHeader>
               <CardContent className="flex-grow flex-1">
                 <div className="space-y-2">
-                  <div className="h-4 w-full bg-border rounded animate-pulse" />
-                  <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                  <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                  <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                  <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
                 </div>
               </CardContent>
               <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-                <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
               </CardFooter>
             </Card>
           ))}

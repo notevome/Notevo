@@ -18,8 +18,9 @@ import GlobalFolderDropUpload from "@/components/home-components/GlobalFolderDro
 import { MobileWarning } from "@/components/ui/mobile-warning";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import PdfSettings from "@/components/home-components/PdfSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import SearchDialog from "@/components/home-components/SearchDialog";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
 import { useQuery } from "@/cache/useQuery";
@@ -64,14 +65,22 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const noteid = searchParams.get("id") as Id<"notes">;
   const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
+  const whiteboardId = searchParams.get(
+    "whiteboardId",
+  ) as Id<"whiteboards"> | null;
   const noteTitle = parseSlug(`${pathSegments[2]}`);
-  const isPdfRoute = pathSegments[2] === "pdf";
-  const currentPdf = useQuery(
-    api.pdfs.getPdfById,
-    pdfId ? { _id: pdfId } : "skip",
-  );
+  const isPdfRoute = Boolean(pdfId);
+  const isWhiteboardRoute = Boolean(whiteboardId);
 
   const showTopFade = scrollTop > 0;
+
+  const isNoteDetailRoute =
+    /^\/home\/[^/]+\/[^/]+\/?$/.test(pathname) &&
+    !isPdfRoute &&
+    !isWhiteboardRoute;
+  const isPastFadeGrowThreshold = scrollTop > 180;
+  const fadeHeight =
+    !isNoteDetailRoute && isPastFadeGrowThreshold ? "12rem" : "6rem";
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
@@ -92,17 +101,17 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
       />
       <main
         className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${
-          open && !isMobile ? `rounded-tl-lg border-t border-l mt-3` : ""
-        } rounded-none`}
+          open && !isMobile ? `app-radius-lg border-t border-l mt-3` : ""
+        } app-radius-none`}
       >
-        <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none rounded-tl-lg border-none">
-          <div className="flex justify-between items-center w-full px-4 py-2 ">
-            <div className="flex justify-start items-center gap-3">
+        <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
+          <div className="flex justify-between items-center w-full px-3.5 py-0.5 ">
+            <div className="flex justify-start items-center gap-2">
               {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
               {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
             </div>
             <div>
-              {!isPdfRoute && noteid && noteTitle && (
+              {!isPdfRoute && !isWhiteboardRoute && noteid && noteTitle && (
                 <span className=" flex justify-between items-center gap-2">
                   <PublicNote noteId={noteid} noteTitle={noteTitle} />
                   <NoteSettings
@@ -115,20 +124,32 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
                   />
                 </span>
               )}
+              {whiteboardId && (
+                <WhiteboardSettings
+                  whiteboardId={whiteboardId}
+                  IconVariant="horizontal_icon"
+                  className={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"}  right-2`}
+                />
+              )}
             </div>
           </div>
         </div>
         <div
           ref={scrollContainerRef}
           className={`scrollbar-gutter-stable min-h-0 flex-1 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent ${
-            isPdfRoute ? "overflow-hidden pt-0" : "overflow-y-auto py-16"
+            isPdfRoute || isWhiteboardRoute
+              ? "overflow-hidden py-0"
+              : "overflow-y-auto py-16"
           }`}
         >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: showTopFade ? 1 : 0 }}
-            transition={showTopFade ? fadeTransition.show : fadeTransition.hide}
-            className="rounded-tl-lg absolute top-0 left-0 w-full h-[4rem] bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
+            initial={{ opacity: 0, height: "6rem" }}
+            animate={{ opacity: showTopFade ? 1 : 0, height: fadeHeight }}
+            transition={{
+              opacity: showTopFade ? fadeTransition.show : fadeTransition.hide,
+              height: { ease: "easeInOut", duration: 0.2 },
+            }}
+            className="app-radius-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
           {children}

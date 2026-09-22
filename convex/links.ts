@@ -1,7 +1,14 @@
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalMutation,
+  internalQuery,
+} from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
+import { paginationOptsValidator } from "convex/server";
+import { ConvexError } from "convex/values";
 
 async function assertTableAccess(
   ctx: { db: any },
@@ -74,6 +81,7 @@ export const createLink = mutation({
 export const getLinksByTableId = query({
   args: {
     notesTableId: v.id("notesTables"),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -97,11 +105,11 @@ export const getLinksByTableId = query({
         q.eq("notesTableId", args.notesTableId),
       )
       .order("desc")
-      .collect();
+      .paginate(args.paginationOpts);
   },
 });
 
-export const deleteLink = mutation({
+export const getLinkById = query({
   args: {
     _id: v.id("links"),
   },
@@ -113,10 +121,181 @@ export const deleteLink = mutation({
 
     const link = await ctx.db.get(args._id);
     if (!link || link.userId !== userId) {
-      throw new Error("Link not found or not authorized");
+      throw new ConvexError("Link not found or not authorized");
+    }
+
+    return link;
+  },
+});
+
+export const getFavLinks = query({
+  args: { paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { paginationOpts }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    return await ctx.db
+      .query("links")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("favorite"), true))
+      .order("desc")
+      .paginate(paginationOpts);
+  },
+});
+
+export const updateLink = mutation({
+  args: {
+    _id: v.id("links"),
+    favorite: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const link = await ctx.db.get(args._id);
+    if (!link || link.userId !== userId) {
+      throw new ConvexError("Link not found or not authorized");
+    }
+
+    await ctx.db.patch(args._id, {
+      favorite: args.favorite ?? link.favorite,
+    });
+  },
+});
+
+export const deleteLink = mutation({
+  args: {
+    _id: v.id("links"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const link = await ctx.db.get(args._id);
+    if (!link || link.userId !== userId) {
+      throw new ConvexError("Link not found or not authorized");
     }
 
     await ctx.db.delete(args._id);
     return args._id;
+  },
+});
+
+export const internalUpdateLinkMetadata = internalMutation({
+  args: {
+    _id: v.id("links"),
+    title: v.optional(v.string()),
+    metadata: linkMetadataValidator,
+  },
+  handler: async (ctx, args) => {
+    const link = await ctx.db.get(args._id);
+    if (!link) return;
+
+    await ctx.db.patch(args._id, {
+      title: args.title ?? link.title,
+      metadata: {
+        ...link.metadata,
+        ...args.metadata,
+      },
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const internalGetLinksMissingChannelInfo = internalQuery({
+  args: {
+    platform: linkPlatformValidator,
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const page = await ctx.db
+      .query("links")
+      .filter((q) => q.eq(q.field("platform"), args.platform))
+      .paginate(args.paginationOpts);
+
+    return {
+      ...page,
+      page: page.page.filter(
+        (link) =>
+          !link.metadata?.authorAvatarUrl || !link.metadata?.authorHandle,
+      ),
+    };
+  },
+});
+
+// Returns ALL links for a platform, regardless of whether metadata fields
+// are already populated. Used by the "force refresh" backfill so stale
+// data (from an older version of the fetch logic) gets overwritten, not
+// just links that are missing data entirely.
+export const internalGetLinksByPlatform = internalQuery({
+  args: {
+    platform: linkPlatformValidator,
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("links")
+      .filter((q) => q.eq(q.field("platform"), args.platform))
+      .paginate(args.paginationOpts);
+  },
+});
+
+export const moveLink = mutation({
+  args: {
+    _id: v.id("links"),
+    targetWorkingSpaceId: v.id("workingSpaces"),
+    targetNotesTableId: v.id("notesTables"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const { _id, targetWorkingSpaceId, targetNotesTableId } = args;
+
+    const link = await ctx.db.get(_id);
+    if (!link) {
+      throw new ConvexError("Link not found");
+    }
+
+    if (link.userId !== userId) {
+      throw new ConvexError("Not authorized to move this link");
+    }
+
+    const targetWorkspace = await ctx.db.get(targetWorkingSpaceId);
+    if (!targetWorkspace) {
+      throw new ConvexError("Target workspace not found");
+    }
+    if (targetWorkspace.userId !== userId) {
+      throw new ConvexError("Not authorized to use this workspace");
+    }
+
+    const targetTable = await ctx.db.get(targetNotesTableId);
+    if (!targetTable) {
+      throw new ConvexError("Target table not found");
+    }
+    if (targetTable.workingSpaceId !== targetWorkingSpaceId) {
+      throw new ConvexError("Target table does not belong to this workspace");
+    }
+
+    await ctx.db.patch(_id, {
+      workingSpaceId: targetWorkingSpaceId,
+      notesTableId: targetNotesTableId,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      linkId: _id,
+      workingSpaceId: targetWorkingSpaceId,
+      notesTableId: targetNotesTableId,
+      title: link.title,
+    };
   },
 });

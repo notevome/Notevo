@@ -31,10 +31,9 @@ export function ThemeToggle() {
         <span className="truncate capitalize text-foreground">Dark mode</span>
       </span>
       <span
-        className="relative h-5 w-9 shrink-0 rounded-full bg-border/70 transition-colors group-data-[state=on]:bg-primary"
-        aria-hidden
+        className="relative h-5 w-9 shrink-0 app-radius-full bg-border/70 transition-colors group-data-[state=on]:bg-primary"
       >
-        <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-background shadow-sm transition-transform group-data-[state=on]:translate-x-4" />
+        <span className="absolute left-0.5 top-0.5 h-4 w-4 app-radius-full bg-background shadow-sm transition-transform group-data-[state=on]:translate-x-4" />
       </span>
     </Toggle>
   );

@@ -35,7 +35,7 @@ function ToolbarTooltipButton({
   label: string;
   shortcut: string;
 } & ComponentProps<typeof Button>) {
-  const tooltip = useHoverTooltip(300);
+  const tooltip = useHoverTooltip(400);
 
   return (
     <Tooltip open={tooltip.open}>
@@ -141,7 +141,7 @@ export const TextButtons = () => {
             label={item.label}
             shortcut={item.shortcut}
             size="sm"
-            className="border-none px-2 h-8 !rounded-none"
+            className="border-none px-2 h-8 !app-radius-none"
             variant="SidebarMenuButton"
             type="button"
           >
@@ -161,7 +161,7 @@ export const TextButtons = () => {
           label={item.label}
           shortcut={item.shortcut}
           size="sm"
-          className="border-none px-2 h-8 !rounded-none"
+          className="border-none px-2 h-8 !app-radius-none"
           variant="SidebarMenuButton"
           type="button"
           onMouseDown={(e) => {

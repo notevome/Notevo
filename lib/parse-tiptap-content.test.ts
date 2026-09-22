@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   extractTextFromTiptap,
   getEmptyTiptapDoc,
@@ -7,7 +7,7 @@ import {
 } from "./parse-tiptap-content";
 
 describe("truncateText", () => {
-  it("returns empty string for empty input", () => {
+  it("returns an empty string for empty input", () => {
     expect(truncateText("")).toBe("");
   });
 
@@ -21,31 +21,13 @@ describe("truncateText", () => {
 });
 
 describe("extractTextFromTiptap", () => {
-  it("returns empty string for null/undefined", () => {
+  it("returns an empty string for nullish content", () => {
     expect(extractTextFromTiptap(null)).toBe("");
     expect(extractTextFromTiptap(undefined)).toBe("");
   });
 
   it("returns raw string when input is a non-JSON string", () => {
     expect(extractTextFromTiptap("plain text")).toBe("plain text");
-  });
-
-  it("extracts text from a basic TipTap JSON structure", () => {
-    const doc = {
-      type: "doc",
-      content: [
-        {
-          type: "paragraph",
-          content: [{ type: "text", text: "Hello" }],
-        },
-        {
-          type: "paragraph",
-          content: [{ type: "text", text: "World" }],
-        },
-      ],
-    };
-
-    expect(extractTextFromTiptap(doc)).toBe("HelloWorld");
   });
 
   it("handles a JSON string input that parses to TipTap content", () => {
@@ -57,20 +39,82 @@ describe("extractTextFromTiptap", () => {
     expect(extractTextFromTiptap(asString)).toBe("Hi");
   });
 
-  it("renders placeholders for nodes without text/content (e.g. image)", () => {
+  it("extracts text from paragraph and heading nodes", () => {
     const doc = {
       type: "doc",
-      content: [{ type: "image" }],
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Hello" }],
+        },
+        {
+          type: "heading",
+          content: [{ type: "text", text: "World" }],
+        },
+      ],
     };
 
-    expect(extractTextFromTiptap(doc)).toBe("[Image]");
+    expect(extractTextFromTiptap(doc)).toBe("HelloWorld");
+  });
+
+  it("renders placeholders for rich nodes without text content", () => {
+    const doc = {
+      type: "doc",
+      content: [{ type: "image" }, { type: "codeBlock" }],
+    };
+
+    expect(extractTextFromTiptap(doc)).toBe("[Image][Code Block]");
+  });
+
+  it("adds list markers for list item content", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "bulletList",
+          content: [
+            {
+              type: "listItem",
+              content: [{ type: "paragraph", content: [{ text: "Task" }] }],
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(extractTextFromTiptap(doc)).toBe("- Task");
+  });
+
+  it("returns a fallback preview when extraction throws", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const content = {
+      get content() {
+        throw new Error("broken content");
+      },
+    };
+
+    expect(extractTextFromTiptap(content)).toBe(
+      "Unable to display content preview",
+    );
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });
 
 describe("parseTiptapContent", () => {
-  it("returns an empty doc for empty input", () => {
+  it("returns an empty TipTap doc for empty input", () => {
     expect(parseTiptapContent(undefined)).toEqual(getEmptyTiptapDoc());
     expect(parseTiptapContent("")).toEqual(getEmptyTiptapDoc());
+  });
+
+  it("returns a fresh empty doc each time", () => {
+    const firstDoc = getEmptyTiptapDoc();
+    firstDoc.content?.push({ type: "heading" });
+
+    expect(getEmptyTiptapDoc()).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    });
   });
 
   it("normalizes array content into a TipTap doc", () => {
@@ -80,14 +124,31 @@ describe("parseTiptapContent", () => {
     });
   });
 
-  it("falls back when the parsed value is not a TipTap doc", () => {
-    expect(parseTiptapContent('{"foo":"bar"}')).toEqual(getEmptyTiptapDoc());
+  it("parses valid JSON string docs", () => {
+    expect(parseTiptapContent('{"type":"doc","content":[{"type":"heading"}]}')).toEqual({
+      type: "doc",
+      content: [{ type: "heading" }],
+    });
   });
 
-  it("fills in a missing content array on doc nodes", () => {
+  it("uses the provided fallback for invalid JSON and unsupported objects", () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    const fallback = { type: "doc", content: [{ type: "heading" }] };
+
+    expect(parseTiptapContent("{", fallback)).toBe(fallback);
+    expect(parseTiptapContent({ foo: "bar" }, fallback)).toBe(fallback);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it("fills in an empty paragraph when doc content is missing or empty", () => {
     expect(parseTiptapContent({ type: "doc" })).toEqual({
       type: "doc",
-      content: [],
+      content: [{ type: "paragraph" }],
+    });
+    expect(parseTiptapContent({ type: "doc", content: [] })).toEqual({
+      type: "doc",
+      content: [{ type: "paragraph" }],
     });
   });
 });

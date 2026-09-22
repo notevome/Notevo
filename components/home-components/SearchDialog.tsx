@@ -10,7 +10,7 @@ import {
   ChevronRight,
   Folder,
   FolderOpen,
-  Link2,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -167,7 +167,8 @@ function PdfItem({
   onIntentPrefetch,
   indented = false,
 }: any) {
-  const href = `/home/${pdf.workingSpaceId}/pdf/${pdf.slug}?pdfId=${pdf._id}`;
+  const pdfSlug = pdf.slug ? (pdf.slug.startsWith("/") ? pdf.slug : `/${pdf.slug}`) : "";
+  const href = `/home/${pdf.workingSpaceId}${pdfSlug}?pdfId=${pdf._id}`;
   return (
     <div
       onClick={onClick}
@@ -195,6 +196,42 @@ function PdfItem({
   );
 }
 
+function getSearchLinkFaviconUrl(url: string): string | null {
+  try {
+    const domain = new URL(url).hostname.replace(/^www\./, "");
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+  } catch {
+    return null;
+  }
+}
+
+function SearchLinkFavicon({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
+  const [errored, setErrored] = useState(false);
+  const faviconUrl = url ? getSearchLinkFaviconUrl(url) : null;
+
+  if (!faviconUrl || errored) {
+    return <Globe className={cn("text-muted-foreground", className)} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={cn(
+        "object-contain grayscale contrast-125 saturate-0",
+        className,
+      )}
+      onError={() => setErrored(true)}
+    />
+  );
+}
+
 function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
   return (
     <div
@@ -205,7 +242,7 @@ function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
         isSelected ? "bg-border" : "hover:bg-border",
       )}
     >
-      <Link2 size={14} />
+      <SearchLinkFavicon url={link.url} className="h-3.5 w-3.5 shrink-0" />
       <div className="flex-1 overflow-hidden">
         <p className="text-sm text-foreground font-medium truncate transition-colors">
           <HighlightedText
@@ -523,10 +560,11 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
     const href =
       note.kind === "pdf"
-        ? `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`
-        : `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+        ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
+        : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
     prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
@@ -544,6 +582,7 @@ export default function SearchDialog({
       window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
+    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
     if (note.kind === "pdf") {
       if (event.button === 0 && event.altKey) {
         event.preventDefault();
@@ -554,7 +593,7 @@ export default function SearchDialog({
         });
       } else {
         router.push(
-          `/home/${note.workingSpaceId}/pdf/${note.slug}?pdfId=${note._id}`,
+          `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`,
         );
       }
       return;
@@ -601,10 +640,10 @@ export default function SearchDialog({
               <div className="w-full flex items-center justify-between gap-1">
                 Search
                 <span className="inline-flex gap-1">
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">Ctrl</span>
                   </kbd>
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 rounded-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
                     <span className="text-xs">K</span>
                   </kbd>
                 </span>
@@ -700,26 +739,26 @@ export default function SearchDialog({
           <div className="w-full flex justify-between items-center">
             <span className="flex justify-center items-center gap-2 space-x-2">
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <ArrowDownUp size={14} />
                 </kbd>
                 <p className="text-foreground font-mono text-xs">Navigate</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   <Undo2 size={14} />
                 </kbd>
                 <p className="text-foreground text-xs">Open</p>
               </span>
               <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   Alt + click
                 </kbd>
                 <p className="text-foreground text-xs">Open in pane</p>
               </span>
             </span>
             <span className="flex justify-center items-center gap-2">
-              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 rounded-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                 ESC
               </kbd>
               <p className="text-foreground  text-xs">Close</p>

@@ -26,11 +26,11 @@ export default function Loading() {
             {Array.from({ length: 2 }).map((_, i) => (
               <div
                 key={i}
-                className={`px-4 py-2.5 min-w-[110px] rounded-t-lg border-2 border-b-0 ${
+                className={`px-4 py-2.5 min-w-[110px] app-radius-lg border-2 border-b-0 ${
                   i === 0 ? "border-border bg-card" : "border-transparent"
                 }`}
               >
-                <div className="h-4 w-16 bg-border rounded animate-pulse" />
+                <div className="h-4 w-16 bg-border app-radius-md animate-pulse" />
               </div>
             ))}
           </div>
@@ -41,7 +41,7 @@ export default function Loading() {
           <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <div className="relative flex-1 min-w-0 md:max-w-md">
-                <div className="h-9 w-full bg-border rounded animate-pulse" />
+                <div className="h-9 w-full bg-border app-radius-md animate-pulse" />
               </div>
             </div>
 
@@ -51,8 +51,8 @@ export default function Loading() {
                 <div className="h-9 w-10 bg-border animate-pulse border-l border-r border-border" />
                 <div className="h-9 w-10 bg-border animate-pulse" />
               </div>
-              <div className="h-9 w-28 bg-border rounded-lg animate-pulse" />
-              <div className="h-9 w-9 bg-border rounded-lg animate-pulse" />
+              <div className="h-9 w-28 bg-border app-radius-lg animate-pulse" />
+              <div className="h-9 w-9 bg-border app-radius-lg animate-pulse" />
             </div>
           </div>
 
@@ -64,20 +64,20 @@ export default function Loading() {
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="h-5 w-3/4 bg-border rounded animate-pulse" />
-                    <div className="h-5 w-5 bg-border rounded animate-pulse" />
+                    <div className="h-5 w-3/4 bg-border app-radius-md animate-pulse" />
+                    <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
                   </div>
                 </CardHeader>
                 <CardContent className="flex-grow flex-1">
                   <div className="space-y-2">
-                    <div className="h-4 w-full bg-border rounded animate-pulse" />
-                    <div className="h-4 w-5/6 bg-border rounded animate-pulse" />
-                    <div className="h-4 w-4/6 bg-border rounded animate-pulse" />
+                    <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                    <div className="h-4 w-5/6 bg-border app-radius-md animate-pulse" />
+                    <div className="h-4 w-4/6 bg-border app-radius-md animate-pulse" />
                   </div>
                 </CardContent>
                 <CardFooter className="py-4 flex items-center justify-between border-t border-border">
-                  <div className="h-4 w-24 bg-border rounded animate-pulse" />
-                  <div className="h-9 w-12 bg-border rounded animate-pulse" />
+                  <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
+                  <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
                 </CardFooter>
               </Card>
             ))}

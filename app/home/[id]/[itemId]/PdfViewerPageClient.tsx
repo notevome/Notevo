@@ -258,7 +258,7 @@ function SearchPanel({
                   type="button"
                   onClick={() => void handleResultClick(result)}
                   className={cn(
-                    "w-full rounded-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
+                    "w-full app-radius-xl border border-border bg-card px-3 py-2 text-left transition-colors hover:bg-muted",
                     activeKey === itemKey && "border-muted-foreground bg-muted",
                   )}
                 >
@@ -324,7 +324,7 @@ function ThumbnailsPanel({ onClose }: { onClose: () => void }) {
                   <Thumbnail
                     pageNumber={pageNumber}
                     className={cn(
-                      "w-[88px] rounded-[14px] bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
+                      "w-[88px] app-radius-lg bg-transparent border border-border outline outline-1 outline-border hover:border-muted-foreground/50 hover:outline-muted-foreground/50",
                       isActive &&
                         "border-muted-foreground outline-muted-foreground",
                     )}
@@ -350,7 +350,7 @@ function ZoomDropdown() {
         <Button
           type="button"
           variant="outline"
-          className="h-8 gap-2 border-border !border-l-0 !rounded-none"
+          className="h-8 gap-2 border-border !border-l-0 !app-radius-none"
         >
           <span>{Math.round(zoom * 100)}%</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground " />
@@ -366,7 +366,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev - 0.1).toFixed(2)))
               }
@@ -377,7 +377,7 @@ function ZoomDropdown() {
               type="button"
               variant="outline"
               size="icon"
-              className="h-7 w-7 !rounded-full"
+              className="h-7 w-7 !app-radius-full"
               onClick={() =>
                 updateZoom((prev) => Number((prev + 0.1).toFixed(2)))
               }
@@ -427,7 +427,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
@@ -463,7 +463,7 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !rounded-none"
+        className="h-8 w-8 border-border !app-radius-none"
         onClick={handleNextPage}
         disabled={currentPage >= pages}
         aria-label="next-page"
@@ -490,8 +490,8 @@ function PdfViewerContent({
   const { open, isMobile } = useSidebar();
   const [query, setQuery] = useState("");
   const [panelMode, setPanelMode] = useState<PanelMode>(null);
-  const searchTooltip = useHoverTooltip(300);
-  const thumbnailsTooltip = useHoverTooltip(300);
+  const searchTooltip = useHoverTooltip(100);
+  const thumbnailsTooltip = useHoverTooltip(100);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(pdftitle || "");
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -572,11 +572,13 @@ function PdfViewerContent({
       }
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
-        <div className=" pointer-events-none absolute inset-x-0 top-1 z-20">
+        <div
+          className={` pointer-events-none absolute inset-x-0 ${isMobile ? "top-0" : "top-1"} z-20`}
+        >
           <div
             className={cn(
               "pointer-events-auto mx-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
-              !renderedInPane && "app-radius-lg",
+              !renderedInPane || (isMobile && "app-radius-lg"),
             )}
           >
             {(!open || isMobile) && (
@@ -584,17 +586,17 @@ function PdfViewerContent({
                 variant="outline"
                 size="icon"
                 className={cn(
-                  "h-8 w-8 border border-border",
-                  renderedInPane && "!rounded-none",
+                  "h-8 w-8 border border-border px-2",
+                  renderedInPane || (isMobile && "!app-radius-none"),
                 )}
                 aria-label="show-search-panel"
               >
-                <SidebarTrigger />
+                <SidebarTrigger className=" h-[22] w-[22]" />
               </Button>
             )}
             {!renderedInPane && (
               <div
-                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!rounded-none" : "app-radius-md"} `}
+                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
               >
                 <h1
                   onDoubleClick={handleNameDoubleClick}
@@ -633,7 +635,7 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border border-border !rounded-none"
+                        className="h-8 w-8 border border-border !app-radius-none"
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "search" ? null : "search",
@@ -663,7 +665,7 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border-y !border-l-0 border-border !rounded-none"
+                        className="h-8 w-8 border-y !border-l-0 border-border !app-radius-none"
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "thumbnails" ? null : "thumbnails",
@@ -702,7 +704,7 @@ function PdfViewerContent({
                     dropdownMenuContentAlign="end"
                     tooltipContentAlign="end"
                     btnVariant="outline"
-                    btnClassName="h-8 w-8 m-0 px-1 border-border !rounded-none"
+                    btnClassName="h-8 w-8 m-0 px-1 border-border !app-radius-none"
                   />
                 )}
               </span>
@@ -728,7 +730,7 @@ function PdfViewerContent({
         ) : null}
 
         <div className=" absolute inset-y-0 right-0 z-10 flex h-screen w-full items-center justify-center border-b border-border bg-background">
-          <Pages className="scrollbar-gutter-stable [&::-webkit-scrollbar-track]:bg-transparent h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border">
+          <Pages className="scrollbar-gutter-stable [&::-webkit-scrollbar-track]:bg-transparent h-full min-h-0 w-full transition-all scroll-smooth [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border">
             <Page>
               <CanvasLayer />
               <TextLayer />
@@ -761,7 +763,7 @@ function PdfViewerShell({
       source={fileUrl}
       isZoomFitWidth
       className={cn(
-        "pdf-viewer-shell relative h-full w-full overflow-hidden rounded-none border-0 bg-background flex flex-col justify-stretch",
+        "pdf-viewer-shell relative h-full w-full overflow-hidden app-radius-none border-0 bg-background flex flex-col justify-stretch",
         open && !isMobile && !renderedInPane && "app-radius-lg",
       )}
       loader={
@@ -796,6 +798,36 @@ export default function PdfViewerPageClient({
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!pdf?.title) return;
+
+    const originalTitle = document.title;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    const originalContent = metaDescription?.getAttribute("content");
+    const pdfTitle = pdf.title || "Untitled PDF";
+
+    document.title = `${pdfTitle} - Notevo PDF`;
+    const descriptionContent = `${pdfTitle} PDF.`;
+
+    if (metaDescription) {
+      metaDescription.setAttribute("content", descriptionContent);
+    } else {
+      const newMeta = document.createElement("meta");
+      newMeta.name = "description";
+      newMeta.content = descriptionContent;
+      document.head.appendChild(newMeta);
+    }
+
+    return () => {
+      document.title = originalTitle;
+      if (metaDescription && originalContent) {
+        metaDescription.setAttribute("content", originalContent);
+      } else if (!metaDescription) {
+        document.querySelector('meta[name="description"]')?.remove();
+      }
+    };
+  }, [pdf?.title]);
 
   useEffect(() => {
     setIsViewerReady(false);
@@ -846,7 +878,7 @@ export default function PdfViewerPageClient({
   if (pdf === undefined) {
     return (
       <div className="flex h-full max-w-full min-h-0 flex-col px-0 py-0 mx-0">
-        <div className="flex-1 rounded-none border-none bg-transparent animate-pulse" />
+        <div className="flex-1 app-radius-none border-none bg-transparent animate-pulse" />
       </div>
     );
   }

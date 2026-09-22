@@ -2,14 +2,23 @@ import { describe, expect, it } from "vitest";
 import { parseSlug } from "./parseSlug";
 
 describe("parseSlug", () => {
-  it("removes a trailing numeric suffix like -123", () => {
-    expect(parseSlug("my-workspace-123")).toBe("My Workspace");
-    expect(parseSlug("my-workspace-0")).toBe("My Workspace");
+  it.each([
+    ["my-workspace-123", "My Workspace"],
+    ["my-workspace-0", "My Workspace"],
+    ["project-plan-2026", "Project Plan"],
+  ])("removes a trailing numeric suffix from %s", (slug, expected) => {
+    expect(parseSlug(slug)).toBe(expected);
   });
 
-  it("keeps digits that are not a trailing numeric suffix", () => {
-    expect(parseSlug("note2-test")).toBe("Note2 Test");
-    expect(parseSlug("note-2-test")).toBe("Note 2 Test");
+  it.each([
+    ["note2-test", "Note2 Test"],
+    ["note-2-test", "Note 2 Test"],
+    ["v2-launch-plan-alpha", "V2 Launch Plan Alpha"],
+  ])("keeps non-trailing digits in %s", (slug, expected) => {
+    expect(parseSlug(slug)).toBe(expected);
+  });
+
+  it("converts hyphen-separated words into title case", () => {
+    expect(parseSlug("team-meeting-notes")).toBe("Team Meeting Notes");
   });
 });
-

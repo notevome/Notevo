@@ -241,7 +241,7 @@ export function LinkHoverCard({
         align="start"
         side="bottom"
         sideOffset={0}
-        className="z-[10002] flex w-[300px] items-center rounded-tl-xl border-border bg-muted p-0 text-popover-foreground"
+        className="z-[10002] flex w-[300px] items-center app-radius-xl border-border bg-muted p-0 text-popover-foreground"
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onMouseEnter={clearHideTimer}
@@ -251,7 +251,7 @@ export function LinkHoverCard({
           href={hoveredLink.href}
           target="_blank"
           rel="noreferrer noopener"
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-tl-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          className="flex min-w-0 flex-1 items-center gap-1.5 app-radius-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
           onMouseDown={(event) => event.stopPropagation()}
         >
           <Globe className="h-3.5 w-3.5 shrink-0" />
@@ -275,7 +275,7 @@ export function LinkHoverCard({
           type="button"
           size="sm"
           variant="ghost"
-          className="h-8 px-2 text-xs !rounded-none"
+          className="h-8 px-2 text-xs !app-radius-none"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => {
             if (!editor || !hoveredAnchorRef.current) return;
