@@ -449,6 +449,7 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar, open } = useSidebar();
+  const tooltip = useHoverTooltip(100);
 
   return (
     <Button
@@ -456,14 +457,21 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="Trigger"
       size="icon"
-      className={cn("h-5 w-5 text-primary", className)}
+      className={cn(
+        `${open ? "h-[22px] w-[22px]" : "h-[19px] w-[19px]"}`,
+        className,
+      )}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      {open ? <PanelLeftClose /> : <PanelLeftOpen />}
+      {open ? (
+        <PanelLeftClose className="text-primary" />
+      ) : (
+        <PanelLeftOpen className="text-muted-foreground " />
+      )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -843,7 +851,10 @@ const SidebarMenuSkeleton = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="menu-skeleton"
-      className={cn("app-radius-lg h-8 flex gap-2 px-2 items-center", className)}
+      className={cn(
+        "app-radius-lg h-8 flex gap-2 px-2 items-center",
+        className,
+      )}
       {...props}
     >
       {showIcon && (

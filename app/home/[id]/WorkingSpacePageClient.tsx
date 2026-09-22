@@ -1152,7 +1152,6 @@ export default function WorkingSpacePageClient({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const [isMouseDown, setIsMouseDown] = useState(false);
   const updateWorkingSpace = useMutation(
     api.workingSpaces.updateWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
@@ -3109,7 +3108,9 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           </p>
         )}
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col gap-3">
+      <CardContent
+        className={`flex flex-1 flex-col ${isSocialLink && "gap-2"} `}
+      >
         {isSocialLink ? (
           <>
             <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
@@ -3260,7 +3261,7 @@ function WhiteboardPreview({
   }, [snapshot]);
 
   return (
-    <div className="relative flex h-52 w-full items-center justify-center overflow-hidden border border-border">
+    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden border border-border">
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
@@ -3269,12 +3270,12 @@ function WhiteboardPreview({
           className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
         />
       ) : (
-        <>
+        <div className=" min-h-48 w-full flex justify-center items-center">
           <PanelTop className="h-8 w-8 text-primary/70" />
           <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
             {preview || "Empty canvas"}
           </span>
-        </>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
   ChevronRight,
@@ -12,7 +13,7 @@ import {
   Plus,
   Search,
 } from "lucide-react";
-import { FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
+import { FaEllipsis, FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
@@ -55,7 +56,8 @@ import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import CreateTableBtn from "./CreateTableBtn";
 
 interface WhiteboardSettingsProps {
-  whiteboard: {
+  whiteboardId?: Id<"whiteboards">;
+  whiteboard?: {
     _id: Id<"whiteboards">;
     title: string;
     favorite?: boolean;
@@ -65,6 +67,7 @@ interface WhiteboardSettingsProps {
     createdAt: number;
     updatedAt: number;
   };
+  IconVariant?: "vertical_icon" | "horizontal_icon";
   onDelete?: (id: Id<"whiteboards">) => void;
   className?: string;
 }
@@ -72,12 +75,21 @@ interface WhiteboardSettingsProps {
 const TITLE_MAX_LENGTH = 55;
 
 export default function WhiteboardSettings({
-  whiteboard,
+  whiteboardId,
+  IconVariant = "vertical_icon",
+  whiteboard: whiteboardProp,
   onDelete,
   className,
 }: WhiteboardSettingsProps) {
+  const router = useRouter();
+  const fetchedWhiteboard = useQuery(
+    api.whiteboards.getWhiteboardById,
+    whiteboardId ? { _id: whiteboardId } : "skip",
+  );
+  const whiteboard = whiteboardProp ?? fetchedWhiteboard;
+
   const [open, setOpen] = useState(false);
-  const [title, setTitle] = useState(whiteboard.title);
+  const [title, setTitle] = useState(whiteboard?.title ?? "");
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [moveOpen, setMoveOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -106,7 +118,14 @@ export default function WhiteboardSettings({
       }>
     | undefined;
 
-  useEffect(() => setTitle(whiteboard.title), [whiteboard.title]);
+  const hasMoveTargets = useMemo(
+    () => (moveTargets?.length ?? 0) > 0,
+    [moveTargets],
+  );
+
+  useEffect(() => {
+    if (whiteboard?.title) setTitle(whiteboard.title);
+  }, [whiteboard?.title]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 250);
@@ -114,14 +133,14 @@ export default function WhiteboardSettings({
   }, [query]);
 
   useEffect(() => {
-    if (!moveOpen) return;
+    if (!moveOpen || !whiteboard) return;
     setQuery("");
     setDebouncedQuery("");
     setExpandedWorkspaceIds([String(whiteboard.workingSpaceId)]);
     setMovingTableId(null);
     const timer = setTimeout(() => searchInputRef.current?.focus(), 20);
     return () => clearTimeout(timer);
-  }, [moveOpen, whiteboard.workingSpaceId]);
+  }, [moveOpen, whiteboard?.workingSpaceId]);
 
   useEffect(() => {
     if (!debouncedQuery || !moveTargets) return;
@@ -129,6 +148,7 @@ export default function WhiteboardSettings({
       moveTargets.map((workspace) => String(workspace._id)),
     );
   }, [debouncedQuery, moveTargets]);
+
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => {
@@ -137,6 +157,8 @@ export default function WhiteboardSettings({
     }, 10);
     return () => clearTimeout(timer);
   }, [open]);
+
+  if (!whiteboard) return null;
 
   const rename = async () => {
     const nextTitle = title.trim();
@@ -163,8 +185,12 @@ export default function WhiteboardSettings({
   };
 
   const remove = async () => {
+    if (onDelete) {
+      onDelete(whiteboard._id);
+    } else {
+      router.push(`/home/${whiteboard.workingSpaceId}`);
+    }
     await deleteWhiteboard({ _id: whiteboard._id });
-    onDelete?.(whiteboard._id);
     setDeleteOpen(false);
   };
 
@@ -215,11 +241,6 @@ export default function WhiteboardSettings({
     }
   };
 
-  const hasMoveTargets = useMemo(
-    () => (moveTargets?.length ?? 0) > 0,
-    [moveTargets],
-  );
-
   return (
     <>
       <DropdownMenu
@@ -235,14 +256,18 @@ export default function WhiteboardSettings({
               <Button
                 variant="Trigger"
                 size="icon"
-                className={cn("h-8 w-8", className)}
+                className={cn("h-8 w-8 ", className)}
                 {...tooltip.triggerProps}
                 aria-label="whiteboard-options"
               >
-                <FaEllipsisVertical
-                  size={18}
-                  className="text-muted-foreground"
-                />
+                {IconVariant === "vertical_icon" ? (
+                  <FaEllipsisVertical
+                    size={18}
+                    className="text-muted-foreground"
+                  />
+                ) : (
+                  <FaEllipsis size={22} className="text-muted-foreground" />
+                )}
               </Button>
             </TooltipTrigger>
           </DropdownMenuTrigger>
