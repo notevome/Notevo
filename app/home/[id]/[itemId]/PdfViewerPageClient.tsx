@@ -562,7 +562,7 @@ function PdfViewerContent({
         });
       }
     }
-  }, 300);
+  }, 100);
   return (
     <LectorSearch
       loading={
@@ -601,7 +601,7 @@ function PdfViewerContent({
                 <h1
                   onDoubleClick={handleNameDoubleClick}
                   title="Double-click to rename"
-                  className=" flex-1 text-lg cursor-text flex justify-start items-center min-w-[20rem] overflow-hidden "
+                  className=" flex-1 text-lg cursor-text flex justify-start items-center min-w-[15rem] max-w-[15rem] overflow-hidden "
                 >
                   {isEditingName ? (
                     <Input

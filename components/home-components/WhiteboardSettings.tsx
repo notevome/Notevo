@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
+import { useDebouncedCallback } from "use-debounce";
+import z from "zod";
+import { generateSlug } from "@/lib/generateSlug";
 import {
   ChevronRight,
   Download,
@@ -70,9 +73,18 @@ interface WhiteboardSettingsProps {
   IconVariant?: "vertical_icon" | "horizontal_icon";
   onDelete?: (id: Id<"whiteboards">) => void;
   className?: string;
+  syncBrowserChrome?: boolean;
 }
 
 const TITLE_MAX_LENGTH = 55;
+
+const whiteboardTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(
+    TITLE_MAX_LENGTH,
+    `Title must be ${TITLE_MAX_LENGTH} characters or less`,
+  );
 
 export default function WhiteboardSettings({
   whiteboardId,
@@ -80,6 +92,7 @@ export default function WhiteboardSettings({
   whiteboard: whiteboardProp,
   onDelete,
   className,
+  syncBrowserChrome = true,
 }: WhiteboardSettingsProps) {
   const router = useRouter();
   const fetchedWhiteboard = useQuery(
@@ -124,13 +137,15 @@ export default function WhiteboardSettings({
   );
 
   useEffect(() => {
-    if (whiteboard?.title) setTitle(whiteboard.title);
-  }, [whiteboard?.title]);
+    if (!syncBrowserChrome || !whiteboard?.title) return;
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedQuery(query), 250);
-    return () => clearTimeout(timer);
-  }, [query]);
+    const originalTitle = document.title;
+    document.title = `${whiteboard.title} - Notevo`;
+
+    return () => {
+      document.title = originalTitle;
+    };
+  }, [syncBrowserChrome, whiteboard?.title]);
 
   useEffect(() => {
     if (!moveOpen || !whiteboard) return;
@@ -158,18 +173,53 @@ export default function WhiteboardSettings({
     return () => clearTimeout(timer);
   }, [open]);
 
-  if (!whiteboard) return null;
+  const debouncedRenameWhiteboard = useDebouncedCallback(
+    (nextTitle: string) => {
+      const currentTitle = whiteboard?.title || "";
+      const result = whiteboardTitleSchema.safeParse(nextTitle);
 
-  const rename = async () => {
-    const nextTitle = title.trim();
-    if (!nextTitle || nextTitle.length > TITLE_MAX_LENGTH) {
-      setTitle(whiteboard.title);
-      return;
-    }
-    if (nextTitle !== whiteboard.title) {
-      await updateWhiteboard({ _id: whiteboard._id, title: nextTitle });
-    }
-  };
+      if (!result.success) {
+        const issue = result.error.issues[0];
+        if (issue.code === "too_small") {
+          setTitle("");
+          toast({
+            title: "Naming failed",
+            description: "Title must not be empty.",
+            variant: "destructive",
+          });
+        } else if (issue.code === "too_big") {
+          setTitle(currentTitle);
+          toast({
+            title: "Naming failed",
+            description: `Title must be ${TITLE_MAX_LENGTH} characters or less`,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
+
+      if (syncBrowserChrome) {
+        document.title = `${nextTitle} - Notevo`;
+        const currentUrl = new URL(window.location.href);
+        const segments = currentUrl.pathname.split("/");
+        segments[segments.length - 1] = generateSlug(nextTitle);
+        currentUrl.pathname = segments.join("/");
+        window.history.replaceState({}, "", currentUrl.href);
+      }
+
+      if (nextTitle !== currentTitle) {
+        updateWhiteboard({ _id: whiteboard._id, title: nextTitle }).catch(
+          (error) => {
+            console.error("Error updating whiteboard title:", error);
+            setTitle(currentTitle);
+          },
+        );
+      }
+    },
+    100,
+  );
+
+  if (!whiteboard) return null;
 
   const download = () => {
     const blob = new Blob(
@@ -284,17 +334,20 @@ export default function WhiteboardSettings({
             <Input
               ref={inputRef}
               value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              onBlur={() => void rename()}
+              onChange={(event) => {
+                setTitle(event.target.value);
+                debouncedRenameWhiteboard(event.target.value.trim());
+              }}
+              onBlur={() => debouncedRenameWhiteboard.flush()}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  void rename();
+                  debouncedRenameWhiteboard.flush();
                   setOpen(false);
                 }
               }}
               className="h-8 text-foreground"
-              placeholder="Rename your whiteboard"
+              placeholder="Rename"
             />
           </DropdownMenuGroup>
           <DropdownMenuGroup>
@@ -328,7 +381,7 @@ export default function WhiteboardSettings({
               onClick={download}
             >
               <Download size={14} className="text-muted-foreground" />
-              Download
+              Download.excalidraw
             </Button>
             <DropdownMenuSeparator />
             <Button
