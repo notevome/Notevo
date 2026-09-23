@@ -546,29 +546,13 @@ function NoteCard({ note }: { note: Note }) {
     : getContentPreviewFromBody(note.body);
 
   const isEmpty = !(note.preview || note.body);
-  const router = useRouter();
   const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
-  const didPrefetch = useRef(false);
-  const prefetchOnce = useCallback(() => {
-    if (didPrefetch.current) return;
-    didPrefetch.current = true;
-    router.prefetch(href);
-  }, [router, href]);
-
-  const handleOpen = useCallback(() => {
-    router.push(href);
-  }, [router, href]);
 
   return (
-    <Card
-      onDoubleClick={handleOpen}
-      onPointerEnter={prefetchOnce}
-      onMouseEnter={prefetchOnce}
-      onFocus={prefetchOnce}
-      onTouchStart={prefetchOnce}
-      onPointerDown={prefetchOnce}
+    <IntentPrefetchLink
+      href={href}
       className={cn(
-        "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none",
+        "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
         isEmpty
           ? "border-dashed border-border hover:border-muted-foreground/50"
           : "border-border hover:border-muted-foreground/50",
@@ -608,6 +592,6 @@ function NoteCard({ note }: { note: Note }) {
           )}
         </div>
       </CardFooter>
-    </Card>
+    </IntentPrefetchLink>
   );
 }
