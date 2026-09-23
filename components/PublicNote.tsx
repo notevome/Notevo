@@ -170,6 +170,54 @@ function TabSlider({ children }: { children: React.ReactNode }) {
   );
 }
 
+function OgPreviewImage({
+  src,
+  alt,
+  loaded,
+  error,
+  wrapperClassName,
+  imageClassName,
+}: {
+  src: string;
+  alt: string;
+  loaded: boolean;
+  error: boolean;
+  wrapperClassName?: string;
+  imageClassName?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative w-full h-48 bg-muted overflow-hidden",
+        wrapperClassName,
+      )}
+    >
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        unoptimized
+        draggable={false}
+        loading="eager"
+        quality={80}
+        className={cn(
+          "select-none [-webkit-user-drag:none] transition-opacity duration-300",
+          loaded ? "opacity-100" : "opacity-0",
+          imageClassName,
+        )}
+      />
+      {!loaded && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 animate-pulse">
+          <Globe2Icon size={18} className="text-muted-foreground" />
+          <span className="text-[10px] font-medium text-muted-foreground">
+            {error ? "Preview unavailable" : "Loading preview…"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface PublicNoteProp {
   noteId: Id<"notes">;
   noteTitle: string | any;
@@ -185,6 +233,8 @@ export default function PublicNote({
   const [open, setOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const [ogImageLoaded, setOgImageLoaded] = useState(false);
+  const [ogImageError, setOgImageError] = useState(false);
+  const ogPreloadedRef = useRef(false);
   const tooltip = useHoverTooltip(100);
   const copyTooltip = useHoverTooltip(100);
 
@@ -213,6 +263,17 @@ export default function PublicNote({
   );
 
   const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
+
+  useEffect(() => {
+    if (!getNote?.published || ogPreloadedRef.current) return;
+    ogPreloadedRef.current = true;
+
+    const preloadImg = new window.Image();
+    preloadImg.src = `/api/og?id=${noteId}`;
+    preloadImg.onload = () => setOgImageLoaded(true);
+    preloadImg.onerror = () => setOgImageError(true);
+  }, [getNote?.published, noteId]);
+
   if (!getNote) return null;
 
   const handlePublished = async () => {
@@ -347,49 +408,26 @@ export default function PublicNote({
                   </TabsList>
                 </TabSlider>
 
-                {/* Default OG Image */}
                 <TabsContent value="default" className="mt-0">
-                  <div className="relative w-full h-48 border border-border aspect-video app-radius-md overflow-hidden bg-muted">
-                    <Image
-                      src={`/api/og?id=${noteId}`}
-                      alt="Open Graph Image"
-                      fill
-                      unoptimized
-                      draggable={false}
-                      loading="eager"
-                      quality={80}
-                      onLoad={() => setOgImageLoaded(true)}
-                      onError={() => setOgImageLoaded(false)}
-                      className={cn(
-                        "object-fill select-none [-webkit-user-drag:none] transition-opacity duration-300",
-                        ogImageLoaded ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    {!ogImageLoaded && (
-                      <div className="absolute inset-0 flex items-center justify-center animate-pulse">
-                        <Globe2Icon
-                          size={20}
-                          className="text-muted-foreground"
-                        />
-                      </div>
-                    )}
-                  </div>
+                  <OgPreviewImage
+                    src={`/api/og?id=${noteId}`}
+                    alt="Open Graph Image"
+                    loaded={ogImageLoaded}
+                    error={ogImageError}
+                    wrapperClassName="border border-border aspect-video app-radius-md"
+                    imageClassName="object-fill"
+                  />
                 </TabsContent>
 
-                {/* Facebook Card Preview */}
                 <TabsContent value="facebook" className="mt-0">
                   <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-48 bg-muted overflow-hidden">
-                      <Image
-                        src={`/api/og?id=${noteId}`}
-                        alt="Facebook OG Preview"
-                        fill
-                        unoptimized
-                        loading="eager"
-                        quality={80}
-                        className="object-cover"
-                      />
-                    </div>
+                    <OgPreviewImage
+                      src={`/api/og?id=${noteId}`}
+                      alt="Facebook OG Preview"
+                      loaded={ogImageLoaded}
+                      error={ogImageError}
+                      imageClassName="object-cover"
+                    />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
                         NOTEVO.ME
@@ -406,20 +444,15 @@ export default function PublicNote({
                   </div>
                 </TabsContent>
 
-                {/* LinkedIn Card Preview */}
                 <TabsContent value="linkedin" className="mt-0">
                   <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-48 bg-muted overflow-hidden">
-                      <Image
-                        src={`/api/og?id=${noteId}`}
-                        alt="LinkedIn OG Preview"
-                        fill
-                        unoptimized
-                        loading="eager"
-                        quality={80}
-                        className="object-cover"
-                      />
-                    </div>
+                    <OgPreviewImage
+                      src={`/api/og?id=${noteId}`}
+                      alt="LinkedIn OG Preview"
+                      loaded={ogImageLoaded}
+                      error={ogImageError}
+                      imageClassName="object-cover"
+                    />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-xs font-semibold text-foreground line-clamp-1">
                         {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
@@ -432,20 +465,15 @@ export default function PublicNote({
                   </div>
                 </TabsContent>
 
-                {/* Twitter / X Card Preview */}
                 <TabsContent value="twitter" className="mt-0">
                   <div className="w-full border border-border rounded-xl overflow-hidden bg-card text-card-foreground shadow-sm">
-                    <div className="relative w-full h-48 bg-muted overflow-hidden">
-                      <Image
-                        src={`/api/og?id=${noteId}`}
-                        alt="Twitter X OG Preview"
-                        fill
-                        unoptimized
-                        loading="eager"
-                        quality={80}
-                        className="object-cover"
-                      />
-                    </div>
+                    <OgPreviewImage
+                      src={`/api/og?id=${noteId}`}
+                      alt="Twitter X OG Preview"
+                      loaded={ogImageLoaded}
+                      error={ogImageError}
+                      imageClassName="object-cover"
+                    />
                     <div className="p-2.5 bg-card space-y-0.5 border-t border-border">
                       <p className="text-[11px] text-muted-foreground">
                         notevo.me
@@ -462,7 +490,6 @@ export default function PublicNote({
                   </div>
                 </TabsContent>
 
-                {/* Slack Card Preview */}
                 <TabsContent value="slack" className="mt-0">
                   <div className="w-full border border-border app-radius-md p-2.5 bg-card text-card-foreground shadow-sm space-y-1.5">
                     <div className="pl-2.5 border-l-4 border-muted-foreground/40 space-y-1">
@@ -477,22 +504,18 @@ export default function PublicNote({
                         {getNote?.preview?.trim() ||
                           "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
                       </p>
-                      <div className="mt-2 relative w-full h-48 rounded-md border border-border overflow-hidden bg-muted">
-                        <Image
-                          src={`/api/og?id=${noteId}`}
-                          alt="Slack OG Preview"
-                          fill
-                          unoptimized
-                          loading="eager"
-                          quality={80}
-                          className="object-fill"
-                        />
-                      </div>
+                      <OgPreviewImage
+                        src={`/api/og?id=${noteId}`}
+                        alt="Slack OG Preview"
+                        loaded={ogImageLoaded}
+                        error={ogImageError}
+                        wrapperClassName="mt-2 rounded-md border border-border"
+                        imageClassName="object-fill"
+                      />
                     </div>
                   </div>
                 </TabsContent>
 
-                {/* WhatsApp Card Preview */}
                 <TabsContent value="whatsapp" className="mt-0">
                   <div
                     className={cn(
@@ -502,17 +525,13 @@ export default function PublicNote({
                         : "bg-[#ebf7ee] border-[#128c7e]/20",
                     )}
                   >
-                    <div className="relative w-full h-48 bg-muted overflow-hidden">
-                      <Image
-                        src={`/api/og?id=${noteId}`}
-                        alt="WhatsApp OG Preview"
-                        fill
-                        unoptimized
-                        loading="eager"
-                        quality={80}
-                        className="object-cover"
-                      />
-                    </div>
+                    <OgPreviewImage
+                      src={`/api/og?id=${noteId}`}
+                      alt="WhatsApp OG Preview"
+                      loaded={ogImageLoaded}
+                      error={ogImageError}
+                      imageClassName="object-cover"
+                    />
                     <div
                       className={cn(
                         "p-2.5 space-y-0.5 border-t",
