@@ -3180,7 +3180,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
 
   const cardStyles =
-    "group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 rounded-xl text-card-foreground shadow";
+    "group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg text-card-foreground shadow";
 
   const cardInnerContent = (
     <CardContent className="flex w-full items-center gap-4 p-3">
