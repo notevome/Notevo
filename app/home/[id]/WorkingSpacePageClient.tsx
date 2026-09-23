@@ -3017,7 +3017,7 @@ function WorkspaceItemThumbnail({
   item: WorkspaceEntry;
   compact?: boolean;
 }) {
-  const size = compact ? " w-10" : "w-full";
+  const size = compact ? " w-52" : "w-full";
   if (item.kind === "whiteboard")
     return (
       <div className={`${size} shrink-0 overflow-hidden`}>
@@ -3302,20 +3302,17 @@ function WhiteboardPreview({
   }, [snapshot]);
 
   return (
-    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden border border-border">
+    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden">
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
           alt=" Whiteboard thumbnail"
           draggable={false}
-          className="pointer-events-none h-full w-full select-none bg-white object-contain [-webkit-user-drag:none]"
+          className="pointer-events-none h-full w-full select-none bg-white object-contain  border border-border [-webkit-user-drag:none]"
         />
       ) : (
-        <div className=" min-h-48 w-full flex justify-center items-center">
+        <div className=" min-h-32 w-full flex justify-center items-center">
           <PanelTop className="h-8 w-8 text-primary/70" />
-          <span className="absolute bottom-2 left-2 bg-card/90 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-            {preview || "Empty canvas"}
-          </span>
         </div>
       )}
     </div>
