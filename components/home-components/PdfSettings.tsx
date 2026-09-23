@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation } from "convex/react";
+import { useDebouncedCallback } from "use-debounce";
+import z from "zod";
 import {
   Download,
   ExternalLink,
@@ -45,6 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import MovePdfDialog from "./MovePdfDialog";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { useToast } from "@/hooks/use-toast";
 
 interface PdfSettingsProps {
   pdfId: Id<"pdfs">;
@@ -62,6 +65,14 @@ interface PdfSettingsProps {
 }
 
 const PDF_TITLE_MAX_LENGTH = 55;
+
+const pdfTitleSchema = z
+  .string()
+  .min(1, "Title cannot be empty")
+  .max(
+    PDF_TITLE_MAX_LENGTH,
+    `Title must be ${PDF_TITLE_MAX_LENGTH} characters or less`,
+  );
 
 const formatPdfTimestamp = (timestamp?: number) => {
   if (!timestamp) return "";
@@ -91,14 +102,11 @@ export default function PdfSettings({
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const tooltip = useHoverTooltip(100);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
   const updatePdf = useMutation(api.pdfs.updatePdf);
   const deletePdf = useMutation(api.pdfs.deletePdf);
-
-  useEffect(() => {
-    setInputValue(pdfTitle || "Untitled");
-  }, [pdfTitle]);
 
   useEffect(() => {
     if (open) {
@@ -109,27 +117,37 @@ export default function PdfSettings({
     }
   }, [open]);
 
-  const handleBlur = useCallback(async () => {
-    const trimmedValue = inputValue.trim();
-    const isValid =
-      trimmedValue.length > 0 && trimmedValue.length <= PDF_TITLE_MAX_LENGTH;
+  const debouncedRenamePdf = useDebouncedCallback((nextTitle: string) => {
+    const currentTitle = pdfTitle || "Untitled";
+    const result = pdfTitleSchema.safeParse(nextTitle);
 
-    if (!isValid) {
-      setInputValue(pdfTitle || "Untitled");
+    if (!result.success) {
+      const issue = result.error.issues[0];
+      if (issue.code === "too_small") {
+        setInputValue("");
+        toast({
+          title: "Naming failed",
+          description: "Title must not be empty.",
+          variant: "destructive",
+        });
+      } else if (issue.code === "too_big") {
+        setInputValue(currentTitle);
+        toast({
+          title: "Naming failed",
+          description: `Title must be ${PDF_TITLE_MAX_LENGTH} characters or less`,
+          variant: "destructive",
+        });
+      }
       return;
     }
 
-    if (trimmedValue !== (pdfTitle || "Untitled")) {
-      try {
-        await updatePdf({ _id: pdfId, title: trimmedValue });
-      } catch (error) {
+    if (nextTitle !== currentTitle) {
+      updatePdf({ _id: pdfId, title: nextTitle }).catch((error) => {
         console.error("Error updating PDF title:", error);
-        setInputValue(pdfTitle || "Untitled");
-      }
+        setInputValue(currentTitle);
+      });
     }
-
-    setInputValue(trimmedValue);
-  }, [inputValue, pdfId, pdfTitle, updatePdf]);
+  }, 100);
 
   const handleDelete = useCallback(async () => {
     if (onDelete) onDelete(pdfId);
@@ -231,12 +249,15 @@ export default function PdfSettings({
             <Input
               type="text"
               value={inputValue}
-              onChange={(event) => setInputValue(event.target.value)}
-              onBlur={() => void handleBlur()}
+              onChange={(event) => {
+                setInputValue(event.target.value);
+                debouncedRenamePdf(event.target.value.trim());
+              }}
+              onBlur={() => debouncedRenamePdf.flush()}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  void handleBlur();
+                  debouncedRenamePdf.flush();
                   setOpen(false);
                 }
               }}
