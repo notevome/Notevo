@@ -239,7 +239,7 @@ function FolderTab({ interactive = false }: { interactive?: boolean }) {
       width="130"
       height="24"
       viewBox="0 0 130 24"
-      className="relative z-2 -mb-px block shrink-0 self-start"
+      className="relative z-10 -mb-px block shrink-0 self-start"
     >
       <path d={`${outline} V24 H0 Z`} className="fill-card" stroke="none" />
       <path
@@ -340,7 +340,7 @@ function Slider({
   return (
     <div ref={wrapperRef} className="relative w-full h-[250px] group">
       {canScrollLeft && (
-        <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[5] pointer-events-none" />
+        <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[11] pointer-events-none" />
       )}
       <div
         ref={scrollContainerRef}
@@ -350,11 +350,11 @@ function Slider({
         {children}
       </div>
       {canScrollRight && (
-        <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[5] pointer-events-none" />
+        <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[11] pointer-events-none" />
       )}
       {(canScrollRight || canScrollLeft) && (
         <div
-          className={`z-10 absolute ${child_type === "workSpaceCard" ? "-bottom-7" : "-bottom-1"}  right-0 flex justify-center items-center gap-2`}
+          className={`z-[12] absolute ${child_type === "workSpaceCard" ? "-bottom-7" : "-bottom-1"}  right-0 flex justify-center items-center gap-2`}
         >
           <Button
             size="icon"
@@ -469,7 +469,7 @@ function WorkspaceCard({
   );
 
   return (
-    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[225px]">
+    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]">
       <FolderTab interactive />
       <Card
         className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors duration-300 group-hover/folder:border-muted-foreground/50"
