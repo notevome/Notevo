@@ -210,6 +210,28 @@ function isSocialLinkPlatform(
   return !isGenericLinkPlatform(platform);
 }
 
+// Strips trailing image-size suffixes (e.g. "_200x200", "_400x400",
+// "_normal", "_bigger") so the same photo served at different sizes
+// compares as equal.
+function stripImageSizeSuffix(url: string): string {
+  return url.replace(
+    /_(?:\d+x\d+|normal|bigger|mini|original)(?=\.[a-zA-Z0-9]+(?:\?.*)?$)/i,
+    "",
+  );
+}
+
+// A post's OG/media thumbnail sometimes just falls back to the author's own
+// avatar (at a different size) when the post has no real image or video.
+// Treat that case as "no thumbnail" so we don't show the person's photo.
+function isAvatarFallbackThumbnail(
+  thumbnailUrl: string | undefined,
+  avatarUrl: string | undefined,
+): boolean {
+  if (!thumbnailUrl || !avatarUrl) return false;
+  if (thumbnailUrl === avatarUrl) return true;
+  return stripImageSizeSuffix(thumbnailUrl) === stripImageSizeSuffix(avatarUrl);
+}
+
 function matchesLinkPlatform(
   platform: LinkPlatform | string | undefined,
   filter: ContentFilter,
@@ -2799,10 +2821,15 @@ function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
-  const thumbnailUrl = isLink
-    ? (item as LinkItem).metadata?.thumbnailUrl
-    : undefined;
-  const isPending = isLink && (item as LinkItem).metadata === undefined;
+  const linkItem = isLink ? (item as LinkItem) : undefined;
+  const isSocialLink = isLink && isSocialLinkPlatform(linkItem?.platform);
+  const rawThumbnailUrl = linkItem?.metadata?.thumbnailUrl;
+  const avatarUrl = linkItem?.metadata?.authorAvatarUrl;
+  const thumbnailUrl =
+    rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
+      ? rawThumbnailUrl
+      : undefined;
+  const isPending = isLink && linkItem?.metadata === undefined;
   const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
 
   if (!isLink) {
@@ -2838,15 +2865,97 @@ function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
       )}
 
       {!isPending && !thumbnailUrl && (
-        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-          <Link2 className="h-4 w-4 text-muted-foreground" />
-        </div>
+        <>
+          {isSocialLink && avatarUrl ? (
+            <LinkAuthorAvatar
+              avatarUrl={avatarUrl}
+              authorName={linkItem?.metadata?.authorName}
+              className="h-full w-full"
+            />
+          ) : (
+            <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
+              <Link2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+        </>
       )}
 
       <LinkFaviconBadge
         url={(item as LinkItem).url}
         className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
       />
+    </div>
+  );
+}
+
+function TimelineHeroBackground({ item }: { item: WorkspaceEntry }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
+
+  if (isLink) {
+    const linkItem = item as LinkItem;
+    const isSocialLink = isSocialLinkPlatform(linkItem.platform);
+    const rawThumbnailUrl = linkItem.metadata?.thumbnailUrl;
+    const avatarUrl = linkItem.metadata?.authorAvatarUrl;
+    const thumbnailUrl =
+      rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
+        ? rawThumbnailUrl
+        : undefined;
+    const isPending = linkItem.metadata === undefined;
+    const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+    return (
+      <div className="relative h-full w-full bg-muted">
+        {thumbnailUrl && (
+          <img
+            src={thumbnailUrl}
+            alt=""
+            draggable={false}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgLoaded(false)}
+            className={cn(
+              "h-full w-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
+              imgLoaded ? "opacity-100" : "opacity-0",
+            )}
+          />
+        )}
+        {showSkeleton && (
+          <div className="absolute inset-0 bg-border/60 animate-pulse" />
+        )}
+        {!isPending && !thumbnailUrl && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isSocialLink && avatarUrl ? (
+              <LinkAuthorAvatar
+                avatarUrl={avatarUrl}
+                authorName={linkItem.metadata?.authorName}
+                className="h-16 w-16"
+              />
+            ) : (
+              <Link2 className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isWhiteboard) {
+    const board = item as WhiteboardItem;
+    return (
+      <div className="h-full w-full bg-muted">
+        <WhiteboardPreview
+          snapshot={board.snapshot}
+          preview={board.preview}
+          fill
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-muted">
+      <FileText className="h-8 w-8 text-muted-foreground" />
     </div>
   );
 }
@@ -2872,39 +2981,136 @@ function TimelineMiniCard({
           (item as PdfItem).title || "untitled-pdf",
         )}?pdfId=${item._id}`
       : isLink
-        ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
-            (item as LinkItem).title ||
-              (item as LinkItem).metadata?.authorName ||
-              "link",
-          )}?linkId=${item._id}`
+        ? (item as LinkItem).url
         : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
 
+  const openLink = () => {
+    if (isLink) window.open(href, "_blank", "noopener,noreferrer");
+  };
+
+  const isSocialLink =
+    isLink && isSocialLinkPlatform((item as LinkItem).platform);
+  const authorHandle = isSocialLink
+    ? formatHandle((item as LinkItem).metadata?.authorHandle)
+    : undefined;
+
   const createdDate = new Date(item.createdAt);
+  const updatedDate = new Date(item.updatedAt);
   const isDifferentYear =
     createdDate.getFullYear() !== new Date().getFullYear();
+  const hasUpdate =
+    Boolean(item.updatedAt) && item.updatedAt !== item.createdAt;
+  const publishedAt = isLink
+    ? ((item as LinkItem).metadata?.publishedAt ?? item.createdAt)
+    : undefined;
+  const publishedDate = publishedAt ? new Date(publishedAt) : undefined;
 
-  const cardClassName = cn(
-    "group flex items-center gap-2 border border-border bg-card hover:border-primary/20 hover:bg-muted/40 transition-colors app-radius-md px-2.5 py-2",
-    inPopover ? "w-full" : "w-[168px]",
-  );
+  const formatShort = (date: Date) =>
+    date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: isDifferentYear ? "numeric" : undefined,
+    });
+
+  const title = isSocialLink
+    ? (item as LinkItem).metadata?.authorName?.trim() ||
+      item.title ||
+      "Untitled"
+    : item.title || (isLink ? (item as LinkItem).url : "Untitled");
+
+  // Clustered list (popover) rows — thumbnail + text side by side, unchanged.
+  if (inPopover) {
+    const rowClassName =
+      "group flex w-full items-center gap-2 border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-md px-2.5 py-2";
+    const rowContent = (
+      <>
+        <TimelineMiniThumbnail item={item} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
+            {title}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {[
+              authorHandle,
+              isLink && publishedDate
+                ? formatLongDateTime(publishedAt as number)
+                : formatShort(createdDate),
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+      </>
+    );
+
+    if (isLink) {
+      return (
+        <div onClick={openLink} className={cn(rowClassName, "cursor-pointer")}>
+          {rowContent}
+        </div>
+      );
+    }
+
+    return (
+      <IntentPrefetchLink href={href} className={rowClassName}>
+        {rowContent}
+      </IntentPrefetchLink>
+    );
+  }
+
+  // Standalone single-item card — full-bleed thumbnail with an info overlay.
+  const cardClassName =
+    "group relative flex h-[210px] w-[168px] flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg";
 
   const cardContent = (
     <>
-      <TimelineMiniThumbnail item={item} />
-      <div className="min-w-0 flex-1">
+      <div className="absolute inset-0">
+        <TimelineHeroBackground item={item} />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-background via-background/85 to-transparent" />
+
+      {(isLink || isWhiteboard) && (
+        <div className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center">
+          {isLink ? (
+            <LinkFaviconBadge
+              url={(item as LinkItem).url}
+              className="h-full w-full p-0.5"
+            />
+          ) : (
+            <PanelTop className="h-3 w-3 text-muted-foreground" />
+          )}
+        </div>
+      )}
+
+      <div className="relative z-10 mt-auto p-2.5">
         <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-          {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
+          {title}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
-          {createdDate.toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: isDifferentYear ? "numeric" : undefined,
-          })}
+          {isLink && publishedDate ? (
+            <>
+              {authorHandle && <span>{authorHandle} · </span>}
+              {formatLongDateTime(publishedAt as number)}
+            </>
+          ) : (
+            <>
+              Created {formatShort(createdDate)}
+              {hasUpdate ? ` · Updated ${formatShort(updatedDate)}` : ""}
+            </>
+          )}
         </p>
       </div>
     </>
   );
+
+  if (isLink) {
+    return (
+      <div onClick={openLink} className={cn(cardClassName, "cursor-pointer")}>
+        {cardContent}
+      </div>
+    );
+  }
 
   return (
     <IntentPrefetchLink href={href} className={cardClassName}>
@@ -3060,11 +3266,25 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
 
+  const hasRealThumbnail = Boolean(
+    link?.metadata?.thumbnailUrl &&
+      !isAvatarFallbackThumbnail(
+        link.metadata.thumbnailUrl,
+        link.metadata?.authorAvatarUrl,
+      ),
+  );
+
   const cardStyles =
     "group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg border bg-card text-card-foreground";
 
   const cardInnerContent = (
     <>
+      {isSocialLink && !hasRealThumbnail && link && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 z-10 h-7 w-7"
+        />
+      )}
       <CardHeader className="pb-3">
         <div className="flex min-w-0 items-start justify-between gap-2">
           {isSocialLink ? (
@@ -3120,9 +3340,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
                 query={searchQuery}
               />
             </p>
-            {link?.metadata?.thumbnailUrl && (
-              <LinkThumbnail link={link} showFaviconBadge />
-            )}
+            {link?.metadata?.thumbnailUrl &&
+              !isAvatarFallbackThumbnail(
+                link.metadata.thumbnailUrl,
+                link.metadata?.authorAvatarUrl,
+              ) && <LinkThumbnail link={link} showFaviconBadge />}
           </>
         ) : (
           <>
@@ -3179,25 +3401,45 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
 
+  const hasRealThumbnail = Boolean(
+    link?.metadata?.thumbnailUrl &&
+      !isAvatarFallbackThumbnail(
+        link.metadata.thumbnailUrl,
+        link.metadata?.authorAvatarUrl,
+      ),
+  );
+
   const cardStyles =
     "group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg text-card-foreground shadow";
 
   const cardInnerContent = (
     <CardContent className="flex w-full items-center gap-4 p-3">
-      {isSocialLink ? (
-        <LinkAuthorAvatar
-          avatarUrl={link?.metadata?.authorAvatarUrl}
-          className="h-10 w-10"
+      {isSocialLink && !hasRealThumbnail && link && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 z-10 h-5 w-5"
         />
+      )}
+      {isSocialLink ? (
+        hasRealThumbnail && <WorkspaceItemThumbnail item={item} compact />
       ) : (
         <WorkspaceItemThumbnail item={item} compact />
       )}
       <div className="min-w-0 flex-1 overflow-hidden">
-        <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
-          <HighlightText
-            text={isSocialLink ? authorName || details.title : details.title}
-            query={searchQuery}
-          />
+        <h3 className="flex max-w-full items-center gap-1.5 break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+          {isSocialLink && (
+            <LinkAuthorAvatar
+              avatarUrl={link?.metadata?.authorAvatarUrl}
+              authorName={authorName || details.title}
+              className="h-5 w-5 shrink-0"
+            />
+          )}
+          <span className="line-clamp-1 min-w-0">
+            <HighlightText
+              text={isSocialLink ? authorName || details.title : details.title}
+              query={searchQuery}
+            />
+          </span>
         </h3>
         <p className="text-xs text-muted-foreground">
           {isSocialLink ? (
@@ -3254,9 +3496,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
 function WhiteboardPreview({
   snapshot,
   preview,
+  fill = false,
 }: {
   snapshot?: string;
   preview?: string;
+  fill?: boolean;
 }) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
@@ -3302,13 +3546,21 @@ function WhiteboardPreview({
   }, [snapshot]);
 
   return (
-    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden">
+    <div
+      className={cn(
+        "relative flex items-center justify-center overflow-hidden",
+        fill ? "h-full w-full" : "h-fit w-full",
+      )}
+    >
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
           alt=" Whiteboard thumbnail"
           draggable={false}
-          className="pointer-events-none h-full w-full select-none bg-white object-contain  border border-border [-webkit-user-drag:none]"
+          className={cn(
+            "pointer-events-none h-full w-full select-none bg-white [-webkit-user-drag:none]",
+            fill ? "object-cover" : "object-contain border border-border",
+          )}
         />
       ) : (
         <div className=" min-h-32 w-full flex justify-center items-center">
