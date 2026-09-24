@@ -2738,16 +2738,12 @@ function CalendarTimelineView({
                           align="center"
                           side="bottom"
                           sideOffset={6}
-                          className="w-64 p-0.5 border-border max-h-72 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-card"
+                          className="w-auto p-0 border-border overflow-hidden"
                         >
-                          {cluster.entries.map((entry) => (
-                            <TimelineMiniCard
-                              key={entry._id}
-                              item={entry}
-                              workspaceId={workspaceId}
-                              inPopover
-                            />
-                          ))}
+                          <TimelineClusterSlider
+                            entries={cluster.entries}
+                            workspaceId={workspaceId}
+                          />
                         </PopoverContent>
                       </Popover>
                     )}
@@ -2757,6 +2753,118 @@ function CalendarTimelineView({
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineClusterSlider({
+  entries,
+  workspaceId,
+}: {
+  entries: WorkspaceEntry[];
+  workspaceId?: Id<"workingSpaces">;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    const raf = requestAnimationFrame(checkScroll);
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", checkScroll);
+      ro.disconnect();
+    };
+  }, [checkScroll, entries.length]);
+
+  const scroll = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: el.clientWidth * (direction === "left" ? -0.65 : 0.65),
+      behavior: "smooth",
+    });
+  }, []);
+
+  return (
+    <div className="relative w-auto max-w-[calc(100vw-2rem)] sm:max-w-[546px] overflow-hidden">
+      <Button
+        variant="Trigger"
+        size="icon"
+        onClick={() => scroll("left")}
+        aria-label="scroll-cards-left"
+        className={cn(
+          "absolute left-2 top-1/2 -translate-y-1/2 z-30 h-8 w-8 ",
+          canScrollLeft
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
+        )}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="Trigger"
+        size="icon"
+        onClick={() => scroll("right")}
+        aria-label="scroll-cards-right"
+        className={cn(
+          "absolute right-2 top-1/2 -translate-y-1/2 z-30 h-8 w-8 ",
+          canScrollRight
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
+        )}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+
+      <div
+        className="absolute left-0 top-0 bottom-0 z-20 w-16 pointer-events-none transition-opacity duration-200"
+        style={{
+          opacity: canScrollLeft ? 1 : 0,
+          background:
+            "linear-gradient(to right, hsl(var(--muted)) 15%, transparent)",
+        }}
+      />
+      <div
+        className="absolute right-0 top-0 bottom-0 z-20 w-16 pointer-events-none transition-opacity duration-200"
+        style={{
+          opacity: canScrollRight ? 1 : 0,
+          background:
+            "linear-gradient(to left, hsl(var(--muted)) 15%, transparent)",
+        }}
+      />
+
+      <div
+        ref={scrollRef}
+        className="flex flex-row items-center gap-2.5 p-2 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
+        onWheel={(e) => {
+          if (e.deltaY !== 0) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+      >
+        {entries.map((entry) => (
+          <TimelineMiniCard
+            key={entry._id}
+            item={entry}
+            workspaceId={workspaceId}
+          />
+        ))}
       </div>
     </div>
   );
@@ -2814,77 +2922,6 @@ function CalendarGapMarker({
         </div>
       </TooltipContent>
     </Tooltip>
-  );
-}
-
-function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const isLink = item.kind === "link";
-  const isWhiteboard = item.kind === "whiteboard";
-  const linkItem = isLink ? (item as LinkItem) : undefined;
-  const isSocialLink = isLink && isSocialLinkPlatform(linkItem?.platform);
-  const rawThumbnailUrl = linkItem?.metadata?.thumbnailUrl;
-  const avatarUrl = linkItem?.metadata?.authorAvatarUrl;
-  const thumbnailUrl =
-    rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
-      ? rawThumbnailUrl
-      : undefined;
-  const isPending = isLink && linkItem?.metadata === undefined;
-  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
-
-  if (!isLink) {
-    return (
-      <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
-        {isWhiteboard ? (
-          <PanelTop className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <FileText className="h-4 w-4 text-muted-foreground" />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative h-9 w-9 flex items-center justify-center flex-shrink-0">
-      {thumbnailUrl && (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          draggable={false}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => setImgLoaded(false)}
-          className={cn(
-            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
-            imgLoaded ? "opacity-100" : "opacity-0",
-          )}
-        />
-      )}
-
-      {showSkeleton && (
-        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
-      )}
-
-      {!isPending && !thumbnailUrl && (
-        <>
-          {isSocialLink && avatarUrl ? (
-            <LinkAuthorAvatar
-              avatarUrl={avatarUrl}
-              authorName={linkItem?.metadata?.authorName}
-              className="h-full w-full"
-            />
-          ) : (
-            <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-              <Link2 className="h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
-        </>
-      )}
-
-      <LinkFaviconBadge
-        url={(item as LinkItem).url}
-        className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
-      />
-    </div>
   );
 }
 
@@ -2963,11 +3000,9 @@ function TimelineHeroBackground({ item }: { item: WorkspaceEntry }) {
 function TimelineMiniCard({
   item,
   workspaceId,
-  inPopover,
 }: {
   item: WorkspaceEntry;
   workspaceId?: Id<"workingSpaces">;
-  inPopover?: boolean;
 }) {
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
@@ -3018,49 +3053,9 @@ function TimelineMiniCard({
       "Untitled"
     : item.title || (isLink ? (item as LinkItem).url : "Untitled");
 
-  // Clustered list (popover) rows — thumbnail + text side by side, unchanged.
-  if (inPopover) {
-    const rowClassName =
-      "group flex w-full items-center gap-2 border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-md px-2.5 py-2";
-    const rowContent = (
-      <>
-        <TimelineMiniThumbnail item={item} />
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-            {title}
-          </p>
-          <p className="text-[10px] text-muted-foreground mt-1">
-            {[
-              authorHandle,
-              isLink && publishedDate
-                ? formatLongDateTime(publishedAt as number)
-                : formatShort(createdDate),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        </div>
-      </>
-    );
-
-    if (isLink) {
-      return (
-        <div onClick={openLink} className={cn(rowClassName, "cursor-pointer")}>
-          {rowContent}
-        </div>
-      );
-    }
-
-    return (
-      <IntentPrefetchLink href={href} className={rowClassName}>
-        {rowContent}
-      </IntentPrefetchLink>
-    );
-  }
-
-  // Standalone single-item card — full-bleed thumbnail with an info overlay.
+  // Timeline card — full-bleed thumbnail with an info overlay.
   const cardClassName =
-    "group relative flex h-[210px] w-[168px] flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg";
+    "group relative flex h-[210px] w-[168px] shrink-0 flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg";
 
   const cardContent = (
     <>
