@@ -143,7 +143,6 @@ export default function HomePageClient() {
 
   return (
     <MaxWContainer className="relative">
-      {/* Hero Section */}
       <div className="overflow-hidden py-2 mb-14">
         <header className="flex flex-col justify-center items-start gap-2 relative">
           <h1 className="text-3xl sm:text-5xl font-bold text-primary">
@@ -174,7 +173,6 @@ export default function HomePageClient() {
         </header>
       </div>
 
-      {/* Workspaces Slider */}
       <div className="mb-8">
         <div className="mb-4 flex justify-between items-center">
           <h2 className="text-foreground text-xl font-semibold">
@@ -192,13 +190,13 @@ export default function HomePageClient() {
         </div>
 
         {recentWorkspaces === undefined ? (
-          <Slider>
+          <Slider child_type="workSpaceCard">
             {[1, 2, 3, 4].map((i) => (
               <WorkspaceCardSkeleton key={i} />
             ))}
           </Slider>
         ) : recentWorkspaces.length > 0 ? (
-          <Slider>
+          <Slider child_type="workSpaceCard">
             {recentWorkspaces.map((workspace: any) => (
               <WorkspaceCard
                 key={workspace._id}
@@ -213,7 +211,6 @@ export default function HomePageClient() {
         )}
       </div>
 
-      {/* Recent Notes Slider */}
       {recentNotes.length !== 0 && (
         <div className="mb-8">
           <div className="mb-4">
@@ -222,7 +219,7 @@ export default function HomePageClient() {
             </h2>
           </div>
 
-          <Slider>
+          <Slider child_type="noteCard ">
             {recentNotes.map((note) => (
               <NoteCard key={note._id} note={note} />
             ))}
@@ -233,11 +230,6 @@ export default function HomePageClient() {
   );
 }
 
-/**
- * Folder tab with a sloped right edge. Sits on top of the folder body and
- * overlaps its top border by 1px so the two look like one continuous shape.
- * Colors come from the theme (fill-card / stroke-border).
- */
 function FolderTab({ interactive = false }: { interactive?: boolean }) {
   const outline =
     "M0.5 24 V9.5 Q0.5 0.5 9.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
@@ -247,7 +239,7 @@ function FolderTab({ interactive = false }: { interactive?: boolean }) {
       width="130"
       height="24"
       viewBox="0 0 130 24"
-      className="relative z-10 -mb-px block shrink-0 self-start"
+      className="relative z-2 -mb-px block shrink-0 self-start"
     >
       <path d={`${outline} V24 H0 Z`} className="fill-card" stroke="none" />
       <path
@@ -287,31 +279,13 @@ function WorkspaceCardSkeleton() {
   );
 }
 
-function NoteCardSkeleton() {
-  return (
-    <Card className="relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] h-[230px] flex flex-col">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-3/4" />
-            <Skeleton className="h-3 w-1/2" />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow flex-1 space-y-2">
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-5/6" />
-        <Skeleton className="h-3 w-4/6" />
-      </CardContent>
-      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border mt-auto">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-16" />
-      </CardFooter>
-    </Card>
-  );
-}
-
-function Slider({ children }: { children: React.ReactNode }) {
+function Slider({
+  children,
+  child_type,
+}: {
+  child_type: "noteCard " | "workSpaceCard";
+  children: React.ReactNode;
+}) {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -368,7 +342,6 @@ function Slider({ children }: { children: React.ReactNode }) {
       {canScrollLeft && (
         <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-
       <div
         ref={scrollContainerRef}
         className="absolute inset-0 flex gap-4 h-fit overflow-x-auto scrollbar-hide scroll-smooth"
@@ -376,13 +349,13 @@ function Slider({ children }: { children: React.ReactNode }) {
       >
         {children}
       </div>
-
       {canScrollRight && (
         <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[5] pointer-events-none" />
       )}
-
       {(canScrollRight || canScrollLeft) && (
-        <div className="z-10 absolute -bottom-1 right-0 flex justify-center items-center gap-2">
+        <div
+          className={`z-10 absolute ${child_type === "workSpaceCard" ? "-bottom-7" : "-bottom-1"}  right-0 flex justify-center items-center gap-2`}
+        >
           <Button
             size="icon"
             variant={canScrollLeft ? "default" : "outline"}
@@ -496,15 +469,12 @@ function WorkspaceCard({
   );
 
   return (
-    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[222px]">
-      {/* Folder tab */}
+    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[225px]">
       <FolderTab interactive />
-      {/* Folder body */}
       <Card
         className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors duration-300 group-hover/folder:border-muted-foreground/50"
         style={{ borderTopLeftRadius: 0 }}
       >
-        {/* Full-card link (click anywhere to open) */}
         <IntentPrefetchLink
           href={`/home/${workspace._id}`}
           aria-label={`Open ${workspace.name || "Untitled"}`}
