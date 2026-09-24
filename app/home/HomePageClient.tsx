@@ -6,6 +6,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderClosed,
+  FolderOpen,
   Star,
   Pin,
   FolderPlus,
@@ -232,22 +233,57 @@ export default function HomePageClient() {
   );
 }
 
+/**
+ * Folder tab with a sloped right edge. Sits on top of the folder body and
+ * overlaps its top border by 1px so the two look like one continuous shape.
+ * Colors come from the theme (fill-card / stroke-border).
+ */
+function FolderTab({ interactive = false }: { interactive?: boolean }) {
+  const outline =
+    "M0.5 24 V9.5 Q0.5 0.5 9.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
+  return (
+    <svg
+      aria-hidden
+      width="130"
+      height="24"
+      viewBox="0 0 130 24"
+      className="relative z-10 -mb-px block shrink-0 self-start"
+    >
+      <path d={`${outline} V24 H0 Z`} className="fill-card" stroke="none" />
+      <path
+        d={outline}
+        fill="none"
+        strokeWidth="1"
+        className={cn(
+          "stroke-border transition-colors duration-300",
+          interactive && "group-hover/folder:stroke-muted-foreground/50",
+        )}
+      />
+    </svg>
+  );
+}
+
 function WorkspaceCardSkeleton() {
   return (
-    <Card className="relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[230px] flex flex-col">
-      <CardHeader className="pb-3 relative">
-        <Skeleton className="h-5 w-3/4" />
-      </CardHeader>
-      <CardContent className="flex-grow flex-1">
-        <div className="h-full flex items-center justify-center">
-          <Skeleton className="h-8 w-8 app-radius-md" />
-        </div>
-      </CardContent>
-      <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-9 w-16" />
-      </CardFooter>
-    </Card>
+    <div className="relative flex flex-col flex-shrink-0 w-[330px] min-h-[222px]">
+      <FolderTab />
+      <Card
+        className="relative overflow-hidden bg-card border-border flex flex-1 flex-col"
+        style={{ borderTopLeftRadius: 0 }}
+      >
+        <CardHeader className="pb-3 relative">
+          <Skeleton className="h-5 w-3/4" />
+        </CardHeader>
+        <CardContent className="flex-grow flex-1">
+          <div className="h-full flex items-center justify-center">
+            <Skeleton className="h-8 w-8 app-radius-md" />
+          </div>
+        </CardContent>
+        <CardFooter className="py-2 px-3 flex justify-between items-center border-t border-border">
+          <Skeleton className="h-3 w-24" />
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
@@ -460,55 +496,65 @@ function WorkspaceCard({
   );
 
   return (
-    <Card className=" flex flex-col justify-between items-stretch group relative overflow-hidden bg-card border-border flex-shrink-0 w-[330px] min-h-[200px] ">
-      <CardHeader className="pb-3 relative">
-        {isEditingName ? (
-          <div className="flex flex-col gap-1 pr-8 max-w-sm">
-            <Input
-              ref={nameInputRef}
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              onBlur={handleNameBlur}
-              onKeyDown={handleNameKeyDown}
-              className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[222px]">
+      {/* Folder tab */}
+      <FolderTab interactive />
+      {/* Folder body */}
+      <Card
+        className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors duration-300 group-hover/folder:border-muted-foreground/50"
+        style={{ borderTopLeftRadius: 0 }}
+      >
+        {/* Full-card link (click anywhere to open) */}
+        <IntentPrefetchLink
+          href={`/home/${workspace._id}`}
+          aria-label={`Open ${workspace.name || "Untitled"}`}
+          className="absolute inset-0 z-[1]"
+        />
+        <CardHeader className="pb-3 relative">
+          {isEditingName ? (
+            <div className="relative z-[2] flex flex-col gap-1 pr-8 max-w-sm">
+              <Input
+                ref={nameInputRef}
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onBlur={handleNameBlur}
+                onKeyDown={handleNameKeyDown}
+                className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+          ) : (
+            <CardTitle
+              className="relative z-[2] text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50"
+              onDoubleClick={handleNameDoubleClick}
+            >
+              {workspace.name || "Untitled"}
+            </CardTitle>
+          )}
+          <div className="absolute top-1.5 right-2 z-[2]">
+            <WorkingSpaceSettings
+              workingSpaceId={workspace._id}
+              workingspaceName={workspace.name}
             />
           </div>
-        ) : (
-          <CardTitle
-            className="text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50"
-            onDoubleClick={handleNameDoubleClick}
-          >
-            {workspace.name || "Untitled"}
-          </CardTitle>
-        )}
-        <div className="absolute top-1.5 right-2">
-          <WorkingSpaceSettings
-            workingSpaceId={workspace._id}
-            workingspaceName={workspace.name}
-          />
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow flex-1 ">
-        <span className=" w-full flex justify-center items-center h-full">
-          <FolderClosed className=" h-10 w-full text-primary text-center" />
-        </span>
-      </CardContent>
-      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(workspace.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-        <Button size="sm" asChild className="h-8 px-6 text-xs">
-          <IntentPrefetchLink href={`/home/${workspace._id}`}>
-            Open
-          </IntentPrefetchLink>
-        </Button>
-      </CardFooter>
-    </Card>
+        </CardHeader>
+        <CardContent className="flex-grow flex-1 ">
+          <span className=" w-full flex justify-center items-center h-full">
+            <FolderClosed className="h-10 w-full text-primary text-center group-hover/folder:hidden" />
+            <FolderOpen className="hidden h-10 w-full text-primary text-center group-hover/folder:block" />
+          </span>
+        </CardContent>
+        <CardFooter className="py-3 px-2.5 flex items-center justify-between border-t border-border">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" />
+            {typeof window !== "undefined" ? (
+              <span>{new Date(workspace.updatedAt).toLocaleDateString()}</span>
+            ) : (
+              <SkeletonTextAnimation className="w-20" />
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 
