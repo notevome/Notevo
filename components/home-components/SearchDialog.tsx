@@ -112,13 +112,7 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
-function NoteItem({
-  note,
-  onClick,
-  isSelected,
-  query,
-  indented = false,
-}: any) {
+function NoteItem({ note, onClick, isSelected, query, indented = false }: any) {
   const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
   return (
     <IntentPrefetchLink
@@ -156,13 +150,7 @@ function buildPdfSlug(title?: string) {
   );
 }
 
-function PdfItem({
-  pdf,
-  onClick,
-  isSelected,
-  query,
-  indented = false,
-}: any) {
+function PdfItem({ pdf, onClick, isSelected, query, indented = false }: any) {
   const pdfSlug = pdf.slug
     ? pdf.slug.startsWith("/")
       ? pdf.slug
@@ -601,8 +589,13 @@ export default function SearchDialog({
       }
       return;
     }
-    // Normal click: let IntentPrefetchLink navigate, just close the dialog
+    event.preventDefault();
     setOpen(false);
+    if (note.kind === "pdf") {
+      router.push(`/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`);
+    } else {
+      router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
