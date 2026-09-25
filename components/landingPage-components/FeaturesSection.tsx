@@ -49,6 +49,7 @@ const featureVideos: Record<string, { video: string; poster: string }> = {
 function FolderTab({ className }: { className?: string }) {
   const outline =
     "M0.5 24 V9.5 Q0.5 0.5 9.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
+
   return (
     <svg
       aria-hidden
