@@ -1,6 +1,6 @@
 "use client";
 import { Features } from "@/lib/data";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import SectionHeading from "./SectionHeading";
 import Section from "../ui/Section";
@@ -46,22 +46,23 @@ const featureVideos: Record<string, { video: string; poster: string }> = {
   },
 };
 
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.15 },
-  },
-};
+function FolderTab({ className }: { className?: string }) {
+  const outline =
+    "M0.5 24 V9.5 Q0.5 0.5 9.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
 
-const itemVariants = (x: number) => ({
-  hidden: { opacity: 0, x, y: 24 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    y: 0,
-    transition: { duration: 0.6, ease: "easeOut" as const },
-  },
-});
+  return (
+    <svg
+      aria-hidden
+      width="145"
+      height="28"
+      viewBox="0 0 130 24"
+      className={className}
+    >
+      <path d={`${outline} V24 H0 Z`} className="fill-primary" stroke="none" />
+      <path d={outline} fill="none" strokeWidth="1" className="stroke-border" />
+    </svg>
+  );
+}
 
 function LazyVideo({
   video,
@@ -102,7 +103,7 @@ function LazyVideo({
   }, []);
 
   return (
-    <div ref={wrapperRef}>
+    <div ref={wrapperRef} className="relative h-full w-full">
       <video
         ref={videoRef}
         poster={poster}
@@ -116,6 +117,78 @@ function LazyVideo({
         style={style}
       />
     </div>
+  );
+}
+
+function FolderFrame({ video, poster }: { video: string; poster: string }) {
+  return (
+    <div className="relative">
+      <div className="relative flex justify-start">
+        <FolderTab className="relative -mb-px" />
+      </div>
+
+      <div className="relative  overflow-hidden rounded-none border border-border border-t-0 bg-gradient-to-br from-primary via-primary/70 to-transparent p-1.5 ">
+        <div className="relative overflow-hidden rounded-none">
+          <LazyVideo
+            video={video}
+            poster={poster}
+            className="h-full w-full object-cover"
+            style={{ pointerEvents: "none" }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeatureItem({
+  feature,
+  isEven,
+}: {
+  feature: (typeof Features)[number];
+  isEven: boolean;
+}) {
+  const itemRef = useRef<HTMLDivElement>(null);
+  const featureMedia = featureVideos[feature.title];
+
+  const { scrollYProgress } = useScroll({
+    target: itemRef,
+    offset: ["start 0.9", "end 0.1"],
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.88, 1, 0.88]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.3, 1, 0.3]);
+
+  if (!featureMedia) return null;
+  const { video, poster } = featureMedia;
+
+  return (
+    <motion.div
+      ref={itemRef}
+      style={{ scale, opacity }}
+      className={`flex flex-col will-change-transform ${
+        isEven ? "md:flex-row" : "md:flex-row-reverse"
+      } items-center gap-8 md:gap-12`}
+    >
+      <div className="w-full md:w-2/3">
+        <FolderFrame video={video} poster={poster} />
+      </div>
+      <div className="w-full md:w-1/2">
+        <div className="Desktop:h-80 flex flex-col items-start justify-end">
+          <div className="mb-4 flex items-start gap-4">
+            <div className="relative bg-primary/10 app-radius-lg p-3">
+              <feature.icon className="h-8 w-8 text-primary" />
+            </div>
+          </div>
+          <h3 className="mb-4 text-2xl font-bold text-foreground md:text-3xl">
+            {feature.title}
+          </h3>
+          <p className="text-lg leading-relaxed text-muted-foreground">
+            {feature.description}
+          </p>
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -139,59 +212,12 @@ export default function FeaturesSection() {
           SectionTitle="Features you'll love"
           SectionSubTitle="Everything you need to take your notes without the hassle."
         />
-        <div className="space-y-24">
+        <div className="space-y-32 py-12">
           {Features.map((feature, index) => {
             const isEven = index % 2 === 0;
-            const featureMedia = featureVideos[feature.title];
-            if (!featureMedia) return null;
-            const { video, poster } = featureMedia;
+            if (!featureVideos[feature.title]) return null;
             return (
-              <motion.div
-                key={index}
-                variants={containerVariants}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-80px" }}
-                className={`flex flex-col ${
-                  isEven ? "md:flex-row" : "md:flex-row-reverse"
-                } gap-8 md:gap-12 items-center`}
-              >
-                <motion.div
-                  variants={itemVariants(isEven ? -40 : 40)}
-                  className="w-full md:w-2/3"
-                >
-                  <div className="relative">
-                    <div
-                      className={`relative ${isEven ? "bg-gradient-to-br" : "bg-gradient-to-bl"} from-primary/50 from-20% to-transparent border-border app-radius-lg p-1 Desktop:p-2 overflow-hidden`}
-                    >
-                      <LazyVideo
-                        video={video}
-                        poster={poster}
-                        className="w-full h-full object-cover app-radius-lg"
-                        style={{ pointerEvents: "none" }}
-                      />
-                    </div>
-                  </div>
-                </motion.div>
-                <motion.div
-                  variants={itemVariants(isEven ? 40 : -40)}
-                  className="w-full md:w-1/2"
-                >
-                  <div className="Desktop:h-80 flex flex-col justify-end items-start">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="relative bg-primary/10 app-radius-lg p-3">
-                        <feature.icon className="w-8 h-8 text-primary" />
-                      </div>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
-                      {feature.title}
-                    </h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                </motion.div>
-              </motion.div>
+              <FeatureItem key={index} feature={feature} isEven={isEven} />
             );
           })}
         </div>
