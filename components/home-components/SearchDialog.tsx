@@ -31,6 +31,7 @@ import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
 import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
+import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 
 interface SearchDialogProps {
   variant?: "default" | "SidebarMenuButton";
@@ -116,17 +117,13 @@ function NoteItem({
   onClick,
   isSelected,
   query,
-  onIntentPrefetch,
   indented = false,
 }: any) {
   const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
   return (
-    <div
+    <IntentPrefetchLink
+      href={href}
       onClick={onClick}
-      onPointerEnter={() => onIntentPrefetch?.(href)}
-      onMouseEnter={() => onIntentPrefetch?.(href)}
-      onFocus={() => onIntentPrefetch?.(href)}
-      onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
         "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
@@ -143,7 +140,7 @@ function NoteItem({
         <Clock className="h-3 w-3" />
         <span>{getRelativeTime(new Date(note.createdAt))}</span>
       </div>
-    </div>
+    </IntentPrefetchLink>
   );
 }
 
@@ -164,18 +161,18 @@ function PdfItem({
   onClick,
   isSelected,
   query,
-  onIntentPrefetch,
   indented = false,
 }: any) {
-  const pdfSlug = pdf.slug ? (pdf.slug.startsWith("/") ? pdf.slug : `/${pdf.slug}`) : "";
+  const pdfSlug = pdf.slug
+    ? pdf.slug.startsWith("/")
+      ? pdf.slug
+      : `/${pdf.slug}`
+    : "";
   const href = `/home/${pdf.workingSpaceId}${pdfSlug}?pdfId=${pdf._id}`;
   return (
-    <div
+    <IntentPrefetchLink
+      href={href}
       onClick={onClick}
-      onPointerEnter={() => onIntentPrefetch?.(href)}
-      onMouseEnter={() => onIntentPrefetch?.(href)}
-      onFocus={() => onIntentPrefetch?.(href)}
-      onTouchStart={() => onIntentPrefetch?.(href)}
       className={cn(
         "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
@@ -192,7 +189,7 @@ function PdfItem({
         <Clock className="h-3 w-3" />
         <span>{getRelativeTime(new Date(pdf.createdAt))}</span>
       </div>
-    </div>
+    </IntentPrefetchLink>
   );
 }
 
@@ -266,7 +263,6 @@ function TableSection({
   selectedNoteId,
   query,
   onNoteClick,
-  onIntentPrefetch,
 }: any) {
   const [isExpanded, setIsExpanded] = useState(true);
   const notes: any[] = table.notes ?? [];
@@ -320,7 +316,6 @@ function TableSection({
                 onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
-                onIntentPrefetch={onIntentPrefetch}
                 indented
               />
             ) : item.kind === "link" ? (
@@ -347,7 +342,6 @@ function TableSection({
                 onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
-                onIntentPrefetch={onIntentPrefetch}
                 indented
               />
             ),
@@ -365,7 +359,6 @@ function WorkspaceTree({
   onNoteClick,
   selectedNoteId,
   query,
-  onIntentPrefetch,
 }: {
   searchTargets: any[];
   expandedWorkspaceIds: string[];
@@ -373,7 +366,6 @@ function WorkspaceTree({
   onNoteClick: (note: any, e: any) => void;
   selectedNoteId?: string;
   query: string;
-  onIntentPrefetch: (href: string) => void;
 }) {
   return (
     <div className="space-y-1">
@@ -420,7 +412,6 @@ function WorkspaceTree({
                     selectedNoteId={selectedNoteId}
                     query={query}
                     onNoteClick={onNoteClick}
-                    onIntentPrefetch={onIntentPrefetch}
                   />
                 ))}
               </div>
@@ -560,7 +551,11 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
-    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
+    const noteSlug = note.slug
+      ? note.slug.startsWith("/")
+        ? note.slug
+        : `/${note.slug}`
+      : "";
     const href =
       note.kind === "pdf"
         ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
@@ -577,37 +572,37 @@ export default function SearchDialog({
   };
   const { openPane } = useHomePane();
   const handleNoteClick = (note: any, event: any) => {
-    setOpen(false);
     if (note.kind === "link") {
+      event.preventDefault();
+      setOpen(false);
       window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
-    const noteSlug = note.slug ? (note.slug.startsWith("/") ? note.slug : `/${note.slug}`) : "";
-    if (note.kind === "pdf") {
-      if (event.button === 0 && event.altKey) {
-        event.preventDefault();
+    const noteSlug = note.slug
+      ? note.slug.startsWith("/")
+        ? note.slug
+        : `/${note.slug}`
+      : "";
+    if (event.altKey) {
+      event.preventDefault();
+      setOpen(false);
+      if (note.kind === "pdf") {
         openPane({
           type: "pdf",
           id: note._id,
           title: note.title || "Untitled",
         });
       } else {
-        router.push(
-          `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`,
-        );
+        openPane({
+          type: "note",
+          id: note._id,
+          title: note.title || "Untitled",
+        });
       }
       return;
     }
-    if (event.button === 0 && event.altKey) {
-      event.preventDefault();
-      openPane({
-        type: "note",
-        id: note._id,
-        title: note.title || "Untitled",
-      });
-    } else {
-      router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
-    }
+    // Normal click: let IntentPrefetchLink navigate, just close the dialog
+    setOpen(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -730,7 +725,6 @@ export default function SearchDialog({
                   : undefined
               }
               query={debouncedQuery}
-              onIntentPrefetch={prefetchOnce}
             />
           )}
         </div>
