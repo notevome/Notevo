@@ -8,7 +8,7 @@ import {
 
 export default function Loading() {
   return (
-    <MaxWContainer className="my-5 grid grid-cols-1">
+    <MaxWContainer className="grid grid-cols-1">
       <header>
         <div className="relative flex justify-between items-end w-full">
           <div className="flex-1 px-1.5 border border-border bg-muted app-radius-md">

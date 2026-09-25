@@ -50,59 +50,57 @@ export default function BreadcrumbWithCustomSeparator() {
   };
 
   return (
-    <div className="py-2">
-      <Breadcrumb className=" *:select-none">
-        <BreadcrumbList className="flex flex-nowrap overflow-hidden whitespace-nowrap text-primary !gap-0.5 scrollbar-none">
-          {pathSegments.map((segment, index) => {
-            const pathToSegment =
-              "/" + pathSegments.slice(0, index + 1).join("/");
-            const isLast = index === pathSegments.length - 1;
+    <Breadcrumb className=" *:select-none w-full">
+      <BreadcrumbList className="flex flex-nowrap overflow-hidden whitespace-nowrap text-primary !gap-0.5 scrollbar-none">
+        {pathSegments.map((segment, index) => {
+          const pathToSegment =
+            "/" + pathSegments.slice(0, index + 1).join("/");
+          const isLast = index === pathSegments.length - 1;
 
-            let displayName;
+          let displayName;
 
-            if (
-              index === homeIndex + 1 &&
-              workspaceDatafilter &&
-              workspaceDatafilter.name
-            ) {
-              displayName = workspaceDatafilter.name;
-            } else if (segment.toLowerCase() === "pdf") {
-              displayName = "PDF";
-            } else {
-              displayName = parseSlug(segment);
-            }
+          if (
+            index === homeIndex + 1 &&
+            workspaceDatafilter &&
+            workspaceDatafilter.name
+          ) {
+            displayName = workspaceDatafilter.name;
+          } else if (segment.toLowerCase() === "pdf") {
+            displayName = "PDF";
+          } else {
+            displayName = parseSlug(segment);
+          }
 
-            displayName = getTruncatedName(displayName);
+          displayName = getTruncatedName(displayName);
 
-            return (
-              <div
-                key={pathToSegment}
-                className="flex items-center justify-start flex-shrink-0"
-              >
-                <BreadcrumbItem>
-                  {isLast ? (
-                    <BreadcrumbPage className="text-primary">
+          return (
+            <div
+              key={pathToSegment}
+              className="flex items-center justify-start flex-shrink-0"
+            >
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage className="text-primary">
+                    {displayName}
+                  </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <IntentPrefetchLink
+                      href={pathToSegment}
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
                       {displayName}
-                    </BreadcrumbPage>
-                  ) : (
-                    <BreadcrumbLink asChild>
-                      <IntentPrefetchLink
-                        href={pathToSegment}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {displayName}
-                      </IntentPrefetchLink>
-                    </BreadcrumbLink>
-                  )}
-                </BreadcrumbItem>
-                {!isLast && (
-                  <ChevronRight className="w-3.5 h-3.5 mx-1 mt-px text-muted-foreground flex-shrink-0" />
+                    </IntentPrefetchLink>
+                  </BreadcrumbLink>
                 )}
-              </div>
-            );
-          })}
-        </BreadcrumbList>
-      </Breadcrumb>
-    </div>
+              </BreadcrumbItem>
+              {!isLast && (
+                <ChevronRight className="w-3.5 h-3.5 mx-1 mt-px text-muted-foreground flex-shrink-0" />
+              )}
+            </div>
+          );
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
