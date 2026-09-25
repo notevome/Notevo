@@ -63,6 +63,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const pathSegments = pathname.split("/").filter((segment) => segment);
+  const homepage = pathname === "/home";
   const noteid = searchParams.get("id") as Id<"notes">;
   const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
   const whiteboardId = searchParams.get(
@@ -105,10 +106,12 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         } app-radius-none`}
       >
         <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
-          <div className="flex justify-between items-center w-full px-3.5 py-0.5 ">
-            <div className="flex justify-start items-center gap-2">
+          <div className="flex justify-between items-center w-full px-3.5 ">
+            <div className="flex justify-start items-center gap-2 py-2.5">
               {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
-              {!isPdfRoute ? <BreadcrumbWithCustomSeparator /> : null}
+              {!isPdfRoute && !homepage ? (
+                <BreadcrumbWithCustomSeparator />
+              ) : null}
             </div>
             <div>
               {!isPdfRoute && !isWhiteboardRoute && noteid && noteTitle && (

@@ -210,6 +210,28 @@ function isSocialLinkPlatform(
   return !isGenericLinkPlatform(platform);
 }
 
+// Strips trailing image-size suffixes (e.g. "_200x200", "_400x400",
+// "_normal", "_bigger") so the same photo served at different sizes
+// compares as equal.
+function stripImageSizeSuffix(url: string): string {
+  return url.replace(
+    /_(?:\d+x\d+|normal|bigger|mini|original)(?=\.[a-zA-Z0-9]+(?:\?.*)?$)/i,
+    "",
+  );
+}
+
+// A post's OG/media thumbnail sometimes just falls back to the author's own
+// avatar (at a different size) when the post has no real image or video.
+// Treat that case as "no thumbnail" so we don't show the person's photo.
+function isAvatarFallbackThumbnail(
+  thumbnailUrl: string | undefined,
+  avatarUrl: string | undefined,
+): boolean {
+  if (!thumbnailUrl || !avatarUrl) return false;
+  if (thumbnailUrl === avatarUrl) return true;
+  return stripImageSizeSuffix(thumbnailUrl) === stripImageSizeSuffix(avatarUrl);
+}
+
 function matchesLinkPlatform(
   platform: LinkPlatform | string | undefined,
   filter: ContentFilter,
@@ -1791,7 +1813,7 @@ export function NotesDroppableContainer({
 
   return (
     <div className="grid grid-cols-1 gap-6 w-full max-w-full">
-      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-5 z-30">
+      <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-7 z-30">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0 md:max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 mt-px text-foreground" />
@@ -2716,16 +2738,12 @@ function CalendarTimelineView({
                           align="center"
                           side="bottom"
                           sideOffset={6}
-                          className="w-64 p-0.5 border-border max-h-72 space-y-0.5 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-card"
+                          className="w-auto p-0 border-border overflow-hidden"
                         >
-                          {cluster.entries.map((entry) => (
-                            <TimelineMiniCard
-                              key={entry._id}
-                              item={entry}
-                              workspaceId={workspaceId}
-                              inPopover
-                            />
-                          ))}
+                          <TimelineClusterSlider
+                            entries={cluster.entries}
+                            workspaceId={workspaceId}
+                          />
                         </PopoverContent>
                       </Popover>
                     )}
@@ -2735,6 +2753,118 @@ function CalendarTimelineView({
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TimelineClusterSlider({
+  entries,
+  workspaceId,
+}: {
+  entries: WorkspaceEntry[];
+  workspaceId?: Id<"workingSpaces">;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    const raf = requestAnimationFrame(checkScroll);
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    const ro = new ResizeObserver(checkScroll);
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      el.removeEventListener("scroll", checkScroll);
+      ro.disconnect();
+    };
+  }, [checkScroll, entries.length]);
+
+  const scroll = useCallback((direction: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({
+      left: el.clientWidth * (direction === "left" ? -0.65 : 0.65),
+      behavior: "smooth",
+    });
+  }, []);
+
+  return (
+    <div className="relative w-auto max-w-[calc(100vw-2rem)] sm:max-w-[546px] overflow-hidden">
+      <Button
+        variant="Trigger"
+        size="icon"
+        onClick={() => scroll("left")}
+        aria-label="scroll-cards-left"
+        className={cn(
+          "absolute left-2 top-1/2 -translate-y-1/2 z-30 h-8 w-8 ",
+          canScrollLeft
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
+        )}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <Button
+        variant="Trigger"
+        size="icon"
+        onClick={() => scroll("right")}
+        aria-label="scroll-cards-right"
+        className={cn(
+          "absolute right-2 top-1/2 -translate-y-1/2 z-30 h-8 w-8 ",
+          canScrollRight
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none",
+        )}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+
+      <div
+        className="absolute left-0 top-0 bottom-0 z-20 w-16 pointer-events-none transition-opacity duration-200"
+        style={{
+          opacity: canScrollLeft ? 1 : 0,
+          background:
+            "linear-gradient(to right, hsl(var(--muted)) 15%, transparent)",
+        }}
+      />
+      <div
+        className="absolute right-0 top-0 bottom-0 z-20 w-16 pointer-events-none transition-opacity duration-200"
+        style={{
+          opacity: canScrollRight ? 1 : 0,
+          background:
+            "linear-gradient(to left, hsl(var(--muted)) 15%, transparent)",
+        }}
+      />
+
+      <div
+        ref={scrollRef}
+        className="flex flex-row items-center gap-2.5 p-2 overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40"
+        onWheel={(e) => {
+          if (e.deltaY !== 0) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+      >
+        {entries.map((entry) => (
+          <TimelineMiniCard
+            key={entry._id}
+            item={entry}
+            workspaceId={workspaceId}
+          />
+        ))}
       </div>
     </div>
   );
@@ -2795,58 +2925,74 @@ function CalendarGapMarker({
   );
 }
 
-function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
+function TimelineHeroBackground({ item }: { item: WorkspaceEntry }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
-  const thumbnailUrl = isLink
-    ? (item as LinkItem).metadata?.thumbnailUrl
-    : undefined;
-  const isPending = isLink && (item as LinkItem).metadata === undefined;
-  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
 
-  if (!isLink) {
+  if (isLink) {
+    const linkItem = item as LinkItem;
+    const isSocialLink = isSocialLinkPlatform(linkItem.platform);
+    const rawThumbnailUrl = linkItem.metadata?.thumbnailUrl;
+    const avatarUrl = linkItem.metadata?.authorAvatarUrl;
+    const thumbnailUrl =
+      rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
+        ? rawThumbnailUrl
+        : undefined;
+    const isPending = linkItem.metadata === undefined;
+    const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
     return (
-      <div className="h-9 w-9 flex items-center justify-center flex-shrink-0 app-radius-md bg-muted">
-        {isWhiteboard ? (
-          <PanelTop className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <FileText className="h-4 w-4 text-muted-foreground" />
+      <div className="relative h-full w-full bg-muted">
+        {thumbnailUrl && (
+          <img
+            src={thumbnailUrl}
+            alt=""
+            draggable={false}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgLoaded(false)}
+            className={cn(
+              "h-full w-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
+              imgLoaded ? "opacity-100" : "opacity-0",
+            )}
+          />
+        )}
+        {showSkeleton && (
+          <div className="absolute inset-0 bg-border/60 animate-pulse" />
+        )}
+        {!isPending && !thumbnailUrl && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isSocialLink && avatarUrl ? (
+              <LinkAuthorAvatar
+                avatarUrl={avatarUrl}
+                authorName={linkItem.metadata?.authorName}
+                className="h-16 w-16"
+              />
+            ) : (
+              <Link2 className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
         )}
       </div>
     );
   }
 
-  return (
-    <div className="relative h-9 w-9 flex items-center justify-center flex-shrink-0">
-      {thumbnailUrl && (
-        <img
-          src={thumbnailUrl}
-          alt=""
-          draggable={false}
-          onLoad={() => setImgLoaded(true)}
-          onError={() => setImgLoaded(false)}
-          className={cn(
-            "h-full w-full object-cover app-radius-md select-none [-webkit-user-drag:none] transition-opacity duration-300",
-            imgLoaded ? "opacity-100" : "opacity-0",
-          )}
+  if (isWhiteboard) {
+    const board = item as WhiteboardItem;
+    return (
+      <div className="h-full w-full bg-muted">
+        <WhiteboardPreview
+          snapshot={board.snapshot}
+          preview={board.preview}
+          fill
         />
-      )}
+      </div>
+    );
+  }
 
-      {showSkeleton && (
-        <div className="absolute inset-0 app-radius-md bg-border/60 animate-pulse" />
-      )}
-
-      {!isPending && !thumbnailUrl && (
-        <div className="h-full w-full app-radius-md bg-muted flex items-center justify-center">
-          <Link2 className="h-4 w-4 text-muted-foreground" />
-        </div>
-      )}
-
-      <LinkFaviconBadge
-        url={(item as LinkItem).url}
-        className="absolute -bottom-1 -right-1 h-[14px] w-[14px]"
-      />
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-muted">
+      <FileText className="h-8 w-8 text-muted-foreground" />
     </div>
   );
 }
@@ -2854,11 +3000,9 @@ function TimelineMiniThumbnail({ item }: { item: WorkspaceEntry }) {
 function TimelineMiniCard({
   item,
   workspaceId,
-  inPopover,
 }: {
   item: WorkspaceEntry;
   workspaceId?: Id<"workingSpaces">;
-  inPopover?: boolean;
 }) {
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
@@ -2872,39 +3016,96 @@ function TimelineMiniCard({
           (item as PdfItem).title || "untitled-pdf",
         )}?pdfId=${item._id}`
       : isLink
-        ? `/home/${(item as LinkItem).workingSpaceId}/link/${generateSlug(
-            (item as LinkItem).title ||
-              (item as LinkItem).metadata?.authorName ||
-              "link",
-          )}?linkId=${item._id}`
+        ? (item as LinkItem).url
         : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
 
+  const openLink = () => {
+    if (isLink) window.open(href, "_blank", "noopener,noreferrer");
+  };
+
+  const isSocialLink =
+    isLink && isSocialLinkPlatform((item as LinkItem).platform);
+  const authorHandle = isSocialLink
+    ? formatHandle((item as LinkItem).metadata?.authorHandle)
+    : undefined;
+
   const createdDate = new Date(item.createdAt);
+  const updatedDate = new Date(item.updatedAt);
   const isDifferentYear =
     createdDate.getFullYear() !== new Date().getFullYear();
+  const hasUpdate =
+    Boolean(item.updatedAt) && item.updatedAt !== item.createdAt;
+  const publishedAt = isLink
+    ? ((item as LinkItem).metadata?.publishedAt ?? item.createdAt)
+    : undefined;
+  const publishedDate = publishedAt ? new Date(publishedAt) : undefined;
 
-  const cardClassName = cn(
-    "group flex items-center gap-2 border border-border bg-card hover:border-primary/20 hover:bg-muted/40 transition-colors app-radius-md px-2.5 py-2",
-    inPopover ? "w-full" : "w-[168px]",
-  );
+  const formatShort = (date: Date) =>
+    date.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: isDifferentYear ? "numeric" : undefined,
+    });
+
+  const title = isSocialLink
+    ? (item as LinkItem).metadata?.authorName?.trim() ||
+      item.title ||
+      "Untitled"
+    : item.title || (isLink ? (item as LinkItem).url : "Untitled");
+
+  // Timeline card — full-bleed thumbnail with an info overlay.
+  const cardClassName =
+    "group relative flex h-[210px] w-[168px] shrink-0 flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg";
 
   const cardContent = (
     <>
-      <TimelineMiniThumbnail item={item} />
-      <div className="min-w-0 flex-1">
+      <div className="absolute inset-0">
+        <TimelineHeroBackground item={item} />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-background via-background/85 to-transparent" />
+
+      {(isLink || isWhiteboard) && (
+        <div className="absolute top-1 right-1 flex h-7 w-7 items-center justify-center">
+          {isLink ? (
+            <LinkFaviconBadge
+              url={(item as LinkItem).url}
+              className="h-full w-full p-0.5"
+            />
+          ) : (
+            <PanelTop className="h-3 w-3 text-muted-foreground" />
+          )}
+        </div>
+      )}
+
+      <div className="relative z-10 mt-auto p-2.5">
         <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-          {item.title || (isLink ? (item as LinkItem).url : "Untitled")}
+          {title}
         </p>
         <p className="text-[10px] text-muted-foreground mt-1">
-          {createdDate.toLocaleDateString(undefined, {
-            month: "short",
-            day: "numeric",
-            year: isDifferentYear ? "numeric" : undefined,
-          })}
+          {isLink && publishedDate ? (
+            <>
+              {authorHandle && <span>{authorHandle} · </span>}
+              {formatLongDateTime(publishedAt as number)}
+            </>
+          ) : (
+            <>
+              Created {formatShort(createdDate)}
+              {hasUpdate ? ` · Updated ${formatShort(updatedDate)}` : ""}
+            </>
+          )}
         </p>
       </div>
     </>
   );
+
+  if (isLink) {
+    return (
+      <div onClick={openLink} className={cn(cardClassName, "cursor-pointer")}>
+        {cardContent}
+      </div>
+    );
+  }
 
   return (
     <IntentPrefetchLink href={href} className={cardClassName}>
@@ -3060,11 +3261,25 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
 
+  const hasRealThumbnail = Boolean(
+    link?.metadata?.thumbnailUrl &&
+      !isAvatarFallbackThumbnail(
+        link.metadata.thumbnailUrl,
+        link.metadata?.authorAvatarUrl,
+      ),
+  );
+
   const cardStyles =
     "group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg border bg-card text-card-foreground";
 
   const cardInnerContent = (
     <>
+      {isSocialLink && !hasRealThumbnail && link && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 z-10 h-7 w-7"
+        />
+      )}
       <CardHeader className="pb-3">
         <div className="flex min-w-0 items-start justify-between gap-2">
           {isSocialLink ? (
@@ -3120,9 +3335,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
                 query={searchQuery}
               />
             </p>
-            {link?.metadata?.thumbnailUrl && (
-              <LinkThumbnail link={link} showFaviconBadge />
-            )}
+            {link?.metadata?.thumbnailUrl &&
+              !isAvatarFallbackThumbnail(
+                link.metadata.thumbnailUrl,
+                link.metadata?.authorAvatarUrl,
+              ) && <LinkThumbnail link={link} showFaviconBadge />}
           </>
         ) : (
           <>
@@ -3179,25 +3396,45 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   const authorHandle = formatHandle(link?.metadata?.authorHandle);
   const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
 
+  const hasRealThumbnail = Boolean(
+    link?.metadata?.thumbnailUrl &&
+      !isAvatarFallbackThumbnail(
+        link.metadata.thumbnailUrl,
+        link.metadata?.authorAvatarUrl,
+      ),
+  );
+
   const cardStyles =
     "group relative flex min-h-[112px] w-full cursor-pointer select-none items-center overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg text-card-foreground shadow";
 
   const cardInnerContent = (
     <CardContent className="flex w-full items-center gap-4 p-3">
-      {isSocialLink ? (
-        <LinkAuthorAvatar
-          avatarUrl={link?.metadata?.authorAvatarUrl}
-          className="h-10 w-10"
+      {isSocialLink && !hasRealThumbnail && link && (
+        <LinkFaviconBadge
+          url={link.url}
+          className="absolute bottom-2 right-2 z-10 h-5 w-5"
         />
+      )}
+      {isSocialLink ? (
+        hasRealThumbnail && <WorkspaceItemThumbnail item={item} compact />
       ) : (
         <WorkspaceItemThumbnail item={item} compact />
       )}
       <div className="min-w-0 flex-1 overflow-hidden">
-        <h3 className="line-clamp-1 max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
-          <HighlightText
-            text={isSocialLink ? authorName || details.title : details.title}
-            query={searchQuery}
-          />
+        <h3 className="flex max-w-full items-center gap-1.5 break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+          {isSocialLink && (
+            <LinkAuthorAvatar
+              avatarUrl={link?.metadata?.authorAvatarUrl}
+              authorName={authorName || details.title}
+              className="h-5 w-5 shrink-0"
+            />
+          )}
+          <span className="line-clamp-1 min-w-0">
+            <HighlightText
+              text={isSocialLink ? authorName || details.title : details.title}
+              query={searchQuery}
+            />
+          </span>
         </h3>
         <p className="text-xs text-muted-foreground">
           {isSocialLink ? (
@@ -3254,9 +3491,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
 function WhiteboardPreview({
   snapshot,
   preview,
+  fill = false,
 }: {
   snapshot?: string;
   preview?: string;
+  fill?: boolean;
 }) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
@@ -3302,13 +3541,21 @@ function WhiteboardPreview({
   }, [snapshot]);
 
   return (
-    <div className="relative flex h-fit w-full items-center justify-center overflow-hidden">
+    <div
+      className={cn(
+        "relative flex items-center justify-center overflow-hidden",
+        fill ? "h-full w-full" : "h-fit w-full",
+      )}
+    >
       {thumbnailUrl ? (
         <img
           src={thumbnailUrl}
           alt=" Whiteboard thumbnail"
           draggable={false}
-          className="pointer-events-none h-full w-full select-none bg-white object-contain  border border-border [-webkit-user-drag:none]"
+          className={cn(
+            "pointer-events-none h-full w-full select-none bg-white [-webkit-user-drag:none]",
+            fill ? "object-cover" : "object-contain border border-border",
+          )}
         />
       ) : (
         <div className=" min-h-32 w-full flex justify-center items-center">
