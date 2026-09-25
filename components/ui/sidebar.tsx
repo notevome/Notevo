@@ -449,7 +449,6 @@ const SidebarTrigger = React.forwardRef<
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar, open } = useSidebar();
-  const tooltip = useHoverTooltip(100);
 
   return (
     <Button
@@ -457,21 +456,14 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="Trigger"
       size="icon"
-      className={cn(
-        `${open ? "h-[22px] w-[22px]" : "h-[19px] w-[19px]"}`,
-        className,
-      )}
+      className={cn("h-[20px] w-[20px] text-primary", className)}
       onClick={(event) => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      {open ? (
-        <PanelLeftClose className="text-primary" />
-      ) : (
-        <PanelLeftOpen className="text-muted-foreground " />
-      )}
+      {open ? <PanelLeftClose /> : <PanelLeftOpen />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

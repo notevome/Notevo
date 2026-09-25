@@ -66,7 +66,7 @@ export default function Loading() {
   return (
     <MaxWContainer className="relative">
       {/* Hero Section */}
-      <div className="overflow-hidden py-6 mb-16">
+      <div className="overflow-hidden mb-14">
         <header className="flex flex-col justify-center items-start gap-2 relative">
           <h1 className="text-3xl sm:text-5xl font-bold text-primary">
             <SkeletonTextAnimation className="mx-0 min-w-52 h-10" />

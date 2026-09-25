@@ -1,7 +1,9 @@
 import MaxWContainer from "@/components/ui/MaxWContainer";
 
 function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`bg-border app-radius-md animate-pulse ${className}`} />;
+  return (
+    <div className={`bg-border app-radius-md animate-pulse ${className}`} />
+  );
 }
 
 function ParagraphSkeleton() {
@@ -17,7 +19,7 @@ function ParagraphSkeleton() {
 
 export default function Loading() {
   return (
-    <MaxWContainer className="relative w-[900px] my-8 space-y-5">
+    <MaxWContainer className="relative w-[900px] space-y-5">
       <div className="mb-6">
         <Skeleton className="h-8 w-2/3 mb-3" />
         <Skeleton className="h-4 w-48" />
