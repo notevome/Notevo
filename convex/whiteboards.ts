@@ -70,6 +70,22 @@ export const getWhiteboardsByTableId = query({
   },
 });
 
+export const getFavWhiteboards = query({
+  args: {
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new ConvexError("Not authenticated");
+    return await ctx.db
+      .query("whiteboards")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("favorite"), true))
+      .order("desc")
+      .paginate(args.paginationOpts);
+  },
+});
+
 export const getWhiteboardById = query({
   args: { _id: v.id("whiteboards") },
   handler: async (ctx, args) => await requireOwner(ctx, args._id),
