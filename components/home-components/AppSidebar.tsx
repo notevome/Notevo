@@ -21,6 +21,7 @@ import {
   SquarePen,
   PanelRightOpen,
   ExternalLink,
+  PenTool,
 } from "lucide-react";
 import { TbSelector } from "react-icons/tb";
 import {
@@ -75,6 +76,7 @@ import { Input } from "../ui/input";
 import NoteSettingsSidbar from "./NoteSettingsSidbar";
 import PdfSettingsSidebar from "./PdfSettingsSidebar";
 import LinkSettingsSidebar from "./LinkSettingsSidebar";
+import WhiteboardSettingsSidebar from "./WhiteboardSettingsSidebar";
 import WorkingSpaceSettingsSidbar from "./WorkingSpaceSettingsSidbar";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
@@ -115,12 +117,16 @@ const noteTitleSchema = z
   .max(60, "Title must be 60 characters or less");
 
 const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "notevo_create_note_workspace_id";
+const PINNED_SECTION_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_section_expanded";
 const PINNED_NOTES_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_notes_expanded";
 const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_uploads_expanded";
 const PINNED_LINKS_EXPANDED_STORAGE_KEY =
   "notevo_sidebar_pinned_links_expanded";
+const PINNED_WHITEBOARDS_EXPANDED_STORAGE_KEY =
+  "notevo_sidebar_pinned_whiteboards_expanded";
 
 function OpenInPaneButton({
   label,
@@ -727,6 +733,7 @@ interface PinnedNotesListProps {
   open: boolean;
   status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
   loadMore: (numItems: number) => void;
+  condensed?: boolean;
 }
 
 const PinnedNotesList = memo(function PinnedNotesList({
@@ -735,6 +742,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
   open,
   status,
   loadMore,
+  condensed,
 }: PinnedNotesListProps) {
   const [isExpanded, setIsExpanded] = useStoredExpandedState(
     PINNED_NOTES_EXPANDED_STORAGE_KEY,
@@ -742,9 +750,9 @@ const PinnedNotesList = memo(function PinnedNotesList({
 
   if (status === "LoadingFirstPage") {
     return (
-      <SidebarGroup>
+      <SidebarGroup className={condensed ? "p-0" : undefined}>
         <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-          <span>Pinned Notes</span>
+          <span>{condensed ? "Notes" : "Pinned Notes"}</span>
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -774,7 +782,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
   }
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className={condensed ? "p-0" : undefined}>
       <SidebarGroupLabel>
         <Button
           variant="Trigger"
@@ -782,7 +790,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          <span>Pinned Notes</span>
+          <span>{condensed ? "Notes" : "Pinned Notes"}</span>
           {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
@@ -796,7 +804,6 @@ const PinnedNotesList = memo(function PinnedNotesList({
           />
         ))}
 
-      {/* Show More Button for Pinned Notes */}
       {isExpanded && favoriteNotes.length > 4 && status === "CanLoadMore" && (
         <SidebarGroupContent>
           <Button
@@ -1027,6 +1034,7 @@ interface PinnedUploadsListProps {
   open: boolean;
   status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
   loadMore: (numItems: number) => void;
+  condensed?: boolean;
 }
 
 const PinnedUploadsList = memo(function PinnedUploadsList({
@@ -1035,6 +1043,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   open,
   status,
   loadMore,
+  condensed,
 }: PinnedUploadsListProps) {
   const [isExpanded, setIsExpanded] = useStoredExpandedState(
     PINNED_UPLOADS_EXPANDED_STORAGE_KEY,
@@ -1042,9 +1051,9 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
 
   if (status === "LoadingFirstPage") {
     return (
-      <SidebarGroup>
+      <SidebarGroup className={condensed ? "p-0" : undefined}>
         <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-          <span>Pinned Uploads</span>
+          <span>{condensed ? "Uploads" : "Pinned Uploads"}</span>
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -1074,7 +1083,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
   }
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className={condensed ? "p-0" : undefined}>
       <SidebarGroupLabel>
         <Button
           variant="Trigger"
@@ -1082,7 +1091,7 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          <span>Pinned Uploads</span>
+          <span>{condensed ? "Uploads" : "Pinned Uploads"}</span>
           {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
@@ -1123,6 +1132,308 @@ const PinnedUploadsList = memo(function PinnedUploadsList({
           </Button>
         </SidebarGroupContent>
       )}
+    </SidebarGroup>
+  );
+});
+
+interface PinnedWhiteboardItemProps {
+  whiteboard: Doc<"whiteboards">;
+  pathname: string;
+  open: boolean;
+}
+
+const PinnedWhiteboardItem = memo(
+  function PinnedWhiteboardItem({
+    whiteboard,
+    pathname,
+    open,
+  }: PinnedWhiteboardItemProps) {
+    const titleTooltip = useHoverTooltip(400);
+    const [isHovered, setIsHovered] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editedTitle, setEditedTitle] = useState(
+      whiteboard.title || "Untitled",
+    );
+    const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    const whiteboardSlug = generateSlug(
+      whiteboard.title || "untitled-whiteboard",
+    );
+    const whiteboardPath = `/home/${whiteboard.workingSpaceId}/${whiteboardSlug}`;
+    const whiteboardHref = `${whiteboardPath}?whiteboardId=${whiteboard._id}`;
+    const isActive = pathname === whiteboardPath;
+
+    const handleContentMouseEnter = useCallback(() => {
+      setIsHovered(true);
+    }, []);
+
+    const handleContentMouseLeave = useCallback(() => {
+      setIsHovered(false);
+    }, []);
+
+    const handleDoubleClick = useCallback(() => {
+      setIsEditing(true);
+      setEditedTitle(whiteboard.title || "Untitled");
+      requestAnimationFrame(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        input.focus();
+        input.select();
+        input.scrollLeft = 0;
+      });
+    }, [whiteboard.title]);
+
+    const handleInputChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEditedTitle(e.target.value);
+      },
+      [],
+    );
+
+    const handleInputBlur = useCallback(async () => {
+      const currentTitle = whiteboard.title || "Untitled";
+      const result = noteTitleSchema.safeParse(editedTitle.trim());
+
+      if (!result.success) {
+        setEditedTitle(currentTitle);
+        setIsEditing(false);
+        return;
+      }
+
+      const trimmedTitle = result.data;
+
+      if (trimmedTitle !== currentTitle) {
+        try {
+          await updateWhiteboard({
+            _id: whiteboard._id,
+            title: trimmedTitle,
+          });
+        } catch (error) {
+          console.error("Error updating whiteboard title:", error);
+          setEditedTitle(currentTitle);
+        }
+      }
+      setIsEditing(false);
+      titleTooltip.hide();
+    }, [
+      editedTitle,
+      whiteboard._id,
+      whiteboard.title,
+      updateWhiteboard,
+      titleTooltip.open,
+    ]);
+
+    const handleInputKeyPress = useCallback(
+      (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+          inputRef.current?.blur();
+        } else if (e.key === "Escape") {
+          setIsEditing(false);
+          setEditedTitle(whiteboard.title || "Untitled");
+          titleTooltip.hide();
+        }
+      },
+      [whiteboard.title, titleTooltip.open],
+    );
+
+    const textClassName = isHovered
+      ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
+      : "truncate flex-grow";
+
+    return (
+      <SidebarGroupContent
+        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+        onMouseEnter={handleContentMouseEnter}
+        onMouseLeave={handleContentMouseLeave}
+      >
+        <SidebarMenu className="flex-1">
+          <SidebarMenuItem>
+            {isEditing ? (
+              <Input
+                ref={inputRef}
+                value={editedTitle}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                onKeyDown={handleInputKeyPress}
+                aria-label="pinned whiteboard title"
+                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+              />
+            ) : (
+              <Tooltip open={titleTooltip.open}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className={`px-2 my-0.5 h-8 group flex-1 ${
+                      isActive ? "bg-border" : ""
+                    }`}
+                    asChild
+                    onDoubleClick={handleDoubleClick}
+                    {...titleTooltip.triggerProps}
+                  >
+                    <IntentPrefetchLink
+                      href={whiteboardHref}
+                      className="flex items-center gap-2 flex-grow min-w-0"
+                    >
+                      {isHovered || isActive ? (
+                        <ChevronRight
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      ) : (
+                        <PenTool
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      )}
+                      <span className={textClassName}>
+                        {formatWorkspaceName(whiteboard.title || "Untitled")}
+                      </span>
+                    </IntentPrefetchLink>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className=" !app-radius-none py-[5px]"
+                >
+                  {whiteboard.title || "Untitled"}
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <div
+          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+          onMouseEnter={titleTooltip.hide}
+        >
+          <WhiteboardSettingsSidebar
+            whiteboardId={whiteboard._id}
+            whiteboardTitle={whiteboard.title}
+            ContainerClassName=""
+          />
+        </div>
+      </SidebarGroupContent>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.whiteboard.favorite === nextProps.whiteboard.favorite &&
+      prevProps.whiteboard.title === nextProps.whiteboard.title &&
+      prevProps.pathname === nextProps.pathname &&
+      prevProps.open === nextProps.open
+    );
+  },
+);
+
+interface PinnedWhiteboardsListProps {
+  favoriteWhiteboards: Doc<"whiteboards">[];
+  pathname: string;
+  open: boolean;
+  status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  loadMore: (numItems: number) => void;
+  condensed?: boolean;
+}
+
+const PinnedWhiteboardsList = memo(function PinnedWhiteboardsList({
+  favoriteWhiteboards,
+  pathname,
+  open,
+  status,
+  loadMore,
+  condensed,
+}: PinnedWhiteboardsListProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_WHITEBOARDS_EXPANDED_STORAGE_KEY,
+  );
+
+  if (status === "LoadingFirstPage") {
+    return (
+      <SidebarGroup className={condensed ? "p-0" : undefined}>
+        <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
+          <span>{condensed ? "Whiteboards" : "Pinned Whiteboards"}</span>
+        </SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SkeletonTextAndIconAnimation
+                text_className={open ? "w-full h-5" : "hidden"}
+              />
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
+    );
+  }
+
+  if (favoriteWhiteboards.length === 0) {
+    return null;
+  }
+
+  return (
+    <SidebarGroup className={condensed ? "p-0" : undefined}>
+      <SidebarGroupLabel>
+        <Button
+          variant="Trigger"
+          size="sm"
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
+          className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
+        >
+          <span>{condensed ? "Whiteboards" : "Pinned Whiteboards"}</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
+        </Button>
+      </SidebarGroupLabel>
+      {isExpanded &&
+        favoriteWhiteboards.map((whiteboard) => (
+          <PinnedWhiteboardItem
+            key={whiteboard._id}
+            whiteboard={whiteboard}
+            pathname={pathname}
+            open={open}
+          />
+        ))}
+
+      {isExpanded &&
+        favoriteWhiteboards.length > 4 &&
+        status === "CanLoadMore" && (
+          <SidebarGroupContent>
+            <Button
+              variant="SidebarMenuButton"
+              size="sm"
+              onClick={() => loadMore(5)}
+              className="px-2 my-0.5 h-7 group flex-1"
+            >
+              <ChevronDown size="16" className=" text-muted-foreground" />
+              Show More
+            </Button>
+          </SidebarGroupContent>
+        )}
+
+      {isExpanded &&
+        favoriteWhiteboards.length > 4 &&
+        status === "LoadingMore" && (
+          <SidebarGroupContent>
+            <Button
+              variant="SidebarMenuButton"
+              size="sm"
+              disabled
+              className="px-2 my-0.5 h-7 group flex-1"
+            >
+              <LoadingAnimation className="h-3 w-3" />
+              Loading...
+            </Button>
+          </SidebarGroupContent>
+        )}
     </SidebarGroup>
   );
 });
@@ -1264,6 +1575,7 @@ interface PinnedLinksListProps {
   open: boolean;
   status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
   loadMore: (numItems: number) => void;
+  condensed?: boolean;
 }
 
 const PinnedLinksList = memo(function PinnedLinksList({
@@ -1271,6 +1583,7 @@ const PinnedLinksList = memo(function PinnedLinksList({
   open,
   status,
   loadMore,
+  condensed,
 }: PinnedLinksListProps) {
   const [isExpanded, setIsExpanded] = useStoredExpandedState(
     PINNED_LINKS_EXPANDED_STORAGE_KEY,
@@ -1278,9 +1591,9 @@ const PinnedLinksList = memo(function PinnedLinksList({
 
   if (status === "LoadingFirstPage") {
     return (
-      <SidebarGroup>
+      <SidebarGroup className={condensed ? "p-0" : undefined}>
         <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-          <span>Pinned Links</span>
+          <span>{condensed ? "Links" : "Pinned Links"}</span>
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -1310,7 +1623,7 @@ const PinnedLinksList = memo(function PinnedLinksList({
   }
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className={condensed ? "p-0" : undefined}>
       <SidebarGroupLabel>
         <Button
           variant="Trigger"
@@ -1318,7 +1631,7 @@ const PinnedLinksList = memo(function PinnedLinksList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          <span>Pinned Links</span>
+          <span>{condensed ? "Links" : "Pinned Links"}</span>
           {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
@@ -1353,6 +1666,158 @@ const PinnedLinksList = memo(function PinnedLinksList({
             Loading...
           </Button>
         </SidebarGroupContent>
+      )}
+    </SidebarGroup>
+  );
+});
+
+interface PinnedItemsSectionProps {
+  favoriteNotes: Doc<"notes">[];
+  favoritePdfs: Doc<"pdfs">[];
+  favoriteWhiteboards: Doc<"whiteboards">[];
+  favoriteLinks: Doc<"links">[];
+  pathname: string;
+  open: boolean;
+  notesStatus: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  pdfsStatus: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  whiteboardsStatus:
+    | "LoadingFirstPage"
+    | "CanLoadMore"
+    | "LoadingMore"
+    | "Exhausted";
+  linksStatus: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
+  loadMoreNotes: (numItems: number) => void;
+  loadMorePdfs: (numItems: number) => void;
+  loadMoreWhiteboards: (numItems: number) => void;
+  loadMoreLinks: (numItems: number) => void;
+}
+
+const PinnedItemsSection = memo(function PinnedItemsSection({
+  favoriteNotes,
+  favoritePdfs,
+  favoriteWhiteboards,
+  favoriteLinks,
+  pathname,
+  open,
+  notesStatus,
+  pdfsStatus,
+  whiteboardsStatus,
+  linksStatus,
+  loadMoreNotes,
+  loadMorePdfs,
+  loadMoreWhiteboards,
+  loadMoreLinks,
+}: PinnedItemsSectionProps) {
+  const [isExpanded, setIsExpanded] = useStoredExpandedState(
+    PINNED_SECTION_EXPANDED_STORAGE_KEY,
+  );
+
+  const isLoadingAny =
+    notesStatus === "LoadingFirstPage" ||
+    pdfsStatus === "LoadingFirstPage" ||
+    whiteboardsStatus === "LoadingFirstPage" ||
+    linksStatus === "LoadingFirstPage";
+
+  const totalPinned =
+    favoriteNotes.length +
+    favoritePdfs.length +
+    favoriteWhiteboards.length +
+    favoriteLinks.length;
+
+  const categoriesWithItems = [
+    favoriteNotes.length,
+    favoritePdfs.length,
+    favoriteWhiteboards.length,
+    favoriteLinks.length,
+  ].filter((count) => count > 0).length;
+
+  if (!isLoadingAny && totalPinned === 0) {
+    return null;
+  }
+
+  if (isLoadingAny || categoriesWithItems <= 1) {
+    return (
+      <>
+        <PinnedNotesList
+          favoriteNotes={favoriteNotes}
+          pathname={pathname}
+          open={open}
+          status={notesStatus}
+          loadMore={loadMoreNotes}
+        />
+        <PinnedUploadsList
+          favoritePdfs={favoritePdfs}
+          pathname={pathname}
+          open={open}
+          status={pdfsStatus}
+          loadMore={loadMorePdfs}
+        />
+        <PinnedWhiteboardsList
+          favoriteWhiteboards={favoriteWhiteboards}
+          pathname={pathname}
+          open={open}
+          status={whiteboardsStatus}
+          loadMore={loadMoreWhiteboards}
+        />
+        <PinnedLinksList
+          favoriteLinks={favoriteLinks}
+          open={open}
+          status={linksStatus}
+          loadMore={loadMoreLinks}
+        />
+      </>
+    );
+  }
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>
+        <Button
+          variant="Trigger"
+          size="sm"
+          onClick={() => setIsExpanded((currentValue) => !currentValue)}
+          className="px-0 h-6 text-xs gap-1 text-muted-foreground flex items-center justify-center"
+        >
+          <Pin strokeWidth={2.5} size="13" />
+          <span>Pinned Items</span>
+          {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
+        </Button>
+      </SidebarGroupLabel>
+
+      {isExpanded && (
+        <div className="ml-2 pl-2 border-l border-border flex flex-col">
+          <PinnedNotesList
+            favoriteNotes={favoriteNotes}
+            pathname={pathname}
+            open={open}
+            status={notesStatus}
+            loadMore={loadMoreNotes}
+            condensed
+          />
+          <PinnedUploadsList
+            favoritePdfs={favoritePdfs}
+            pathname={pathname}
+            open={open}
+            status={pdfsStatus}
+            loadMore={loadMorePdfs}
+            condensed
+          />
+          <PinnedWhiteboardsList
+            favoriteWhiteboards={favoriteWhiteboards}
+            pathname={pathname}
+            open={open}
+            status={whiteboardsStatus}
+            loadMore={loadMoreWhiteboards}
+            condensed
+          />
+          <PinnedLinksList
+            favoriteLinks={favoriteLinks}
+            open={open}
+            status={linksStatus}
+            loadMore={loadMoreLinks}
+            condensed
+          />
+        </div>
       )}
     </SidebarGroup>
   );
@@ -1873,6 +2338,15 @@ const AppSidebar = React.memo(function AppSidebar() {
     status: favoriteLinksStatus,
     loadMore: loadMoreLinks,
   } = usePaginatedQuery(api.links.getFavLinks, {}, { initialNumItems: 5 });
+  const {
+    results: favoriteWhiteboards,
+    status: favoriteWhiteboardsStatus,
+    loadMore: loadMoreWhiteboards,
+  } = usePaginatedQuery(
+    api.whiteboards.getFavWhiteboards,
+    {},
+    { initialNumItems: 5 },
+  );
   const cleanupOrphanedItems = useMutation(
     api.workingSpaces.cleanupOrphanedItems,
   );
@@ -2094,25 +2568,21 @@ const AppSidebar = React.memo(function AppSidebar() {
               open={open}
             />
 
-            <PinnedNotesList
+            <PinnedItemsSection
               favoriteNotes={results}
-              pathname={pathname}
-              open={open}
-              status={status}
-              loadMore={loadMore}
-            />
-            <PinnedUploadsList
               favoritePdfs={favoritePdfs}
+              favoriteWhiteboards={favoriteWhiteboards}
+              favoriteLinks={favoriteLinks}
               pathname={pathname}
               open={open}
-              status={favoritePdfsStatus}
-              loadMore={loadMorePdfs}
-            />
-            <PinnedLinksList
-              favoriteLinks={favoriteLinks}
-              open={open}
-              status={favoriteLinksStatus}
-              loadMore={loadMoreLinks}
+              notesStatus={status}
+              pdfsStatus={favoritePdfsStatus}
+              whiteboardsStatus={favoriteWhiteboardsStatus}
+              linksStatus={favoriteLinksStatus}
+              loadMoreNotes={loadMore}
+              loadMorePdfs={loadMorePdfs}
+              loadMoreWhiteboards={loadMoreWhiteboards}
+              loadMoreLinks={loadMoreLinks}
             />
             <WorkspacesList
               getWorkingSpaces={getWorkingSpaces}
