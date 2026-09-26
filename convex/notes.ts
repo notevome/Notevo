@@ -404,9 +404,25 @@ export const getFavNotes = query({
       .order("desc")
       .paginate(paginationOpts);
 
+    const validPage = (
+      await Promise.all(
+        result.page.map(async (note) => {
+          if (note.workingSpaceId) {
+            const ws = await ctx.db.get(note.workingSpaceId);
+            if (!ws) return null;
+          }
+          if (note.notesTableId) {
+            const table = await ctx.db.get(note.notesTableId);
+            if (!table) return null;
+          }
+          return toNoteListItem(note);
+        }),
+      )
+    ).filter(Boolean);
+
     return {
       ...result,
-      page: result.page.map(toNoteListItem),
+      page: validPage,
     };
   },
 });

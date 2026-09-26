@@ -112,59 +112,255 @@ export const deleteWorkingSpace = mutation({
       throw new ConvexError("Not authorized to delete this workspace");
     }
 
-    // Find all tables associated with this workspace
     const tables = await ctx.db
       .query("notesTables")
       .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
       .collect();
 
-    // Delete all notes associated with this workspace
-    const notes = await ctx.db
+    const notesByWorkspace = await ctx.db
       .query("notes")
       .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
       .collect();
+    const notesByTable = (
+      await Promise.all(
+        tables.map((table) =>
+          ctx.db
+            .query("notes")
+            .withIndex("by_notesTableId", (q) =>
+              q.eq("notesTableId", table._id),
+            )
+            .collect(),
+        ),
+      )
+    ).flat();
+    const notesToDelete = [...notesByWorkspace, ...notesByTable].filter(
+      (note, index, arr) =>
+        arr.findIndex((candidate) => candidate._id === note._id) === index,
+    );
 
     const pdfsByWorkspace = await ctx.db
       .query("pdfs")
       .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
       .collect();
-
     const pdfsByTable = (
       await Promise.all(
         tables.map((table) =>
           ctx.db
             .query("pdfs")
-            .withIndex("by_notesTableId", (q) => q.eq("notesTableId", table._id))
+            .withIndex("by_notesTableId", (q) =>
+              q.eq("notesTableId", table._id),
+            )
             .collect(),
         ),
       )
     ).flat();
-
     const pdfsToDelete = [...pdfsByWorkspace, ...pdfsByTable].filter(
-      (pdf, index, pdfs) =>
-        pdfs.findIndex((candidate) => candidate._id === pdf._id) === index,
+      (pdf, index, arr) =>
+        arr.findIndex((candidate) => candidate._id === pdf._id) === index,
     );
 
-    // Delete all notes
-    for (const note of notes) {
+    const whiteboardsByWorkspace = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .collect();
+    const whiteboardsByTable = (
+      await Promise.all(
+        tables.map((table) =>
+          ctx.db
+            .query("whiteboards")
+            .withIndex("by_notesTableId", (q) =>
+              q.eq("notesTableId", table._id),
+            )
+            .collect(),
+        ),
+      )
+    ).flat();
+    const whiteboardsToDelete = [
+      ...whiteboardsByWorkspace,
+      ...whiteboardsByTable,
+    ].filter(
+      (wb, index, arr) =>
+        arr.findIndex((candidate) => candidate._id === wb._id) === index,
+    );
+
+    const linksByWorkspace = await ctx.db
+      .query("links")
+      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .collect();
+    const linksByTable = (
+      await Promise.all(
+        tables.map((table) =>
+          ctx.db
+            .query("links")
+            .withIndex("by_notesTableId", (q) =>
+              q.eq("notesTableId", table._id),
+            )
+            .collect(),
+        ),
+      )
+    ).flat();
+    const linksToDelete = [...linksByWorkspace, ...linksByTable].filter(
+      (link, index, arr) =>
+        arr.findIndex((candidate) => candidate._id === link._id) === index,
+    );
+
+    for (const note of notesToDelete) {
+      if (note.tags) {
+        for (const tagId of note.tags) {
+          try {
+            await ctx.db.delete(tagId);
+          } catch {
+            // Tag may already be deleted
+          }
+        }
+      }
       await ctx.db.delete(note._id);
     }
 
-    // Delete all PDFs and their stored files
     for (const pdf of pdfsToDelete) {
-      await ctx.storage.delete(pdf.storageId);
+      try {
+        await ctx.storage.delete(pdf.storageId);
+      } catch {
+        // Storage file may already be deleted
+      }
       await ctx.db.delete(pdf._id);
     }
 
-    // Delete all tables
+    for (const whiteboard of whiteboardsToDelete) {
+      await ctx.db.delete(whiteboard._id);
+    }
+
+    for (const link of linksToDelete) {
+      await ctx.db.delete(link._id);
+    }
+
     for (const table of tables) {
       await ctx.db.delete(table._id);
     }
 
-    // Finally, delete the workspace
     await ctx.db.delete(_id);
 
     return { success: true };
+  },
+});
+
+export const cleanupOrphanedItems = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return {
+        deletedLinks: 0,
+        deletedWhiteboards: 0,
+        deletedPdfs: 0,
+        deletedNotes: 0,
+      };
+    }
+
+    const userLinks = await ctx.db
+      .query("links")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    let deletedLinks = 0;
+    for (const link of userLinks) {
+      let orphan = false;
+      if (link.workingSpaceId) {
+        const ws = await ctx.db.get(link.workingSpaceId);
+        if (!ws) orphan = true;
+      }
+      if (link.notesTableId) {
+        const tbl = await ctx.db.get(link.notesTableId);
+        if (!tbl) orphan = true;
+      }
+      if (orphan) {
+        await ctx.db.delete(link._id);
+        deletedLinks++;
+      }
+    }
+
+    const userWhiteboards = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    let deletedWhiteboards = 0;
+    for (const wb of userWhiteboards) {
+      let orphan = false;
+      if (wb.workingSpaceId) {
+        const ws = await ctx.db.get(wb.workingSpaceId);
+        if (!ws) orphan = true;
+      }
+      if (wb.notesTableId) {
+        const tbl = await ctx.db.get(wb.notesTableId);
+        if (!tbl) orphan = true;
+      }
+      if (orphan) {
+        await ctx.db.delete(wb._id);
+        deletedWhiteboards++;
+      }
+    }
+
+    const userPdfs = await ctx.db
+      .query("pdfs")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    let deletedPdfs = 0;
+    for (const pdf of userPdfs) {
+      let orphan = false;
+      if (pdf.workingSpaceId) {
+        const ws = await ctx.db.get(pdf.workingSpaceId);
+        if (!ws) orphan = true;
+      }
+      if (pdf.notesTableId) {
+        const tbl = await ctx.db.get(pdf.notesTableId);
+        if (!tbl) orphan = true;
+      }
+      if (orphan) {
+        try {
+          await ctx.storage.delete(pdf.storageId);
+        } catch {}
+        await ctx.db.delete(pdf._id);
+        deletedPdfs++;
+      }
+    }
+
+    const userNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    let deletedNotes = 0;
+    for (const note of userNotes) {
+      let orphan = false;
+      if (note.workingSpaceId) {
+        const ws = await ctx.db.get(note.workingSpaceId);
+        if (!ws) orphan = true;
+      }
+      if (note.notesTableId) {
+        const tbl = await ctx.db.get(note.notesTableId);
+        if (!tbl) orphan = true;
+      }
+      if (orphan) {
+        if (note.tags) {
+          for (const tagId of note.tags) {
+            try {
+              await ctx.db.delete(tagId);
+            } catch {}
+          }
+        }
+        await ctx.db.delete(note._id);
+        deletedNotes++;
+      }
+    }
+
+    return {
+      deletedLinks,
+      deletedWhiteboards,
+      deletedPdfs,
+      deletedNotes,
+    };
   },
 });
 

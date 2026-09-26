@@ -136,12 +136,33 @@ export const getFavLinks = query({
       throw new ConvexError("Not authenticated");
     }
 
-    return await ctx.db
+    const result = await ctx.db
       .query("links")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("favorite"), true))
       .order("desc")
       .paginate(paginationOpts);
+
+    const validPage = (
+      await Promise.all(
+        result.page.map(async (link) => {
+          if (link.workingSpaceId) {
+            const ws = await ctx.db.get(link.workingSpaceId);
+            if (!ws) return null;
+          }
+          if (link.notesTableId) {
+            const table = await ctx.db.get(link.notesTableId);
+            if (!table) return null;
+          }
+          return link;
+        }),
+      )
+    ).filter(Boolean);
+
+    return {
+      ...result,
+      page: validPage,
+    };
   },
 });
 

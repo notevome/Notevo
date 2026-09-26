@@ -226,29 +226,36 @@ export const deleteTable = mutation({
       .query("whiteboards")
       .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
       .collect();
+    const linksToDelete = await ctx.db
+      .query("links")
+      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .collect();
 
     for (const note of notesToDelete) {
       if (note.tags) {
         for (const tagId of note.tags) {
-          await ctx.db.delete(tagId);
+          try {
+            await ctx.db.delete(tagId);
+          } catch {
+            // Tag may already be deleted
+          }
         }
       }
       await ctx.db.delete(note._id);
     }
 
     for (const pdf of pdfsToDelete) {
-      await ctx.storage.delete(pdf.storageId);
+      try {
+        await ctx.storage.delete(pdf.storageId);
+      } catch {
+        // Storage file may already be deleted
+      }
       await ctx.db.delete(pdf._id);
     }
 
     for (const whiteboard of whiteboardsToDelete) {
       await ctx.db.delete(whiteboard._id);
     }
-
-    const linksToDelete = await ctx.db
-      .query("links")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
-      .collect();
 
     for (const link of linksToDelete) {
       await ctx.db.delete(link._id);
@@ -391,24 +398,25 @@ export const moveTable = mutation({
       updatedAt: Date.now(),
     });
 
-    const [notesInTable, pdfsInTable, linksInTable, whiteboardsInTable] = await Promise.all([
-      ctx.db
-        .query("notes")
-        .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
-        .collect(),
-      ctx.db
-        .query("pdfs")
-        .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
-        .collect(),
-      ctx.db
-        .query("links")
-        .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
-        .collect(),
-      ctx.db
-        .query("whiteboards")
-        .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
-        .collect(),
-    ]);
+    const [notesInTable, pdfsInTable, linksInTable, whiteboardsInTable] =
+      await Promise.all([
+        ctx.db
+          .query("notes")
+          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .collect(),
+        ctx.db
+          .query("pdfs")
+          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .collect(),
+        ctx.db
+          .query("links")
+          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .collect(),
+        ctx.db
+          .query("whiteboards")
+          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .collect(),
+      ]);
 
     await Promise.all([
       ...notesInTable.map((note) =>

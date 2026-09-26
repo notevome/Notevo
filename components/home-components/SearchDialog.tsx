@@ -11,6 +11,7 @@ import {
   Folder,
   FolderOpen,
   Globe,
+  PanelTop,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -30,6 +31,7 @@ import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
 import { useHomePane } from "./HomePaneDrawer";
+import { useToast } from "@/hooks/use-toast";
 import { ShortcutBadge } from "../ui/shortcut-badge";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 
@@ -118,6 +120,7 @@ function NoteItem({ note, onClick, isSelected, query, indented = false }: any) {
     <IntentPrefetchLink
       href={href}
       onClick={onClick}
+      data-selected={isSelected}
       className={cn(
         "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
@@ -161,6 +164,7 @@ function PdfItem({ pdf, onClick, isSelected, query, indented = false }: any) {
     <IntentPrefetchLink
       href={href}
       onClick={onClick}
+      data-selected={isSelected}
       className={cn(
         "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
@@ -176,6 +180,59 @@ function PdfItem({ pdf, onClick, isSelected, query, indented = false }: any) {
       <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
         <Clock className="h-3 w-3" />
         <span>{getRelativeTime(new Date(pdf.createdAt))}</span>
+      </div>
+    </IntentPrefetchLink>
+  );
+}
+
+function buildWhiteboardSlug(title?: string) {
+  if (!title) return "untitled-whiteboard";
+
+  return (
+    title
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "untitled-whiteboard"
+  );
+}
+
+function WhiteboardItem({
+  whiteboard,
+  onClick,
+  isSelected,
+  query,
+  indented = false,
+}: any) {
+  const whiteboardSlug = whiteboard.slug
+    ? whiteboard.slug.startsWith("/")
+      ? whiteboard.slug
+      : `/${whiteboard.slug}`
+    : "";
+  const href = `/home/${whiteboard.workingSpaceId}${whiteboardSlug}?whiteboardId=${whiteboard._id}`;
+  return (
+    <IntentPrefetchLink
+      href={href}
+      onClick={onClick}
+      data-selected={isSelected}
+      className={cn(
+        "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
+        indented && "ml-7",
+        isSelected ? "bg-border" : "hover:bg-border",
+      )}
+    >
+      <PanelTop size={14} />
+      <div className="flex-1 overflow-hidden">
+        <p className="text-sm text-foreground font-medium truncate transition-colors">
+          <HighlightedText
+            text={whiteboard.title || "Untitled"}
+            query={query}
+          />
+        </p>
+      </div>
+      <div className="flex items-center gap-1 text-xs shrink-0 text-muted-foreground">
+        <Clock className="h-3 w-3" />
+        <span>{getRelativeTime(new Date(whiteboard.createdAt))}</span>
       </div>
     </IntentPrefetchLink>
   );
@@ -221,6 +278,7 @@ function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
   return (
     <div
       onClick={onClick}
+      data-selected={isSelected}
       className={cn(
         "flex items-center gap-2 mb-px py-1.5 px-2 cursor-pointer app-radius-lg transition-all",
         indented && "ml-7",
@@ -244,6 +302,45 @@ function LinkItem({ link, onClick, isSelected, query, indented = false }: any) {
   );
 }
 
+function getTableItems(table: any, workspaceName?: string) {
+  const notes: any[] = table.notes ?? [];
+  const pdfs: any[] = table.pdfs ?? [];
+  const links: any[] = table.links ?? [];
+  const whiteboards: any[] = table.whiteboards ?? [];
+
+  return [
+    ...notes.map((note) => ({
+      ...note,
+      kind: "note" as const,
+      workingSpaceName: workspaceName,
+      tableName: table.name,
+    })),
+    ...pdfs.map((pdf) => ({
+      ...pdf,
+      kind: "pdf" as const,
+      slug: buildPdfSlug(pdf.title),
+      workingSpaceName: workspaceName,
+      tableName: table.name,
+    })),
+    ...whiteboards.map((whiteboard) => ({
+      ...whiteboard,
+      kind: "whiteboard" as const,
+      slug: buildWhiteboardSlug(whiteboard.title),
+      workingSpaceName: workspaceName,
+      tableName: table.name,
+    })),
+    ...links.map((link) => ({
+      ...link,
+      kind: "link" as const,
+      workingSpaceName: workspaceName,
+      tableName: table.name,
+    })),
+  ].sort(
+    (a, b) =>
+      b.createdAt - a.createdAt || String(a._id).localeCompare(String(b._id)),
+  );
+}
+
 // Tables are now collapsible — each manages its own open/close state
 function TableSection({
   table,
@@ -253,18 +350,10 @@ function TableSection({
   onNoteClick,
 }: any) {
   const [isExpanded, setIsExpanded] = useState(true);
-  const notes: any[] = table.notes ?? [];
-  const pdfs: any[] = table.pdfs ?? [];
-  const links: any[] = table.links ?? [];
-  const items = [
-    ...notes.map((note) => ({ ...note, kind: "note" as const })),
-    ...pdfs.map((pdf) => ({
-      ...pdf,
-      kind: "pdf" as const,
-      slug: buildPdfSlug(pdf.title),
-    })),
-    ...links.map((link) => ({ ...link, kind: "link" as const })),
-  ].sort((a, b) => b.createdAt - a.createdAt);
+  const items = useMemo(
+    () => getTableItems(table, workspace?.name),
+    [table, workspace?.name],
+  );
 
   return (
     <div>
@@ -296,11 +385,16 @@ function TableSection({
             item.kind === "pdf" ? (
               <PdfItem
                 key={item._id}
-                pdf={{
-                  ...item,
-                  workingSpaceName: workspace.name,
-                  tableName: table.name,
-                }}
+                pdf={item}
+                onClick={(e: any) => onNoteClick(item, e)}
+                isSelected={selectedNoteId === String(item._id)}
+                query={query}
+                indented
+              />
+            ) : item.kind === "whiteboard" ? (
+              <WhiteboardItem
+                key={item._id}
+                whiteboard={item}
                 onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
@@ -309,11 +403,7 @@ function TableSection({
             ) : item.kind === "link" ? (
               <LinkItem
                 key={item._id}
-                link={{
-                  ...item,
-                  workingSpaceName: workspace.name,
-                  tableName: table.name,
-                }}
+                link={item}
                 onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
@@ -322,11 +412,7 @@ function TableSection({
             ) : (
               <NoteItem
                 key={item._id}
-                note={{
-                  ...item,
-                  workingSpaceName: workspace.name,
-                  tableName: table.name,
-                }}
+                note={item}
                 onClick={(e: any) => onNoteClick(item, e)}
                 isSelected={selectedNoteId === String(item._id)}
                 query={query}
@@ -456,27 +542,7 @@ export default function SearchDialog({
   const allNotes = useMemo<any[]>(() => {
     if (!searchTargets) return [];
     return searchTargets.flatMap((ws) =>
-      (ws.tables ?? []).flatMap((t: any) => [
-        ...(t.notes ?? []).map((n: any) => ({
-          ...n,
-          kind: "note" as const,
-          workingSpaceName: ws.name,
-          tableName: t.name,
-        })),
-        ...(t.pdfs ?? []).map((pdf: any) => ({
-          ...pdf,
-          kind: "pdf" as const,
-          slug: buildPdfSlug(pdf.title),
-          workingSpaceName: ws.name,
-          tableName: t.name,
-        })),
-        ...(t.links ?? []).map((link: any) => ({
-          ...link,
-          kind: "link" as const,
-          workingSpaceName: ws.name,
-          tableName: t.name,
-        })),
-      ]),
+      (ws.tables ?? []).flatMap((t: any) => getTableItems(t, ws.name)),
     );
   }, [searchTargets]);
 
@@ -547,9 +613,21 @@ export default function SearchDialog({
     const href =
       note.kind === "pdf"
         ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
-        : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
+        : note.kind === "whiteboard"
+          ? `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`
+          : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
     prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
+
+  useEffect(() => {
+    if (!open) return;
+    const selectedEl = resultsScrollRef.current?.querySelector(
+      '[data-selected="true"]',
+    );
+    if (selectedEl) {
+      selectedEl.scrollIntoView({ block: "nearest" });
+    }
+  }, [selectedIndex, open]);
 
   const toggleWorkspace = (workspaceId: string) => {
     setExpandedWorkspaceIds((prev) =>
@@ -559,10 +637,18 @@ export default function SearchDialog({
     );
   };
   const { openPane } = useHomePane();
+  const { toast } = useToast();
   const handleNoteClick = (note: any, event: any) => {
     if (note.kind === "link") {
       event.preventDefault();
       setOpen(false);
+      if (event.altKey) {
+        toast({
+          variant: "destructive",
+          title: "Cannot open in side pane",
+          description: "Links cannot be opened in a side pane.",
+        });
+      }
       window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
@@ -580,11 +666,25 @@ export default function SearchDialog({
           id: note._id,
           title: note.title || "Untitled",
         });
-      } else {
+      } else if (note.kind === "whiteboard") {
+        toast({
+          variant: "destructive",
+          title: "Cannot open in side pane",
+          description: "Whiteboards cannot be opened in a side pane FOR NOW.",
+        });
+        router.push(
+          `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`,
+        );
+      } else if (note.kind === "note") {
         openPane({
           type: "note",
           id: note._id,
           title: note.title || "Untitled",
+        });
+      } else {
+        toast({
+          title: "Cannot open in side pane",
+          description: "This item cannot be opened in a side pane.",
         });
       }
       return;
@@ -593,6 +693,10 @@ export default function SearchDialog({
     setOpen(false);
     if (note.kind === "pdf") {
       router.push(`/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`);
+    } else if (note.kind === "whiteboard") {
+      router.push(
+        `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`,
+      );
     } else {
       router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
     }
@@ -642,10 +746,12 @@ export default function SearchDialog({
       )}
 
       <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
-        <DialogTitle className="sr-only">Search Notes</DialogTitle>
+        <DialogTitle className="sr-only">
+          Search Notes and Whiteboards
+        </DialogTitle>
         <DialogDescription className="sr-only">
-          Search across workspaces, tables, and notes, then open the selected
-          result.
+          Search across workspaces, tables, notes, and whiteboards, then open
+          the selected result.
         </DialogDescription>
 
         <div className="flex items-center border-b border-border px-4 py-2">
@@ -656,7 +762,7 @@ export default function SearchDialog({
           )}
           <Input
             ref={inputRef}
-            placeholder="Search workspaces, tables and notes..."
+            placeholder="Search workspaces, tables, notes and whiteboards..."
             className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0 text-sm bg-transparent"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -689,9 +795,9 @@ export default function SearchDialog({
               {!debouncedQuery ? (
                 <>
                   <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
-                  <p className="font-medium">No notes found</p>
+                  <p className="font-medium">No items found</p>
                   <p className="text-xs mt-1">
-                    Create your first note to get started
+                    Create your first note or whiteboard to get started
                   </p>
                 </>
               ) : (

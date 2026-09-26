@@ -126,12 +126,33 @@ export const getFavPdfs = query({
       throw new Error("Unauthenticated");
     }
 
-    return await ctx.db
+    const result = await ctx.db
       .query("pdfs")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("favorite"), true))
       .order("desc")
       .paginate(paginationOpts);
+
+    const validPage = (
+      await Promise.all(
+        result.page.map(async (pdf) => {
+          if (pdf.workingSpaceId) {
+            const ws = await ctx.db.get(pdf.workingSpaceId);
+            if (!ws) return null;
+          }
+          if (pdf.notesTableId) {
+            const table = await ctx.db.get(pdf.notesTableId);
+            if (!table) return null;
+          }
+          return pdf;
+        }),
+      )
+    ).filter(Boolean);
+
+    return {
+      ...result,
+      page: validPage,
+    };
   },
 });
 
