@@ -418,7 +418,7 @@ export const getFavNotes = query({
           return toNoteListItem(note);
         }),
       )
-    ).filter(Boolean);
+    ).filter((x): x is NonNullable<typeof x> => x !== null);
 
     return {
       ...result,
