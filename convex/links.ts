@@ -157,7 +157,7 @@ export const getFavLinks = query({
           return link;
         }),
       )
-    ).filter(Boolean);
+    ).filter((x): x is NonNullable<typeof x> => x !== null);
 
     return {
       ...result,

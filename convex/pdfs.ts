@@ -147,7 +147,7 @@ export const getFavPdfs = query({
           return pdf;
         }),
       )
-    ).filter(Boolean);
+    ).filter((x): x is NonNullable<typeof x> => x !== null);
 
     return {
       ...result,
