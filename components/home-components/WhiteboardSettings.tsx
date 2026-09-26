@@ -138,6 +138,7 @@ export default function WhiteboardSettings({
 
   useEffect(() => {
     if (!syncBrowserChrome || !whiteboard?.title) return;
+    if (!isOnThisWhiteboardRoute()) return;
 
     const originalTitle = document.title;
     document.title = `${whiteboard.title} - Notevo`;
@@ -145,7 +146,7 @@ export default function WhiteboardSettings({
     return () => {
       document.title = originalTitle;
     };
-  }, [syncBrowserChrome, whiteboard?.title]);
+  }, [syncBrowserChrome, whiteboard?.title, whiteboard?._id]);
 
   useEffect(() => {
     if (!moveOpen || !whiteboard) return;
@@ -173,6 +174,12 @@ export default function WhiteboardSettings({
     return () => clearTimeout(timer);
   }, [open]);
 
+  const isOnThisWhiteboardRoute = () => {
+    if (typeof window === "undefined" || !whiteboard) return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("whiteboardId") === String(whiteboard._id);
+  };
+
   const debouncedRenameWhiteboard = useDebouncedCallback(
     (nextTitle: string) => {
       const currentTitle = whiteboard?.title || "";
@@ -198,7 +205,7 @@ export default function WhiteboardSettings({
         return;
       }
 
-      if (syncBrowserChrome) {
+      if (syncBrowserChrome && isOnThisWhiteboardRoute()) {
         document.title = `${nextTitle} - Notevo`;
         const currentUrl = new URL(window.location.href);
         const segments = currentUrl.pathname.split("/");

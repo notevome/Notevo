@@ -1873,6 +1873,12 @@ const AppSidebar = React.memo(function AppSidebar() {
     status: favoriteLinksStatus,
     loadMore: loadMoreLinks,
   } = usePaginatedQuery(api.links.getFavLinks, {}, { initialNumItems: 5 });
+  const cleanupOrphanedItems = useMutation(
+    api.workingSpaces.cleanupOrphanedItems,
+  );
+  useEffect(() => {
+    cleanupOrphanedItems().catch(() => {});
+  }, [cleanupOrphanedItems]);
   const createTable = useMutation(
     api.notesTables.createTable,
   ).withOptimisticUpdate((local, args) => {
