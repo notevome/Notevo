@@ -3075,9 +3075,7 @@ function TimelineMiniCard({
               url={(item as LinkItem).url}
               className="h-full w-full p-0.5"
             />
-          ) : (
-            <PanelTop className="h-3 w-3 text-muted-foreground" />
-          )}
+          ) : null}
         </div>
       )}
 
@@ -3628,7 +3626,7 @@ function LinkFavicon({
   return (
     <img
       src={faviconUrl}
-      alt=""
+      alt="favicon"
       draggable={false}
       className={cn(
         "object-contain select-none [-webkit-user-drag:none]",
