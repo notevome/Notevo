@@ -11,11 +11,13 @@ import {
   useRef,
   useState,
 } from "react";
-import { PanelRightClose, X } from "lucide-react";
+import { ChevronsRight, MoveDiagonal2, X } from "lucide-react";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import NotePageClient from "@/app/home/[id]/[itemId]/NotePageClient";
 import PdfViewerPageClient from "@/app/home/[id]/[itemId]/PdfViewerPageClient";
 import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
 import { Button } from "@/components/ui/button";
+import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import {
   Drawer,
   DrawerClose,
@@ -25,6 +27,8 @@ import {
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { cn } from "@/lib/utils";
 import { parseSlug } from "@/lib/parseSlug";
+import { useQuery } from "convex/react";
+import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
 type HomePaneItem =
@@ -32,11 +36,14 @@ type HomePaneItem =
       type: "note";
       id: Id<"notes">;
       title?: string;
+      slug?: string;
+      workingSpaceId?: Id<"workingSpaces">;
     }
   | {
       type: "pdf";
       id: Id<"pdfs">;
       title?: string;
+      workingSpaceId?: Id<"workingSpaces">;
     }
   | {
       type: "workspace";
@@ -105,7 +112,93 @@ function HomePaneDrawer({
   const startXRef = useRef(0);
   const startWidthRef = useRef(DEFAULT_PANE_WIDTH);
   const rafRef = useRef<number>(0);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useParams<{ id?: string | string[] }>();
+  const workspaceId = useMemo(() => {
+    const paramId = params?.id;
+    if (paramId) return Array.isArray(paramId) ? paramId[0] : paramId;
+
+    const segments = pathname?.split("/").filter(Boolean) ?? [];
+    const homeIndex = segments.indexOf("home");
+    if (homeIndex !== -1 && segments[homeIndex + 1]) {
+      return segments[homeIndex + 1];
+    }
+    return undefined;
+  }, [params, pathname]);
   const closeTooltip = useHoverTooltip(400);
+  const collapseTooltip = useHoverTooltip(400);
+  const expandTooltip = useHoverTooltip(400);
+
+  const noteDoc = useQuery(
+    api.notes.getNoteById,
+    activeItem?.type === "note" ? { _id: activeItem.id } : "skip",
+  );
+  const pdfDoc = useQuery(
+    api.pdfs.getPdfById,
+    activeItem?.type === "pdf" ? { _id: activeItem.id } : "skip",
+  );
+
+  const fullPageHref = useMemo(() => {
+    if (!activeItem) return null;
+
+    if (activeItem.type === "workspace") {
+      return `/home/${activeItem.id}`;
+    }
+
+    if (activeItem.type === "note") {
+      const spaceId =
+        activeItem.workingSpaceId ?? noteDoc?.workingSpaceId ?? workspaceId;
+      if (!spaceId) return null;
+
+      const slug =
+        activeItem.slug ??
+        noteDoc?.slug ??
+        activeItem.title ??
+        noteDoc?.title ??
+        activeItem.id;
+
+      return `/home/${spaceId}/${slug}?id=${activeItem.id}`;
+    }
+
+    const spaceId =
+      activeItem.workingSpaceId ?? pdfDoc?.workingSpaceId ?? workspaceId;
+    if (!spaceId) return null;
+
+    const slug = activeItem.title ?? pdfDoc?.title ?? activeItem.id;
+
+    return `/home/${spaceId}/${slug}?pdfId=${activeItem.id}`;
+  }, [activeItem, noteDoc, pdfDoc, workspaceId]);
+
+  useEffect(() => {
+    if (activeItem && !fullPageHref) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[HomePaneDrawer] could not build full-page href — no workspaceId resolved.",
+        { activeItem, noteDoc, pdfDoc, pathname, workspaceId },
+      );
+    }
+  }, [activeItem, fullPageHref, noteDoc, pdfDoc, pathname, workspaceId]);
+
+  const openFullPage = useCallback(() => {
+    if (!fullPageHref) return;
+    router.push(fullPageHref);
+    closePane();
+  }, [closePane, fullPageHref, router]);
+
+  useEffect(() => {
+    if (!activeItem) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+        event.preventDefault();
+        openFullPage();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeItem, openFullPage]);
 
   useEffect(() => {
     const savedWidth = window.localStorage.getItem(PANE_WIDTH_STORAGE_KEY);
@@ -207,38 +300,61 @@ function HomePaneDrawer({
           >
             <div className="mx-auto h-full w-px bg-gradient-to-b from-transparent from-5% via-border to-transparent to-95% group-hover/resize:via-primary" />
           </div>
-          <div className="z-30 absolute top-0 right-0 w-full flex h-10 shrink-0 items-center justify-between ">
-            <div className="flex min-w-0 items-center gap-2 px-2.5">
-              {activeItem?.type !== "pdf" && (
-                <DrawerTitle className="truncate text-sm font-medium">
-                  {getPaneTitle(activeItem)}
-                </DrawerTitle>
-              )}
+          <div className=" w-full flex h-9 shrink-0 items-center justify-between bg-card border-b border-border p-2">
+            <div className="flex min-w-0 items-center gap-2 ">
+              <div className="flex items-center gap-0.5">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  aria-label="close-pane"
+                  title="Close (Escape)"
+                  onClick={closePane}
+                  {...collapseTooltip.triggerProps}
+                >
+                  <ChevronsRight size={16} />
+                </Button>
+                {fullPageHref ? (
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    aria-label="open-full-page"
+                    title="Open in full page (Ctrl+Enter)"
+                    {...expandTooltip.triggerProps}
+                  >
+                    <IntentPrefetchLink href={fullPageHref} onClick={closePane}>
+                      <MoveDiagonal2 size={16} />
+                    </IntentPrefetchLink>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    aria-label="open-full-page"
+                    title="Open in full page (Ctrl+Enter)"
+                    disabled
+                  >
+                    <MoveDiagonal2 size={16} />
+                  </Button>
+                )}
+              </div>
+              <div className="h-4 w-px shrink-0 bg-border" aria-hidden />
+              <DrawerTitle className="truncate text-sm font-medium">
+                {getPaneTitle(activeItem)}
+              </DrawerTitle>
             </div>
-            <DrawerClose asChild>
-              <Button
-                variant="Trigger"
-                size="icon"
-                className="h-4 w-7"
-                aria-label="close-pane"
-                {...closeTooltip.triggerProps}
-              >
-                <X size={16} />
-              </Button>
-            </DrawerClose>
           </div>
           <div
             className={cn(
               "scrollbar-gutter-stable min-h-0 flex-1 bg-background [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem]",
               activeItem?.type === "pdf"
                 ? "overflow-hidden"
-                : "overflow-y-auto py-16",
+                : "overflow-y-auto py-4",
             )}
           >
-            <div
-              className={`app-radius-lg ${activeItem?.type !== "pdf" ? "h-[6rem]" : "h-[4rem]"}  absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16`}
-              aria-hidden
-            />
             {activeItem ? <HomePaneContent item={activeItem} /> : null}
           </div>
         </div>

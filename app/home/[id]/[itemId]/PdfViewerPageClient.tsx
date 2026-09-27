@@ -23,6 +23,7 @@ import {
   ChevronRight,
   FileSearch,
   FileText,
+  GripVertical,
   Search,
   X,
 } from "lucide-react";
@@ -498,6 +499,187 @@ function PdfViewerContent({
   const { toast } = useToast();
   const updatePdf = useMutation(api.pdfs.updatePdf);
 
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const dragInfoRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startClientY: number;
+    startLeft: number;
+    startTop: number;
+  } | null>(null);
+  const [toolbarPosition, setToolbarPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [isDraggingToolbar, setIsDraggingToolbar] = useState(false);
+
+  const getMinLeftBound = useCallback(() => {
+    const margin = 4;
+    const sidebarEl = document.querySelector<HTMLElement>(
+      '[data-sidebar="sidebar"]',
+    );
+    if (!sidebarEl) return margin;
+    const style = window.getComputedStyle(sidebarEl);
+    if (style.display === "none" || style.visibility === "hidden") {
+      return margin;
+    }
+    const rect = sidebarEl.getBoundingClientRect();
+    if (rect.width <= 0) return margin;
+    return Math.max(rect.right + 8, margin);
+  }, []);
+
+  const handleToolbarDragPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLButtonElement>) => {
+      const toolbarEl = toolbarRef.current;
+      if (!toolbarEl || e.button !== 0) return;
+      const rect = toolbarEl.getBoundingClientRect();
+      dragInfoRef.current = {
+        pointerId: e.pointerId,
+        startClientX: e.clientX,
+        startClientY: e.clientY,
+        startLeft: rect.left,
+        startTop: rect.top,
+      };
+      setIsDraggingToolbar(true);
+    },
+    [],
+  );
+
+  const handleToolbarDragDoubleClick = useCallback(() => {
+    setToolbarPosition(null);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingToolbar) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const dragInfo = dragInfoRef.current;
+      const toolbarEl = toolbarRef.current;
+      if (!dragInfo || !toolbarEl || e.pointerId !== dragInfo.pointerId) return;
+
+      const deltaX = e.clientX - dragInfo.startClientX;
+      const deltaY = e.clientY - dragInfo.startClientY;
+      const rect = toolbarEl.getBoundingClientRect();
+      const margin = 4;
+      const minLeft = getMinLeftBound();
+      const maxLeft = Math.max(
+        window.innerWidth - rect.width - margin,
+        minLeft,
+      );
+      const maxTop = Math.max(
+        window.innerHeight - rect.height - margin,
+        margin,
+      );
+      const nextLeft = Math.min(
+        Math.max(dragInfo.startLeft + deltaX, minLeft),
+        maxLeft,
+      );
+      const nextTop = Math.min(
+        Math.max(dragInfo.startTop + deltaY, margin),
+        maxTop,
+      );
+      setToolbarPosition({ x: nextLeft, y: nextTop });
+    };
+
+    const handlePointerEnd = () => {
+      setIsDraggingToolbar(false);
+      dragInfoRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerEnd);
+    window.addEventListener("pointercancel", handlePointerEnd);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerEnd);
+      window.removeEventListener("pointercancel", handlePointerEnd);
+    };
+  }, [isDraggingToolbar, getMinLeftBound]);
+
+  useEffect(() => {
+    if (!toolbarPosition) return;
+    const handleResize = () => {
+      const toolbarEl = toolbarRef.current;
+      if (!toolbarEl) return;
+      const rect = toolbarEl.getBoundingClientRect();
+      const margin = 4;
+      const minLeft = getMinLeftBound();
+      const maxLeft = Math.max(
+        window.innerWidth - rect.width - margin,
+        minLeft,
+      );
+      const maxTop = Math.max(
+        window.innerHeight - rect.height - margin,
+        margin,
+      );
+      setToolbarPosition((current) =>
+        current
+          ? {
+              x: Math.min(Math.max(current.x, minLeft), maxLeft),
+              y: Math.min(Math.max(current.y, margin), maxTop),
+            }
+          : current,
+      );
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [toolbarPosition, getMinLeftBound]);
+
+  useEffect(() => {
+    const reclampToolbarLeft = () => {
+      const toolbarEl = toolbarRef.current;
+      if (!toolbarEl) return;
+      const rect = toolbarEl.getBoundingClientRect();
+      const margin = 4;
+      const minLeft = getMinLeftBound();
+      if (rect.left >= minLeft) return;
+      const maxLeft = Math.max(
+        window.innerWidth - rect.width - margin,
+        minLeft,
+      );
+      setToolbarPosition((current) =>
+        current ? { ...current, x: Math.min(minLeft, maxLeft) } : current,
+      );
+    };
+
+    reclampToolbarLeft();
+
+    let rafId = 0;
+    let frames = 0;
+    const maxFrames = 45;
+    const tick = () => {
+      reclampToolbarLeft();
+      frames += 1;
+      if (frames < maxFrames) {
+        rafId = window.requestAnimationFrame(tick);
+      }
+    };
+    rafId = window.requestAnimationFrame(tick);
+
+    const sidebarEl = document.querySelector<HTMLElement>(
+      '[data-sidebar="sidebar"]',
+    );
+    const resizeObserver = sidebarEl
+      ? new ResizeObserver(reclampToolbarLeft)
+      : null;
+    resizeObserver?.observe(sidebarEl as HTMLElement);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      resizeObserver?.disconnect();
+    };
+  }, [open, getMinLeftBound]);
+
+  useEffect(() => {
+    if (isMobile || renderedInPane) {
+      setToolbarPosition(null);
+      setIsDraggingToolbar(false);
+      dragInfoRef.current = null;
+    }
+  }, [isMobile, renderedInPane]);
+
+  const canDragToolbar = !isMobile && !renderedInPane;
+
   const handleNameDoubleClick = useCallback(() => {
     setEditedName(pdftitle || "");
     setIsEditingName(true);
@@ -576,12 +758,29 @@ function PdfViewerContent({
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
         <div
-          className={` pointer-events-none absolute inset-x-0 ${isMobile ? "top-0" : "top-2"} z-30`}
+          className={cn(
+            "absolute z-20",
+            canDragToolbar && toolbarPosition
+              ? "pointer-events-none"
+              : `pointer-events-none inset-x-0 ${isMobile ? "top-0" : "top-1"}`,
+          )}
+          style={
+            canDragToolbar && toolbarPosition
+              ? {
+                  position: "fixed",
+                  left: toolbarPosition.x,
+                  top: toolbarPosition.y,
+                }
+              : undefined
+          }
         >
           <div
+            ref={toolbarRef}
             className={cn(
-              "pointer-events-auto mx-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
+              "pointer-events-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
+              !(canDragToolbar && toolbarPosition) && "mx-auto",
               !renderedInPane || (isMobile && "app-radius-lg"),
+              isDraggingToolbar && "select-none",
             )}
           >
             {(!open || isMobile) && (
@@ -597,36 +796,39 @@ function PdfViewerContent({
                 <SidebarTrigger className=" h-[22] w-[22]" />
               </Button>
             )}
-            <div
-              className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
-            >
-              <h1
-                onDoubleClick={handleNameDoubleClick}
-                title="Double-click to rename"
-                className={`flex-1 text-lg cursor-text flex justify-start items-center ${renderedInPane ? "min-w-[10rem] max-w-[10rem]" : "min-w-[15rem] max-w-[15rem]"}  overflow-hidden `}
+            {!renderedInPane && (
+              <div
+                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
               >
-                {isEditingName ? (
-                  <Input
-                    ref={nameInputRef as any}
-                    value={editedName}
-                    onChange={(e: any) => {
-                      setEditedName(e.target.value);
-                      debouncedUpdatePdfTitle(e.target.value.trim());
-                    }}
-                    onKeyDown={handleNameKeyDown}
-                    onBlur={() => {
-                      setIsEditingName(false);
-                    }}
-                    placeholder="Untitled PDF"
-                    className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
-                  />
-                ) : (
-                  <span className=" w-full overflow-hidden text-nowrap">
-                    {pdftitle || "Untitled PDF"}
-                  </span>
-                )}
-              </h1>
-            </div>
+                <h1
+                  onDoubleClick={handleNameDoubleClick}
+                  title="Double-click to rename"
+                  className="flex-1 text-lg cursor-text flex justify-start items-center min-w-[15rem] max-w-[15rem]  overflow-hidden "
+                >
+                  {isEditingName ? (
+                    <Input
+                      ref={nameInputRef as any}
+                      value={editedName}
+                      onChange={(e: any) => {
+                        setEditedName(e.target.value);
+                        debouncedUpdatePdfTitle(e.target.value.trim());
+                      }}
+                      onKeyDown={handleNameKeyDown}
+                      onBlur={() => {
+                        setIsEditingName(false);
+                      }}
+                      placeholder="Untitled PDF"
+                      className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                    />
+                  ) : (
+                    <span className=" w-full overflow-hidden text-nowrap">
+                      {pdftitle || "Untitled PDF"}
+                    </span>
+                  )}
+                </h1>
+              </div>
+            )}
+
             <div className=" w-full flex items-center justify-between gap-0">
               <span>
                 <div className="flex items-center gap-0">
@@ -707,6 +909,19 @@ function PdfViewerContent({
                     btnVariant="outline"
                     btnClassName="h-8 w-8 m-0 px-1 border-border !app-radius-none"
                   />
+                )}
+                {canDragToolbar && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 border-y border-r !border-l-0 border-border !app-radius-none touch-none cursor-grab active:cursor-grabbing"
+                    onPointerDown={handleToolbarDragPointerDown}
+                    onDoubleClick={handleToolbarDragDoubleClick}
+                    aria-label="drag-toolbar"
+                  >
+                    <GripVertical size={16} />
+                  </Button>
                 )}
               </span>
             </div>

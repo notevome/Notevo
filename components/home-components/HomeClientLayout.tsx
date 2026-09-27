@@ -73,7 +73,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const isPdfRoute = Boolean(pdfId);
   const isWhiteboardRoute = Boolean(whiteboardId);
 
-  const showTopFade = isPdfRoute || isWhiteboardRoute ? true : scrollTop > 0;
+  const showTopFade = isWhiteboardRoute ? true : scrollTop > 0;
 
   const isNoteDetailRoute =
     /^\/home\/[^/]+\/[^/]+\/?$/.test(pathname) &&
