@@ -93,6 +93,11 @@ div.Stack .Stack_vertical .zoom-actions>div.Stack .Stack_horizontal {
   gap: 0 !important;
 }
 
+.zoom-actions,
+.undo-redo-buttons {
+  box-shadow: none !important;
+}
+
 .whiteboard-canvas .excalidraw .range-wrapper {
   --color-slider-track: hsl(var(--primary));
   --button-bg: hsl(var(--muted));
@@ -111,7 +116,7 @@ div.Stack .Stack_vertical .zoom-actions>div.Stack .Stack_horizontal {
 .whiteboard-canvas .excalidraw div.App-menu__left {
   position: fixed;
   top: 3.5rem;
-  right: 0.5rem;
+  right: 0.3rem;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: flex-end;
@@ -244,8 +249,8 @@ div.layer-ui__wrapper__top-right.zen-mode-transition {
 
 .whiteboard-canvas .excalidraw div.App-menu_top {
   position: fixed;
-  bottom: 0.5rem;
-  right: 28%;
+  bottom: 0.3rem;
+  right: 30%;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: flex-end;

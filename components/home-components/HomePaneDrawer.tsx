@@ -207,22 +207,23 @@ function HomePaneDrawer({
           >
             <div className="mx-auto h-full w-px bg-gradient-to-b from-transparent from-5% via-border to-transparent to-95% group-hover/resize:via-primary" />
           </div>
-          <div className="flex h-10 shrink-0 items-center justify-between border-b border-border bg-card/80 px-3 backdrop-blur">
-            <div className="flex min-w-0 items-center gap-2">
-              <PanelRightClose className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <DrawerTitle className="truncate text-sm font-medium">
-                {getPaneTitle(activeItem)}
-              </DrawerTitle>
+          <div className="z-30 absolute top-0 right-0 w-full flex h-10 shrink-0 items-center justify-between ">
+            <div className="flex min-w-0 items-center gap-2 px-2.5">
+              {activeItem?.type !== "pdf" && (
+                <DrawerTitle className="truncate text-sm font-medium">
+                  {getPaneTitle(activeItem)}
+                </DrawerTitle>
+              )}
             </div>
             <DrawerClose asChild>
               <Button
-                variant="ghost"
+                variant="Trigger"
                 size="icon"
-                className="h-7 w-7"
+                className="h-4 w-7"
                 aria-label="close-pane"
                 {...closeTooltip.triggerProps}
               >
-                <X className="h-4 w-4" />
+                <X size={16} />
               </Button>
             </DrawerClose>
           </div>
@@ -231,9 +232,13 @@ function HomePaneDrawer({
               "scrollbar-gutter-stable min-h-0 flex-1 bg-background [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem]",
               activeItem?.type === "pdf"
                 ? "overflow-hidden"
-                : "overflow-y-auto py-10",
+                : "overflow-y-auto py-16",
             )}
           >
+            <div
+              className={`app-radius-lg ${activeItem?.type !== "pdf" ? "h-[6rem]" : "h-[4rem]"}  absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16`}
+              aria-hidden
+            />
             {activeItem ? <HomePaneContent item={activeItem} /> : null}
           </div>
         </div>
