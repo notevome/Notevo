@@ -3028,6 +3028,9 @@ function TimelineMiniCard({
   const authorHandle = isSocialLink
     ? formatHandle((item as LinkItem).metadata?.authorHandle)
     : undefined;
+  const authorAvatarUrl = isSocialLink
+    ? (item as LinkItem).metadata?.authorAvatarUrl
+    : undefined;
 
   const createdDate = new Date(item.createdAt);
   const updatedDate = new Date(item.updatedAt);
@@ -3079,22 +3082,33 @@ function TimelineMiniCard({
       )}
 
       <div className="relative z-10 mt-auto p-2.5">
-        <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-          {title}
-        </p>
-        <p className="text-[10px] text-muted-foreground mt-1">
-          {isLink && publishedDate ? (
-            <>
-              {authorHandle && <span>{authorHandle} · </span>}
-              {formatLongDateTime(publishedAt as number)}
-            </>
-          ) : (
-            <>
-              Created {formatShort(createdDate)}
-              {hasUpdate ? ` · Updated ${formatShort(updatedDate)}` : ""}
-            </>
+        <div className={cn(isSocialLink && "flex items-start gap-1.5")}>
+          {isSocialLink && (
+            <LinkAuthorAvatar
+              avatarUrl={authorAvatarUrl}
+              authorName={title}
+              className="mt-0.5 h-6 w-6"
+            />
           )}
-        </p>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
+              {title}
+            </p>
+            <p className="text-[10px] text-muted-foreground mt-1">
+              {isLink && publishedDate ? (
+                <>
+                  {authorHandle && <span>{authorHandle} · </span>}
+                  {formatLongDateTime(publishedAt as number)}
+                </>
+              ) : (
+                <>
+                  Created {formatShort(createdDate)}
+                  {hasUpdate ? ` · Updated ${formatShort(updatedDate)}` : ""}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
       </div>
     </>
   );
