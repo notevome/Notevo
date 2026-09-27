@@ -1778,7 +1778,6 @@ const PinnedItemsSection = memo(function PinnedItemsSection({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className="px-0 h-6 text-xs gap-1 text-muted-foreground flex items-center justify-center"
         >
-          <Pin strokeWidth={2.5} size="13" />
           <span>Pinned Items</span>
           {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
