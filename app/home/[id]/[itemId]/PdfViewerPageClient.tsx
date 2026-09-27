@@ -505,8 +505,11 @@ function PdfViewerContent({
 
   useEffect(() => {
     if (isEditingName) {
-      nameInputRef.current?.focus();
-      nameInputRef.current?.select();
+      const nameRefInput = nameInputRef?.current;
+      if (!nameRefInput) return;
+      nameRefInput.focus();
+      nameRefInput.select();
+      nameRefInput.scrollLeft = 0;
     }
   }, [isEditingName]);
 
@@ -573,7 +576,7 @@ function PdfViewerContent({
     >
       <div className=" relative min-w-full min-h-full bg-transparent ">
         <div
-          className={` pointer-events-none absolute inset-x-0 ${isMobile ? "top-0" : "top-1"} z-20`}
+          className={` pointer-events-none absolute inset-x-0 ${isMobile ? "top-0" : "top-2"} z-30`}
         >
           <div
             className={cn(
@@ -594,38 +597,36 @@ function PdfViewerContent({
                 <SidebarTrigger className=" h-[22] w-[22]" />
               </Button>
             )}
-            {!renderedInPane && (
-              <div
-                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
+            <div
+              className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
+            >
+              <h1
+                onDoubleClick={handleNameDoubleClick}
+                title="Double-click to rename"
+                className={`flex-1 text-lg cursor-text flex justify-start items-center ${renderedInPane ? "min-w-[10rem] max-w-[10rem]" : "min-w-[15rem] max-w-[15rem]"}  overflow-hidden `}
               >
-                <h1
-                  onDoubleClick={handleNameDoubleClick}
-                  title="Double-click to rename"
-                  className=" flex-1 text-lg cursor-text flex justify-start items-center min-w-[15rem] max-w-[15rem] overflow-hidden "
-                >
-                  {isEditingName ? (
-                    <Input
-                      ref={nameInputRef as any}
-                      value={editedName}
-                      onChange={(e: any) => {
-                        setEditedName(e.target.value);
-                        debouncedUpdatePdfTitle(e.target.value.trim());
-                      }}
-                      onKeyDown={handleNameKeyDown}
-                      onBlur={() => {
-                        setIsEditingName(false);
-                      }}
-                      placeholder="Untitled PDF"
-                      className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
-                    />
-                  ) : (
-                    <span className=" w-full overflow-hidden text-nowrap">
-                      {pdftitle || "Untitled PDF"}
-                    </span>
-                  )}
-                </h1>
-              </div>
-            )}
+                {isEditingName ? (
+                  <Input
+                    ref={nameInputRef as any}
+                    value={editedName}
+                    onChange={(e: any) => {
+                      setEditedName(e.target.value);
+                      debouncedUpdatePdfTitle(e.target.value.trim());
+                    }}
+                    onKeyDown={handleNameKeyDown}
+                    onBlur={() => {
+                      setIsEditingName(false);
+                    }}
+                    placeholder="Untitled PDF"
+                    className=" !w-full placeholder:text-muted-foreground/50 border-0 bg-transparent px-0 py-0 my-0 md:text-lg font-bol h-[1.8rem] cursor-text leading-12 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  />
+                ) : (
+                  <span className=" w-full overflow-hidden text-nowrap">
+                    {pdftitle || "Untitled PDF"}
+                  </span>
+                )}
+              </h1>
+            </div>
             <div className=" w-full flex items-center justify-between gap-0">
               <span>
                 <div className="flex items-center gap-0">

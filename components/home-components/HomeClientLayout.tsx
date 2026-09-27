@@ -73,7 +73,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const isPdfRoute = Boolean(pdfId);
   const isWhiteboardRoute = Boolean(whiteboardId);
 
-  const showTopFade = scrollTop > 0;
+  const showTopFade = isPdfRoute || isWhiteboardRoute ? true : scrollTop > 0;
 
   const isNoteDetailRoute =
     /^\/home\/[^/]+\/[^/]+\/?$/.test(pathname) &&
@@ -81,7 +81,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     !isWhiteboardRoute;
   const isPastFadeGrowThreshold = scrollTop > 180;
   const fadeHeight =
-    !isNoteDetailRoute && isPastFadeGrowThreshold ? "12rem" : "6rem";
+    !isNoteDetailRoute && isPastFadeGrowThreshold ? "12rem" : "4rem";
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
@@ -146,7 +146,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           }`}
         >
           <motion.div
-            initial={{ opacity: 0, height: "6rem" }}
+            initial={{ opacity: 0, height: "4rem" }}
             animate={{ opacity: showTopFade ? 1 : 0, height: fadeHeight }}
             transition={{
               opacity: showTopFade ? fadeTransition.show : fadeTransition.hide,
