@@ -81,7 +81,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     !isWhiteboardRoute;
   const isPastFadeGrowThreshold = scrollTop > 180;
   const fadeHeight =
-    !isNoteDetailRoute && isPastFadeGrowThreshold ? "12rem" : "4rem";
+    !isNoteDetailRoute && isPastFadeGrowThreshold ? "8rem" : "4rem";
 
   return (
     <div className="flex h-screen w-full bg-muted overflow-hidden">
@@ -101,14 +101,12 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         }}
       />
       <main
-        className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${
-          open && !isMobile ? `app-radius-lg border-t border-l mt-3` : ""
-        } app-radius-none`}
+        className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "app-radius-lg border-t border-l mt-3" : ""} app-radius-none`}
       >
         <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
           <div className="flex justify-between items-center w-full px-3.5 ">
             <div className="flex justify-start items-center gap-2 py-2.5">
-              {(!open || isMobile) && !isPdfRoute && <SidebarTrigger />}
+              {isMobile && !isPdfRoute && <SidebarTrigger />}
               {!isPdfRoute && !homepage ? (
                 <BreadcrumbWithCustomSeparator />
               ) : null}
@@ -131,7 +129,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
                 <WhiteboardSettings
                   whiteboardId={whiteboardId}
                   IconVariant="horizontal_icon"
-                  className={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"}  right-2`}
+                  className={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"} right-2`}
                 />
               )}
             </div>

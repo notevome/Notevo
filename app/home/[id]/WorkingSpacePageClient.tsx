@@ -102,13 +102,39 @@ function getMediaQuery() {
   return isMobile;
 }
 
-function useGridColumnCount(enabled: boolean) {
-  const isMdUp = useMediaQuery({ minWidth: 768 });
-  const isSmUp = useMediaQuery({ minWidth: 640 });
-  if (!enabled) return 1;
-  if (isMdUp) return 3;
-  if (isSmUp) return 2;
-  return 1;
+const GRID_MIN_CARD_WIDTH = 350;
+
+function useContainerColumnCount(
+  containerRef: React.RefObject<HTMLElement | null>,
+  enabled: boolean,
+) {
+  const [columns, setColumns] = useState(1);
+
+  useEffect(() => {
+    if (!enabled) {
+      setColumns(1);
+      return;
+    }
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = (width: number) => {
+      const cols = Math.max(1, Math.floor(width / GRID_MIN_CARD_WIDTH));
+      setColumns(cols);
+    };
+
+    update(el.getBoundingClientRect().width);
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        update(entry.contentRect.width);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [containerRef, enabled]);
+
+  return columns;
 }
 
 const getContentPreviewFromBody = (body: any) => {
@@ -1359,7 +1385,7 @@ export default function WorkingSpacePageClient({
   }, [isMobile, viewMode]);
 
   return (
-    <MaxWContainer className="grid grid-cols-1">
+    <MaxWContainer className="grid grid-cols-1 max-w-full">
       <header>
         <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
@@ -1789,7 +1815,8 @@ export function NotesDroppableContainer({
   }, []);
   const isMobile = getMediaQuery();
   const isGridLayout = viewMode === "grid" || isMobile;
-  const numColumns = useGridColumnCount(isGridLayout);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const numColumns = useContainerColumnCount(gridContainerRef, isGridLayout);
 
   const {
     orderedItems,
@@ -2172,7 +2199,10 @@ export function NotesDroppableContainer({
               });
 
               return (
-                <div className="flex gap-4 items-start w-full max-w-full">
+                <div
+                  ref={gridContainerRef}
+                  className="flex gap-4 items-start w-full max-w-full"
+                >
                   {columnItems.map((column, colIndex) => (
                     <div
                       key={colIndex}

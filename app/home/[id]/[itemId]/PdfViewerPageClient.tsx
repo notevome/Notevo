@@ -783,7 +783,7 @@ function PdfViewerContent({
               isDraggingToolbar && "select-none",
             )}
           >
-            {(!open || isMobile) && (
+            {isMobile && !renderedInPane && (
               <Button
                 variant="outline"
                 size="icon"
