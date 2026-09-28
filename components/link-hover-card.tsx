@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -6,11 +7,10 @@ import {
   PopoverContent,
 } from "@/components/ui/popover";
 import type { EditorInstance } from "novel";
-import { Check, Copy, Globe } from "lucide-react";
+import { Check, Copy, Globe, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import { Unlink } from "lucide-react";
 
 type LinkHoverCardProps = {
   editor: EditorInstance | null;
@@ -34,11 +34,13 @@ export function LinkHoverCard({
   const [hoveredLink, setHoveredLink] = useState<HoveredLinkState | null>(null);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+
   const hoveredAnchorRef = useRef<HTMLAnchorElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
   const isPinnedRef = useRef(false);
+
   const clearHideTimer = useCallback(() => {
     if (hideTimerRef.current !== null) {
       window.clearTimeout(hideTimerRef.current);
@@ -100,7 +102,6 @@ export function LinkHoverCard({
 
   useEffect(() => {
     setMounted(true);
-
     return () => {
       setMounted(false);
       clearHideTimer();
@@ -117,6 +118,8 @@ export function LinkHoverCard({
     const editorElement = editor.view.dom;
 
     const handleMouseOver = (event: MouseEvent) => {
+      if (isPinnedRef.current) return;
+
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
 
@@ -129,6 +132,8 @@ export function LinkHoverCard({
     };
 
     const handleMouseOut = (event: MouseEvent) => {
+      if (isPinnedRef.current) return;
+
       const target = event.target;
       if (!(target instanceof HTMLElement)) return;
 
