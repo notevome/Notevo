@@ -25,11 +25,20 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ShortcutBadge } from "@/components/ui/shortcut-badge";
 import { cn } from "@/lib/utils";
 import { parseSlug } from "@/lib/parseSlug";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import NoteSettings from "@/components/home-components/NoteSettings";
+import PdfSettings from "@/components/home-components/PdfSettings";
 
 type HomePaneItem =
   | {
@@ -126,9 +135,8 @@ function HomePaneDrawer({
     }
     return undefined;
   }, [params, pathname]);
-  const closeTooltip = useHoverTooltip(400);
-  const collapseTooltip = useHoverTooltip(400);
-  const expandTooltip = useHoverTooltip(400);
+  const collapseTooltip = useHoverTooltip(150);
+  const expandTooltip = useHoverTooltip(150);
 
   const noteDoc = useQuery(
     api.notes.getNoteById,
@@ -303,49 +311,98 @@ function HomePaneDrawer({
           <div className=" w-full flex h-9 shrink-0 items-center justify-between bg-card border-b border-border p-2">
             <div className="flex min-w-0 items-center gap-2 ">
               <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  aria-label="close-pane"
-                  title="Close (Escape)"
-                  onClick={closePane}
-                  {...collapseTooltip.triggerProps}
-                >
-                  <ChevronsRight size={16} />
-                </Button>
-                {fullPageHref ? (
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    aria-label="open-full-page"
-                    title="Open in full page (Ctrl+Enter)"
-                    {...expandTooltip.triggerProps}
+                <TooltipProvider>
+                  <Tooltip
+                    open={collapseTooltip.open}
+                    onOpenChange={collapseTooltip.setOpen}
                   >
-                    <IntentPrefetchLink href={fullPageHref} onClick={closePane}>
-                      <MoveDiagonal2 size={16} />
-                    </IntentPrefetchLink>
-                  </Button>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    aria-label="open-full-page"
-                    title="Open in full page (Ctrl+Enter)"
-                    disabled
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        aria-label="close-pane"
+                        onClick={closePane}
+                        {...collapseTooltip.triggerProps}
+                      >
+                        <ChevronsRight size={16} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="flex items-center gap-1 px-1 py-0.5 text-xs"
+                    >
+                      Close <ShortcutBadge keys="Esc" />
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip
+                    open={expandTooltip.open}
+                    onOpenChange={expandTooltip.setOpen}
                   >
-                    <MoveDiagonal2 size={16} />
-                  </Button>
-                )}
+                    <TooltipTrigger asChild>
+                      {fullPageHref ? (
+                        <Button
+                          asChild
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label="open-full-page"
+                          {...expandTooltip.triggerProps}
+                        >
+                          <IntentPrefetchLink
+                            href={fullPageHref}
+                            onClick={closePane}
+                          >
+                            <MoveDiagonal2 size={16} />
+                          </IntentPrefetchLink>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label="open-full-page"
+                          disabled
+                        >
+                          <MoveDiagonal2 size={16} />
+                        </Button>
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="flex items-center gap-1 px-1 py-0.5 text-xs"
+                    >
+                      Open in full page <ShortcutBadge keys="Ctrl+Enter" />
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
               <div className="h-4 w-px shrink-0 bg-border" aria-hidden />
               <DrawerTitle className="truncate text-sm font-medium">
                 {getPaneTitle(activeItem)}
               </DrawerTitle>
             </div>
+            {activeItem?.type === "note" && (
+              <NoteSettings
+                noteId={activeItem.id}
+                noteTitle={getPaneTitle(activeItem)}
+                IconVariant="horizontal_icon"
+                ShowWidthOp={false}
+                DropdownMenuContentAlign="end"
+                TooltipContentAlign="end"
+              />
+            )}
+            {activeItem?.type === "pdf" && (
+              <PdfSettings
+                pdfId={activeItem.id}
+                pdfTitle={getPaneTitle(activeItem)}
+                iconVariant="horizontal_icon"
+                dropdownMenuContentAlign="end"
+                tooltipContentAlign="end"
+              />
+            )}
           </div>
           <div
             className={cn(

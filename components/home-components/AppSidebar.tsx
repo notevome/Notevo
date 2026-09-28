@@ -95,6 +95,7 @@ import { FaGithub } from "react-icons/fa6";
 import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
 import { DialogTitle } from "@radix-ui/react-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
@@ -1149,6 +1150,7 @@ const PinnedWhiteboardItem = memo(
     open,
   }: PinnedWhiteboardItemProps) {
     const titleTooltip = useHoverTooltip(400);
+    const { toast } = useToast();
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(
@@ -1274,6 +1276,16 @@ const PinnedWhiteboardItem = memo(
                     <IntentPrefetchLink
                       href={whiteboardHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          toast({
+                            variant: "destructive",
+                            title: "Cannot open in side pane",
+                            description: "Whiteboards cannot be opened in a side pane.",
+                          });
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <ChevronRight
@@ -1482,6 +1494,7 @@ function SidebarLinkFavicon({
 const PinnedLinkItem = memo(
   function PinnedLinkItem({ link, open }: PinnedLinkItemProps) {
     const titleTooltip = useHoverTooltip(400);
+    const { toast } = useToast();
     const [isHovered, setIsHovered] = useState(false);
 
     const displayTitle =
@@ -1523,6 +1536,16 @@ const PinnedLinkItem = memo(
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 flex-grow min-w-0"
+                    onClick={(event) => {
+                      if (event.altKey) {
+                        event.preventDefault();
+                        toast({
+                          variant: "destructive",
+                          title: "Cannot open in side pane",
+                          description: "Links cannot be opened in a side pane.",
+                        });
+                      }
+                    }}
                   >
                     {isHovered ? (
                       <ExternalLink
@@ -1992,6 +2015,17 @@ const WorkspaceItem = memo(
                     <IntentPrefetchLink
                       href={workspaceHref}
                       className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.button === 0 && event.altKey) {
+                          event.preventDefault();
+                          openPane({
+                            type: "workspace",
+                            id: workingSpace._id,
+                            title: workingSpace.name || "Untitled",
+                          });
+                          titleTooltip.hide();
+                        }
+                      }}
                     >
                       {isHovered || isActive ? (
                         <FolderOpen
