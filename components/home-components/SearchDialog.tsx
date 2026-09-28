@@ -32,6 +32,7 @@ import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
 import { useHomePane } from "./HomePaneDrawer";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { ShortcutBadge } from "../ui/shortcut-badge";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 
@@ -520,6 +521,7 @@ export default function SearchDialog({
   const [scrollTop, setScrollTop] = useState(0);
   const [canScroll, setCanScroll] = useState(false);
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
+  const isMobile = useIsMobile();
 
   const prefetchOnce = useCallback(
     (href: string) => {
@@ -657,7 +659,7 @@ export default function SearchDialog({
         ? note.slug
         : `/${note.slug}`
       : "";
-    if (event.altKey) {
+    if (event.altKey && !isMobile) {
       event.preventDefault();
       setOpen(false);
       if (note.kind === "pdf") {
@@ -843,12 +845,12 @@ export default function SearchDialog({
                 </kbd>
                 <p className="text-foreground text-xs">Open</p>
               </span>
-              <span className="flex justify-center items-center gap-2">
+              {!isMobile && <span className="flex justify-center items-center gap-2">
                 <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                   Alt + click
                 </kbd>
                 <p className="text-foreground text-xs">Open in pane</p>
-              </span>
+              </span>}
             </span>
             <span className="flex justify-center items-center gap-2">
               <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">

@@ -39,6 +39,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import NoteSettings from "@/components/home-components/NoteSettings";
 import PdfSettings from "@/components/home-components/PdfSettings";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type HomePaneItem =
   | {
@@ -426,14 +427,20 @@ export const HomePaneProvider = memo(function HomePaneProvider({
   children: ReactNode;
 }) {
   const [activeItem, setActiveItem] = useState<HomePaneItem | null>(null);
+  const isMobile = useIsMobile();
 
   const openPane = useCallback((item: HomePaneItem) => {
+    if (isMobile) return;
     setActiveItem(item);
-  }, []);
+  }, [isMobile]);
 
   const closePane = useCallback(() => {
     setActiveItem(null);
   }, []);
+
+  useEffect(() => {
+    if (isMobile) closePane();
+  }, [isMobile, closePane]);
 
   const value = useMemo(
     () => ({

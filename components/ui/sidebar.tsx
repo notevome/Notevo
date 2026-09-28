@@ -35,10 +35,18 @@ type SidebarContext = {
   setOpen: (open: boolean) => void;
   openMobile: boolean;
   setOpenMobile: (open: boolean) => void;
+  hoverOpen: boolean;
+  setHoverOpen: (open: boolean) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
   sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
+  /** Call when a popup/dropdown inside the sidebar opens. */
+  notifyPopupOpen: () => void;
+  /** Call when a popup/dropdown inside the sidebar closes. */
+  notifyPopupClose: () => void;
+  /** Ref holding the current count of open popups — read synchronously in event handlers. */
+  popupOpenCountRef: React.RefObject<number>;
 };
 
 const SidebarContext = React.createContext<SidebarContext | null>(null);
@@ -73,9 +81,23 @@ const SidebarProvider = React.forwardRef<
   ) => {
     const isMobile = useIsMobile();
     const [openMobile, setOpenMobile] = React.useState(false);
+    const [hoverOpen, setHoverOpen] = React.useState(false);
     const [sidebarWidth, setSidebarWidthState] = React.useState<number | null>(
       null,
     );
+
+    // Tracks how many popups/dropdowns are open inside the sidebar.
+    // Using a ref (not state) so incrementing/decrementing never triggers
+    // a re-render — we only need it as a guard in the mouse-leave handler.
+    const popupOpenCountRef = React.useRef(0);
+
+    const notifyPopupOpen = React.useCallback(() => {
+      popupOpenCountRef.current += 1;
+    }, []);
+
+    const notifyPopupClose = React.useCallback(() => {
+      popupOpenCountRef.current = Math.max(0, popupOpenCountRef.current - 1);
+    }, []);
 
     // On mount, read width from cookie
     React.useEffect(() => {
@@ -121,12 +143,26 @@ const SidebarProvider = React.forwardRef<
     const toggleSidebar = React.useCallback(() => {
       return isMobile
         ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open);
+        : (setHoverOpen(false), setOpen((open) => !open));
     }, [isMobile, setOpen, setOpenMobile]);
+
+    React.useEffect(() => {
+      if (isMobile) setHoverOpen(false);
+    }, [isMobile]);
 
     // Keyboard shortcut
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          if (isMobile) {
+            setOpenMobile(false);
+          } else {
+            setHoverOpen(false);
+            setOpen(false);
+          }
+          return;
+        }
+
         if (
           event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
           (event.metaKey || event.ctrlKey)
@@ -137,7 +173,7 @@ const SidebarProvider = React.forwardRef<
       };
       window.addEventListener("keydown", handleKeyDown);
       return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [toggleSidebar]);
+    }, [isMobile, setOpen, setOpenMobile, toggleSidebar]);
 
     // On mount, read open state from cookie
     React.useEffect(() => {
@@ -164,9 +200,14 @@ const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
+        hoverOpen,
+        setHoverOpen,
         toggleSidebar,
         sidebarWidth: sidebarWidth ?? 0,
         setSidebarWidth,
+        notifyPopupOpen,
+        notifyPopupClose,
+        popupOpenCountRef,
       }),
       [
         state,
@@ -175,9 +216,14 @@ const SidebarProvider = React.forwardRef<
         isMobile,
         openMobile,
         setOpenMobile,
+        hoverOpen,
+        setHoverOpen,
         toggleSidebar,
         sidebarWidth,
         setSidebarWidth,
+        notifyPopupOpen,
+        notifyPopupClose,
+        popupOpenCountRef,
       ],
     );
 
@@ -242,8 +288,12 @@ const Sidebar = React.memo(
         state,
         openMobile,
         setOpenMobile,
+        setOpen,
+        hoverOpen,
+        setHoverOpen,
         sidebarWidth,
         setSidebarWidth,
+        popupOpenCountRef,
       } = useSidebar();
 
       // Refs for resize — no React state used during drag
@@ -254,8 +304,6 @@ const Sidebar = React.memo(
       const sidebarRef = React.useRef<HTMLDivElement>(null);
       // We'll directly mutate the CSS var on this wrapper element
       const wrapperRef = React.useRef<HTMLElement | null>(null);
-
-      // Ref to the spacer div that pushes main content
       const spacerRef = React.useRef<HTMLDivElement>(null);
 
       const handleMouseDown = React.useCallback(
@@ -304,10 +352,8 @@ const Sidebar = React.memo(
             if (sidebarRef.current) {
               sidebarRef.current.style.width = `${newWidth}px`;
             }
-            // Update the spacer div so main content moves in sync
-            if (spacerRef.current) {
+            if (spacerRef.current)
               spacerRef.current.style.width = `${newWidth}px`;
-            }
           });
         };
 
@@ -323,11 +369,7 @@ const Sidebar = React.memo(
           if (wrapperRef.current) {
             wrapperRef.current.removeAttribute("data-resizing");
           }
-          // Reset inline widths so CSS var takes over cleanly
-          if (spacerRef.current) {
-            spacerRef.current.style.width = "";
-          }
-
+          if (spacerRef.current) spacerRef.current.style.width = "";
           // Only now commit final width to React state + cookie (once per drag)
           if (sidebarRef.current) {
             const finalWidth = parseInt(sidebarRef.current.style.width, 10);
@@ -349,17 +391,28 @@ const Sidebar = React.memo(
       const sidebarClasses = React.useMemo(
         () =>
           cn(
-            "duration-150 fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width,opacity] ease-linear md:flex motion-reduce:transition-none",
+            "duration-150 fixed z-40 hidden w-[--sidebar-width] transition-[left,right,width,opacity] ease-linear md:flex motion-reduce:transition-none",
+            hoverOpen || state === "collapsed"
+              ? "top-12 h-[calc(100svh-6rem)]"
+              : "inset-y-0 h-svh",
             side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-            "group-data-[collapsible=offcanvas]:opacity-0 group-data-[collapsible=offcanvas]:pointer-events-none",
-            variant === "floating" || variant === "inset"
-              ? "py-2 px-0.5 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] ",
+              ? state === "expanded" || hoverOpen
+                ? "left-0"
+                : "left-[calc(var(--sidebar-width)*-1)]"
+              : state === "expanded" || hoverOpen
+                ? "right-0"
+                : "right-[calc(var(--sidebar-width)*-1)]",
+            state === "collapsed" &&
+              !hoverOpen &&
+              "pointer-events-none opacity-0",
+            hoverOpen
+              ? "p-0"
+              : variant === "floating" || variant === "inset"
+                ? "py-2 px-0.5 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
+                : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] ",
             className,
           ),
-        [side, variant, collapsible, className],
+        [side, variant, className, state, hoverOpen],
       );
 
       const resizeHandle =
@@ -371,6 +424,31 @@ const Sidebar = React.memo(
             <div className="absolute -right-[1px] top-0 h-full w-px cursor-col-resize bg-gradient-to-t from-transparent from-5% to-95% to-transparent via-50% group-hover/resize:via-primary" />
           </div>
         ) : null;
+
+      const revealSidebar = React.useCallback(() => {
+        if (state === "collapsed") {
+          setHoverOpen(true);
+        }
+      }, [setHoverOpen, state]);
+
+      const openSidebarFromEdge = React.useCallback(() => {
+        setHoverOpen(false);
+        setOpen(true);
+      }, [setHoverOpen, setOpen]);
+
+      const closeMobileAfterNavigation = React.useCallback(
+        (event: React.MouseEvent<HTMLDivElement>) => {
+          const target = event.target as HTMLElement;
+          if (
+            target.closest(
+              'a, [data-sidebar="menu-button"], [data-sidebar="menu-sub-button"]',
+            )
+          ) {
+            setOpenMobile(false);
+          }
+        },
+        [setOpenMobile],
+      );
 
       if (collapsible === "none") {
         return (
@@ -391,9 +469,11 @@ const Sidebar = React.memo(
         return (
           <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
             <SheetContent
+              id="app-sidebar"
               data-sidebar="sidebar"
               data-mobile="true"
-              className="w-[--sidebar-width] p-0 text-sidebar-foreground !border-0 [&>button]:hidden"
+              className="h-[100dvh] w-[85vw] max-w-[--sidebar-width] border-r border-sidebar-border p-0 text-sidebar-foreground shadow-none [&>button]:hidden data-[state=closed]:duration-200 data-[state=open]:duration-200"
+              overlayClassName="bg-black/30 data-[state=closed]:duration-200 data-[state=open]:duration-200"
               style={
                 {
                   "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -401,7 +481,12 @@ const Sidebar = React.memo(
               }
               side={side}
             >
-              <div className="flex h-full w-full flex-col">{children}</div>
+              <div
+                className="flex h-full w-full flex-col"
+                onClick={closeMobileAfterNavigation}
+              >
+                {children}
+              </div>
             </SheetContent>
           </Sheet>
         );
@@ -410,32 +495,52 @@ const Sidebar = React.memo(
       return (
         <div
           ref={ref}
+          id="app-sidebar"
           className="group peer hidden md:block text-sidebar-foreground"
           data-state={state}
+          data-hover={hoverOpen}
           data-collapsible={state === "collapsed" ? collapsible : ""}
           data-variant={variant}
           data-side={side}
         >
           <div
-            ref={spacerRef}
-            className={cn(
-              "duration-150 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear motion-reduce:transition-none",
-              "group-data-[collapsible=offcanvas]:w-0",
-              "group-data-[side=right]:rotate-180",
-              variant === "floating" || variant === "inset"
-                ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-                : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
-            )}
-          />
-          <div ref={sidebarRef} className={sidebarClasses} {...props}>
+            ref={sidebarRef}
+            className={sidebarClasses}
+            onMouseLeave={() => {
+              if (hoverOpen && popupOpenCountRef.current === 0) {
+                setHoverOpen(false);
+              }
+            }}
+            {...props}
+          >
             <div
               data-sidebar="sidebar"
-              className="flex h-full w-full flex-col group-data-[variant=floating]:app-radius-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
+              className="flex h-full w-full flex-col group-data-[variant=floating]:app-radius-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow group-data-[hover=true]:app-radius-lg group-data-[hover=true]:border group-data-[hover=true]:border-sidebar-border group-data-[hover=true]:shadow"
             >
               {children}
               {resizeHandle}
             </div>
           </div>
+          <div
+            ref={spacerRef}
+            className={cn(
+              "duration-150 relative h-svh w-[--sidebar-width] bg-transparent transition-[width] ease-linear motion-reduce:transition-none",
+              "group-data-[collapsible=offcanvas]:w-0",
+              variant === "floating" || variant === "inset"
+                ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+                : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]",
+            )}
+          />
+          {state === "collapsed" && side === "left" && (
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-10 hidden w-3 cursor-e-resize mask-image-gradient-both bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
+              onMouseEnter={revealSidebar}
+              onFocus={openSidebarFromEdge}
+              onClick={openSidebarFromEdge}
+            />
+          )}
         </div>
       );
     },
@@ -444,11 +549,35 @@ const Sidebar = React.memo(
 
 Sidebar.displayName = "Sidebar";
 
+function useSidebarPopupGuard() {
+  const { notifyPopupOpen, notifyPopupClose } = useSidebar();
+  return React.useCallback(
+    (open: boolean) => {
+      if (open) {
+        notifyPopupOpen();
+      } else {
+        notifyPopupClose();
+      }
+    },
+    [notifyPopupOpen, notifyPopupClose],
+  );
+}
+
 const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar, open } = useSidebar();
+  const {
+    open,
+    setOpen,
+    openMobile,
+    setOpenMobile,
+    hoverOpen,
+    setHoverOpen,
+    isMobile,
+  } = useSidebar();
+  const isOpen = isMobile ? openMobile : open || hoverOpen;
+  const isFloatingPreview = !isMobile && hoverOpen;
 
   return (
     <Button
@@ -457,13 +586,30 @@ const SidebarTrigger = React.forwardRef<
       variant="Trigger"
       size="icon"
       className={cn("h-[20px] w-[20px] text-primary", className)}
+      aria-controls="app-sidebar"
+      aria-expanded={isOpen}
+      aria-label={
+        isFloatingPreview
+          ? "Open sidebar in the layout"
+          : isOpen
+            ? "Close sidebar"
+            : "Open sidebar"
+      }
       onClick={(event) => {
         onClick?.(event);
-        toggleSidebar();
+        if (isMobile) {
+          setOpenMobile(!isOpen);
+        } else if (hoverOpen) {
+          setHoverOpen(false);
+          setOpen(true);
+        } else {
+          setHoverOpen(false);
+          setOpen(!isOpen);
+        }
       }}
       {...props}
     >
-      {open ? <PanelLeftClose /> : <PanelLeftOpen />}
+      {isFloatingPreview || !isOpen ? <PanelLeftOpen /> : <PanelLeftClose />}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );
@@ -946,4 +1092,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  useSidebarPopupGuard,
 };

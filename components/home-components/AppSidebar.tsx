@@ -38,6 +38,7 @@ import {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  useSidebarPopupGuard,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -96,6 +97,7 @@ import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
@@ -137,6 +139,9 @@ function OpenInPaneButton({
   onOpen: () => void;
 }) {
   const tooltip = useHoverTooltip(100);
+  const isMobile = useIsMobile();
+
+  if (isMobile) return null;
 
   return (
     <Tooltip open={tooltip.open}>
@@ -211,6 +216,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   const [canScrollBottom, setCanScrollBottom] = useState(false);
   const [canScrollTop, setCanScrollTop] = useState(false);
   const scrollElementRef = useRef<HTMLDivElement | null>(null);
+  const popupGuard = useSidebarPopupGuard();
 
   const handleSidebarScroll = useCallback((el: HTMLDivElement | null) => {
     if (!el) return;
@@ -391,7 +397,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                   </>
                 )}
               </Button>
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={popupGuard}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
@@ -2145,6 +2151,7 @@ const UserAccountSection = memo(function UserAccountSection({
   const settingsHref = "/home/settings/profile";
   const isSettingsActive = pathname === settingsHref;
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
+  const popupGuard = useSidebarPopupGuard();
 
   return (
     <SidebarFooter className=" z-50 text-foreground">
@@ -2155,7 +2162,7 @@ const UserAccountSection = memo(function UserAccountSection({
       />
       <SidebarMenu>
         <SidebarMenuItem>
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={popupGuard}>
             <DropdownMenuTrigger asChild>
               {isSigningOut ? (
                 <Button
