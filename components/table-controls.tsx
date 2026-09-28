@@ -391,7 +391,6 @@ export const TableControls = ({ editor }: TableControlsProps) => {
           {highlightColors.map((color) => (
             <button
               key={color.name}
-              title={color.name}
               className="w-6 h-6 app-radius-md border border-border hover:scale-110 transition-transform"
               style={{
                 backgroundColor: color.value || "transparent",
