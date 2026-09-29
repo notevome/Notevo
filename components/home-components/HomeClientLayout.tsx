@@ -140,7 +140,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           className={`scrollbar-gutter-stable min-h-0 flex-1 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent ${
             isPdfRoute || isWhiteboardRoute
               ? "overflow-hidden py-0"
-              : "overflow-y-auto py-16"
+              : "overflow-y-auto py-12"
           }`}
         >
           <motion.div
