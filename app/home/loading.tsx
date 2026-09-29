@@ -64,7 +64,7 @@ function SliderRow({ children }: { children: React.ReactNode }) {
 
 export default function Loading() {
   return (
-    <MaxWContainer className="relative">
+    <MaxWContainer className="relative !max-w-[1200px]">
       {/* Hero Section */}
       <div className="overflow-hidden mb-14">
         <header className="flex flex-col justify-center items-start gap-2 relative">
