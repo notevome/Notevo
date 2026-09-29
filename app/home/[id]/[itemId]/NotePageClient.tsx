@@ -246,6 +246,7 @@ export default function NotePageClient({
       <TailwindAdvancedEditor
         renderedInPane={renderedInPane}
         editorBubblePlacement={false}
+        workingSpaceId={stableNote?.workingSpaceId}
         initialContent={content ?? serverContent}
         onUpdate={(editor) => {
           const updatedContent = editor.getJSON();

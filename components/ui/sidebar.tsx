@@ -154,16 +154,6 @@ const SidebarProvider = React.forwardRef<
     // Keyboard shortcut
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "Escape") {
-          if (isMobile) {
-            setOpenMobile(false);
-          } else {
-            setHoverOpen(false);
-            setOpen(false);
-          }
-          return;
-        }
-
         if (
           event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
           (event.metaKey || event.ctrlKey)

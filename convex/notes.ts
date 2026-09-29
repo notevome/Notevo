@@ -674,3 +674,361 @@ export const getWorkspaceTree = query({
     return targets.filter(Boolean) as NonNullable<(typeof targets)[number]>[];
   },
 });
+
+export const getMentionItems = query({
+  args: {
+    query: v.optional(v.string()),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return [];
+    }
+
+    const normalizedQuery = normalizeSearchText(args.query?.trim());
+    const isSearching = normalizedQuery.length > 0;
+
+    const workspaces = await ctx.db
+      .query("workingSpaces")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    const wsMap = new Map(workspaces.map((ws) => [String(ws._id), ws]));
+
+    const allTables: any[] = [];
+    for (const ws of workspaces) {
+      const tables = await ctx.db
+        .query("notesTables")
+        .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", ws._id))
+        .collect();
+      allTables.push(...tables);
+    }
+    const tableMap = new Map(allTables.map((t) => [String(t._id), t]));
+
+    const rawNotes = await ctx.db
+      .query("notes")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(isSearching ? 60 : 30);
+
+    const rawWhiteboards = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(isSearching ? 40 : 20);
+
+    const rawPdfs = await ctx.db
+      .query("pdfs")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(isSearching ? 40 : 20);
+
+    const rawLinks = await ctx.db
+      .query("links")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(isSearching ? 40 : 20);
+
+    const formatNote = (note: any) => {
+      const ws = note.workingSpaceId
+        ? wsMap.get(String(note.workingSpaceId))
+        : undefined;
+      const table = note.notesTableId
+        ? tableMap.get(String(note.notesTableId))
+        : undefined;
+      const preview = note.preview ?? computeNotePreview(note.body);
+      return {
+        _id: String(note._id),
+        kind: "note" as const,
+        title: note.title || "Untitled note",
+        subtitle: preview
+          ? truncateText(preview, 80)
+          : table?.name
+            ? `In ${table.name}`
+            : undefined,
+        preview: preview,
+        href: `/home/${note.workingSpaceId}/${note.slug || note._id}?id=${note._id}`,
+        tableName: table?.name,
+        workingSpaceId: note.workingSpaceId
+          ? String(note.workingSpaceId)
+          : undefined,
+        workingSpaceName: ws?.name,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
+      };
+    };
+
+    const formatWhiteboard = (board: any) => {
+      const ws = board.workingSpaceId
+        ? wsMap.get(String(board.workingSpaceId))
+        : undefined;
+      const table = board.notesTableId
+        ? tableMap.get(String(board.notesTableId))
+        : undefined;
+      return {
+        _id: String(board._id),
+        kind: "whiteboard" as const,
+        title: board.title || "Untitled whiteboard",
+        subtitle: table?.name ? `In ${table.name}` : "Whiteboard",
+        snapshot: board.snapshot,
+        preview: board.preview,
+        href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+        tableName: table?.name,
+        workingSpaceId: board.workingSpaceId
+          ? String(board.workingSpaceId)
+          : undefined,
+        workingSpaceName: ws?.name,
+        createdAt: board.createdAt,
+        updatedAt: board.updatedAt,
+      };
+    };
+
+    const formatPdf = (pdf: any) => {
+      const ws = pdf.workingSpaceId
+        ? wsMap.get(String(pdf.workingSpaceId))
+        : undefined;
+      const table = pdf.notesTableId
+        ? tableMap.get(String(pdf.notesTableId))
+        : undefined;
+      return {
+        _id: String(pdf._id),
+        kind: "pdf" as const,
+        title: pdf.title || "Untitled PDF",
+        subtitle: table?.name ? `In ${table.name}` : "PDF upload",
+        href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+        tableName: table?.name,
+        workingSpaceId: pdf.workingSpaceId
+          ? String(pdf.workingSpaceId)
+          : undefined,
+        workingSpaceName: ws?.name,
+        createdAt: pdf.createdAt,
+        updatedAt: pdf.updatedAt,
+      };
+    };
+
+    const formatLink = (link: any) => {
+      const ws = link.workingSpaceId
+        ? wsMap.get(String(link.workingSpaceId))
+        : undefined;
+      const table = link.notesTableId
+        ? tableMap.get(String(link.notesTableId))
+        : undefined;
+      const title =
+        link.title ||
+        link.metadata?.authorName ||
+        link.metadata?.siteName ||
+        link.url;
+      return {
+        _id: String(link._id),
+        kind: "link" as const,
+        title: title || "Untitled link",
+        subtitle: link.metadata?.description
+          ? truncateText(link.metadata.description, 80)
+          : link.url,
+        url: link.url,
+        platform: link.platform,
+        metadata: link.metadata,
+        href: link.url,
+        tableName: table?.name,
+        workingSpaceId: link.workingSpaceId
+          ? String(link.workingSpaceId)
+          : undefined,
+        workingSpaceName: ws?.name,
+        createdAt: link.createdAt,
+        updatedAt: link.updatedAt,
+      };
+    };
+
+    let formattedNotes = rawNotes.map(formatNote);
+    let formattedWhiteboards = rawWhiteboards.map(formatWhiteboard);
+    let formattedPdfs = rawPdfs.map(formatPdf);
+    let formattedLinks = rawLinks.map(formatLink);
+
+    if (isSearching) {
+      formattedNotes = formattedNotes.filter(
+        (n) =>
+          normalizeSearchText(n.title).includes(normalizedQuery) ||
+          normalizeSearchText(n.preview).includes(normalizedQuery) ||
+          normalizeSearchText(n.tableName).includes(normalizedQuery),
+      );
+      formattedWhiteboards = formattedWhiteboards.filter(
+        (w) =>
+          normalizeSearchText(w.title).includes(normalizedQuery) ||
+          normalizeSearchText(w.tableName).includes(normalizedQuery),
+      );
+      formattedPdfs = formattedPdfs.filter(
+        (p) =>
+          normalizeSearchText(p.title).includes(normalizedQuery) ||
+          normalizeSearchText(p.tableName).includes(normalizedQuery),
+      );
+      formattedLinks = formattedLinks.filter(
+        (l) =>
+          normalizeSearchText(l.title).includes(normalizedQuery) ||
+          normalizeSearchText(l.subtitle).includes(normalizedQuery) ||
+          normalizeSearchText(l.url).includes(normalizedQuery),
+      );
+    }
+
+    const all = [
+      ...formattedNotes,
+      ...formattedWhiteboards,
+      ...formattedPdfs,
+      ...formattedLinks,
+    ];
+
+    if (args.workingSpaceId) {
+      const targetWs = String(args.workingSpaceId);
+      all.sort((a, b) => {
+        const aMatches = a.workingSpaceId === targetWs ? 1 : 0;
+        const bMatches = b.workingSpaceId === targetWs ? 1 : 0;
+        if (aMatches !== bMatches) return bMatches - aMatches;
+        return (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt);
+      });
+    } else {
+      all.sort(
+        (a, b) => (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt),
+      );
+    }
+
+    return all.slice(0, 30);
+  },
+});
+
+export const resolveHoverItem = query({
+  args: {
+    itemId: v.optional(v.string()),
+    kind: v.optional(v.string()),
+    url: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+
+    let { itemId, kind, url } = args;
+
+    if (!itemId && url) {
+      try {
+        const parsed = new URL(url, "http://localhost");
+        const idParam = parsed.searchParams.get("id");
+        const pdfParam = parsed.searchParams.get("pdfId");
+        const whiteboardParam = parsed.searchParams.get("whiteboardId");
+
+        if (idParam) {
+          itemId = idParam;
+          kind = "note";
+        } else if (pdfParam) {
+          itemId = pdfParam;
+          kind = "pdf";
+        } else if (whiteboardParam) {
+          itemId = whiteboardParam;
+          kind = "whiteboard";
+        }
+      } catch {
+        // ignore url parsing error
+      }
+    }
+
+    if (itemId) {
+      try {
+        const doc = await ctx.db.get(itemId as any);
+        if (doc) {
+          if ("body" in doc || kind === "note") {
+            const note = doc as any;
+            const preview = note.preview ?? computeNotePreview(note.body);
+            return {
+              kind: "note" as const,
+              _id: String(note._id),
+              title: note.title || "Untitled note",
+              preview: preview,
+              createdAt: note.createdAt,
+              updatedAt: note.updatedAt,
+              workingSpaceId: note.workingSpaceId
+                ? String(note.workingSpaceId)
+                : undefined,
+              slug: note.slug,
+              href: `/home/${note.workingSpaceId}/${note.slug || note._id}?id=${note._id}`,
+            };
+          }
+          if ("snapshot" in doc || kind === "whiteboard") {
+            const board = doc as any;
+            return {
+              kind: "whiteboard" as const,
+              _id: String(board._id),
+              title: board.title || "Untitled whiteboard",
+              snapshot: board.snapshot,
+              preview: board.preview,
+              createdAt: board.createdAt,
+              updatedAt: board.updatedAt,
+              workingSpaceId: board.workingSpaceId
+                ? String(board.workingSpaceId)
+                : undefined,
+              href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+            };
+          }
+          if ("storageId" in doc || kind === "pdf") {
+            const pdf = doc as any;
+            return {
+              kind: "pdf" as const,
+              _id: String(pdf._id),
+              title: pdf.title || "Untitled PDF",
+              createdAt: pdf.createdAt,
+              updatedAt: pdf.updatedAt,
+              workingSpaceId: pdf.workingSpaceId
+                ? String(pdf.workingSpaceId)
+                : undefined,
+              href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+            };
+          }
+          if ("platform" in doc || kind === "link") {
+            const link = doc as any;
+            return {
+              kind: "link" as const,
+              _id: String(link._id),
+              title:
+                link.title ||
+                link.metadata?.authorName ||
+                link.metadata?.siteName ||
+                link.url,
+              url: link.url,
+              platform: link.platform,
+              metadata: link.metadata,
+              createdAt: link.createdAt,
+              updatedAt: link.updatedAt,
+              href: link.url,
+            };
+          }
+        }
+      } catch {
+        // doc lookup error
+      }
+    }
+
+    if (url && userId) {
+      const userLink = await ctx.db
+        .query("links")
+        .withIndex("by_userId", (q) => q.eq("userId", userId))
+        .filter((q) => q.eq(q.field("url"), url))
+        .first();
+
+      if (userLink) {
+        return {
+          kind: "link" as const,
+          _id: String(userLink._id),
+          title:
+            userLink.title ||
+            userLink.metadata?.authorName ||
+            userLink.metadata?.siteName ||
+            userLink.url,
+          url: userLink.url,
+          platform: userLink.platform,
+          metadata: userLink.metadata,
+          createdAt: userLink.createdAt,
+          updatedAt: userLink.updatedAt,
+          href: userLink.url,
+        };
+      }
+    }
+
+    return null;
+  },
+});
+

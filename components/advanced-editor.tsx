@@ -38,6 +38,8 @@ import { useMediaQuery } from "react-responsive";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { Plus, X } from "lucide-react";
 import { LinkHoverCard } from "./link-hover-card";
+import { MentionPopup } from "./mention/MentionPopup";
+import type { Id } from "@/convex/_generated/dataModel";
 import {
   Tooltip,
   TooltipContent,
@@ -48,11 +50,13 @@ const TailwindAdvancedEditor = ({
   onUpdate,
   editorBubblePlacement,
   renderedInPane,
+  workingSpaceId,
 }: {
   initialContent: any;
   onUpdate: (editor: EditorInstance) => void;
   editorBubblePlacement: Boolean;
   renderedInPane?: boolean;
+  workingSpaceId?: Id<"workingSpaces">;
 }) => {
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
@@ -185,7 +189,8 @@ const TailwindAdvancedEditor = ({
       },
     }),
     Placeholder.configure({
-      placeholder: "Press '/' for commands, or start writing...",
+      placeholder:
+        "Press '/' for commands,'@' for wiki-links, or start writing...",
       showOnlyWhenEditable: true,
       includeChildren: true,
     }),
@@ -227,12 +232,15 @@ const TailwindAdvancedEditor = ({
           {editorInstance && (
             <>
               <LinkHoverCard editor={editorInstance} disabled={openLink} />
+              <MentionPopup
+                editor={editorInstance}
+                workingSpaceId={workingSpaceId}
+              />
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
                 <div
                   className={`lg:flex items-center justify-center hidden ${!renderedInPane && "mr-5"}`}
                 >
-                  {/* Delete Block */}
                   <Tooltip delayDuration={150} disableHoverableContent>
                     <TooltipTrigger asChild>
                       <button

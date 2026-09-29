@@ -1393,3 +1393,24 @@ hr {
     @apply bg-background text-foreground;
   }
 }
+
+.mention-query-active,
+a.novel-link[data-item-kind] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 0;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  text-decoration: none !important;
+  font-weight: 500;
+  border: 1px solid hsl(var(--border));
+  transition: all 0.15s ease;
+}
+
+a.novel-link[data-item-kind]:hover {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--foreground));
+  text-decoration: none !important;
+}
