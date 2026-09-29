@@ -142,7 +142,7 @@ export default function HomePageClient() {
   }, [viewer]);
 
   return (
-    <MaxWContainer className="relative">
+    <MaxWContainer className="relative max-w-[1300px]">
       <div className="overflow-hidden mb-14">
         <header className="flex flex-col justify-center items-start gap-2 relative">
           <h1 className="text-3xl sm:text-5xl font-bold text-primary">
@@ -247,7 +247,7 @@ function FolderTab({ interactive = false }: { interactive?: boolean }) {
         fill="none"
         strokeWidth="1"
         className={cn(
-          "stroke-border transition-colors duration-300",
+          "stroke-border transition-colors",
           interactive && "group-hover/folder:stroke-muted-foreground/50",
         )}
       />
@@ -472,7 +472,7 @@ function WorkspaceCard({
     <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]">
       <FolderTab interactive />
       <Card
-        className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors duration-300 group-hover/folder:border-muted-foreground/50"
+        className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors group-hover/folder:border-muted-foreground/50"
         style={{ borderTopLeftRadius: 0 }}
       >
         <IntentPrefetchLink
@@ -568,7 +568,7 @@ function NoteCard({ note }: { note: Note }) {
     <IntentPrefetchLink
       href={href}
       className={cn(
-        "group relative overflow-hidden bg-card border transition-colors duration-300 flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
+        "group relative overflow-hidden bg-card border transition-colors flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
         isEmpty
           ? "border-dashed border-border hover:border-muted-foreground/50"
           : "border-border hover:border-muted-foreground/50",
