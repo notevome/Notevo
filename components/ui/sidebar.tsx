@@ -535,7 +535,7 @@ const Sidebar = React.memo(
             <button
               type="button"
               aria-label="Open sidebar"
-              className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-10 hidden w-3 cursor-e-resize mask-image-gradient-both bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
+              className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-50 hidden w-3 cursor-e-resize mask-image-gradient-both bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
               onMouseEnter={revealSidebar}
               onFocus={openSidebarFromEdge}
               onClick={openSidebarFromEdge}
