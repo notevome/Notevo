@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { SidebarHoverHint } from "@/components/ui/sidebar-hover-hint";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -391,7 +392,7 @@ const Sidebar = React.memo(
       const sidebarClasses = React.useMemo(
         () =>
           cn(
-            "duration-150 fixed z-40 hidden w-[--sidebar-width] transition-[left,right,width,opacity] ease-linear md:flex motion-reduce:transition-none",
+            "duration-150 fixed z-40 hidden w-[--sidebar-width] transition-[left,right,width,opacity,height,top] ease-linear md:flex motion-reduce:transition-none",
             hoverOpen || state === "collapsed"
               ? "top-12 h-[calc(100svh-6rem)]"
               : "inset-y-0 h-svh",
@@ -532,13 +533,9 @@ const Sidebar = React.memo(
             )}
           />
           {state === "collapsed" && side === "left" && (
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-50 hidden w-3 cursor-e-resize mask-image-gradient-both bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
-              onMouseEnter={revealSidebar}
-              onFocus={openSidebarFromEdge}
-              onClick={openSidebarFromEdge}
+            <SidebarHoverHint
+              revealSidebar={revealSidebar}
+              openSidebarFromEdge={openSidebarFromEdge}
             />
           )}
         </div>
