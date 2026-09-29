@@ -19,6 +19,7 @@ import { useMediaQuery } from "react-responsive";
 import {
   useState,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useCallback,
   useRef,
@@ -102,39 +103,42 @@ function getMediaQuery() {
   return isMobile;
 }
 
-const GRID_MIN_CARD_WIDTH = 350;
+const GRID_MIN_CARD_WIDTH = 380;
 
-function useContainerColumnCount(
-  containerRef: React.RefObject<HTMLElement | null>,
-  enabled: boolean,
-) {
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
+function useContainerColumnCount(enabled: boolean) {
   const [columns, setColumns] = useState(1);
+  const [containerEl, setContainerEl] = useState<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!enabled) {
-      setColumns(1);
+  const containerRef = useCallback((node: HTMLElement | null) => {
+    setContainerEl(node);
+  }, []);
+
+  useIsomorphicLayoutEffect(() => {
+    if (!enabled || !containerEl) {
       return;
     }
-    const el = containerRef.current;
-    if (!el) return;
 
     const update = (width: number) => {
+      if (!width || width <= 0) return;
       const cols = Math.max(1, Math.floor(width / GRID_MIN_CARD_WIDTH));
-      setColumns(cols);
+      setColumns((prev) => (prev !== cols ? cols : prev));
     };
 
-    update(el.getBoundingClientRect().width);
+    update(containerEl.getBoundingClientRect().width);
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         update(entry.contentRect.width);
       }
     });
-    observer.observe(el);
+    observer.observe(containerEl);
     return () => observer.disconnect();
-  }, [containerRef, enabled]);
+  }, [containerEl, enabled]);
 
-  return columns;
+  return [columns, containerRef] as const;
 }
 
 const getContentPreviewFromBody = (body: any) => {
@@ -227,18 +231,12 @@ function isGenericLinkPlatform(
   );
 }
 
-// A "social" link is one from a platform we can render as an authored post
-// (avatar + name + handle + post content). Anything else is treated as a
-// plain website link (title + Open Graph image).
 function isSocialLinkPlatform(
   platform: LinkPlatform | string | undefined,
 ): boolean {
   return !isGenericLinkPlatform(platform);
 }
 
-// Strips trailing image-size suffixes (e.g. "_200x200", "_400x400",
-// "_normal", "_bigger") so the same photo served at different sizes
-// compares as equal.
 function stripImageSizeSuffix(url: string): string {
   return url.replace(
     /_(?:\d+x\d+|normal|bigger|mini|original)(?=\.[a-zA-Z0-9]+(?:\?.*)?$)/i,
@@ -246,9 +244,6 @@ function stripImageSizeSuffix(url: string): string {
   );
 }
 
-// A post's OG/media thumbnail sometimes just falls back to the author's own
-// avatar (at a different size) when the post has no real image or video.
-// Treat that case as "no thumbnail" so we don't show the person's photo.
 function isAvatarFallbackThumbnail(
   thumbnailUrl: string | undefined,
   avatarUrl: string | undefined,
@@ -1815,8 +1810,7 @@ export function NotesDroppableContainer({
   }, []);
   const isMobile = getMediaQuery();
   const isGridLayout = viewMode === "grid" || isMobile;
-  const gridContainerRef = useRef<HTMLDivElement>(null);
-  const numColumns = useContainerColumnCount(gridContainerRef, isGridLayout);
+  const [numColumns, gridContainerRef] = useContainerColumnCount(isGridLayout);
 
   const {
     orderedItems,
@@ -1839,7 +1833,10 @@ export function NotesDroppableContainer({
       : orderedItems;
 
   return (
-    <div className="grid grid-cols-1 gap-6 w-full max-w-full">
+    <div
+      ref={gridContainerRef}
+      className="grid grid-cols-1 gap-6 w-full max-w-full"
+    >
       <div className="flex flex-wrap gap-y-2 gap-x-4 items-start sm:items-center justify-between sticky -top-7 z-30">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="relative flex-1 min-w-0 md:max-w-md">
@@ -2199,10 +2196,7 @@ export function NotesDroppableContainer({
               });
 
               return (
-                <div
-                  ref={gridContainerRef}
-                  className="flex gap-4 items-start w-full max-w-full"
-                >
+                <div className="flex gap-4 items-start w-full max-w-full">
                   {columnItems.map((column, colIndex) => (
                     <div
                       key={colIndex}
