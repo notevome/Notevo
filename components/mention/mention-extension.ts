@@ -60,6 +60,27 @@ export function dismissMention(view: EditorView) {
 
 const MAX_QUERY_LENGTH = 60;
 
+const MENTION_PLACEHOLDER = "Search notes, PDFs, whiteboards or links…";
+const MENTION_EMPTY_CLASS = "mention-query-empty";
+const PLACEHOLDER_STYLE_ID = "mention-placeholder-style";
+
+function ensurePlaceholderStyle() {
+  if (typeof document === "undefined") return;
+  if (document.getElementById(PLACEHOLDER_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = PLACEHOLDER_STYLE_ID;
+  style.textContent = `
+.mention-query-active.${MENTION_EMPTY_CLASS}::after {
+  content: attr(data-decoration-content);
+  margin-left: 0.4em;
+  opacity: 0.55;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}`;
+  document.head.appendChild(style);
+}
+
 function charAt(doc: any, pos: number): string {
   try {
     return doc.textBetween(pos, pos + 1);
@@ -82,6 +103,10 @@ export const MentionExtension = Extension.create({
         },
       },
     };
+  },
+
+  onCreate() {
+    ensurePlaceholderStyle();
   },
 
   addProseMirrorPlugins() {
@@ -110,7 +135,6 @@ export const MentionExtension = Extension.create({
           });
           if (typedAt !== null) return typedAt;
 
-          // Otherwise keep following the previous "@" through the edit.
           if (prev === null) return null;
           const mapped = tr.mapping.mapResult(prev, -1);
           if (mapped.deleted) return null;
@@ -166,6 +190,8 @@ export const MentionExtension = Extension.create({
         pluginKey: MentionPluginKey,
         decorationTag: "span",
         decorationClass: "mention-query-active",
+        decorationEmptyClass: MENTION_EMPTY_CLASS,
+        decorationContent: MENTION_PLACEHOLDER,
         ...this.options.suggestion,
 
         allow: (props: any) => {

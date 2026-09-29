@@ -32,6 +32,35 @@ import { cacheItem } from "./mention-cache";
 import { LinkFaviconBadge } from "@/components/WorkspacePreviewComponents";
 import { cn } from "@/lib/utils";
 
+const SKELETON_ROWS = [
+  { title: "w-2/3", subtitle: "w-1/2" },
+  { title: "w-3/4", subtitle: "w-2/5" },
+  { title: "w-1/2", subtitle: "w-3/5" },
+];
+
+function MentionSkeleton() {
+  return (
+    <div role="status" aria-label="Loading items" aria-busy="true">
+      {SKELETON_ROWS.map((row, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-2.5 px-2.5 py-2 animate-pulse"
+        >
+          <div className="h-6 w-6 shrink-0 flex items-center justify-center">
+            <div className="h-4 w-4 app-radius-sm bg-muted" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <div className={cn("h-3 app-radius-sm bg-muted", row.title)} />
+            <div
+              className={cn("h-2.5 app-radius-sm bg-muted/70", row.subtitle)}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function HighlightText({ text, query }: { text: string; query?: string }) {
   const trimmedQuery = query?.trim();
   if (!trimmedQuery) return <>{text}</>;
@@ -260,21 +289,6 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
       onMouseDown={(e) => e.preventDefault()} // Prevent editor blur
     >
       <div className="p-2 border-b border-border bg-muted/30 space-y-1.5">
-        <div className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground">
-          <Search className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
-          <span className="font-medium text-foreground">
-            {query ? (
-              <>
-                Searching for &quot;
-                <HighlightText text={query} query={query} />
-                &quot;
-              </>
-            ) : (
-              "Link to note, pdf, whiteboard..."
-            )}
-          </span>
-        </div>
-
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[11px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {(
             [
@@ -307,9 +321,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
         className="max-h-60 overflow-y-auto p-1.5 space-y-0.5 scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-button]:hidden"
       >
         {items === undefined ? (
-          <div className="py-6 text-center text-xs text-muted-foreground animate-pulse">
-            Loading items...
-          </div>
+          <MentionSkeleton />
         ) : filteredItems.length === 0 ? (
           <div className="py-6 text-center text-xs text-muted-foreground">
             {query ? `No items found matching "${query}"` : "No items found"}
