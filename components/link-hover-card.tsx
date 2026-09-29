@@ -1,16 +1,21 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover";
 import type { EditorInstance } from "novel";
-import { Check, Copy, Globe, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@/cache/useQuery";
+import { api } from "@/convex/_generated/api";
+import {
+  ItemHoverCardContent,
+  type ResolvedHoverItem,
+} from "@/components/item-hover-card-content";
+import { cacheItem, getCachedItem } from "@/components/mention/mention-cache";
 
 type LinkHoverCardProps = {
   editor: EditorInstance | null;
@@ -19,95 +24,136 @@ type LinkHoverCardProps = {
 
 type HoveredLinkState = {
   href: string;
-  top: number;
-  left: number;
+  itemId?: string;
+  kind?: "note" | "whiteboard" | "pdf" | "link";
+  rect: { top: number; left: number; width: number; height: number };
+  pinned: boolean;
 };
 
-const HIDE_DELAY_MS = 0;
-const COPY_FEEDBACK_MS = 1600;
-const CARD_WIDTH_PX = 320;
+const HOVER_INTENT_MS = 50;
+
+const LINK_SELECTOR = "a[href], [data-item-id]";
+
+function findLinkElement(target: EventTarget | null): HTMLElement | null {
+  if (!(target instanceof Element)) return null;
+  const el = target.closest(LINK_SELECTOR);
+  return el instanceof HTMLElement ? el : null;
+}
+
+function getElementHref(el: HTMLElement): string {
+  if (el instanceof HTMLAnchorElement) {
+    return el.href || el.getAttribute("href") || "";
+  }
+  return el.getAttribute("href") || el.getAttribute("data-href") || "";
+}
+
+function HoverCardDataResolver({
+  hoveredLink,
+  onUnlink,
+  canUnlink,
+}: {
+  hoveredLink: HoveredLinkState;
+  onUnlink: () => void;
+  canUnlink: boolean;
+}) {
+  const cached =
+    getCachedItem(hoveredLink.itemId) || getCachedItem(hoveredLink.href);
+
+  const shouldQuery = hoveredLink.pinned || !cached;
+
+  const queryResult = useQuery(
+    api.notes.resolveHoverItem,
+    shouldQuery && (hoveredLink.itemId || hoveredLink.href)
+      ? {
+          itemId: hoveredLink.itemId,
+          kind: hoveredLink.kind,
+          url: hoveredLink.href,
+        }
+      : "skip",
+  );
+
+  useEffect(() => {
+    if (queryResult) {
+      cacheItem(queryResult as ResolvedHoverItem);
+    }
+  }, [queryResult]);
+
+  const resolvedItem =
+    (queryResult as ResolvedHoverItem | null) || cached || null;
+
+  return (
+    <ItemHoverCardContent
+      item={resolvedItem}
+      fallbackUrl={hoveredLink.href}
+      onUnlink={onUnlink}
+      canUnlink={canUnlink}
+    />
+  );
+}
 
 export function LinkHoverCard({
   editor,
   disabled = false,
 }: LinkHoverCardProps) {
+  const router = useRouter();
   const [hoveredLink, setHoveredLink] = useState<HoveredLinkState | null>(null);
-  const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const hoveredAnchorRef = useRef<HTMLAnchorElement | null>(null);
+  const hoveredAnchorRef = useRef<HTMLElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
-  const hideTimerRef = useRef<number | null>(null);
-  const copiedTimerRef = useRef<number | null>(null);
   const isPinnedRef = useRef(false);
+  const intentTimerRef = useRef<number | null>(null);
 
-  const clearHideTimer = useCallback(() => {
-    if (hideTimerRef.current !== null) {
-      window.clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  }, []);
-
-  const clearCopiedTimer = useCallback(() => {
-    if (copiedTimerRef.current !== null) {
-      window.clearTimeout(copiedTimerRef.current);
-      copiedTimerRef.current = null;
+  const clearIntentTimer = useCallback(() => {
+    if (intentTimerRef.current !== null) {
+      window.clearTimeout(intentTimerRef.current);
+      intentTimerRef.current = null;
     }
   }, []);
 
   const hideCard = useCallback(() => {
-    clearHideTimer();
+    clearIntentTimer();
     isPinnedRef.current = false;
     hoveredAnchorRef.current = null;
-    setCopied(false);
     setHoveredLink(null);
-  }, [clearHideTimer]);
+  }, [clearIntentTimer]);
 
-  const scheduleHide = useCallback(() => {
-    if (isPinnedRef.current) return;
-    clearHideTimer();
-    hideTimerRef.current = window.setTimeout(() => {
-      hoveredAnchorRef.current = null;
-      setCopied(false);
-      setHoveredLink(null);
-    }, HIDE_DELAY_MS);
-  }, [clearHideTimer]);
+  const showCard = useCallback(
+    (anchor: HTMLElement, pinned: boolean) => {
+      const box = anchor.getBoundingClientRect();
+      const href = getElementHref(anchor);
 
-  const updateCardPosition = useCallback((anchor: HTMLAnchorElement) => {
-    const rect = anchor.getBoundingClientRect();
-    const maxLeft = Math.max(12, window.innerWidth - CARD_WIDTH_PX - 12);
+      if (pinned && href) {
+        try {
+          const parsed = new URL(href, window.location.origin);
+          if (parsed.origin === window.location.origin) {
+            router.prefetch(parsed.pathname + parsed.search);
+          }
+        } catch {
+          // ignore
+        }
+      }
 
-    setHoveredLink({
-      href: anchor.href,
-      top: Math.min(rect.bottom + 10, window.innerHeight - 72),
-      left: Math.min(Math.max(rect.left, 12), maxLeft),
-    });
-  }, []);
-
-  const handleCopy = useCallback(async () => {
-    if (!hoveredLink?.href) return;
-
-    try {
-      await navigator.clipboard.writeText(hoveredLink.href);
-      setCopied(true);
-      clearCopiedTimer();
-      copiedTimerRef.current = window.setTimeout(() => {
-        setCopied(false);
-      }, COPY_FEEDBACK_MS);
-      toast.success("Link copied");
-    } catch {
-      toast.error("Could not copy link");
-    }
-  }, [clearCopiedTimer, hoveredLink?.href]);
+      setHoveredLink({
+        href,
+        itemId: anchor.getAttribute("data-item-id") || undefined,
+        kind: (anchor.getAttribute("data-item-kind") as any) || undefined,
+        rect: {
+          top: box.top,
+          left: box.left,
+          width: box.width,
+          height: box.height,
+        },
+        pinned,
+      });
+    },
+    [router],
+  );
 
   useEffect(() => {
     setMounted(true);
-    return () => {
-      setMounted(false);
-      clearHideTimer();
-      clearCopiedTimer();
-    };
-  }, [clearCopiedTimer, clearHideTimer]);
+    return () => setMounted(false);
+  }, []);
 
   useEffect(() => {
     if (!editor || disabled) {
@@ -120,48 +166,49 @@ export function LinkHoverCard({
     const handleMouseOver = (event: MouseEvent) => {
       if (isPinnedRef.current) return;
 
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
+      const anchor = findLinkElement(event.target);
+      if (!anchor || !editorElement.contains(anchor)) return;
+      if (hoveredAnchorRef.current === anchor) return;
 
-      const anchor = target.closest("a.novel-link");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
-
-      clearHideTimer();
+      clearIntentTimer();
       hoveredAnchorRef.current = anchor;
-      updateCardPosition(anchor);
+      intentTimerRef.current = window.setTimeout(() => {
+        intentTimerRef.current = null;
+        if (hoveredAnchorRef.current === anchor && !isPinnedRef.current) {
+          showCard(anchor, false);
+        }
+      }, HOVER_INTENT_MS);
     };
 
     const handleMouseOut = (event: MouseEvent) => {
       if (isPinnedRef.current) return;
 
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
+      const anchor = findLinkElement(event.target);
+      if (!anchor || !editorElement.contains(anchor)) return;
 
-      const anchor = target.closest("a.novel-link");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const related = event.relatedTarget;
+      if (related instanceof Node && anchor.contains(related)) return;
 
-      const relatedTarget = event.relatedTarget;
-      if (
-        relatedTarget instanceof Node &&
-        popoverRef.current?.contains(relatedTarget)
-      ) {
-        return;
-      }
-
-      scheduleHide();
+      hideCard();
     };
 
+    // Click: pin the card immediately so it becomes interactive.
     const handleClick = (event: MouseEvent) => {
-      const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
+      const anchor = findLinkElement(event.target);
+      if (!anchor || !editorElement.contains(anchor)) return;
 
-      const anchor = target.closest("a.novel-link");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
+      if (event.ctrlKey || event.metaKey) {
+        const href = getElementHref(anchor);
+        if (href) {
+          window.open(href, "_blank", "noopener,noreferrer");
+          return;
+        }
+      }
 
-      clearHideTimer();
+      clearIntentTimer();
       isPinnedRef.current = true;
       hoveredAnchorRef.current = anchor;
-      updateCardPosition(anchor);
+      showCard(anchor, true);
     };
 
     const handleDocumentMouseDown = (event: MouseEvent) => {
@@ -176,17 +223,14 @@ export function LinkHoverCard({
       hideCard();
     };
 
-    const handleViewportChange = () => {
-      if (!hoveredAnchorRef.current) return;
-      updateCardPosition(hoveredAnchorRef.current);
+    const handleResize = () => {
+      if (!hoveredAnchorRef.current || !isPinnedRef.current) return;
+      showCard(hoveredAnchorRef.current, true);
     };
 
     const handleScroll = () => {
-      if (isPinnedRef.current) {
-        hideCard();
-        return;
-      }
-      handleViewportChange();
+      if (!hoveredAnchorRef.current && intentTimerRef.current === null) return;
+      hideCard();
     };
 
     const handleEscape = (event: KeyboardEvent) => {
@@ -200,7 +244,7 @@ export function LinkHoverCard({
     editorElement.addEventListener("click", handleClick);
     document.addEventListener("mousedown", handleDocumentMouseDown, true);
     window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleViewportChange);
+    window.addEventListener("resize", handleResize);
     window.addEventListener("keydown", handleEscape);
 
     return () => {
@@ -209,22 +253,30 @@ export function LinkHoverCard({
       editorElement.removeEventListener("click", handleClick);
       document.removeEventListener("mousedown", handleDocumentMouseDown, true);
       window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleViewportChange);
+      window.removeEventListener("resize", handleResize);
       window.removeEventListener("keydown", handleEscape);
-      clearHideTimer();
+      clearIntentTimer();
     };
-  }, [
-    clearHideTimer,
-    disabled,
-    editor,
-    hideCard,
-    scheduleHide,
-    updateCardPosition,
-  ]);
+  }, [clearIntentTimer, disabled, editor, hideCard, showCard]);
 
   if (!mounted || !hoveredLink || disabled) {
     return null;
   }
+
+  const handleUnlink = () => {
+    if (!editor || !hoveredAnchorRef.current) return;
+
+    const pos = editor.view.posAtDOM(hoveredAnchorRef.current, 0);
+
+    editor
+      .chain()
+      .setTextSelection(pos)
+      .extendMarkRange("link")
+      .unsetLink()
+      .run();
+
+    hideCard();
+  };
 
   return (
     <Popover open modal={false}>
@@ -232,10 +284,12 @@ export function LinkHoverCard({
         <PopoverAnchor asChild>
           <div
             aria-hidden="true"
-            className="fixed h-0 w-0 pointer-events-none"
+            className="fixed pointer-events-none"
             style={{
-              top: hoveredLink.top,
-              left: hoveredLink.left,
+              top: hoveredLink.rect.top,
+              left: hoveredLink.rect.left,
+              width: hoveredLink.rect.width,
+              height: hoveredLink.rect.height,
             }}
           />
         </PopoverAnchor>,
@@ -245,60 +299,19 @@ export function LinkHoverCard({
         ref={popoverRef}
         align="start"
         side="bottom"
-        sideOffset={0}
-        className="z-[10002] flex w-[300px] items-center app-radius-xl border-border bg-muted p-0 text-popover-foreground"
+        sideOffset={8}
+        collisionPadding={12}
+        className={`z-[10002] w-auto max-w-[420px] p-0 border-0 bg-transparent shadow-none ${
+          hoveredLink.pinned ? "" : "pointer-events-none"
+        }`}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
-        onMouseEnter={clearHideTimer}
-        onMouseLeave={scheduleHide}
       >
-        <a
-          href={hoveredLink.href}
-          target="_blank"
-          rel="noreferrer noopener"
-          className="flex min-w-0 flex-1 items-center gap-1.5 app-radius-lg pl-2 py-0 text-xs text-muted-foreground transition-colors hover:text-foreground"
-          onMouseDown={(event) => event.stopPropagation()}
-        >
-          <Globe className="h-3.5 w-3.5 shrink-0" />
-          <span className="truncate">{hoveredLink.href}</span>
-        </a>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-8 px-2 text-xs"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={handleCopy}
-        >
-          {copied ? (
-            <Check className="h-3.5 w-3.5" />
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
-          )}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-8 px-2 text-xs !app-radius-none"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => {
-            if (!editor || !hoveredAnchorRef.current) return;
-
-            const pos = editor.view.posAtDOM(hoveredAnchorRef.current, 0);
-
-            editor
-              .chain()
-              .setTextSelection(pos)
-              .extendMarkRange("link")
-              .unsetLink()
-              .run();
-
-            hideCard();
-          }}
-        >
-          <Unlink className="h-3.5 w-3.5" />
-        </Button>
+        <HoverCardDataResolver
+          hoveredLink={hoveredLink}
+          onUnlink={handleUnlink}
+          canUnlink={editor?.isEditable ?? true}
+        />
       </PopoverContent>
     </Popover>
   );

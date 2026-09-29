@@ -34,10 +34,41 @@ import { ReactNodeViewRenderer } from "@tiptap/react";
 import { CodeBlockComponent } from "./code-block-component";
 import TextAlign from "@tiptap/extension-text-align";
 import { ToggleAction } from "./toggle-action-node";
+import { MentionExtension } from "./mention/mention-extension";
 
 const aiHighlight = AIHighlight;
 
-const tiptapLink = TiptapLink.configure({
+const tiptapLink = TiptapLink.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      "data-item-id": {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-item-id"),
+        renderHTML: (attributes) => {
+          if (!attributes["data-item-id"]) return {};
+          return { "data-item-id": attributes["data-item-id"] };
+        },
+      },
+      "data-item-kind": {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-item-kind"),
+        renderHTML: (attributes) => {
+          if (!attributes["data-item-kind"]) return {};
+          return { "data-item-kind": attributes["data-item-kind"] };
+        },
+      },
+      "data-item-title": {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-item-title"),
+        renderHTML: (attributes) => {
+          if (!attributes["data-item-title"]) return {};
+          return { "data-item-title": attributes["data-item-title"] };
+        },
+      },
+    };
+  },
+}).configure({
   openOnClick: false,
   HTMLAttributes: {
     class: cx(
@@ -261,4 +292,5 @@ export const defaultExtensions = [
   TipTapExtensionTableHeader,
   textAlign,
   ToggleAction,
+  MentionExtension,
 ];
