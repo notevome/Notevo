@@ -424,12 +424,10 @@ const TailwindAdvancedEditor = ({
           </EditorContent>
         </div>
       </EditorRoot>
-      {/* Compact Floating ToC */}
       {!isMobile && (
         <CompactFloatingToC items={items} editor={editorInstance} />
       )}
 
-      {/* Plus button block-insert dropdown */}
       {plusMenuOpen && editorInstance && (
         <div
           ref={plusMenuRef}
@@ -437,7 +435,7 @@ const TailwindAdvancedEditor = ({
             position: "fixed",
             left: plusMenuPos.x,
             top: plusMenuPos.y,
-            zIndex: 9999,
+            zIndex: 60000,
           }}
           className="relative w-64 max-h-[330px] overflow-y-auto app-radius-lg border border-border bg-muted px-1 py-1 shadow-lg scroll-smooth scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent"
         >
