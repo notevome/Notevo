@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
 import {
   FileText,
   File,
@@ -27,6 +27,92 @@ import {
 } from "@/components/WorkspacePreviewComponents";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+function ThumbnailFrame({
+  src,
+  children,
+}: {
+  src?: string;
+  children: ReactNode;
+}) {
+  const [ready, setReady] = useState(!src);
+
+  useEffect(() => {
+    if (!src) {
+      setReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    const done = () => {
+      if (!cancelled) setReady(true);
+    };
+
+    const img = new window.Image();
+    img.onload = done;
+    img.onerror = done;
+    img.src = src;
+    if (img.complete) done();
+
+    const timer = window.setTimeout(done, 4000);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [src]);
+
+  return (
+    <div className="relative aspect-video w-full overflow-hidden app-radius-md bg-muted">
+      {!ready && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 animate-pulse bg-muted-foreground/10"
+        />
+      )}
+      <div className="absolute inset-0 transition-opacity duration-200">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function HoverCardSkeleton({
+  kind,
+}: {
+  kind?: "note" | "whiteboard" | "pdf" | "link";
+}) {
+  const isNote = kind === "note";
+  return (
+    <div
+      aria-busy="true"
+      className={cn(
+        "flex flex-col max-w-[90vw] overflow-hidden app-radius-xl border border-border bg-card ",
+        isNote ? "w-[360px]" : "w-[380px]",
+      )}
+    >
+      <div className="p-2 border-b border-border animate-pulse">
+        <div className="flex items-start gap-2">
+          <div className="h-6 w-6 shrink-0 mt-0.5 app-radius-md bg-muted" />
+          <div className="flex-1 space-y-1.5 pt-1">
+            <div className="h-3 w-2/3 app-radius-sm bg-muted" />
+            <div className="h-2.5 w-1/3 app-radius-sm bg-muted/70" />
+          </div>
+        </div>
+      </div>
+      <div className="p-2 space-y-3 animate-pulse">
+        <div className="space-y-1.5">
+          <div className="h-2.5 w-full app-radius-sm bg-muted/70" />
+          <div className="h-2.5 w-full app-radius-sm bg-muted/70" />
+          <div className="h-2.5 w-3/4 app-radius-sm bg-muted/70" />
+        </div>
+        {!isNote && (
+          <div className="aspect-video w-full app-radius-md bg-muted" />
+        )}
+      </div>
+    </div>
+  );
+}
 
 export interface ResolvedHoverItem {
   kind: "note" | "whiteboard" | "pdf" | "link";
@@ -471,9 +557,13 @@ export function ItemHoverCardContent({
           </p>
         )}
 
-        {(hasRealThumbnail || !isSocial) && (
+        {hasRealThumbnail ? (
+          <ThumbnailFrame src={item.metadata?.thumbnailUrl}>
+            <LinkThumbnail link={linkObj} showFaviconBadge />
+          </ThumbnailFrame>
+        ) : !isSocial ? (
           <LinkThumbnail link={linkObj} showFaviconBadge />
-        )}
+        ) : null}
       </div>
     </div>
   );

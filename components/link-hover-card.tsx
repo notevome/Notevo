@@ -13,6 +13,7 @@ import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import {
   ItemHoverCardContent,
+  HoverCardSkeleton,
   type ResolvedHoverItem,
 } from "@/components/item-hover-card-content";
 import { cacheItem, getCachedItem } from "@/components/mention/mention-cache";
@@ -80,6 +81,10 @@ function HoverCardDataResolver({
 
   const resolvedItem =
     (queryResult as ResolvedHoverItem | null) || cached || null;
+
+  if (!resolvedItem && shouldQuery && queryResult === undefined) {
+    return <HoverCardSkeleton kind={hoveredLink.kind} />;
+  }
 
   return (
     <ItemHoverCardContent
