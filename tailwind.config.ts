@@ -39,6 +39,16 @@ export default {
       "2xl": "1536px",
     },
     extend: {
+      // Push Tailwind layers far above Tiptap's drag handle.
+      // Negative classes (-z-10 etc.) are generated from these keys too.
+      zIndex: {
+        "0": "0",
+        "10": "10000",
+        "20": "20000",
+        "30": "30000",
+        "40": "40000",
+        "50": "50000",
+      },
       animation: {
         scroll:
           "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
