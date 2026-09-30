@@ -283,7 +283,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
         position: "fixed",
         top,
         left,
-        zIndex: 10005,
+        zIndex: 700000,
       }}
       className="w-[360px] max-w-[92vw] overflow-hidden app-radius-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100"
       onMouseDown={(e) => e.preventDefault()} // Prevent editor blur

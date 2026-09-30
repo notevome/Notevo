@@ -306,7 +306,7 @@ export function LinkHoverCard({
         side="bottom"
         sideOffset={8}
         collisionPadding={12}
-        className={`z-[10002] w-auto max-w-[420px] p-0 border-0 bg-transparent shadow-none ${
+        className={`z-[60000] w-auto max-w-[420px] p-0 border-0 bg-transparent shadow-none ${
           hoveredLink.pinned ? "" : "pointer-events-none"
         }`}
         onOpenAutoFocus={(event) => event.preventDefault()}
