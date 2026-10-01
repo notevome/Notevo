@@ -10,7 +10,11 @@ import {
   ChevronRight,
   ChevronDown,
   Link2,
+  Globe,
+  Layers,
   PanelTop,
+  PenTool,
+  StickyNote,
   X,
   Filter,
 } from "lucide-react";
@@ -192,19 +196,61 @@ type ContentFilter =
 
 type FilterIconComponent = (props: { className?: string }) => any;
 
+function BrandIcon({ path, className }: { path: string; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d={path} />
+    </svg>
+  );
+}
+
+const XIcon: FilterIconComponent = ({ className }) => (
+  <BrandIcon
+    className={className}
+    path="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"
+  />
+);
+
+const YouTubeIcon: FilterIconComponent = ({ className }) => (
+  <BrandIcon
+    className={className}
+    path="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
+  />
+);
+
+const InstagramIcon: FilterIconComponent = ({ className }) => (
+  <BrandIcon
+    className={className}
+    path="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"
+  />
+);
+
+const LinkedInIcon: FilterIconComponent = ({ className }) => (
+  <BrandIcon
+    className={className}
+    path="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+  />
+);
+
 const CONTENT_FILTER_OPTIONS: {
   value: ContentFilter;
   label: string;
+  icon: FilterIconComponent;
 }[] = [
-  { value: "all", label: "All" },
-  { value: "note", label: "Notes" },
-  { value: "pdf", label: "PDFs" },
-  { value: "whiteboard", label: "Whiteboards" },
-  { value: "youtube", label: "YouTube" },
-  { value: "x", label: "X" },
-  { value: "instagram", label: "Instagram" },
-  { value: "linkedin", label: "LinkedIn" },
-  { value: "link", label: "Link" },
+  { value: "all", label: "All", icon: Layers },
+  { value: "note", label: "Notes", icon: StickyNote },
+  { value: "pdf", label: "PDFs", icon: FileText },
+  { value: "whiteboard", label: "Whiteboards", icon: PenTool },
+  { value: "youtube", label: "YouTube Videos", icon: YouTubeIcon },
+  { value: "x", label: "X (twitter) Posts", icon: XIcon },
+  { value: "instagram", label: "Instagram Posts", icon: InstagramIcon },
+  { value: "linkedin", label: "LinkedIn Posts", icon: LinkedInIcon },
+  { value: "link", label: "Sites", icon: Globe },
 ];
 
 const GROUPABLE_LINK_FILTERS = new Set<ContentFilter>([
@@ -496,6 +542,48 @@ const STORAGE_KEYS = {
 };
 
 type DropTarget = { id: string; position: "before" | "after" };
+
+// Use the actual card as the drag ghost. Without this the browser drags the
+// <a> inside the card and shows its title + URL as a small text tooltip.
+// We snapshot a clone (taken before React applies the faded "dragging" style)
+// so the ghost looks exactly like the card the user picked up.
+function setCardDragImage(
+  e: {
+    clientX: number;
+    clientY: number;
+    currentTarget: HTMLElement;
+    dataTransfer: DataTransfer;
+  },
+  id: string,
+) {
+  const el = e.currentTarget;
+  const rect = el.getBoundingClientRect();
+
+  // Drop the link's own uri/text payload so dropping elsewhere can't navigate.
+  e.dataTransfer.clearData();
+  e.dataTransfer.setData("text/plain", id);
+  e.dataTransfer.effectAllowed = "move";
+
+  const ghost = el.cloneNode(true) as HTMLElement;
+  ghost.style.position = "fixed";
+  ghost.style.top = "-10000px";
+  ghost.style.left = "-10000px";
+  ghost.style.width = `${rect.width}px`;
+  ghost.style.height = `${rect.height}px`;
+  ghost.style.margin = "0";
+  ghost.style.opacity = "1";
+  ghost.style.transform = "none";
+  ghost.style.pointerEvents = "none";
+  document.body.appendChild(ghost);
+
+  e.dataTransfer.setDragImage(
+    ghost,
+    e.clientX - rect.left,
+    e.clientY - rect.top,
+  );
+  // The browser has captured the image by the next tick.
+  setTimeout(() => ghost.remove(), 0);
+}
 
 function useClientSideOrder<T extends { _id: string }>(
   storageKey: string,
@@ -1959,6 +2047,7 @@ export function NotesDroppableContainer({
                         setSubFilterValue(null);
                       }}
                     >
+                      <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="truncate">{option.label}</span>
                       {isActiveCategory && !subFilterValue ? (
                         <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
@@ -1975,12 +2064,13 @@ export function NotesDroppableContainer({
                         isActiveCategory && !subFilterValue && "bg-muted",
                       )}
                     >
+                      <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                       <span className="truncate">{option.label}</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent className="w-64 max-h-80 overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border">
                       <DropdownMenuItem
                         className={cn(
-                          "gap-2",
+                          "gap-2 px-2.5",
                           isActiveCategory && !subFilterValue && "bg-muted",
                         )}
                         onSelect={() => {
@@ -1988,6 +2078,7 @@ export function NotesDroppableContainer({
                           setSubFilterValue(null);
                         }}
                       >
+                        <option.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
                         <span className="truncate">All {option.label}</span>
                         {isActiveCategory && !subFilterValue ? (
                           <Check className="ml-auto h-3.5 w-3.5 shrink-0" />
@@ -2095,29 +2186,41 @@ export function NotesDroppableContainer({
               const renderItem = (item: (typeof displayItems)[number]) => {
                 const draggableEnabled =
                   !searchQuery.trim() && contentFilter === "all";
+                // List cards are inset with mx-6 md:mx-12 xl:mx-32, so the
+                // placeholder needs the same inset (as padding, so the whole
+                // row stays a valid drop zone) or it spans edge to edge.
+                const dropPlaceholder = (
+                  <div
+                    className={cn(
+                      "w-full shrink-0",
+                      !isGridLayout && "px-6 md:px-12 xl:px-32",
+                    )}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDrop();
+                    }}
+                  >
+                    <div
+                      className="app-radius-md border border-dashed border-muted-foreground/50 bg-muted w-full"
+                      style={{ height: draggedSize?.height ?? 96 }}
+                    />
+                  </div>
+                );
                 return (
                   <Fragment key={item._id}>
                     {dropTarget?.id === item._id &&
-                      dropTarget.position === "before" && (
-                        <div
-                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
-                          style={{ height: draggedSize?.height ?? 96 }}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            handleDrop();
-                          }}
-                        />
-                      )}
+                      dropTarget.position === "before" &&
+                      dropPlaceholder}
                     <div
                       draggable={draggableEnabled}
                       onDragStart={(e) => {
                         const rect = e.currentTarget.getBoundingClientRect();
+                        setCardDragImage(e, item._id);
                         handleDragStart(item._id, {
                           width: rect.width,
                           height: rect.height,
                         });
-                        e.dataTransfer.effectAllowed = "move";
                       }}
                       onDragOver={(e) => handleDragOverItem(e, item._id)}
                       onDrop={(e) => {
@@ -2144,7 +2247,7 @@ export function NotesDroppableContainer({
                         draggableEnabled &&
                           "cursor-grab active:cursor-grabbing",
                         draggingId === item._id &&
-                          "opacity-40 scale-[0.98] transition-transform",
+                          "opacity-70 transition-opacity",
                       )}
                     >
                       {isGridLayout ? (
@@ -2155,26 +2258,19 @@ export function NotesDroppableContainer({
                           searchQuery={searchQuery}
                         />
                       ) : (
-                        <WorkspaceListCard
-                          item={item}
-                          workspaceId={workspaceId}
-                          onDelete={handleItemDelete}
-                          searchQuery={searchQuery}
-                        />
+                        <div className=" mx-6 md:mx-12 xl:mx-32">
+                          <WorkspaceListCard
+                            item={item}
+                            workspaceId={workspaceId}
+                            onDelete={handleItemDelete}
+                            searchQuery={searchQuery}
+                          />
+                        </div>
                       )}
                     </div>
                     {dropTarget?.id === item._id &&
-                      dropTarget.position === "after" && (
-                        <div
-                          className="app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0 w-full"
-                          style={{ height: draggedSize?.height ?? 96 }}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            handleDrop();
-                          }}
-                        />
-                      )}
+                      dropTarget.position === "after" &&
+                      dropPlaceholder}
                   </Fragment>
                 );
               };
@@ -3722,7 +3818,7 @@ function LinkThumbnail({
       {!isPending && !thumbnailUrl && (
         <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
           <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
-          <span>{platformLabel(link.platform) || "Link"}</span>
+          <span>{platformLabel(link.platform) || "Site"}</span>
         </div>
       )}
 
