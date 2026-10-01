@@ -1189,7 +1189,7 @@ function SliderTabsList({
                 {dropTarget?.id === table._id &&
                   dropTarget?.position === "before" && (
                     <div
-                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                       style={{ width: draggedSize?.width ?? 128 }}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
@@ -1202,11 +1202,11 @@ function SliderTabsList({
                   draggable
                   onDragStart={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
+                    setCardDragImage(e, table._id);
                     handleDragStart(table._id, {
                       width: rect.width,
                       height: rect.height,
                     });
-                    e.dataTransfer.effectAllowed = "move";
                   }}
                   onDragOver={(e) => handleDragOverItem(e, table._id)}
                   onDrop={(e) => {
@@ -1216,8 +1216,7 @@ function SliderTabsList({
                   onDragEnd={handleDragEnd}
                   className={cn(
                     "cursor-grab active:cursor-grabbing",
-                    draggingId === table._id &&
-                      "opacity-40 scale-[0.98] transition-transform",
+                    draggingId === table._id && "opacity-70 transition-opacity",
                   )}
                 >
                   <TableTab data-table-id={table._id} table={table} />
@@ -1225,7 +1224,7 @@ function SliderTabsList({
                 {dropTarget?.id === table._id &&
                   dropTarget?.position === "after" && (
                     <div
-                      className="self-stretch app-radius-md border border-dashed border-primary/50 bg-primary/10 shrink-0"
+                      className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                       style={{ width: draggedSize?.width ?? 128 }}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
