@@ -239,7 +239,7 @@ function FolderTab({ interactive = false }: { interactive?: boolean }) {
       width="130"
       height="24"
       viewBox="0 0 130 24"
-      className="relative z-10 -mb-px block shrink-0 self-start"
+      className="relative z-[10] -mb-px block shrink-0 self-start"
     >
       <path d={`${outline} V24 H0 Z`} className="fill-card" stroke="none" />
       <path
@@ -354,7 +354,7 @@ function Slider({
       )}
       {(canScrollRight || canScrollLeft) && (
         <div
-          className={`z-[12] absolute ${child_type === "workSpaceCard" ? "-bottom-7" : "-bottom-1"}  right-0 flex justify-center items-center gap-2`}
+          className={`z-[12] absolute ${child_type === "workSpaceCard" ? "-bottom-5" : "-bottom-0.5"}  right-0 flex justify-center items-center gap-2`}
         >
           <Button
             size="icon"
