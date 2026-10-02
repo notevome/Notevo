@@ -429,10 +429,13 @@ export const HomePaneProvider = memo(function HomePaneProvider({
   const [activeItem, setActiveItem] = useState<HomePaneItem | null>(null);
   const isMobile = useIsMobile();
 
-  const openPane = useCallback((item: HomePaneItem) => {
-    if (isMobile) return;
-    setActiveItem(item);
-  }, [isMobile]);
+  const openPane = useCallback(
+    (item: HomePaneItem) => {
+      if (isMobile) return;
+      setActiveItem(item);
+    },
+    [isMobile],
+  );
 
   const closePane = useCallback(() => {
     setActiveItem(null);

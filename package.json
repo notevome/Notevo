@@ -1,6 +1,6 @@
 {
   "name": "notevo",
-  "version": "v18.1.0-beta",
+  "version": "v18.3.0-beta",
   "private": true,
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",

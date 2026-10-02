@@ -260,7 +260,7 @@ export default function NoteSettings({
           side="bottom"
           align={DropdownMenuContentAlign}
           alignOffset={1}
-          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-[10000]"
+          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground"
         >
           <DropdownMenuGroup className="relative">
             <Label>Rename :</Label>
