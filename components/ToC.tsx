@@ -438,7 +438,7 @@ export const CompactFloatingToC = ({
   }
 
   return (
-    <div className="fixed right-3 top-24 z-40">
+    <div className="fixed right-3 top-24">
       <div
         className={`
           transition-all duration-150 ease-linear px-0.5 border border-solid app-radius-lg bg-background 
