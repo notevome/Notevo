@@ -20,9 +20,9 @@ import type { Id } from "@/convex/_generated/dataModel";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import WorkingSpaceSettings from "@/components/home-components/WorkingSpaceSettings";
 import WorkingSpaceNotFound from "@/components/home-components/WorkingSpaceNotFound";
-import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
+import { buildItemSlug } from "@/lib/slug";
 import { useQuery } from "@/cache/useQuery";
 import {
   Card,
@@ -469,13 +469,17 @@ function WorkspaceCard({
   );
 
   return (
-    <div className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]">
+    <div
+      draggable={false}
+      className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]"
+    >
       <FolderTab interactive />
       <Card
         className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors group-hover/folder:border-muted-foreground/50"
         style={{ borderTopLeftRadius: 0 }}
       >
         <IntentPrefetchLink
+          draggable={false}
           href={`/home/${workspace._id}`}
           aria-label={`Open ${workspace.name || "Untitled"}`}
           className="absolute inset-0 z-[1]"
@@ -562,10 +566,11 @@ function NoteCard({ note }: { note: Note }) {
     : getContentPreviewFromBody(note.body);
 
   const isEmpty = !(note.preview || note.body);
-  const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+  const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
 
   return (
     <IntentPrefetchLink
+      draggable={false}
       href={href}
       className={cn(
         "group relative overflow-hidden bg-card border transition-colors flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",

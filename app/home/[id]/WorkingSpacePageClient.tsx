@@ -36,6 +36,7 @@ import { useQuery } from "@/cache/useQuery";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { z } from "zod";
+import { buildItemSlug } from "@/lib/slug";
 import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
@@ -3127,16 +3128,18 @@ function TimelineMiniCard({
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
   const href = isWhiteboard
-    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${generateSlug(
+    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${buildItemSlug(
         (item as WhiteboardItem).title || "untitled-whiteboard",
-      )}?whiteboardId=${item._id}`
+        item._id,
+      )}`
     : isPdf
-      ? `/home/${(item as PdfItem).workingSpaceId}/${generateSlug(
+      ? `/home/${(item as PdfItem).workingSpaceId}/${buildItemSlug(
           (item as PdfItem).title || "untitled-pdf",
-        )}?pdfId=${item._id}`
+          item._id,
+        )}`
       : isLink
         ? (item as LinkItem).url
-        : `/home/${workspaceId}/${(item as Note).slug}?id=${item._id}`;
+        : `/home/${workspaceId}/${buildItemSlug((item as Note).title || (item as Note).slug, item._id)}`;
 
   const openLink = () => {
     if (isLink) window.open(href, "_blank", "noopener,noreferrer");
@@ -3254,7 +3257,7 @@ function getWorkspaceItemDetails(
     return {
       title: board.title || "Untitled whiteboard",
       subtitle: "",
-      href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+      href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
   if (item.kind === "pdf") {
@@ -3262,7 +3265,7 @@ function getWorkspaceItemDetails(
     return {
       title: pdf.title || "Untitled PDF",
       subtitle: "PDF upload",
-      href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+      href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
     };
   }
   if (item.kind === "link") {
@@ -3283,7 +3286,7 @@ function getWorkspaceItemDetails(
     subtitle: note.preview
       ? parseTiptapContentTruncateText(note.preview, 80)
       : getContentPreviewFromBody(note.body),
-    href: `/home/${workspaceId}/${note.slug}?id=${note._id}`,
+    href: `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
   };
 }
 

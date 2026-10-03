@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useMemo,
 } from "react";
 import {
   SidebarProvider,
@@ -23,6 +24,7 @@ import SearchDialog from "@/components/home-components/SearchDialog";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
 import { parseSlug } from "@/lib/parseSlug";
+import { extractIdFromSlug } from "@/lib/slug";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import PublicNote from "../PublicNote";
@@ -30,6 +32,12 @@ import { motion } from "framer-motion";
 import { NOISE_PNG } from "@/lib/data";
 import { useTheme } from "next-themes";
 import { HomePaneProvider } from "@/components/home-components/HomePaneDrawer";
+import {
+  PendingNoteDraftProvider,
+  usePendingNoteDraftContext,
+} from "@/components/home-components/PendingNoteDraftProvider";
+import PendingNoteDraftPageClient from "@/app/home/[id]/[itemId]/PendingNoteDraftPageClient";
+import { resolveDraftTokenToRender } from "@/lib/pendingNoteDraft";
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
   hide: { ease: "easeInOut" as const, duration: 0 },
@@ -64,12 +72,88 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const searchParams = useSearchParams();
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const homepage = pathname === "/home";
-  const noteid = searchParams.get("id") as Id<"notes">;
-  const pdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
-  const whiteboardId = searchParams.get(
+  const { activeDraftToken, getDraft, finishDraft } =
+    usePendingNoteDraftContext();
+  const rawNoteId = searchParams.get("id") as Id<"notes"> | null;
+  const rawPdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
+  const rawWhiteboardId = searchParams.get(
     "whiteboardId",
   ) as Id<"whiteboards"> | null;
-  const noteTitle = parseSlug(`${pathSegments[2]}`);
+
+  const currentItemSlug =
+    pathSegments.length >= 3 && pathSegments[0] === "home"
+      ? pathSegments[2]
+      : null;
+  const routeDraftToken = currentItemSlug?.startsWith("draft-")
+    ? currentItemSlug.slice("draft-".length)
+    : null;
+  const activeDraft = activeDraftToken ? getDraft(activeDraftToken) : undefined;
+  const slugId = currentItemSlug ? extractIdFromSlug(currentItemSlug) : null;
+  const activeDraftNoteId =
+    activeDraft?.noteId && slugId === String(activeDraft.noteId)
+      ? activeDraft.noteId
+      : null;
+  const promotedNote = useQuery(
+    api.notes.getNoteById,
+    activeDraftNoteId ? { _id: activeDraftNoteId } : "skip",
+  );
+  const draftTokenToRender = resolveDraftTokenToRender({
+    routeDraftToken,
+    activeDraftToken,
+    activeDraftOriginPath: activeDraft?.originPath ?? null,
+    activeDraftNoteId: activeDraftNoteId ? String(activeDraftNoteId) : null,
+    pathname,
+  });
+
+  const draftPromotionState = useMemo(() => {
+    if (!activeDraftToken || !activeDraftNoteId || promotedNote === undefined) {
+      return null;
+    }
+
+    if (pathname === activeDraft?.originPath) {
+      return null;
+    }
+
+    return { token: activeDraftToken };
+  }, [
+    activeDraft?.originPath,
+    activeDraftNoteId,
+    activeDraftToken,
+    pathname,
+    promotedNote,
+  ]);
+
+  useEffect(() => {
+    if (!draftPromotionState) {
+      return;
+    }
+
+    const draft = getDraft(draftPromotionState.token);
+    if (draft) {
+      finishDraft(draftPromotionState.token);
+    }
+  }, [draftPromotionState, finishDraft, getDraft]);
+
+  const detectedItemType = useQuery(
+    api.notes.getItemType,
+    !currentItemSlug?.startsWith("draft-") &&
+      !rawNoteId &&
+      !rawPdfId &&
+      !rawWhiteboardId &&
+      slugId
+      ? { id: slugId }
+      : "skip",
+  );
+
+  const whiteboardId =
+    rawWhiteboardId ||
+    (detectedItemType === "whiteboard" ? (slugId as Id<"whiteboards">) : null);
+  const pdfId =
+    rawPdfId || (detectedItemType === "pdf" ? (slugId as Id<"pdfs">) : null);
+  const noteid =
+    rawNoteId || (detectedItemType === "note" ? (slugId as Id<"notes">) : null);
+
+  const noteTitle = parseSlug(`${pathSegments[2] || ""}`);
   const isPdfRoute = Boolean(pdfId);
   const isWhiteboardRoute = Boolean(whiteboardId);
 
@@ -153,7 +237,14 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
             className="app-radius-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
-          {children}
+          {draftTokenToRender ? (
+            <PendingNoteDraftPageClient
+              key={draftTokenToRender}
+              token={draftTokenToRender}
+            />
+          ) : (
+            children
+          )}
         </div>
         <MobileWarning />
       </main>
@@ -165,11 +256,13 @@ HomeContent.displayName = "homeContent";
 
 const HomeClientLayout = memo(({ children }: { children: ReactNode }) => {
   return (
-    <SidebarProvider>
-      <HomePaneProvider>
-        <HomeContent>{children}</HomeContent>
-      </HomePaneProvider>
-    </SidebarProvider>
+    <PendingNoteDraftProvider>
+      <SidebarProvider>
+        <HomePaneProvider>
+          <HomeContent>{children}</HomeContent>
+        </HomePaneProvider>
+      </SidebarProvider>
+    </PendingNoteDraftProvider>
   );
 });
 

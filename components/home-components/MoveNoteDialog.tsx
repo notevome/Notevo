@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
   ChevronRight,
@@ -17,6 +17,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
 import { cn } from "@/lib/utils";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -64,6 +65,8 @@ export default function MoveNoteDialog({
   note,
 }: MoveNoteDialogProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -183,6 +186,14 @@ export default function MoveNoteDialog({
         targetWorkingSpaceId,
         targetNotesTableId,
       });
+      const currentItemId =
+        searchParams.get("id") ||
+        extractIdFromSlug(pathname.split("/").filter(Boolean).pop());
+      if (currentItemId === String(note._id)) {
+        router.replace(
+          `/home/${result.workingSpaceId}/${buildItemSlug(note.title || result.slug, note._id)}`,
+        );
+      }
       onOpenChange(false);
       toast({
         variant: "default",
@@ -191,7 +202,7 @@ export default function MoveNoteDialog({
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm">
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}/${result.slug}?id=${note._id}`}
+              href={`/home/${result.workingSpaceId}/${buildItemSlug(note.title || result.slug, note._id)}`}
               className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />

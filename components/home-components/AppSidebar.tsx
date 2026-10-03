@@ -49,7 +49,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMutation, insertAtBottomIfLoaded } from "convex/react";
+import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -89,6 +89,7 @@ import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { z } from "zod";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
 import NoteContextMenu from "./NoteContextMenu";
@@ -98,15 +99,15 @@ import { ShortcutBadge } from "../ui/shortcut-badge";
 import { DialogTitle } from "@radix-ui/react-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
 
 interface SidebarHeaderSectionProps {
   getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
   handleCreateNote: (
     workingSpaceId: Id<"workingSpaces">,
     workingSpacesSlug: string,
-  ) => Promise<void>;
+  ) => void;
   handleCreateWorkingSpace: () => Promise<void>;
-  loading: boolean;
 }
 
 const workspaceNameSchema = z
@@ -211,7 +212,6 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   getWorkingSpaces,
   handleCreateNote,
   handleCreateWorkingSpace,
-  loading,
 }: SidebarHeaderSectionProps) {
   const [canScrollBottom, setCanScrollBottom] = useState(false);
   const [canScrollTop, setCanScrollTop] = useState(false);
@@ -365,20 +365,15 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
       )}
       {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
         ? getWorkingSpaces.map((workingSpace) => (
-            <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden ">
+            <div
+              key={workingSpace._id}
+              className="flex h-[36px] p-[2px] w-full items-center overflow-hidden "
+            >
               <Button
-                key={workingSpace._id}
                 className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
-                disabled={loading}
                 onMouseDown={() => void createNoteInWorkspace(workingSpace)}
               >
-                {loading ? (
-                  <>redirecting...</>
-                ) : (
-                  <>
-                    <SquarePen size={16} className=" mt-px" /> New Note
-                  </>
-                )}
+                <SquarePen size={16} className=" mt-px" /> New Note
               </Button>
             </div>
           ))
@@ -386,22 +381,14 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden ">
               <Button
                 className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
-                disabled={loading}
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
-                {loading ? (
-                  <>redirecting...</>
-                ) : (
-                  <>
-                    <SquarePen size={16} className=" mt-px" /> New Note
-                  </>
-                )}
+                <SquarePen size={16} className=" mt-px" /> New Note
               </Button>
               <DropdownMenu onOpenChange={popupGuard}>
                 <DropdownMenuTrigger asChild>
                   <Button
                     className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
-                    disabled={loading}
                     aria-label="select-create-note-workspace"
                   >
                     <ChevronDown size={16} className="font-bold" />
@@ -436,7 +423,6 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                           onSelect={() =>
                             void createNoteInWorkspace(workingSpace)
                           }
-                          disabled={loading}
                         >
                           <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
                           <FolderClosed size="16" />
@@ -546,9 +532,14 @@ const PinnedNoteItem = memo(
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const notePath = `/home/${note.workingSpaceId}/${note.slug}`;
-    const noteHref = `${notePath}?id=${note._id}`;
-    const isActive = pathname === notePath;
+    const noteSlug = buildItemSlug(note.title || note.slug, note._id);
+    const notePath = `/home/${note.workingSpaceId}/${noteSlug}`;
+    const noteHref = notePath;
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const isActive =
+      pathname === notePath ||
+      (pathSegments.length >= 3 &&
+        extractIdFromSlug(pathSegments[2]) === note._id);
 
     const handleContentMouseEnter = useCallback(() => {
       setIsHovered(true);
@@ -595,6 +586,26 @@ const PinnedNoteItem = memo(
             _id: note._id,
             title: trimmedTitle,
           });
+          const currentUrl = new URL(window.location.href);
+          const lastSegment = currentUrl.pathname
+            .split("/")
+            .filter(Boolean)
+            .pop();
+          if (
+            currentUrl.searchParams.get("id") === String(note._id) ||
+            extractIdFromSlug(lastSegment) === String(note._id)
+          ) {
+            const segments = currentUrl.pathname.split("/").filter(Boolean);
+            segments[segments.length - 1] = buildItemSlug(
+              trimmedTitle,
+              note._id,
+            );
+            currentUrl.pathname = `/${segments.join("/")}`;
+            currentUrl.searchParams.delete("id");
+            router.replace(
+              `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
+            );
+          }
           router.refresh();
         } catch (error) {
           console.error("Error updating note title:", error);
@@ -603,7 +614,14 @@ const PinnedNoteItem = memo(
       }
       setIsEditing(false);
       titleTooltip.hide();
-    }, [editedTitle, note.title, note._id, updateNote, titleTooltip.open]);
+    }, [
+      editedTitle,
+      note.title,
+      note._id,
+      updateNote,
+      router,
+      titleTooltip.open,
+    ]);
 
     const handleInputKeyPress = useCallback(
       (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -858,10 +876,14 @@ const PinnedUploadItem = memo(
     const updatePdf = useMutation(api.pdfs.updatePdf);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const pdfSlug = generateSlug(pdf.title || "untitled-pdf");
-    const pdfPath = `/home/${pdf.workingSpaceId}/${pdfSlug}`;
-    const pdfHref = `${pdfPath}?pdfId=${pdf._id}`;
-    const isActive = pathname === pdfPath;
+    const pdfPath = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`;
+    const legacyPdfPath = `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}`;
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const isActive =
+      pathname === pdfPath ||
+      pathname === legacyPdfPath ||
+      extractIdFromSlug(pathSegments[2]) === pdf._id;
+    const pdfHref = pdfPath;
 
     const handleContentMouseEnter = useCallback(() => {
       setIsHovered(true);
@@ -908,6 +930,25 @@ const PinnedUploadItem = memo(
             _id: pdf._id,
             title: trimmedTitle,
           });
+          const currentUrl = new URL(window.location.href);
+          const lastSegment = currentUrl.pathname
+            .split("/")
+            .filter(Boolean)
+            .pop();
+          if (
+            currentUrl.searchParams.get("pdfId") === String(pdf._id) ||
+            extractIdFromSlug(lastSegment) === String(pdf._id)
+          ) {
+            const segments = currentUrl.pathname.split("/");
+            segments[segments.length - 1] = buildItemSlug(
+              trimmedTitle,
+              pdf._id,
+            );
+            currentUrl.pathname = segments.join("/");
+            currentUrl.searchParams.delete("pdfId");
+            window.history.replaceState({}, "", currentUrl.href);
+            document.title = `${trimmedTitle} - Notevo`;
+          }
         } catch (error) {
           console.error("Error updating PDF title:", error);
           setEditedTitle(currentTitle);
@@ -1165,12 +1206,19 @@ const PinnedWhiteboardItem = memo(
     const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    const whiteboardSlug = generateSlug(
+    const whiteboardSlug = buildItemSlug(
       whiteboard.title || "untitled-whiteboard",
+      whiteboard._id,
     );
     const whiteboardPath = `/home/${whiteboard.workingSpaceId}/${whiteboardSlug}`;
-    const whiteboardHref = `${whiteboardPath}?whiteboardId=${whiteboard._id}`;
-    const isActive = pathname === whiteboardPath;
+    const legacyWhiteboardPath = `/home/${whiteboard.workingSpaceId}/${generateSlug(whiteboard.title || "untitled-whiteboard")}`;
+    const whiteboardHref = whiteboardPath;
+    const pathSegments = pathname.split("/").filter(Boolean);
+    const isActive =
+      pathname === whiteboardPath ||
+      pathname === legacyWhiteboardPath ||
+      (pathSegments.length >= 3 &&
+        extractIdFromSlug(pathSegments[2]) === whiteboard._id);
 
     const handleContentMouseEnter = useCallback(() => {
       setIsHovered(true);
@@ -1217,6 +1265,26 @@ const PinnedWhiteboardItem = memo(
             _id: whiteboard._id,
             title: trimmedTitle,
           });
+          const currentUrl = new URL(window.location.href);
+          const lastSegment = currentUrl.pathname
+            .split("/")
+            .filter(Boolean)
+            .pop();
+          if (
+            currentUrl.searchParams.get("whiteboardId") ===
+              String(whiteboard._id) ||
+            extractIdFromSlug(lastSegment) === String(whiteboard._id)
+          ) {
+            const segments = currentUrl.pathname.split("/");
+            segments[segments.length - 1] = buildItemSlug(
+              trimmedTitle,
+              whiteboard._id,
+            );
+            currentUrl.pathname = segments.join("/");
+            currentUrl.searchParams.delete("whiteboardId");
+            window.history.replaceState({}, "", currentUrl.href);
+            document.title = `${trimmedTitle} - Notevo`;
+          }
         } catch (error) {
           console.error("Error updating whiteboard title:", error);
           setEditedTitle(currentTitle);
@@ -1288,7 +1356,8 @@ const PinnedWhiteboardItem = memo(
                           toast({
                             variant: "destructive",
                             title: "Cannot open in side pane",
-                            description: "Whiteboards cannot be opened in a side pane.",
+                            description:
+                              "Whiteboards cannot be opened in a side pane.",
                           });
                         }
                       }}
@@ -2305,6 +2374,7 @@ const AppSidebar = React.memo(function AppSidebar() {
   const { open, isMobile, sidebarWidth } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
+  const { beginNoteDraft } = usePendingNoteDraftContext();
   const createWorkingSpace = useMutation(
     api.workingSpaces.createWorkingSpace,
   ).withOptimisticUpdate((local, args) => {
@@ -2332,32 +2402,6 @@ const AppSidebar = React.memo(function AppSidebar() {
       ] as any);
     }
   });
-  const createNote = useMutation(api.notes.createNote).withOptimisticUpdate(
-    (local, arg) => {
-      const { title, notesTableId, workingSpacesSlug, workingSpaceId } = arg;
-      const now = Date.now();
-      const uuid = crypto.randomUUID();
-      const tempId = `${uuid}-${now}` as any;
-      insertAtBottomIfLoaded({
-        localQueryStore: local,
-        paginatedQuery: api.notes.getNoteByUserId,
-        argsToMatch: {},
-        item: {
-          _id: tempId,
-          _creationTime: now,
-          title: "New Quick Access Notes",
-          body: undefined,
-          slug: "untitled",
-          workingSpaceId,
-          workingSpacesSlug,
-          notesTableId,
-          createdAt: now,
-          updatedAt: now,
-        },
-      });
-    },
-  );
-
   const getWorkingSpaces = useQuery(
     api.workingSpaces.getRecentWorkingSpaces,
     {},
@@ -2393,38 +2437,9 @@ const AppSidebar = React.memo(function AppSidebar() {
   useEffect(() => {
     cleanupOrphanedItems().catch(() => {});
   }, [cleanupOrphanedItems]);
-  const createTable = useMutation(
-    api.notesTables.createTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { workingSpaceId: wsId, name } = args;
-    const now = Date.now();
-    const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as any;
-
-    // Update the getTables query for all workspaces that might be viewing this
-    const currentTables = local.getQuery(api.notesTables.getTables, {
-      workingSpaceId: wsId,
-    });
-    if (currentTables !== undefined) {
-      local.setQuery(api.notesTables.getTables, { workingSpaceId: wsId }, [
-        {
-          _id: tempId,
-          _creationTime: now,
-          name: name || "Untitled",
-          workingSpaceId: wsId,
-          slug: "untitled",
-          createdAt: now,
-          updatedAt: now,
-        },
-        ...currentTables,
-      ]);
-    }
-  });
-
   const { signOut } = useAuthActions();
 
   const [isSigningOut, setIsSigningOut] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   // Scroll-fade tracking
   const sidebarContentRef = useRef<HTMLDivElement | null>(null);
@@ -2505,10 +2520,19 @@ const AppSidebar = React.memo(function AppSidebar() {
   }, [recalcSidebarScroll]);
 
   const ishome = useMemo(() => pathname === "/home", [pathname]);
+  const [hasLoadedSidebarData, setHasLoadedSidebarData] = useState(false);
+
+  useEffect(() => {
+    if (getWorkingSpaces !== undefined && User !== undefined) {
+      setHasLoadedSidebarData(true);
+    }
+  }, [getWorkingSpaces, User]);
 
   const isSidebarLoading = useMemo(
-    () => getWorkingSpaces === undefined || User === undefined,
-    [getWorkingSpaces, User, results, status],
+    () =>
+      !hasLoadedSidebarData &&
+      (getWorkingSpaces === undefined || User === undefined),
+    [getWorkingSpaces, User, hasLoadedSidebarData],
   );
 
   const handleCreateWorkingSpace = useCallback(async () => {
@@ -2520,35 +2544,15 @@ const AppSidebar = React.memo(function AppSidebar() {
   }, [createWorkingSpace]);
 
   const handleCreateNote = useCallback(
-    async (workingSpaceId: any, workingSpacesSlug: string) => {
-      try {
-        setLoading(true);
-        const tableName = "New Quick Access Notes";
-
-        const tableId = await createTable({
-          name: tableName,
-          workingSpaceId: workingSpaceId,
-        });
-
-        const newNoteId = await createNote({
-          workingSpacesSlug: workingSpacesSlug,
-          workingSpaceId: workingSpaceId,
-          title: tableName,
-          notesTableId: tableId,
-        });
-
-        if (newNoteId) {
-          const newNoteUrl = `/home/${workingSpaceId}/${`new-quick-access-notes`}?id=${newNoteId}`;
-          router.push(newNoteUrl);
-        }
-      } catch (error) {
-        console.error("Error creating note:", error);
-        router.push(`/home/${workingSpaceId}`);
-      } finally {
-        setLoading(false);
-      }
+    (workingSpaceId: any, workingSpacesSlug: string) => {
+      const draft = beginNoteDraft({
+        workingSpaceId,
+        workingSpacesSlug,
+        originPath: pathname,
+      });
+      router.push(`/home/${workingSpaceId}/draft-${draft.token}`);
     },
-    [createNote, createTable],
+    [beginNoteDraft, pathname, router],
   );
 
   const handleSignOut = useCallback(async () => {
@@ -2579,7 +2583,6 @@ const AppSidebar = React.memo(function AppSidebar() {
         getWorkingSpaces={getWorkingSpaces}
         handleCreateNote={handleCreateNote}
         handleCreateWorkingSpace={handleCreateWorkingSpace}
-        loading={loading}
       />
 
       <div className="relative flex min-h-0 flex-1 flex-col">

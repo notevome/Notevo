@@ -30,6 +30,7 @@ import {
   usePathname,
   useSearchParams,
 } from "next/navigation";
+import { extractIdFromSlug } from "@/lib/slug";
 interface NoteSettingsSidbarProps {
   noteId: Id<"notes"> | any;
   noteTitle: string | any;
@@ -44,8 +45,8 @@ export default function NoteSettingsSidbar({
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const searchParams = useSearchParams();
-  const realPathName = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${searchParams.get("id")}`;
-  const noteHref = `/home/${pathSegments[1]}/${pathSegments[2]}?id=${noteId}`;
+  const currentNoteId =
+    searchParams.get("id") || extractIdFromSlug(pathSegments[2]);
   const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
@@ -93,7 +94,7 @@ export default function NoteSettingsSidbar({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      if (realPathName === noteHref) {
+      if (currentNoteId === String(noteId)) {
         router.push(`/home/${pathSegments[1]}`);
         await new Promise((resolve) => setTimeout(resolve, 300));
         await deleteNote({ _id: noteId });
@@ -141,7 +142,11 @@ export default function NoteSettingsSidbar({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+          <TooltipContent
+            side="right"
+            sideOffset={5}
+            className="!app-radius-none"
+          >
             {getNote?.favorite ? "Unpin note" : "Pin note"}
           </TooltipContent>
         </Tooltip>

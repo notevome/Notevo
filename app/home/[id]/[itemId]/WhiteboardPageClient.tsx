@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { buildItemSlug } from "@/lib/slug";
 import { useDebouncedCallback } from "use-debounce";
 import { useTheme } from "next-themes";
 import type {
@@ -158,10 +159,26 @@ export default function WhiteboardPageClient({
     if (!whiteboard?.title) return;
     const originalTitle = document.title;
     document.title = `${whiteboard.title} - Notevo Whiteboard`;
+
+    try {
+      const currentUrl = new URL(window.location.href);
+      const segments = currentUrl.pathname.split("/").filter(Boolean);
+      if (segments.length >= 3 && segments[0] === "home") {
+        const expectedSlug = buildItemSlug(whiteboard.title, whiteboardId);
+        if (segments[2] !== expectedSlug) {
+          segments[2] = expectedSlug;
+          currentUrl.pathname = "/" + segments.join("/");
+          window.history.replaceState({}, "", currentUrl.href);
+        }
+      }
+    } catch {
+      // Ignore
+    }
+
     return () => {
       document.title = originalTitle;
     };
-  }, [whiteboard?.title]);
+  }, [whiteboard?.title, whiteboardId]);
 
   useEffect(
     () => () => {

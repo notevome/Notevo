@@ -30,6 +30,7 @@ import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
+import { buildItemSlug } from "@/lib/slug";
 import { useHomePane } from "./HomePaneDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -116,7 +117,7 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
 }
 
 function NoteItem({ note, onClick, isSelected, query, indented = false }: any) {
-  const href = `/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`;
+  const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -160,7 +161,7 @@ function PdfItem({ pdf, onClick, isSelected, query, indented = false }: any) {
       ? pdf.slug
       : `/${pdf.slug}`
     : "";
-  const href = `/home/${pdf.workingSpaceId}${pdfSlug}?pdfId=${pdf._id}`;
+  const href = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || pdf.slug, pdf._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -210,7 +211,7 @@ function WhiteboardItem({
       ? whiteboard.slug
       : `/${whiteboard.slug}`
     : "";
-  const href = `/home/${whiteboard.workingSpaceId}${whiteboardSlug}?whiteboardId=${whiteboard._id}`;
+  const href = `/home/${whiteboard.workingSpaceId}/${buildItemSlug(whiteboard.title || whiteboard.slug, whiteboard._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -607,17 +608,7 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
-    const noteSlug = note.slug
-      ? note.slug.startsWith("/")
-        ? note.slug
-        : `/${note.slug}`
-      : "";
-    const href =
-      note.kind === "pdf"
-        ? `/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`
-        : note.kind === "whiteboard"
-          ? `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`
-          : `/home/${note.workingSpaceId}${noteSlug}?id=${note._id}`;
+    const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
     prefetchOnce(href);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
@@ -654,11 +645,6 @@ export default function SearchDialog({
       window.open(note.url, "_blank", "noopener,noreferrer");
       return;
     }
-    const noteSlug = note.slug
-      ? note.slug.startsWith("/")
-        ? note.slug
-        : `/${note.slug}`
-      : "";
     if (event.altKey && !isMobile) {
       event.preventDefault();
       setOpen(false);
@@ -675,7 +661,7 @@ export default function SearchDialog({
           description: "Whiteboards cannot be opened in a side pane FOR NOW.",
         });
         router.push(
-          `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`,
+          `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
         );
       } else if (note.kind === "note") {
         openPane({
@@ -694,13 +680,17 @@ export default function SearchDialog({
     event.preventDefault();
     setOpen(false);
     if (note.kind === "pdf") {
-      router.push(`/home/${note.workingSpaceId}${noteSlug}?pdfId=${note._id}`);
+      router.push(
+        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+      );
     } else if (note.kind === "whiteboard") {
       router.push(
-        `/home/${note.workingSpaceId}${noteSlug}?whiteboardId=${note._id}`,
+        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
       );
     } else {
-      router.push(`/home/${note.workingSpaceId}/${note.slug}?id=${note._id}`);
+      router.push(
+        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+      );
     }
   };
 
@@ -845,12 +835,14 @@ export default function SearchDialog({
                 </kbd>
                 <p className="text-foreground text-xs">Open</p>
               </span>
-              {!isMobile && <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                  Alt + click
-                </kbd>
-                <p className="text-foreground text-xs">Open in pane</p>
-              </span>}
+              {!isMobile && (
+                <span className="flex justify-center items-center gap-2">
+                  <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                    Alt + click
+                  </kbd>
+                  <p className="text-foreground text-xs">Open in pane</p>
+                </span>
+              )}
             </span>
             <span className="flex justify-center items-center gap-2">
               <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">

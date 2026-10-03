@@ -13,6 +13,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug } from "@/lib/slug";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 const noteMemoryCache = new Map<string, unknown>();
@@ -138,8 +139,9 @@ export default function NotePageClient({
         currentUrl.searchParams.set("paneTitle", nextSlug);
       } else {
         const segments = currentUrl.pathname.split("/");
-        segments[3] = nextSlug;
+        segments[3] = buildItemSlug(trimmedTitle, noteId);
         currentUrl.pathname = segments.join("/");
+        currentUrl.searchParams.delete("id");
       }
 
       window.history.replaceState({}, "", currentUrl.href);

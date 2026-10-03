@@ -3,6 +3,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import NotePageClient from "./NotePageClient";
 import PdfViewerPageClient from "./PdfViewerPageClient";
 import WhiteboardPageClient from "./WhiteboardPageClient";
+import ItemPageClient from "./ItemPageClient";
 
 export default async function ItemPage({
   params,
@@ -36,7 +37,9 @@ export default async function ItemPage({
         : null;
   if (resolvedWhiteboardId) {
     return (
-      <WhiteboardPageClient whiteboardId={resolvedWhiteboardId as Id<"whiteboards">} />
+      <WhiteboardPageClient
+        whiteboardId={resolvedWhiteboardId as Id<"whiteboards">}
+      />
     );
   }
 
@@ -45,11 +48,15 @@ export default async function ItemPage({
       ? id
       : Array.isArray(id)
         ? id[0]
-        : routeSegment;
+        : null;
 
-  if (!resolvedNoteId) {
+  if (resolvedNoteId) {
+    return <NotePageClient noteId={resolvedNoteId as Id<"notes">} />;
+  }
+
+  if (!routeSegment) {
     redirect("/");
   }
 
-  return <NotePageClient noteId={resolvedNoteId as Id<"notes">} />;
+  return <ItemPageClient rawItemId={routeSegment} />;
 }
