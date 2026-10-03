@@ -43,6 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import {
   Tooltip,
   TooltipContent,
@@ -114,7 +115,8 @@ export default function NoteSettings({
   const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const currentNoteId = searchParams.get("id");
+  const currentSlug = pathname.split("/").filter(Boolean).pop();
+  const currentNoteId = searchParams.get("id") || extractIdFromSlug(currentSlug);
   const isViewingThisNote = currentNoteId === noteId;
 
   // Download hook
@@ -167,11 +169,11 @@ export default function NoteSettings({
       await updateNote({ _id: noteId, title: trimmedValue });
 
       if (isViewingThisNote) {
-        const newSlug = generateSlug(trimmedValue);
+        const newSlug = buildItemSlug(trimmedValue, noteId);
         const pathSegments = pathname.split("/");
         pathSegments[pathSegments.length - 1] = newSlug;
         const newPath = pathSegments.join("/");
-        router.replace(`${newPath}?id=${noteId}`);
+        router.replace(newPath);
       }
     }
 

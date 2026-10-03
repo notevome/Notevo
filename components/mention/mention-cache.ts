@@ -1,4 +1,5 @@
 import type { ResolvedHoverItem } from "@/components/item-hover-card-content";
+import { extractIdFromSlug } from "@/lib/slug";
 
 export const itemMemoryCache = new Map<string, ResolvedHoverItem>();
 
@@ -38,6 +39,10 @@ export function getCachedItem(key?: string | null): ResolvedHoverItem | undefine
 
     const whiteboardId = parsed.searchParams.get("whiteboardId");
     if (whiteboardId && itemMemoryCache.has(whiteboardId)) return itemMemoryCache.get(whiteboardId);
+
+    const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
+    const slugId = extractIdFromSlug(lastSegment);
+    if (slugId && itemMemoryCache.has(slugId)) return itemMemoryCache.get(slugId);
   } catch {
     // ignore
   }

@@ -6,6 +6,7 @@ import { useMutation } from "convex/react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import {
   ChevronRight,
   Download,
@@ -177,7 +178,12 @@ export default function WhiteboardSettings({
   const isOnThisWhiteboardRoute = () => {
     if (typeof window === "undefined" || !whiteboard) return false;
     const params = new URLSearchParams(window.location.search);
-    return params.get("whiteboardId") === String(whiteboard._id);
+    if (params.get("whiteboardId") === String(whiteboard._id)) return true;
+    const lastSegment = window.location.pathname
+      .split("/")
+      .filter(Boolean)
+      .pop();
+    return extractIdFromSlug(lastSegment) === String(whiteboard._id);
   };
 
   const debouncedRenameWhiteboard = useDebouncedCallback(
@@ -209,7 +215,10 @@ export default function WhiteboardSettings({
         document.title = `${nextTitle} - Notevo`;
         const currentUrl = new URL(window.location.href);
         const segments = currentUrl.pathname.split("/");
-        segments[segments.length - 1] = generateSlug(nextTitle);
+        segments[segments.length - 1] = buildItemSlug(
+          nextTitle,
+          whiteboard._id,
+        );
         currentUrl.pathname = segments.join("/");
         window.history.replaceState({}, "", currentUrl.href);
       }
@@ -280,6 +289,11 @@ export default function WhiteboardSettings({
         targetWorkingSpaceId,
         targetNotesTableId,
       });
+      if (isOnThisWhiteboardRoute()) {
+        router.replace(
+          `/home/${targetWorkingSpaceId}/${buildItemSlug(whiteboard.title, whiteboard._id)}`,
+        );
+      }
       setMoveOpen(false);
       toast({
         variant: "default",

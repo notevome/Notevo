@@ -34,6 +34,7 @@ import {
 import { ShortcutBadge } from "@/components/ui/shortcut-badge";
 import { cn } from "@/lib/utils";
 import { parseSlug } from "@/lib/parseSlug";
+import { buildItemSlug } from "@/lib/slug";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -160,23 +161,28 @@ function HomePaneDrawer({
         activeItem.workingSpaceId ?? noteDoc?.workingSpaceId ?? workspaceId;
       if (!spaceId) return null;
 
-      const slug =
-        activeItem.slug ??
-        noteDoc?.slug ??
+      const titleOrSlug =
         activeItem.title ??
         noteDoc?.title ??
-        activeItem.id;
+        activeItem.slug ??
+        noteDoc?.slug ??
+        "untitled";
 
-      return `/home/${spaceId}/${slug}?id=${activeItem.id}`;
+      const slug = buildItemSlug(titleOrSlug, activeItem.id);
+
+      return `/home/${spaceId}/${slug}`;
     }
 
     const spaceId =
       activeItem.workingSpaceId ?? pdfDoc?.workingSpaceId ?? workspaceId;
     if (!spaceId) return null;
 
-    const slug = activeItem.title ?? pdfDoc?.title ?? activeItem.id;
+    const slug = buildItemSlug(
+      activeItem.title ?? pdfDoc?.title ?? activeItem.id,
+      activeItem.id,
+    );
 
-    return `/home/${spaceId}/${slug}?pdfId=${activeItem.id}`;
+    return `/home/${spaceId}/${slug}`;
   }, [activeItem, noteDoc, pdfDoc, workspaceId]);
 
   useEffect(() => {

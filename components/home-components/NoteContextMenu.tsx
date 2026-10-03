@@ -30,6 +30,7 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import {
   Pin,
   FileText,
@@ -104,7 +105,8 @@ export default function NoteContextMenu({
   const deleteNote = useMutation(api.notes.deleteNote);
   const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
 
-  const currentNoteId = searchParams.get("id");
+  const currentSlug = pathname.split("/").filter(Boolean).pop();
+  const currentNoteId = searchParams.get("id") || extractIdFromSlug(currentSlug);
   const isViewingThisNote = currentNoteId === noteId;
 
   const { handleDownload } = useNoteDownload({
@@ -155,11 +157,11 @@ export default function NoteContextMenu({
       await updateNote({ _id: noteId, title: trimmedValue });
 
       if (isViewingThisNote) {
-        const newSlug = generateSlug(trimmedValue);
+        const newSlug = buildItemSlug(trimmedValue, noteId);
         const pathSegments = pathname.split("/");
         pathSegments[pathSegments.length - 1] = newSlug;
         const newPath = pathSegments.join("/");
-        router.replace(`${newPath}?id=${noteId}`);
+        router.replace(newPath);
       }
       router.refresh();
     }

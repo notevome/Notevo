@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "../lib/slug";
 import { paginationOptsValidator } from "convex/server";
 import {
   extractTextFromTiptap,
@@ -390,6 +391,20 @@ export const getNoteById = query({
   },
 });
 
+export const getItemType = query({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.id) return null;
+    const noteId = ctx.db.normalizeId("notes", args.id);
+    if (noteId) return "note";
+    const wbId = ctx.db.normalizeId("whiteboards", args.id);
+    if (wbId) return "whiteboard";
+    const pdfId = ctx.db.normalizeId("pdfs", args.id);
+    if (pdfId) return "pdf";
+    return null;
+  },
+});
+
 export const getFavNotes = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
@@ -747,7 +762,7 @@ export const getMentionItems = query({
             ? `In ${table.name}`
             : undefined,
         preview: preview,
-        href: `/home/${note.workingSpaceId}/${note.slug || note._id}?id=${note._id}`,
+        href: `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
         tableName: table?.name,
         workingSpaceId: note.workingSpaceId
           ? String(note.workingSpaceId)
@@ -772,7 +787,7 @@ export const getMentionItems = query({
         subtitle: table?.name ? `In ${table.name}` : "Whiteboard",
         snapshot: board.snapshot,
         preview: board.preview,
-        href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+        href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
         tableName: table?.name,
         workingSpaceId: board.workingSpaceId
           ? String(board.workingSpaceId)
@@ -795,7 +810,7 @@ export const getMentionItems = query({
         kind: "pdf" as const,
         title: pdf.title || "Untitled PDF",
         subtitle: table?.name ? `In ${table.name}` : "PDF upload",
-        href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+        href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
         tableName: table?.name,
         workingSpaceId: pdf.workingSpaceId
           ? String(pdf.workingSpaceId)
@@ -921,6 +936,12 @@ export const resolveHoverItem = query({
         } else if (whiteboardParam) {
           itemId = whiteboardParam;
           kind = "whiteboard";
+        } else {
+          const lastSegment = parsed.pathname.split("/").filter(Boolean).pop();
+          const slugId = extractIdFromSlug(lastSegment);
+          if (slugId) {
+            itemId = slugId;
+          }
         }
       } catch {
         // ignore url parsing error
@@ -945,7 +966,7 @@ export const resolveHoverItem = query({
                 ? String(note.workingSpaceId)
                 : undefined,
               slug: note.slug,
-              href: `/home/${note.workingSpaceId}/${note.slug || note._id}?id=${note._id}`,
+              href: `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
             };
           }
           if ("snapshot" in doc || kind === "whiteboard") {
@@ -961,7 +982,7 @@ export const resolveHoverItem = query({
               workingSpaceId: board.workingSpaceId
                 ? String(board.workingSpaceId)
                 : undefined,
-              href: `/home/${board.workingSpaceId}/${generateSlug(board.title || "untitled-whiteboard")}?whiteboardId=${board._id}`,
+              href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
             };
           }
           if ("storageId" in doc || kind === "pdf") {
@@ -975,7 +996,7 @@ export const resolveHoverItem = query({
               workingSpaceId: pdf.workingSpaceId
                 ? String(pdf.workingSpaceId)
                 : undefined,
-              href: `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}?pdfId=${pdf._id}`,
+              href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
             };
           }
           if ("platform" in doc || kind === "link") {
@@ -1031,4 +1052,3 @@ export const resolveHoverItem = query({
     return null;
   },
 });
-

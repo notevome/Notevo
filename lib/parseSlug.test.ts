@@ -21,4 +21,16 @@ describe("parseSlug", () => {
   it("converts hyphen-separated words into title case", () => {
     expect(parseSlug("team-meeting-notes")).toBe("Team Meeting Notes");
   });
+
+  it("strips trailing document IDs from composite slugs", () => {
+    expect(
+      parseSlug(
+        "difference-between-compiled-and-interpreted-language-k5702xzxdbwdcjfwx878001gxx8bcxje",
+      ),
+    ).toBe("Difference Between Compiled And Interpreted Language");
+  });
+
+  it("handles pure document ID slugs", () => {
+    expect(parseSlug("k5702xzxdbwdcjfwx878001gxx8bcxje")).toBe("Untitled");
+  });
 });

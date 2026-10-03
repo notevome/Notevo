@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "convex/react";
 import {
@@ -15,7 +16,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -62,6 +63,9 @@ export default function MovePdfDialog({
   onOpenChange,
   pdf,
 }: MovePdfDialogProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -173,7 +177,16 @@ export default function MovePdfDialog({
       });
       onOpenChange(false);
 
-      const pdfSlug = generateSlug(result.title || pdf.title || "untitled-pdf");
+      const pdfSlug = buildItemSlug(
+        result.title || pdf.title || "untitled-pdf",
+        pdf._id,
+      );
+      const currentItemId =
+        searchParams.get("pdfId") ||
+        extractIdFromSlug(pathname.split("/").filter(Boolean).pop());
+      if (currentItemId === String(pdf._id)) {
+        router.replace(`/home/${result.workingSpaceId}/${pdfSlug}`);
+      }
 
       toast({
         variant: "default",
@@ -182,7 +195,7 @@ export default function MovePdfDialog({
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}/${pdfSlug}?pdfId=${pdf._id}`}
+              href={`/home/${result.workingSpaceId}/${pdfSlug}`}
               className="flex justify-center items-center gap-2"
             >
               <FileSymlink size={16} />

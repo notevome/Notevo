@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { SquarePen, X, Pin, PinOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { extractIdFromSlug } from "@/lib/slug";
 import {
   redirect,
   useRouter,
@@ -44,8 +45,8 @@ export default function WhiteboardSettingsSidebar({
   const pathname = usePathname();
   const pathSegments = pathname.split("/").filter((segment) => segment);
   const searchParams = useSearchParams();
-  const realPathName = `/home/${pathSegments[1]}/${pathSegments[2]}?whiteboardId=${searchParams.get("whiteboardId")}`;
-  const whiteboardHref = `/home/${pathSegments[1]}/${pathSegments[2]}?whiteboardId=${whiteboardId}`;
+  const currentWhiteboardId =
+    searchParams.get("whiteboardId") || extractIdFromSlug(pathSegments[2]);
   const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const updateWhiteboard = useMutation(
@@ -95,7 +96,7 @@ export default function WhiteboardSettingsSidebar({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      if (realPathName === whiteboardHref) {
+      if (currentWhiteboardId === String(whiteboardId)) {
         router.push(`/home/${pathSegments[1]}`);
         await new Promise((resolve) => setTimeout(resolve, 300));
         await deleteWhiteboard({ _id: whiteboardId });

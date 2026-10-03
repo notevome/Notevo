@@ -48,6 +48,7 @@ import {
 import MovePdfDialog from "./MovePdfDialog";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useToast } from "@/hooks/use-toast";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 
 interface PdfSettingsProps {
   pdfId: Id<"pdfs">;
@@ -142,10 +143,30 @@ export default function PdfSettings({
     }
 
     if (nextTitle !== currentTitle) {
-      updatePdf({ _id: pdfId, title: nextTitle }).catch((error) => {
-        console.error("Error updating PDF title:", error);
-        setInputValue(currentTitle);
-      });
+      updatePdf({ _id: pdfId, title: nextTitle })
+        .then(() => {
+          if (typeof window === "undefined") return;
+          const currentUrl = new URL(window.location.href);
+          const lastSegment = currentUrl.pathname
+            .split("/")
+            .filter(Boolean)
+            .pop();
+          const isThisPdf =
+            currentUrl.searchParams.get("pdfId") === String(pdfId) ||
+            extractIdFromSlug(lastSegment) === String(pdfId);
+          if (!isThisPdf) return;
+
+          const segments = currentUrl.pathname.split("/");
+          segments[segments.length - 1] = buildItemSlug(nextTitle, pdfId);
+          currentUrl.pathname = segments.join("/");
+          currentUrl.searchParams.delete("pdfId");
+          window.history.replaceState({}, "", currentUrl.href);
+          document.title = `${nextTitle} - Notevo`;
+        })
+        .catch((error) => {
+          console.error("Error updating PDF title:", error);
+          setInputValue(currentTitle);
+        });
     }
   }, 100);
 

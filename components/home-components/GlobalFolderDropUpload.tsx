@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { generateSlug } from "@/lib/generateSlug";
+import { buildItemSlug } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
 type PendingUpload = {
@@ -224,8 +225,11 @@ export default function GlobalFolderDropUpload() {
           });
 
           if (!firstPdfRoute) {
-            const pdfSlug = generateSlug(file.name.replace(/\.pdf$/i, ""));
-            firstPdfRoute = `/home/${workingSpaceId}/${pdfSlug}?pdfId=${pdfId}`;
+            const pdfSlug = buildItemSlug(
+              file.name.replace(/\.pdf$/i, ""),
+              pdfId,
+            );
+            firstPdfRoute = `/home/${workingSpaceId}/${pdfSlug}`;
           }
         }
 
