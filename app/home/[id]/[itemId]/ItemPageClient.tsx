@@ -8,6 +8,7 @@ import NotePageClient from "./NotePageClient";
 import WhiteboardPageClient from "./WhiteboardPageClient";
 import PdfViewerPageClient from "./PdfViewerPageClient";
 import PendingNoteDraftPageClient from "./PendingNoteDraftPageClient";
+import NoteLoadingSkeletonUI from "@/components/ui/NoteLoadingSkeletonUI";
 
 interface ItemPageClientProps {
   rawItemId: string;
@@ -28,7 +29,7 @@ export default function ItemPageClient({ rawItemId }: ItemPageClientProps) {
   }
 
   if (itemType === undefined) {
-    return <div className="h-full min-h-[60vh] w-full animate-pulse bg-card" />;
+    return <NoteLoadingSkeletonUI />;
   }
 
   if (itemType === "whiteboard") {
