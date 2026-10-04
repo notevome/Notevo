@@ -203,6 +203,7 @@ export default function MoveNoteDialog({
           <Button variant="secondary" className="px-3 h-8" size="sm">
             <IntentPrefetchLink
               href={`/home/${result.workingSpaceId}/${buildItemSlug(note.title || result.slug, note._id)}`}
+              prefetchNoteId={note._id}
               className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />

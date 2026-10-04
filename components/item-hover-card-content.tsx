@@ -300,6 +300,7 @@ export function ItemHoverCardContent({
 
           <IntentPrefetchLink
             href={item.href}
+            prefetchNoteId={item._id}
             className="inline-flex w-full items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium app-radius-md bg-border text-muted-foreground hover:brightness-150 transition-colors shadow-sm"
           >
             <span>Open note</span>

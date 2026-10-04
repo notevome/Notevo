@@ -572,6 +572,7 @@ function NoteCard({ note }: { note: Note }) {
     <IntentPrefetchLink
       draggable={false}
       href={href}
+      prefetchNoteId={note._id}
       className={cn(
         "group relative overflow-hidden bg-card border transition-colors flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
         isEmpty

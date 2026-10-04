@@ -16,6 +16,11 @@ import { generateSlug } from "@/lib/generateSlug";
 import { buildItemSlug } from "@/lib/slug";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import type { FunctionReturnType } from "convex/server";
+import {
+  cachePrefetchedNote,
+  getPrefetchedNote,
+} from "@/lib/notePrefetchCache";
 const noteMemoryCache = new Map<string, unknown>();
 
 const noteTitleSchema = z
@@ -25,27 +30,36 @@ const noteTitleSchema = z
 
 export default function NotePageClient({
   noteId,
+  initialNote,
   renderedInPane = false,
 }: {
   noteId: Id<"notes">;
+  initialNote?: FunctionReturnType<typeof api.notes.getNoteById>;
   renderedInPane?: boolean;
 }) {
   const { noteWidth } = useNoteWidth();
   const note = useQuery(api.notes.getNoteById, { _id: noteId });
   const [lastNote, setLastNote] = useState<typeof note>(() => {
-    return noteMemoryCache.get(noteId as unknown as string) as typeof note;
+    return (
+      (getPrefetchedNote(String(noteId)) as typeof note) ??
+      (noteMemoryCache.get(noteId as unknown as string) as typeof note) ??
+      initialNote
+    );
   });
 
   const { toast } = useToast();
   useEffect(() => {
     setLastNote(
-      noteMemoryCache.get(noteId as unknown as string) as typeof note,
+      (getPrefetchedNote(String(noteId)) as typeof note) ??
+        (noteMemoryCache.get(noteId as unknown as string) as typeof note) ??
+        initialNote,
     );
     setContent(undefined);
-  }, [noteId]);
+  }, [initialNote, noteId]);
 
   useEffect(() => {
     if (note === undefined) return;
+    cachePrefetchedNote(note);
     noteMemoryCache.set(noteId as unknown as string, note);
     setLastNote(note);
   }, [note, noteId]);

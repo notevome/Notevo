@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { useConvex } from "convex/react";
 import {
   ArrowDownUp,
   Undo2,
@@ -31,6 +32,7 @@ import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
 import { buildItemSlug } from "@/lib/slug";
+import { prefetchNote } from "@/lib/notePrefetchCache";
 import { useHomePane } from "./HomePaneDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -121,6 +123,7 @@ function NoteItem({ note, onClick, isSelected, query, indented = false }: any) {
   return (
     <IntentPrefetchLink
       href={href}
+      prefetchNoteId={note._id}
       onClick={onClick}
       data-selected={isSelected}
       className={cn(
@@ -516,6 +519,7 @@ export default function SearchDialog({
     [],
   );
   const router = useRouter();
+  const convex = useConvex();
   const prefetchedRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsScrollRef = useRef<HTMLDivElement>(null);
@@ -525,12 +529,16 @@ export default function SearchDialog({
   const isMobile = useIsMobile();
 
   const prefetchOnce = useCallback(
-    (href: string) => {
-      if (prefetchedRef.current.has(href)) return;
-      prefetchedRef.current.add(href);
-      router.prefetch(href);
+    (href: string, noteId?: string) => {
+      if (!prefetchedRef.current.has(href)) {
+        prefetchedRef.current.add(href);
+        router.prefetch(href);
+      }
+      if (noteId) {
+        void prefetchNote(convex, noteId).catch(() => undefined);
+      }
     },
-    [router],
+    [convex, router],
   );
 
   useEffect(() => {
@@ -609,7 +617,7 @@ export default function SearchDialog({
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
     const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
-    prefetchOnce(href);
+    prefetchOnce(href, note.kind === "note" ? note._id : undefined);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
   useEffect(() => {

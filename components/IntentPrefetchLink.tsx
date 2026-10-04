@@ -4,15 +4,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ComponentProps } from "react";
 import { forwardRef, useCallback, useRef } from "react";
+import { useConvex } from "convex/react";
+import { prefetchNote } from "@/lib/notePrefetchCache";
 
 type Props = Omit<ComponentProps<typeof Link>, "prefetch" | "href"> & {
   href: string;
+  prefetchNoteId?: string;
 };
 
 const IntentPrefetchLink = forwardRef<HTMLAnchorElement, Props>(
   function IntentPrefetchLink(
     {
       href,
+      prefetchNoteId,
       onMouseEnter,
       onFocus,
       onTouchStart,
@@ -24,13 +28,17 @@ const IntentPrefetchLink = forwardRef<HTMLAnchorElement, Props>(
     ref,
   ) {
     const router = useRouter();
+    const convex = useConvex();
     const didPrefetch = useRef(false);
 
     const prefetchOnce = useCallback(() => {
       if (didPrefetch.current) return;
       didPrefetch.current = true;
       router.prefetch(href);
-    }, [router, href]);
+      if (prefetchNoteId) {
+        void prefetchNote(convex, prefetchNoteId).catch(() => undefined);
+      }
+    }, [convex, prefetchNoteId, router, href]);
 
     return (
       <Link
