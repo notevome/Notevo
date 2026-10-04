@@ -360,6 +360,11 @@ function HomePaneDrawer({
                         >
                           <IntentPrefetchLink
                             href={fullPageHref}
+                            prefetchNoteId={
+                              activeItem?.type === "note"
+                                ? activeItem.id
+                                : undefined
+                            }
                             onClick={closePane}
                           >
                             <MoveDiagonal2 size={16} />

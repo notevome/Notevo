@@ -3242,7 +3242,11 @@ function TimelineMiniCard({
   }
 
   return (
-    <IntentPrefetchLink href={href} className={cardClassName}>
+    <IntentPrefetchLink
+      href={href}
+      prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
+      className={cardClassName}
+    >
       {cardContent}
     </IntentPrefetchLink>
   );
@@ -3505,7 +3509,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
     );
   }
   return (
-    <IntentPrefetchLink href={details.href} className={cardStyles}>
+    <IntentPrefetchLink
+      href={details.href}
+      prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
+      className={cardStyles}
+    >
       {cardInnerContent}
     </IntentPrefetchLink>
   );
@@ -3616,7 +3624,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   }
 
   return (
-    <IntentPrefetchLink href={details.href} className={cardStyles}>
+    <IntentPrefetchLink
+      href={details.href}
+      prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
+      className={cardStyles}
+    >
       {cardInnerContent}
     </IntentPrefetchLink>
   );

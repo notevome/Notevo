@@ -671,6 +671,7 @@ const PinnedNoteItem = memo(
                   >
                     <IntentPrefetchLink
                       href={noteHref}
+                      prefetchNoteId={note._id}
                       className="flex items-center gap-2 flex-grow min-w-0"
                       onClick={(event) => {
                         if (event.button === 0 && event.altKey) {

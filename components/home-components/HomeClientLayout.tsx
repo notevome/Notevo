@@ -37,7 +37,9 @@ import {
   usePendingNoteDraftContext,
 } from "@/components/home-components/PendingNoteDraftProvider";
 import PendingNoteDraftPageClient from "@/app/home/[id]/[itemId]/PendingNoteDraftPageClient";
+import NotePageClient from "@/app/home/[id]/[itemId]/NotePageClient";
 import { resolveDraftTokenToRender } from "@/lib/pendingNoteDraft";
+import { getPrefetchedNote } from "@/lib/notePrefetchCache";
 const fadeTransition = {
   show: { ease: "easeInOut" as const, duration: 0 },
   hide: { ease: "easeInOut" as const, duration: 0 },
@@ -93,10 +95,20 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     activeDraft?.noteId && slugId === String(activeDraft.noteId)
       ? activeDraft.noteId
       : null;
+  const cachedRouteNoteId = routeDraftToken
+    ? null
+    : (rawNoteId ?? (!rawPdfId && !rawWhiteboardId ? slugId : null));
+  const cachedRouteNote = cachedRouteNoteId
+    ? getPrefetchedNote(String(cachedRouteNoteId))
+    : undefined;
   const promotedNote = useQuery(
     api.notes.getNoteById,
     activeDraftNoteId ? { _id: activeDraftNoteId } : "skip",
   );
+  const [promotedNoteRoute, setPromotedNoteRoute] = useState<{
+    noteId: Id<"notes">;
+    note: NonNullable<typeof promotedNote>;
+  } | null>(null);
   const draftTokenToRender = resolveDraftTokenToRender({
     routeDraftToken,
     activeDraftToken,
@@ -129,14 +141,25 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     }
 
     const draft = getDraft(draftPromotionState.token);
-    if (draft) {
+    if (draft && promotedNote && activeDraftNoteId) {
+      setPromotedNoteRoute({
+        noteId: activeDraftNoteId,
+        note: promotedNote,
+      });
       finishDraft(draftPromotionState.token);
     }
-  }, [draftPromotionState, finishDraft, getDraft]);
+  }, [
+    activeDraftNoteId,
+    draftPromotionState,
+    finishDraft,
+    getDraft,
+    promotedNote,
+  ]);
 
   const detectedItemType = useQuery(
     api.notes.getItemType,
     !currentItemSlug?.startsWith("draft-") &&
+      !cachedRouteNote &&
       !rawNoteId &&
       !rawPdfId &&
       !rawWhiteboardId &&
@@ -151,7 +174,16 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const pdfId =
     rawPdfId || (detectedItemType === "pdf" ? (slugId as Id<"pdfs">) : null);
   const noteid =
-    rawNoteId || (detectedItemType === "note" ? (slugId as Id<"notes">) : null);
+    rawNoteId ||
+    (cachedRouteNote?._id as Id<"notes"> | undefined) ||
+    (detectedItemType === "note" ? (slugId as Id<"notes">) : null);
+  const promotedNoteRouteIsCurrent =
+    promotedNoteRoute && slugId === String(promotedNoteRoute.noteId);
+  const cachedNoteRouteIsCurrent = Boolean(
+    cachedRouteNote &&
+      (slugId === String(cachedRouteNote._id) ||
+        rawNoteId === cachedRouteNote._id),
+  );
 
   const noteTitle = parseSlug(`${pathSegments[2] || ""}`);
   const isPdfRoute = Boolean(pdfId);
@@ -237,7 +269,19 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
             className="app-radius-lg absolute top-0 left-0 w-full bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent z-20 pointer-events-none -mb-16"
             aria-hidden
           />
-          {draftTokenToRender ? (
+          {promotedNoteRouteIsCurrent ? (
+            <NotePageClient
+              key={promotedNoteRoute.noteId}
+              noteId={promotedNoteRoute.noteId}
+              initialNote={promotedNoteRoute.note}
+            />
+          ) : cachedNoteRouteIsCurrent && cachedRouteNote ? (
+            <NotePageClient
+              key={cachedRouteNote._id}
+              noteId={cachedRouteNote._id}
+              initialNote={cachedRouteNote}
+            />
+          ) : draftTokenToRender ? (
             <PendingNoteDraftPageClient
               key={draftTokenToRender}
               token={draftTokenToRender}
