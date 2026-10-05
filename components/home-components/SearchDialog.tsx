@@ -13,9 +13,14 @@ import {
   FolderOpen,
   Globe,
   PanelTop,
+  FolderPlus,
+  SquarePen,
+  Table,
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useMutation } from "convex/react";
+import type { Id } from "@/convex/_generated/dataModel";
 
 import {
   Dialog,
@@ -32,12 +37,14 @@ import { useQuery } from "@/cache/useQuery";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import { cn } from "@/lib/utils";
 import { buildItemSlug } from "@/lib/slug";
+import { generateSlug } from "@/lib/generateSlug";
 import { prefetchNote } from "@/lib/notePrefetchCache";
 import { useHomePane } from "./HomePaneDrawer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShortcutBadge } from "../ui/shortcut-badge";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
+import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
 
 interface SearchDialogProps {
   variant?: "default" | "SidebarMenuButton";
@@ -518,8 +525,22 @@ export default function SearchDialog({
   const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>(
     [],
   );
+  const [creationKind, setCreationKind] = useState<
+    "note" | "whiteboard" | null
+  >(null);
+  const [creationSelectionIndex, setCreationSelectionIndex] = useState(0);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
+    Id<"workingSpaces"> | ""
+  >("");
+  const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
+  const [isCreatingItem, setIsCreatingItem] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const convex = useConvex();
+  const { beginNoteDraft } = usePendingNoteDraftContext();
+  const { toast } = useToast();
+  const createWorkspace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const prefetchedRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsScrollRef = useRef<HTMLDivElement>(null);
@@ -549,6 +570,19 @@ export default function SearchDialog({
   const searchTargets = useQuery(api.notes.getWorkspaceTree, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
+  const creationWorkspaces = useQuery(
+    api.workingSpaces.getRecentWorkingSpaces,
+    creationKind ? {} : "skip",
+  );
+  const creationTables = useQuery(
+    api.notesTables.getTables,
+    creationKind && selectedWorkspaceId
+      ? { workingSpaceId: selectedWorkspaceId }
+      : "skip",
+  );
+  const selectedWorkspace = creationWorkspaces?.find(
+    (workspace) => workspace._id === selectedWorkspaceId,
+  );
 
   const allNotes = useMemo<any[]>(() => {
     if (!searchTargets) return [];
@@ -558,6 +592,18 @@ export default function SearchDialog({
   }, [searchTargets]);
 
   const hasResults = allNotes.length > 0;
+
+  useEffect(() => {
+    if (
+      !creationKind ||
+      selectedWorkspaceId ||
+      creationWorkspaces?.length !== 1
+    ) {
+      return;
+    }
+    setSelectedWorkspaceId(creationWorkspaces[0]._id);
+    setCreationSelectionIndex(0);
+  }, [creationKind, creationWorkspaces, selectedWorkspaceId]);
 
   const handleResultsScroll = useCallback(() => {
     const el = resultsScrollRef.current;
@@ -570,11 +616,101 @@ export default function SearchDialog({
     );
   }, []);
 
+  const handleCreateWorkspaceFromSearch = useCallback(async () => {
+    const name = debouncedQuery.trim();
+    if (!name || isCreatingWorkspace) return;
+
+    setIsCreatingWorkspace(true);
+    try {
+      const workspaceId = await createWorkspace({ name });
+      setOpen(false);
+      setQuery("");
+      router.push(`/home/${workspaceId}`);
+    } catch (error) {
+      console.error("Failed to create workspace from search:", error);
+      toast({
+        title: "Could not create workspace",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingWorkspace(false);
+    }
+  }, [createWorkspace, debouncedQuery, isCreatingWorkspace, router, toast]);
+
+  const handleCreateItemFromSearch = useCallback(
+    async (notesTableId: Id<"notesTables">) => {
+      const title = debouncedQuery.trim();
+      if (
+        !title ||
+        !creationKind ||
+        !selectedWorkspaceId ||
+        !selectedWorkspace ||
+        isCreatingItem
+      ) {
+        return;
+      }
+
+      if (creationKind === "note") {
+        const draft = beginNoteDraft({
+          workingSpaceId: selectedWorkspaceId,
+          workingSpacesSlug:
+            selectedWorkspace.slug ?? generateSlug(selectedWorkspace.name),
+          notesTableId,
+          title,
+          originPath: pathname,
+        });
+        setOpen(false);
+        setQuery("");
+        router.push(`/home/${selectedWorkspaceId}/draft-${draft.token}`);
+        return;
+      }
+
+      setIsCreatingItem(true);
+      try {
+        const whiteboardId = await createWhiteboard({
+          title,
+          workingSpaceId: selectedWorkspaceId,
+          notesTableId,
+        });
+        setOpen(false);
+        setQuery("");
+        router.push(
+          `/home/${selectedWorkspaceId}/${buildItemSlug(title, whiteboardId)}`,
+        );
+      } catch (error) {
+        console.error("Failed to create whiteboard from search:", error);
+        toast({
+          title: "Could not create whiteboard",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsCreatingItem(false);
+      }
+    },
+    [
+      beginNoteDraft,
+      createWhiteboard,
+      creationKind,
+      debouncedQuery,
+      isCreatingItem,
+      pathname,
+      router,
+      selectedWorkspace,
+      selectedWorkspaceId,
+      toast,
+    ],
+  );
+
   useEffect(() => {
     if (!open) return;
     setQuery("");
     setDebouncedQuery("");
     setSelectedIndex(0);
+    setCreationKind(null);
+    setSelectedWorkspaceId("");
+    setCreationSelectionIndex(0);
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [open]);
 
@@ -638,7 +774,6 @@ export default function SearchDialog({
     );
   };
   const { openPane } = useHomePane();
-  const { toast } = useToast();
   const handleNoteClick = (note: any, event: any) => {
     if (note.kind === "link") {
       event.preventDefault();
@@ -703,6 +838,57 @@ export default function SearchDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    const showCreationChoices =
+      !isLoading && !hasResults && Boolean(debouncedQuery.trim());
+    if (showCreationChoices) {
+      const options = !creationKind
+        ? ["workspace", "note", "whiteboard"]
+        : selectedWorkspaceId
+          ? (creationTables ?? [])
+          : (creationWorkspaces ?? []);
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        if (options.length) {
+          setCreationSelectionIndex((index) =>
+            e.key === "ArrowDown"
+              ? (index + 1) % options.length
+              : (index - 1 + options.length) % options.length,
+          );
+        }
+        return;
+      }
+
+      if (e.key === "Enter") {
+        if (!creationKind) {
+          e.preventDefault();
+          if (creationSelectionIndex === 0) {
+            void handleCreateWorkspaceFromSearch();
+          } else {
+            setCreationKind(
+              creationSelectionIndex === 1 ? "note" : "whiteboard",
+            );
+            setSelectedWorkspaceId("");
+            setCreationSelectionIndex(0);
+          }
+        } else if (!selectedWorkspaceId) {
+          const workspace = creationWorkspaces?.[creationSelectionIndex];
+          if (workspace) {
+            e.preventDefault();
+            setSelectedWorkspaceId(workspace._id);
+            setCreationSelectionIndex(0);
+          }
+        } else {
+          const table = creationTables?.[creationSelectionIndex];
+          if (table) {
+            e.preventDefault();
+            void handleCreateItemFromSearch(table._id);
+          }
+        }
+        return;
+      }
+    }
+
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setSelectedIndex((prev) => Math.min(prev + 1, allNotes.length - 1));
@@ -717,6 +903,8 @@ export default function SearchDialog({
 
   const isDebouncing = query !== debouncedQuery;
   const isLoading = isDebouncing || searchTargets === undefined;
+  const isCreationChooserOpen =
+    !isLoading && !hasResults && Boolean(debouncedQuery.trim());
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -791,27 +979,187 @@ export default function SearchDialog({
           {isLoading ? (
             <SearchLoadingSkeleton />
           ) : !hasResults ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              {!debouncedQuery ? (
-                <>
-                  <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
-                  <p className="font-medium">No items found</p>
-                  <p className="text-xs mt-1">
-                    Create your first note or whiteboard to get started
+            !debouncedQuery.trim() ? (
+              <div className="py-16 text-center text-sm text-muted-foreground">
+                <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
+                <p className="font-medium">No items found</p>
+                <p className="text-xs mt-1">
+                  Search for something or create a new item.
+                </p>
+              </div>
+            ) : creationKind ? (
+              <div className="mx-auto max-w-xl space-y-3 py-6">
+                <div className="min-w-0 px-2">
+                  <p className="text-sm font-medium text-foreground">
+                    {selectedWorkspaceId
+                      ? `Choose a table in ${selectedWorkspace?.name || "workspace"}`
+                      : "Choose a workspace"}
                   </p>
-                </>
-              ) : (
-                <>
-                  <Search className="mx-auto h-12 w-12 opacity-50 text-primary mb-3" />
-                  <p className="font-medium">
-                    No results found for &quot;{debouncedQuery}&quot;
+                  <p className="truncate text-xs text-muted-foreground">
+                    Create {creationKind} &quot;{debouncedQuery.trim()}&quot;
                   </p>
-                  <p className="text-xs mt-1">
-                    Try different keywords or check your spelling
+                </div>
+
+                {!selectedWorkspaceId ? (
+                  creationWorkspaces === undefined ? (
+                    <SearchLoadingSkeleton />
+                  ) : creationWorkspaces.length ? (
+                    <div
+                      className="space-y-1"
+                      role="listbox"
+                      aria-label="Workspaces"
+                    >
+                      {creationWorkspaces.map((workspace, index) => (
+                        <Button
+                          key={workspace._id}
+                          type="button"
+                          role="option"
+                          aria-selected={creationSelectionIndex === index}
+                          variant="ghost"
+                          className={cn(
+                            "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                            creationSelectionIndex === index && "bg-accent",
+                          )}
+                          onMouseMove={() => setCreationSelectionIndex(index)}
+                          onClick={() => {
+                            setSelectedWorkspaceId(workspace._id);
+                            setCreationSelectionIndex(0);
+                          }}
+                        >
+                          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="truncate">
+                            {workspace.name || "Untitled workspace"}
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-auto w-full justify-start gap-3 px-3 py-3 text-left"
+                      disabled={isCreatingWorkspace}
+                      onClick={() => void handleCreateWorkspaceFromSearch()}
+                    >
+                      {isCreatingWorkspace ? (
+                        <LoadingAnimation className="h-4 w-4 shrink-0" />
+                      ) : (
+                        <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="truncate">
+                        No workspaces. Create &quot;{debouncedQuery.trim()}
+                        &quot;
+                      </span>
+                    </Button>
+                  )
+                ) : creationTables === undefined ? (
+                  <SearchLoadingSkeleton />
+                ) : creationTables.length ? (
+                  <div className="space-y-1" role="listbox" aria-label="Tables">
+                    {creationTables.map((table, index) => (
+                      <Button
+                        key={table._id}
+                        type="button"
+                        role="option"
+                        aria-selected={creationSelectionIndex === index}
+                        variant="ghost"
+                        disabled={isCreatingItem}
+                        className={cn(
+                          "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                          creationSelectionIndex === index && "bg-accent",
+                        )}
+                        onMouseMove={() => setCreationSelectionIndex(index)}
+                        onClick={() =>
+                          void handleCreateItemFromSearch(table._id)
+                        }
+                      >
+                        {isCreatingItem ? (
+                          <LoadingAnimation className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <Table className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="truncate">
+                          {table.name || "Untitled table"}
+                        </span>
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                    This workspace has no tables. Choose another workspace or
+                    create a table first.
                   </p>
-                </>
-              )}
-            </div>
+                )}
+              </div>
+            ) : (
+              <div className="mx-auto max-w-xl space-y-2 py-6">
+                <p className="mb-3 px-2 text-sm text-muted-foreground">
+                  No results found for &quot;{debouncedQuery.trim()}&quot;.
+                  Create it instead:
+                </p>
+                <Button
+                  type="button"
+                  data-selected={creationSelectionIndex === 0}
+                  variant="ghost"
+                  className={cn(
+                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                    creationSelectionIndex === 0 && "bg-accent",
+                  )}
+                  onMouseMove={() => setCreationSelectionIndex(0)}
+                  disabled={isCreatingWorkspace}
+                  onClick={() => void handleCreateWorkspaceFromSearch()}
+                >
+                  {isCreatingWorkspace ? (
+                    <LoadingAnimation className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  )}
+                  <span className="truncate">
+                    Create workspace &quot;{debouncedQuery.trim()}&quot;
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  data-selected={creationSelectionIndex === 1}
+                  className={cn(
+                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                    creationSelectionIndex === 1 && "bg-accent",
+                  )}
+                  onMouseMove={() => setCreationSelectionIndex(1)}
+                  onClick={() => {
+                    setSelectedWorkspaceId("");
+                    setCreationKind("note");
+                    setCreationSelectionIndex(0);
+                  }}
+                >
+                  <SquarePen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">
+                    Create note &quot;{debouncedQuery.trim()}&quot;
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  data-selected={creationSelectionIndex === 2}
+                  className={cn(
+                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                    creationSelectionIndex === 2 && "bg-accent",
+                  )}
+                  onMouseMove={() => setCreationSelectionIndex(2)}
+                  onClick={() => {
+                    setSelectedWorkspaceId("");
+                    setCreationKind("whiteboard");
+                    setCreationSelectionIndex(0);
+                  }}
+                >
+                  <PanelTop className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="truncate">
+                    Create whiteboard &quot;{debouncedQuery.trim()}&quot;
+                  </span>
+                </Button>
+              </div>
+            )
           ) : (
             <WorkspaceTree
               searchTargets={searchTargets!}
@@ -839,9 +1187,11 @@ export default function SearchDialog({
               </span>
               <span className="flex justify-center items-center gap-2">
                 <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                  <Undo2 size={14} />
+                  {isCreationChooserOpen ? "Enter" : <Undo2 size={14} />}
                 </kbd>
-                <p className="text-foreground text-xs">Open</p>
+                <p className="text-foreground text-xs">
+                  {isCreationChooserOpen ? "Choose" : "Open"}
+                </p>
               </span>
               {!isMobile && (
                 <span className="flex justify-center items-center gap-2">

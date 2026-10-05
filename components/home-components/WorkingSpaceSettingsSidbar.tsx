@@ -123,7 +123,11 @@ export default function WorkingSpaceSettingsSidbar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+          <TooltipContent
+            side="right"
+            sideOffset={5}
+            className="!app-radius-none"
+          >
             Delete workspace
           </TooltipContent>
         </Tooltip>
@@ -137,20 +141,20 @@ export default function WorkingSpaceSettingsSidbar({
               {hasContent ? (
                 <>
                   This workspace contains:
-                  <div className="mt-2 space-y-1">
+                  <span className="mt-2 block space-y-1">
                     {tableCount > 0 && (
-                      <span>
+                      <span className="block">
                         <span className="font-medium text-foreground">
                           {tableCount}
                         </span>{" "}
                         table{tableCount !== 1 ? "s" : ""}
                       </span>
                     )}
-                  </div>
-                  <div className="mt-2">
+                  </span>
+                  <span className="mt-2 block">
                     Deleting this workspace will permanently remove all tables,
                     notes, and their data.
-                  </div>
+                  </span>
                 </>
               ) : (
                 "Are you sure you want to delete this workspace? This action cannot be undone."
