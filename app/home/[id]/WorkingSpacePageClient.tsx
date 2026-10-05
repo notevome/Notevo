@@ -161,19 +161,19 @@ const getContentPreviewFromBody = (body: any) => {
   }
 };
 
-function isNoteEmpty(note: { preview?: string; body?: any }): boolean {
-  if (note.preview) return false;
-  return getContentPreviewFromBody(note.body) === EMPTY_CONTENT_MESSAGE;
-}
-
 const whiteboardEmptyCache = new Map<string, boolean>();
-function isWhiteboardEmpty(snapshot?: string): boolean {
-  if (!snapshot) return true;
-  const cached = whiteboardEmptyCache.get(snapshot);
+function isWhiteboardEmpty(board: {
+  _id: string;
+  updatedAt: number;
+  snapshot?: string;
+}): boolean {
+  if (!board.snapshot) return true;
+  const key = `${board._id}:${board.updatedAt}`;
+  const cached = whiteboardEmptyCache.get(key);
   if (cached !== undefined) return cached;
   let empty = false;
   try {
-    const scene = JSON.parse(snapshot);
+    const scene = JSON.parse(board.snapshot);
     empty =
       !Array.isArray(scene.elements) ||
       scene.elements.filter((el: any) => !el?.isDeleted).length === 0;
@@ -181,7 +181,7 @@ function isWhiteboardEmpty(snapshot?: string): boolean {
     empty = false;
   }
   if (whiteboardEmptyCache.size > 500) whiteboardEmptyCache.clear();
-  whiteboardEmptyCache.set(snapshot, empty);
+  whiteboardEmptyCache.set(key, empty);
   return empty;
 }
 const workspaceNameSchema = z
@@ -3287,7 +3287,7 @@ function getWorkspaceItemDetails(
     const board = item as WhiteboardItem;
     return {
       title: board.title || "Untitled whiteboard",
-      subtitle: isWhiteboardEmpty(board.snapshot) ? EMPTY_CONTENT_MESSAGE : "",
+      subtitle: isWhiteboardEmpty(board) ? EMPTY_CONTENT_MESSAGE : "",
       href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
@@ -3384,10 +3384,7 @@ function WorkspaceItemThumbnail({
   compact?: boolean;
 }) {
   const size = compact ? " w-52" : "w-full";
-  if (
-    item.kind === "whiteboard" &&
-    isWhiteboardEmpty((item as WhiteboardItem).snapshot)
-  ) {
+  if (item.kind === "whiteboard" && isWhiteboardEmpty(item as WhiteboardItem)) {
     if (!compact) return null;
     return (
       <div className={`${size} flex shrink-0 items-center justify-center`}>
@@ -3420,13 +3417,14 @@ function WorkspaceItemThumbnail({
 
 function ItemKindIcon({
   item,
+  empty = false,
   className,
 }: {
   item: WorkspaceEntry;
+  empty?: boolean;
   className?: string;
 }) {
   if (item.kind === "note") {
-    const empty = isNoteEmpty(item as Note);
     const NoteIcon = empty ? EmptyFileIcon : FileText;
     return (
       <NoteIcon
@@ -3508,7 +3506,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
             </div>
           ) : (
             <div className="flex min-w-0 items-start gap-2">
-              <ItemKindIcon item={item} className="mt-1 h-5 w-5" />
+              <ItemKindIcon
+                item={item}
+                empty={details.subtitle === EMPTY_CONTENT_MESSAGE}
+                className="mt-1 h-5 w-5"
+              />
               <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
                 <HighlightText text={details.title} query={searchQuery} />
               </CardTitle>
@@ -3639,7 +3641,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
               className="h-5 w-5 shrink-0"
             />
           )}
-          <ItemKindIcon item={item} className="h-5 w-5" />
+          <ItemKindIcon
+            item={item}
+            empty={details.subtitle === EMPTY_CONTENT_MESSAGE}
+            className="h-5 w-5"
+          />
           <span className="line-clamp-1 min-w-0">
             <HighlightText
               text={isSocialLink ? authorName || details.title : details.title}
