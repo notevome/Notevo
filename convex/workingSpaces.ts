@@ -39,7 +39,7 @@ export const createWorkingSpace = mutation({
     const newWorkingSpace = await ctx.db.insert("workingSpaces", workingSpace);
 
     const tableName = "Notes";
-    const tableSlugBase = generateSlug(tableName);
+    const tableSlugBase = `${generateSlug(tableName)}-${slug || String(newWorkingSpace)}`;
     let tableSlug = tableSlugBase;
     let existingTable = await ctx.db
       .query("notesTables")

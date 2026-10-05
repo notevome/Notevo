@@ -534,12 +534,16 @@ export default function SearchDialog({
   >("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingItem, setIsCreatingItem] = useState(false);
+  const [creatingNotesTableId, setCreatingNotesTableId] = useState<
+    Id<"notesTables"> | null
+  >(null);
   const router = useRouter();
   const pathname = usePathname();
   const convex = useConvex();
   const { beginNoteDraft } = usePendingNoteDraftContext();
   const { toast } = useToast();
   const createWorkspace = useMutation(api.workingSpaces.createWorkingSpace);
+  const getOrCreateNotesTable = useMutation(api.notesTables.getOrCreateTable);
   const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const prefetchedRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -638,6 +642,71 @@ export default function SearchDialog({
     }
   }, [createWorkspace, debouncedQuery, isCreatingWorkspace, router, toast]);
 
+  const handleCreateWorkspaceForItem = useCallback(async () => {
+    const title = debouncedQuery.trim();
+    if (!title || !creationKind || isCreatingWorkspace) return;
+
+    setIsCreatingWorkspace(true);
+    try {
+      const workspaceId = await createWorkspace({ name: title });
+      const [workspace, notesTableId] = await Promise.all([
+        convex.query(api.workingSpaces.getWorkingSpaceById, {
+          _id: workspaceId,
+        }),
+        getOrCreateNotesTable({ name: "Notes", workingSpaceId: workspaceId }),
+      ]);
+
+      if (creationKind === "note") {
+        const draft = beginNoteDraft({
+          workingSpaceId: workspaceId,
+          workingSpacesSlug:
+            workspace.slug ?? generateSlug(workspace.name || title),
+          notesTableId,
+          title,
+          originPath: pathname,
+        });
+        setOpen(false);
+        setQuery("");
+        router.push(`/home/${workspaceId}/draft-${draft.token}`);
+        return;
+      }
+
+      setCreatingNotesTableId(notesTableId);
+      setIsCreatingItem(true);
+      const whiteboardId = await createWhiteboard({
+        title,
+        workingSpaceId: workspaceId,
+        notesTableId,
+      });
+      setOpen(false);
+      setQuery("");
+      router.push(`/home/${workspaceId}/${buildItemSlug(title, whiteboardId)}`);
+    } catch (error) {
+      console.error("Failed to create workspace item from search:", error);
+      toast({
+        title: `Could not create ${creationKind}`,
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingWorkspace(false);
+      setIsCreatingItem(false);
+      setCreatingNotesTableId(null);
+    }
+  }, [
+    beginNoteDraft,
+    convex,
+    createWhiteboard,
+    createWorkspace,
+    creationKind,
+    debouncedQuery,
+    getOrCreateNotesTable,
+    isCreatingWorkspace,
+    pathname,
+    router,
+    toast,
+  ]);
+
   const handleCreateItemFromSearch = useCallback(
     async (notesTableId: Id<"notesTables">) => {
       const title = debouncedQuery.trim();
@@ -666,6 +735,7 @@ export default function SearchDialog({
         return;
       }
 
+      setCreatingNotesTableId(notesTableId);
       setIsCreatingItem(true);
       try {
         const whiteboardId = await createWhiteboard({
@@ -687,6 +757,7 @@ export default function SearchDialog({
         });
       } finally {
         setIsCreatingItem(false);
+        setCreatingNotesTableId(null);
       }
     },
     [
@@ -845,7 +916,11 @@ export default function SearchDialog({
         ? ["workspace", "note", "whiteboard"]
         : selectedWorkspaceId
           ? (creationTables ?? [])
-          : (creationWorkspaces ?? []);
+          : creationWorkspaces === undefined
+            ? []
+            : creationWorkspaces.length
+              ? creationWorkspaces
+              : ["create-workspace"];
 
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
@@ -872,11 +947,16 @@ export default function SearchDialog({
             setCreationSelectionIndex(0);
           }
         } else if (!selectedWorkspaceId) {
-          const workspace = creationWorkspaces?.[creationSelectionIndex];
-          if (workspace) {
+          if (creationWorkspaces?.length === 0) {
             e.preventDefault();
-            setSelectedWorkspaceId(workspace._id);
-            setCreationSelectionIndex(0);
+            void handleCreateWorkspaceForItem();
+          } else {
+            const workspace = creationWorkspaces?.[creationSelectionIndex];
+            if (workspace) {
+              e.preventDefault();
+              setSelectedWorkspaceId(workspace._id);
+              setCreationSelectionIndex(0);
+            }
           }
         } else {
           const table = creationTables?.[creationSelectionIndex];
@@ -1039,7 +1119,7 @@ export default function SearchDialog({
                       variant="ghost"
                       className="h-auto w-full justify-start gap-3 px-3 py-3 text-left"
                       disabled={isCreatingWorkspace}
-                      onClick={() => void handleCreateWorkspaceFromSearch()}
+                      onClick={() => void handleCreateWorkspaceForItem()}
                     >
                       {isCreatingWorkspace ? (
                         <LoadingAnimation className="h-4 w-4 shrink-0" />
@@ -1047,8 +1127,8 @@ export default function SearchDialog({
                         <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
                       )}
                       <span className="truncate">
-                        No workspaces. Create &quot;{debouncedQuery.trim()}
-                        &quot;
+                        Create workspace and {creationKind} &quot;
+                        {debouncedQuery.trim()}&quot;
                       </span>
                     </Button>
                   )
@@ -1073,7 +1153,7 @@ export default function SearchDialog({
                           void handleCreateItemFromSearch(table._id)
                         }
                       >
-                        {isCreatingItem ? (
+                        {creatingNotesTableId === table._id ? (
                           <LoadingAnimation className="h-4 w-4 shrink-0" />
                         ) : (
                           <Table className="h-4 w-4 shrink-0 text-muted-foreground" />
