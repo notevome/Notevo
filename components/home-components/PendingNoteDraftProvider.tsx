@@ -16,6 +16,7 @@ import { api } from "@/convex/_generated/api";
 
 type DraftPhase = "creating" | "saving" | "ready" | "error";
 const PENDING_NOTE_DRAFTS_KEY = "notevo_pending_note_drafts";
+const DEFAULT_DRAFT_TITLE = "New Quick Access Notes";
 
 export interface PendingNoteDraft {
   token: string;
@@ -25,6 +26,7 @@ export interface PendingNoteDraft {
   notesTableId?: Id<"notesTables">;
   noteId?: Id<"notes">;
   title: string;
+  initialTitle?: string;
   content?: JSONContent;
   revision: number;
   phase: DraftPhase;
@@ -37,6 +39,8 @@ interface PendingNoteDraftContextValue {
     workingSpaceId: Id<"workingSpaces">;
     workingSpacesSlug: string;
     originPath: string;
+    notesTableId?: Id<"notesTables">;
+    title?: string;
   }) => { token: string; completion: Promise<Id<"notes">> };
   activeDraftToken: string | null;
   getDraft: (token: string) => PendingNoteDraft | undefined;
@@ -67,7 +71,7 @@ export function PendingNoteDraftProvider({
     },
   );
 
-  const createTable = useMutation(api.notesTables.createTable);
+  const getOrCreateTable = useMutation(api.notesTables.getOrCreateTable);
   const createNote = useMutation(api.notes.createNote);
   const updateNote = useMutation(api.notes.updateNote);
 
@@ -166,8 +170,8 @@ export function PendingNoteDraftProvider({
           });
 
           if (!draft.notesTableId) {
-            const notesTableId = await createTable({
-              name: "New Quick Access Notes",
+            const notesTableId = await getOrCreateTable({
+              name: DEFAULT_DRAFT_TITLE,
               workingSpaceId: draft.workingSpaceId,
             });
             draft = { ...draftsRef.current[token], notesTableId };
@@ -197,7 +201,8 @@ export function PendingNoteDraftProvider({
               ? JSON.stringify(currentDraft.content)
               : undefined;
             const titleChanged =
-              currentDraft.title !== "New Quick Access Notes";
+              currentDraft.title !==
+              (currentDraft.initialTitle ?? DEFAULT_DRAFT_TITLE);
 
             if (body !== undefined || titleChanged) {
               await updateNote({
@@ -242,7 +247,7 @@ export function PendingNoteDraftProvider({
       void job.then(clearJob, clearJob);
       return job;
     },
-    [createNote, createTable, storeDraft, updateNote],
+    [getOrCreateTable, createNote, storeDraft, updateNote],
   );
   persistRef.current = persistDraft;
 
@@ -260,13 +265,17 @@ export function PendingNoteDraftProvider({
       workingSpaceId: Id<"workingSpaces">;
       workingSpacesSlug: string;
       originPath: string;
+      notesTableId?: Id<"notesTables">;
+      title?: string;
     }) => {
       const token = crypto.randomUUID().replaceAll("-", "");
+      const initialTitle = args.title ?? DEFAULT_DRAFT_TITLE;
       setActiveDraftToken(token);
       storeDraft(token, {
         token,
         ...args,
-        title: "New Quick Access Notes",
+        title: initialTitle,
+        initialTitle,
         revision: 0,
         phase: "creating",
       });

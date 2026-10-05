@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { insertAtTop, useAction, useMutation } from "convex/react";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, FileUp, FileText, Link2, PanelTop } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
@@ -30,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
 import {
   FaYoutube,
   FaXTwitter,
@@ -100,6 +102,9 @@ export default function WorkingspaceNewDropdownBtn({
   className,
 }: WorkingspaceNewDropdownBtnProps) {
   const { toast } = useToast();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { beginNoteDraft } = usePendingNoteDraftContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [preferredAction, setPreferredAction] =
     useState<PreferredAction>("note");
@@ -185,25 +190,25 @@ export default function WorkingspaceNewDropdownBtn({
     [isUploading, notesTableId, workingSpaceId, workingSpacesSlug],
   );
 
-  const handleCreateNote = useCallback(async () => {
+  const handleCreateNote = useCallback(() => {
     if (!notesTableId || !workingSpaceId || !workingSpacesSlug) return;
 
-    try {
-      await createNote({
-        title: "Untitled",
-        notesTableId,
-        workingSpacesSlug,
-        workingSpaceId,
-      });
-    } catch (error) {
-      console.error("Failed to create note:", error);
-      toast({
-        title: "Could not create note",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    }
-  }, [createNote, notesTableId, toast, workingSpaceId, workingSpacesSlug]);
+    const { token } = beginNoteDraft({
+      notesTableId,
+      title: "Untitled",
+      workingSpaceId,
+      workingSpacesSlug,
+      originPath: pathname,
+    });
+    router.push(`/home/${workingSpaceId}/draft-${token}`);
+  }, [
+    beginNoteDraft,
+    notesTableId,
+    pathname,
+    router,
+    workingSpaceId,
+    workingSpacesSlug,
+  ]);
 
   const handleCreateWhiteboard = useCallback(async () => {
     if (!notesTableId || !workingSpaceId) return;

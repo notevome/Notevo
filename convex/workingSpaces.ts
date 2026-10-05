@@ -37,6 +37,33 @@ export const createWorkingSpace = mutation({
       updatedAt: Date.now(),
     };
     const newWorkingSpace = await ctx.db.insert("workingSpaces", workingSpace);
+
+    const tableName = "Notes";
+    const tableSlugBase = generateSlug(tableName);
+    let tableSlug = tableSlugBase;
+    let existingTable = await ctx.db
+      .query("notesTables")
+      .withIndex("by_slug", (q) => q.eq("slug", tableSlug))
+      .first();
+    let tableCounter = 1;
+    while (existingTable) {
+      tableSlug = `${tableSlugBase}-${tableCounter}`;
+      existingTable = await ctx.db
+        .query("notesTables")
+        .withIndex("by_slug", (q) => q.eq("slug", tableSlug))
+        .first();
+      tableCounter++;
+    }
+
+    const now = Date.now();
+    await ctx.db.insert("notesTables", {
+      name: tableName,
+      workingSpaceId: newWorkingSpace,
+      slug: tableSlug,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     return newWorkingSpace;
   },
 });
