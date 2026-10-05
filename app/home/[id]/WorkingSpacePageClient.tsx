@@ -3,6 +3,7 @@ import {
   Calendar,
   Check,
   FileText,
+  File as EmptyFileIcon,
   LayoutGrid,
   List,
   Search,
@@ -146,17 +147,43 @@ function useContainerColumnCount(enabled: boolean) {
   return [columns, containerRef] as const;
 }
 
+const EMPTY_CONTENT_MESSAGE = "No content yet. Click to start writing...";
+
 const getContentPreviewFromBody = (body: any) => {
-  if (!body) return "No content yet. Click to start writing...";
+  if (!body) return EMPTY_CONTENT_MESSAGE;
   try {
     const plainText = parseTiptapContentExtractText(body);
     return plainText
       ? parseTiptapContentTruncateText(plainText, 80)
-      : "No content yet. Click to start writing...";
+      : EMPTY_CONTENT_MESSAGE;
   } catch (error) {
     return "Unable to display content preview";
   }
 };
+
+function isNoteEmpty(note: { preview?: string; body?: any }): boolean {
+  if (note.preview) return false;
+  return getContentPreviewFromBody(note.body) === EMPTY_CONTENT_MESSAGE;
+}
+
+const whiteboardEmptyCache = new Map<string, boolean>();
+function isWhiteboardEmpty(snapshot?: string): boolean {
+  if (!snapshot) return true;
+  const cached = whiteboardEmptyCache.get(snapshot);
+  if (cached !== undefined) return cached;
+  let empty = false;
+  try {
+    const scene = JSON.parse(snapshot);
+    empty =
+      !Array.isArray(scene.elements) ||
+      scene.elements.filter((el: any) => !el?.isDeleted).length === 0;
+  } catch {
+    empty = false;
+  }
+  if (whiteboardEmptyCache.size > 500) whiteboardEmptyCache.clear();
+  whiteboardEmptyCache.set(snapshot, empty);
+  return empty;
+}
 const workspaceNameSchema = z
   .string()
   .min(1, "Name cannot be empty")
@@ -3260,7 +3287,7 @@ function getWorkspaceItemDetails(
     const board = item as WhiteboardItem;
     return {
       title: board.title || "Untitled whiteboard",
-      subtitle: "",
+      subtitle: isWhiteboardEmpty(board.snapshot) ? EMPTY_CONTENT_MESSAGE : "",
       href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
@@ -3357,6 +3384,17 @@ function WorkspaceItemThumbnail({
   compact?: boolean;
 }) {
   const size = compact ? " w-52" : "w-full";
+  if (
+    item.kind === "whiteboard" &&
+    isWhiteboardEmpty((item as WhiteboardItem).snapshot)
+  ) {
+    if (!compact) return null;
+    return (
+      <div className={`${size} flex shrink-0 items-center justify-center`}>
+        <PenTool className="h-6 w-6 text-primary" />
+      </div>
+    );
+  }
   if (item.kind === "whiteboard")
     return (
       <div className={`${size} shrink-0 overflow-hidden`}>
@@ -3378,6 +3416,33 @@ function WorkspaceItemThumbnail({
       <FileText className="h-6 w-6 text-primary" />
     </div>
   );
+}
+
+function ItemKindIcon({
+  item,
+  className,
+}: {
+  item: WorkspaceEntry;
+  className?: string;
+}) {
+  if (item.kind === "note") {
+    const empty = isNoteEmpty(item as Note);
+    const NoteIcon = empty ? EmptyFileIcon : FileText;
+    return (
+      <NoteIcon
+        aria-label={empty ? "Empty note" : "Note"}
+        className={cn("shrink-0 text-muted-foreground", className)}
+      />
+    );
+  }
+  if (item.kind === "whiteboard")
+    return (
+      <PenTool
+        aria-label="Whiteboard"
+        className={cn("shrink-0 text-muted-foreground", className)}
+      />
+    );
+  return null;
 }
 
 const WorkspaceGridCard = memo(function WorkspaceGridCard({
@@ -3442,9 +3507,12 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
               </div>
             </div>
           ) : (
-            <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
-              <HighlightText text={details.title} query={searchQuery} />
-            </CardTitle>
+            <div className="flex min-w-0 items-start gap-2">
+              <ItemKindIcon item={item} className="mt-1 h-5 w-5" />
+              <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
+                <HighlightText text={details.title} query={searchQuery} />
+              </CardTitle>
+            </div>
           )}
           <div
             onClick={(e) => e.stopPropagation()}
@@ -3571,6 +3639,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
               className="h-5 w-5 shrink-0"
             />
           )}
+          <ItemKindIcon item={item} className="h-5 w-5" />
           <span className="line-clamp-1 min-w-0">
             <HighlightText
               text={isSocialLink ? authorName || details.title : details.title}
