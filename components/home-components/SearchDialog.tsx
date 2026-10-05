@@ -56,6 +56,12 @@ interface SearchDialogProps {
   enableShortcut?: boolean;
 }
 
+type EmptyWorkspaceCleanupResult =
+  | "deleted"
+  | "not-empty"
+  | "unavailable"
+  | "failed";
+
 const getRelativeTime = (date: Date) => {
   const now = new Date();
   const diffInDays = Math.floor(
@@ -534,15 +540,17 @@ export default function SearchDialog({
   >("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingItem, setIsCreatingItem] = useState(false);
-  const [creatingNotesTableId, setCreatingNotesTableId] = useState<
-    Id<"notesTables"> | null
-  >(null);
+  const [creatingNotesTableId, setCreatingNotesTableId] =
+    useState<Id<"notesTables"> | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const convex = useConvex();
   const { beginNoteDraft } = usePendingNoteDraftContext();
   const { toast } = useToast();
   const createWorkspace = useMutation(api.workingSpaces.createWorkingSpace);
+  const deleteWorkspaceIfEmpty = useMutation(
+    api.workingSpaces.deleteWorkingSpaceIfEmpty,
+  );
   const getOrCreateNotesTable = useMutation(api.notesTables.getOrCreateTable);
   const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const prefetchedRef = useRef<Set<string>>(new Set());
@@ -586,6 +594,20 @@ export default function SearchDialog({
   );
   const selectedWorkspace = creationWorkspaces?.find(
     (workspace) => workspace._id === selectedWorkspaceId,
+  );
+
+  const cleanupEmptyWorkspace = useCallback(
+    async (
+      workspaceId: Id<"workingSpaces">,
+    ): Promise<EmptyWorkspaceCleanupResult> => {
+      try {
+        return await deleteWorkspaceIfEmpty({ _id: workspaceId });
+      } catch (error) {
+        console.error("Failed to clean up empty workspace:", error);
+        return "failed";
+      }
+    },
+    [deleteWorkspaceIfEmpty],
   );
 
   const allNotes = useMemo<any[]>(() => {
@@ -646,9 +668,11 @@ export default function SearchDialog({
     const title = debouncedQuery.trim();
     if (!title || !creationKind || isCreatingWorkspace) return;
 
+    let createdWorkspaceId: Id<"workingSpaces"> | null = null;
     setIsCreatingWorkspace(true);
     try {
       const workspaceId = await createWorkspace({ name: title });
+      createdWorkspaceId = workspaceId;
       const [workspace, notesTableId] = await Promise.all([
         convex.query(api.workingSpaces.getWorkingSpaceById, {
           _id: workspaceId,
@@ -664,6 +688,17 @@ export default function SearchDialog({
           notesTableId,
           title,
           originPath: pathname,
+        });
+        void draft.completion.catch(async () => {
+          const cleanupResult = await cleanupEmptyWorkspace(workspaceId);
+          if (cleanupResult === "failed") {
+            toast({
+              title: "Note could not be saved",
+              description:
+                "The workspace could not be cleaned up after the save failed.",
+              variant: "destructive",
+            });
+          }
         });
         setOpen(false);
         setQuery("");
@@ -683,9 +718,16 @@ export default function SearchDialog({
       router.push(`/home/${workspaceId}/${buildItemSlug(title, whiteboardId)}`);
     } catch (error) {
       console.error("Failed to create workspace item from search:", error);
+      let cleanupFailed = false;
+      if (createdWorkspaceId) {
+        cleanupFailed =
+          (await cleanupEmptyWorkspace(createdWorkspaceId)) === "failed";
+      }
       toast({
         title: `Could not create ${creationKind}`,
-        description: "Please try again.",
+        description: cleanupFailed
+          ? "Please try again. The new empty workspace could not be removed."
+          : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -699,6 +741,7 @@ export default function SearchDialog({
     createWhiteboard,
     createWorkspace,
     creationKind,
+    cleanupEmptyWorkspace,
     debouncedQuery,
     getOrCreateNotesTable,
     isCreatingWorkspace,
@@ -1118,10 +1161,10 @@ export default function SearchDialog({
                       type="button"
                       variant="ghost"
                       className="h-auto w-full justify-start gap-3 px-3 py-3 text-left"
-                      disabled={isCreatingWorkspace}
+                      disabled={isCreatingWorkspace || isCreatingItem}
                       onClick={() => void handleCreateWorkspaceForItem()}
                     >
-                      {isCreatingWorkspace ? (
+                      {isCreatingWorkspace || isCreatingItem ? (
                         <LoadingAnimation className="h-4 w-4 shrink-0" />
                       ) : (
                         <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />

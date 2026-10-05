@@ -253,6 +253,7 @@ export function PendingNoteDraftProvider({
 
   useEffect(() => {
     if (!isHydrated) return;
+    // Route departure is not abandonment: this provider keeps saving and session storage restores retries.
     Object.values(drafts).forEach((draft) => {
       if (draft.phase === "creating" || draft.phase === "saving") {
         void persistDraft(draft.token).catch(() => undefined);
