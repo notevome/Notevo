@@ -3,6 +3,14 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
 
+// Add every new workspace-owned content table here so empty-workspace cleanup stays safe.
+const WORKSPACE_CONTENT_TABLES = [
+  "notes",
+  "pdfs",
+  "whiteboards",
+  "links",
+] as const;
+
 export const createWorkingSpace = mutation({
   args: {
     name: v.string(),
@@ -39,7 +47,7 @@ export const createWorkingSpace = mutation({
     const newWorkingSpace = await ctx.db.insert("workingSpaces", workingSpace);
 
     const tableName = "Notes";
-    const tableSlugBase = generateSlug(tableName);
+    const tableSlugBase = `${generateSlug(tableName)}-${slug || String(newWorkingSpace)}`;
     let tableSlug = tableSlugBase;
     let existingTable = await ctx.db
       .query("notesTables")
@@ -268,6 +276,63 @@ export const deleteWorkingSpace = mutation({
     await ctx.db.delete(_id);
 
     return { success: true };
+  },
+});
+
+export const deleteWorkingSpaceIfEmpty = mutation({
+  args: {
+    _id: v.id("workingSpaces"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Not authenticated");
+    }
+
+    const workspace = await ctx.db.get(args._id);
+    if (!workspace || workspace.userId !== userId) {
+      return "unavailable" as const;
+    }
+
+    const tables = await ctx.db
+      .query("notesTables")
+      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", args._id))
+      .collect();
+
+    const hasWorkspaceItems = async (
+      tableName: (typeof WORKSPACE_CONTENT_TABLES)[number],
+    ) => {
+      const directItems = await ctx.db
+        .query(tableName)
+        .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", args._id))
+        .first();
+      if (directItems) return true;
+
+      const tableItems = await Promise.all(
+        tables.map((table) =>
+          ctx.db
+            .query(tableName)
+            .withIndex("by_notesTableId", (q) =>
+              q.eq("notesTableId", table._id),
+            )
+            .first(),
+        ),
+      );
+      return tableItems.some(Boolean);
+    };
+
+    const containsItems = await Promise.all(
+      WORKSPACE_CONTENT_TABLES.map((tableName) => hasWorkspaceItems(tableName)),
+    );
+    if (containsItems.some(Boolean)) {
+      return "not-empty" as const;
+    }
+
+    for (const table of tables) {
+      await ctx.db.delete(table._id);
+    }
+    await ctx.db.delete(args._id);
+    return "deleted" as const;
   },
 });
 
