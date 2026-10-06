@@ -3505,14 +3505,20 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
               </div>
             </div>
           ) : (
-            <div className="flex min-w-0 items-start gap-2">
+            <div className="flex min-w-0 items-start gap-2.5">
               <ItemKindIcon
                 item={item}
                 empty={details.subtitle === EMPTY_CONTENT_MESSAGE}
-                className="mt-1 h-5 w-5"
+                className="mt-2.5 h-6 w-6"
               />
               <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
                 <HighlightText text={details.title} query={searchQuery} />
+                {item.kind !== "link" && (
+                  <p className="text-xs text-muted-foreground">
+                    Created {formatLongDate(item.createdAt)} · Last updated{" "}
+                    {formatLongDate(item.updatedAt)}
+                  </p>
+                )}
               </CardTitle>
             </div>
           )}
@@ -3525,12 +3531,6 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
             <WorkspaceItemSettings item={item} onDelete={onDelete} />
           </div>
         </div>
-        {item.kind !== "link" && (
-          <p className="text-xs text-muted-foreground">
-            Created {formatLongDate(item.createdAt)} · Last updated{" "}
-            {formatLongDate(item.updatedAt)}
-          </p>
-        )}
       </CardHeader>
       <CardContent
         className={`flex flex-1 flex-col ${isSocialLink && "gap-2"} `}
