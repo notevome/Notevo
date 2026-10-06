@@ -3505,19 +3505,19 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
               </div>
             </div>
           ) : (
-            <div className="flex min-w-0 items-start gap-2.5">
+            <div className="flex min-w-0 items-start gap-3">
               <ItemKindIcon
                 item={item}
                 empty={details.subtitle === EMPTY_CONTENT_MESSAGE}
-                className="mt-2.5 h-6 w-6"
+                className="mt-3 h-6 w-6"
               />
-              <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground line-clamp-2 [overflow-wrap:anywhere]">
+              <CardTitle className="max-w-full break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
                 <HighlightText text={details.title} query={searchQuery} />
                 {item.kind !== "link" && (
-                  <p className="text-xs text-muted-foreground">
+                  <span className=" block text-xs text-muted-foreground">
                     Created {formatLongDate(item.createdAt)} · Last updated{" "}
                     {formatLongDate(item.updatedAt)}
-                  </p>
+                  </span>
                 )}
               </CardTitle>
             </div>
