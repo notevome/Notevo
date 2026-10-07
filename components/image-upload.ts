@@ -1,41 +1,56 @@
 import { createImageUpload } from "novel";
 import { toast } from "sonner";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "@/convex/_generated/api";
+
+const convex = new ConvexHttpClient(
+  process.env.NEXT_PUBLIC_CONVEX_URL as string,
+);
 
 const onUpload = (file: File) => {
-  const promise = fetch("/api/upload", {
-    method: "POST",
-    headers: {
-      "content-type": file?.type || "application/octet-stream",
-      "x-vercel-filename": file?.name || "image.png",
-    },
-    body: file,
-  });
-
-  return new Promise((resolve, reject) => {
+  return new Promise<string>((resolve, reject) => {
     toast.promise(
-      promise.then(async (res) => {
-        // Successfully uploaded image
-        if (res.status === 200) {
-          const { url } = (await res.json()) as { url: string };
-          // preload the image
-          const image = new Image();
-          image.src = url;
-          image.onload = () => {
-            resolve(url);
-          };
-          // No blob store configured
-        } else if (res.status === 401) {
-          resolve(file);
-          throw new Error("`BLOB_READ_WRITE_TOKEN` environment variable not found, reading image locally instead.");
-          // Unknown error
-        } else {
-          throw new Error("Error uploading image. Please try again.");
+      (async () => {
+        const uploadUrl = await convex.mutation(
+          api.files.generateUploadUrl,
+          {},
+        );
+
+        const result = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+
+        if (!result.ok) {
+          throw new Error("Failed to upload image to storage.");
         }
-      }),
+
+        const { storageId } = (await result.json()) as { storageId: string };
+
+        const publicUrl = await convex.mutation(api.files.getUrl, {
+          storageId: storageId as any,
+        });
+
+        if (!publicUrl) {
+          throw new Error("Could not retrieve image URL after upload.");
+        }
+
+        await new Promise<void>((res, rej) => {
+          const img = new Image();
+          img.src = publicUrl;
+          img.onload = () => res();
+          img.onerror = () =>
+            rej(new Error("Image failed to load after upload."));
+        });
+
+        resolve(publicUrl);
+        return publicUrl;
+      })(),
       {
         loading: "Uploading image...",
         success: "Image uploaded successfully.",
-        error: (e) => {
+        error: (e: Error) => {
           reject(e);
           return e.message;
         },
