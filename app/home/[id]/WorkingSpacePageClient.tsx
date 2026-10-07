@@ -51,6 +51,7 @@ import TablesNotFound from "@/components/home-components/TablesNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
+import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -3260,9 +3261,18 @@ function TimelineMiniCard({
     </>
   );
 
+  const { openPane } = useHomePane();
+  const { toast } = useToast();
+
   if (isLink) {
     return (
-      <div onClick={openLink} className={cn(cardClassName, "cursor-pointer")}>
+      <div
+        onClick={(e) => {
+          if (handleWorkspaceItemAltClick(e, item, openPane, toast)) return;
+          openLink();
+        }}
+        className={cn(cardClassName, "cursor-pointer")}
+      >
         {cardContent}
       </div>
     );
@@ -3273,6 +3283,9 @@ function TimelineMiniCard({
       href={href}
       prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
       className={cardClassName}
+      onClick={(e) => {
+        handleWorkspaceItemAltClick(e, item, openPane, toast);
+      }}
     >
       {cardContent}
     </IntentPrefetchLink>
@@ -3443,6 +3456,51 @@ function ItemKindIcon({
   return null;
 }
 
+function handleWorkspaceItemAltClick(
+  event: React.MouseEvent,
+  item: WorkspaceEntry,
+  openPane: (paneItem: any) => void,
+  toast: any,
+) {
+  if (event.button !== 0 || !event.altKey) return false;
+  event.preventDefault();
+  event.stopPropagation();
+
+  if (item.kind === "note") {
+    openPane({
+      type: "note",
+      id: item._id,
+      title: (item as Note).title || "Untitled",
+    });
+    return true;
+  }
+  if (item.kind === "pdf") {
+    openPane({
+      type: "pdf",
+      id: item._id,
+      title: (item as PdfItem).title || "Untitled",
+    });
+    return true;
+  }
+  if (item.kind === "whiteboard") {
+    toast({
+      variant: "destructive",
+      title: "Cannot open in side pane",
+      description: "Whiteboards cannot be opened in a side pane.",
+    });
+    return true;
+  }
+  if (item.kind === "link") {
+    toast({
+      variant: "destructive",
+      title: "Cannot open in side pane",
+      description: "Links cannot be opened in a side pane.",
+    });
+    return true;
+  }
+  return false;
+}
+
 const WorkspaceGridCard = memo(function WorkspaceGridCard({
   item,
   workspaceId,
@@ -3455,6 +3513,8 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   searchQuery: string;
 }) {
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const { openPane } = useHomePane();
+  const { toast } = useToast();
 
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
@@ -3569,9 +3629,11 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   if (item.kind === "link") {
     return (
       <div
-        onClick={() =>
-          window.open(details.href, "_blank", "noopener,noreferrer")
-        }
+        onClick={(e) => {
+          if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
+            window.open(details.href, "_blank", "noopener,noreferrer");
+          }
+        }}
         className={cardStyles}
       >
         {cardInnerContent}
@@ -3583,6 +3645,7 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
       href={details.href}
       prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
       className={cardStyles}
+      onClick={(e) => { handleWorkspaceItemAltClick(e, item, openPane, toast); }}
     >
       {cardInnerContent}
     </IntentPrefetchLink>
@@ -3601,6 +3664,8 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   searchQuery: string;
 }) {
   const details = getWorkspaceItemDetails(item, workspaceId);
+  const { openPane } = useHomePane();
+  const { toast } = useToast();
 
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
@@ -3688,9 +3753,11 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   if (item.kind === "link") {
     return (
       <div
-        onClick={() =>
-          window.open(details.href, "_blank", "noopener,noreferrer")
-        }
+        onClick={(e) => {
+          if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
+            window.open(details.href, "_blank", "noopener,noreferrer");
+          }
+        }}
         className={cardStyles}
       >
         {cardInnerContent}
@@ -3703,6 +3770,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
       href={details.href}
       prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
       className={cardStyles}
+      onClick={(e) => { handleWorkspaceItemAltClick(e, item, openPane, toast); }}
     >
       {cardInnerContent}
     </IntentPrefetchLink>

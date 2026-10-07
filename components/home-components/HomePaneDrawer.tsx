@@ -42,7 +42,7 @@ import NoteSettings from "@/components/home-components/NoteSettings";
 import PdfSettings from "@/components/home-components/PdfSettings";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type HomePaneItem =
+export type HomePaneItem =
   | {
       type: "note";
       id: Id<"notes">;

@@ -144,41 +144,6 @@ export default function WorkingspaceNewDropdownBtn({
     }
   }, []);
 
-  const createNote = useMutation(api.notes.createNote).withOptimisticUpdate(
-    (local, args) => {
-      const {
-        notesTableId: nextTableId,
-        title,
-        workingSpacesSlug,
-        workingSpaceId,
-      } = args;
-
-      if (!notesTableId || nextTableId !== notesTableId) return;
-
-      const now = Date.now();
-      const uuid = crypto.randomUUID();
-      const tempId = `${uuid}-${now}` as Id<"notes">;
-
-      insertAtTop({
-        localQueryStore: local,
-        paginatedQuery: api.notes.getNotesByTableId,
-        argsToMatch: { notesTableId },
-        item: {
-          _id: tempId,
-          _creationTime: now,
-          title: title || "Untitled",
-          slug: "untitled",
-          workingSpaceId,
-          workingSpacesSlug,
-          notesTableId,
-          favorite: false,
-          createdAt: now,
-          updatedAt: now,
-        },
-      });
-    },
-  );
-
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
   const createLink = useMutation(api.links.createLink);
@@ -536,7 +501,6 @@ export default function WorkingspaceNewDropdownBtn({
         </DropdownMenu>
       </div>
 
-      {/* Insert Link Dialog */}
       <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
         <DialogContent className="sm:max-w-md bg-card border-border px-4 pt-4 pb-2.5">
           <DialogHeader>
