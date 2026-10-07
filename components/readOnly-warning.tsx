@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "./ui/button";
 import { AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 export function ReadOnlyWarning() {
   const [showWarning, setShowWarning] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const hasSeenWarning = localStorage.getItem("ReadOnlySeen");
     if (!hasSeenWarning) {
       setShowWarning(true);
@@ -20,14 +23,14 @@ export function ReadOnlyWarning() {
     setShowWarning(false);
   };
 
-  if (!showWarning) return null;
+  if (!mounted || !showWarning) return null;
 
-  return (
+  return createPortal(
     <motion.div
       initial={{ y: -80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ ease: "linear", duration: 0.5, delay: 2 }}
-      className="fixed top-4 inset-x-0 z-50 flex justify-center px-4"
+      className="fixed top-4 inset-x-0 z-[90001] flex justify-center px-4"
     >
       <div className="w-full max-w-2xl bg-background/80 backdrop-blur-md pr-2 pl-4 py-2 app-radius-lg border border-border shadow-lg">
         <div className="flex items-start gap-3">
@@ -45,6 +48,7 @@ export function ReadOnlyWarning() {
           </Button>
         </div>
       </div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }
