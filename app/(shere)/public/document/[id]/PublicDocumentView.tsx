@@ -84,19 +84,20 @@ export default function PublicDocumentView() {
         setIsScrolled(e.currentTarget.scrollTop > 0);
       }}
     >
+      <ReadOnlyWarning />
+
       <div
         aria-hidden
-        className="sticky top-0 z-40 pointer-events-none h-0 overflow-visible"
+        className="sticky top-0 z-20 pointer-events-none h-0 overflow-visible"
       >
         <div
-          className="sticky top-0 z-40 pointer-events-none h-24 bg-gradient-to-b from-background from-20% to-transparent transition-opacity duration-150"
+          className="sticky top-0 pointer-events-none h-[4rem] bg-gradient-to-b from-background from-0% via-background/65 via-45% to-100% to-transparent transition-opacity duration-150"
           style={{ opacity: isScrolled ? 1 : 0 }}
         />
       </div>
 
-      <header className=" sticky top-0 left-0 w-full z-[10000]">
+      <header className=" sticky top-0 left-0 w-full z-30">
         <div className=" px-2 py-2.5 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
-          <ReadOnlyWarning />
           <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-1.5 h-8">
             {PublicNoteTitle}
             <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground ">
