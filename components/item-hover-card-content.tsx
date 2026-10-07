@@ -27,6 +27,7 @@ import {
 } from "@/components/WorkspacePreviewComponents";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 
 function ThumbnailFrame({
   src,
@@ -147,6 +148,7 @@ export function ItemHoverCardContent({
   canUnlink = true,
 }: ItemHoverCardContentProps) {
   const [copied, setCopied] = useState(false);
+  const { openPane } = useHomePane();
 
   const handleCopy = useCallback(async () => {
     const targetUrl = item?.href || item?.url || fallbackUrl;
@@ -300,7 +302,17 @@ export function ItemHoverCardContent({
 
           <IntentPrefetchLink
             href={item.href}
-            prefetchNoteId={item._id}
+            prefetchNoteId={item._id as any}
+            onClick={(e) => {
+              if (e.button === 0 && e.altKey) {
+                e.preventDefault();
+                openPane({
+                  type: "note",
+                  id: item._id as any,
+                  title: item.title,
+                });
+              }
+            }}
             className="inline-flex w-full items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium app-radius-md bg-border text-muted-foreground hover:brightness-150 transition-colors shadow-sm"
           >
             <span>Open note</span>
@@ -443,6 +455,16 @@ export function ItemHoverCardContent({
 
           <IntentPrefetchLink
             href={item.href}
+            onClick={(e) => {
+              if (e.button === 0 && e.altKey) {
+                e.preventDefault();
+                openPane({
+                  type: "pdf",
+                  id: item._id as any,
+                  title: item.title,
+                });
+              }
+            }}
             className="inline-flex w-full items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium app-radius-md bg-border text-muted-foreground hover:brightness-150 transition-colors shadow-sm"
           >
             <span>Open PDF</span>

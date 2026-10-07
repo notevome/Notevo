@@ -41,6 +41,7 @@ import {
 import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 const homeMemoryCache: {
   viewer?: any;
   recentWorkspaces?: any;
@@ -549,6 +550,7 @@ interface Note {
 }
 
 function NoteCard({ note }: { note: Note }) {
+  const { openPane } = useHomePane();
   const getContentPreviewFromBody = (body: any) => {
     if (!body) return "No content yet. Click to start writing...";
     try {
@@ -573,6 +575,12 @@ function NoteCard({ note }: { note: Note }) {
       draggable={false}
       href={href}
       prefetchNoteId={note._id}
+      onClick={(e) => {
+        if (e.button === 0 && e.altKey) {
+          e.preventDefault();
+          openPane({ type: "note", id: note._id, title: note.title });
+        }
+      }}
       className={cn(
         "group relative overflow-hidden bg-card border transition-colors flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
         isEmpty
