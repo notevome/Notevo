@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
+import NoteContextMenu from "@/components/home-components/NoteContextMenu";
 const homeMemoryCache: {
   viewer?: any;
   recentWorkspaces?: any;
@@ -401,6 +402,10 @@ function WorkspaceCard({
 }: WorkspaceCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
+  const [contextMenuPosition, setContextMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
@@ -478,6 +483,11 @@ function WorkspaceCard({
       <Card
         className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors group-hover/folder:border-muted-foreground/50"
         style={{ borderTopLeftRadius: 0 }}
+        onContextMenu={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setContextMenuPosition({ x: event.clientX, y: event.clientY });
+        }}
       >
         <IntentPrefetchLink
           draggable={false}
@@ -509,6 +519,8 @@ function WorkspaceCard({
             <WorkingSpaceSettings
               workingSpaceId={workspace._id}
               workingspaceName={workspace.name}
+              contextMenuPosition={contextMenuPosition}
+              onContextMenuClose={() => setContextMenuPosition(null)}
             />
           </div>
         </CardHeader>
@@ -570,7 +582,7 @@ function NoteCard({ note }: { note: Note }) {
   const isEmpty = !(note.preview || note.body);
   const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
 
-  return (
+  const noteCard = (
     <IntentPrefetchLink
       draggable={false}
       href={href}
@@ -623,5 +635,11 @@ function NoteCard({ note }: { note: Note }) {
         </div>
       </CardFooter>
     </IntentPrefetchLink>
+  );
+
+  return (
+    <NoteContextMenu noteId={note._id} noteTitle={note.title}>
+      {noteCard}
+    </NoteContextMenu>
   );
 }

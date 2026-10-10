@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
@@ -106,7 +107,8 @@ export default function NoteContextMenu({
   const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
 
   const currentSlug = pathname.split("/").filter(Boolean).pop();
-  const currentNoteId = searchParams.get("id") || extractIdFromSlug(currentSlug);
+  const currentNoteId =
+    searchParams.get("id") || extractIdFromSlug(currentSlug);
   const isViewingThisNote = currentNoteId === noteId;
 
   const { handleDownload } = useNoteDownload({
@@ -204,19 +206,23 @@ export default function NoteContextMenu({
         {children}
 
         <DropdownMenu open={open} onOpenChange={setOpen}>
-          <DropdownMenuTrigger asChild>
-            <span
-              ref={triggerRef}
-              style={{
-                position: "fixed",
-                left: triggerPos.x,
-                top: triggerPos.y,
-                width: 0,
-                height: 0,
-                pointerEvents: "none",
-              }}
-            />
-          </DropdownMenuTrigger>
+          {typeof document !== "undefined" &&
+            createPortal(
+              <DropdownMenuTrigger asChild>
+                <span
+                  ref={triggerRef}
+                  style={{
+                    position: "fixed",
+                    left: triggerPos.x,
+                    top: triggerPos.y,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </DropdownMenuTrigger>,
+              document.body,
+            )}
 
           <DropdownMenuContent
             className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-[10000]"

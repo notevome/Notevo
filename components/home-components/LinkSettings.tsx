@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation } from "convex/react";
 import { Check, Copy, ExternalLink, FileOutput, Pin } from "lucide-react";
 import { FaEllipsis, FaEllipsisVertical, FaRegTrashCan } from "react-icons/fa6";
@@ -52,6 +53,8 @@ interface LinkSettingsProps {
   dropdownMenuContentAlign: "end" | "start";
   tooltipContentAlign: "end" | "start";
   onDelete?: (linkId: Id<"links">) => void;
+  contextMenuPosition?: { x: number; y: number } | null;
+  onContextMenuClose?: () => void;
 }
 
 const formatLinkTimestamp = (timestamp?: number) => {
@@ -79,6 +82,8 @@ export default function LinkSettings({
   dropdownMenuContentAlign,
   tooltipContentAlign,
   onDelete,
+  contextMenuPosition,
+  onContextMenuClose,
 }: LinkSettingsProps) {
   const [open, setOpen] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -90,6 +95,10 @@ export default function LinkSettings({
   const deleteLink = useMutation(api.links.deleteLink);
 
   const link = useQuery(api.links.getLinkById, { _id: linkId });
+
+  useEffect(() => {
+    if (contextMenuPosition) setOpen(true);
+  }, [contextMenuPosition]);
 
   const handleFavoritePin = useCallback(async () => {
     await updateLink({
@@ -140,6 +149,7 @@ export default function LinkSettings({
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
+          if (!next) onContextMenuClose?.();
           if (next) tooltip.hide();
         }}
       >
@@ -173,6 +183,25 @@ export default function LinkSettings({
             Pin, Open, Copy, Move, Delete
           </TooltipContent>
         </Tooltip>
+        {open &&
+          contextMenuPosition &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <DropdownMenuTrigger asChild>
+              <span
+                aria-hidden
+                style={{
+                  position: "fixed",
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </DropdownMenuTrigger>,
+            document.body,
+          )}
 
         <DropdownMenuContent
           side="bottom"

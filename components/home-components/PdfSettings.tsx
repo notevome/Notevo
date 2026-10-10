@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation } from "convex/react";
 import { useDebouncedCallback } from "use-debounce";
 import z from "zod";
@@ -63,6 +64,8 @@ interface PdfSettingsProps {
   dropdownMenuContentAlign: "end" | "start";
   tooltipContentAlign: "end" | "start";
   onDelete?: (pdfId: Id<"pdfs">) => void;
+  contextMenuPosition?: { x: number; y: number } | null;
+  onContextMenuClose?: () => void;
 }
 
 const PDF_TITLE_MAX_LENGTH = 55;
@@ -96,6 +99,8 @@ export default function PdfSettings({
   dropdownMenuContentAlign,
   tooltipContentAlign,
   onDelete,
+  contextMenuPosition,
+  onContextMenuClose,
 }: PdfSettingsProps) {
   const [inputValue, setInputValue] = useState(pdfTitle || "Untitled");
   const [open, setOpen] = useState(false);
@@ -117,6 +122,10 @@ export default function PdfSettings({
       }, 10);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (contextMenuPosition) setOpen(true);
+  }, [contextMenuPosition]);
 
   const debouncedRenamePdf = useDebouncedCallback((nextTitle: string) => {
     const currentTitle = pdfTitle || "Untitled";
@@ -225,6 +234,7 @@ export default function PdfSettings({
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
+          if (!next) onContextMenuClose?.();
           if (next) tooltip.hide();
         }}
       >
@@ -258,6 +268,25 @@ export default function PdfSettings({
             Rename, Pin, Move, Download, Delete
           </TooltipContent>
         </Tooltip>
+        {open &&
+          contextMenuPosition &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <DropdownMenuTrigger asChild>
+              <span
+                aria-hidden
+                style={{
+                  position: "fixed",
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </DropdownMenuTrigger>,
+            document.body,
+          )}
 
         <DropdownMenuContent
           side="bottom"

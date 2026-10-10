@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import { useDebouncedCallback } from "use-debounce";
@@ -75,6 +76,8 @@ interface WhiteboardSettingsProps {
   onDelete?: (id: Id<"whiteboards">) => void;
   className?: string;
   syncBrowserChrome?: boolean;
+  contextMenuPosition?: { x: number; y: number } | null;
+  onContextMenuClose?: () => void;
 }
 
 const TITLE_MAX_LENGTH = 55;
@@ -94,6 +97,8 @@ export default function WhiteboardSettings({
   onDelete,
   className,
   syncBrowserChrome = true,
+  contextMenuPosition,
+  onContextMenuClose,
 }: WhiteboardSettingsProps) {
   const router = useRouter();
   const fetchedWhiteboard = useQuery(
@@ -113,6 +118,10 @@ export default function WhiteboardSettings({
   );
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (contextMenuPosition) setOpen(true);
+  }, [contextMenuPosition]);
   const inputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tooltip = useHoverTooltip(100);
@@ -318,6 +327,7 @@ export default function WhiteboardSettings({
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
+          if (!next) onContextMenuClose?.();
           if (next) tooltip.hide();
         }}
       >
@@ -346,6 +356,25 @@ export default function WhiteboardSettings({
             Rename, Pin, Move, Download, Delete
           </TooltipContent>
         </Tooltip>
+        {open &&
+          contextMenuPosition &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <DropdownMenuTrigger asChild>
+              <span
+                aria-hidden
+                style={{
+                  position: "fixed",
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </DropdownMenuTrigger>,
+            document.body,
+          )}
         <DropdownMenuContent
           align="end"
           className="z-[10000] w-48 space-y-4 px-1.5 pb-1.5 pt-0 text-muted-foreground"
