@@ -28,7 +28,6 @@ I've been looking for a Note Taking app that's simpler than Notion but more orga
  ## Features
  
  -  **Notion style editor** powered by TipTap
- -  **AI-powered autocompletion** with OpenAI integration
  -  **Real-time updates**
  -  **Cloud storage support with Convex**
  -  **Authentication with Convex**
