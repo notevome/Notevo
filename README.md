@@ -1,14 +1,14 @@
 # Notevo
 
-> A minimal, structured note-taking app — simpler than Notion, more organized than Google Keep.
+> A minimal, structured note-taking app: simpler than Notion, more organized than Google Keep.
 
 [![Website](https://img.shields.io/badge/Website-notevo.me-644A40?style=for-the-badge&logo=globe&logoColor=white)](https://notevo.me)
-[![@Moe H](https://img.shields.io/badge/Portfolio-mohammedh.dev-333333?style=for-the-badge&logo=aboutdotme&logoColor=white)](https://www.mohammedh.dev/)
+[![@Moe](https://img.shields.io/badge/@Moe-mohammedh.dev-333333?style=for-the-badge&logo=aboutdotme&logoColor=white)](https://www.mohammedh.dev/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Notevo-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/notevo)
 [![GitHub](https://img.shields.io/badge/GitHub-Notevo-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/notevome/Notevo)
 [![Email](https://img.shields.io/badge/Email-support@notevo.me-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:support@notevo.me)
 
-I built Notevo because I couldn't find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. Notevo gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI — without the bloat.
+I built Notevo because I could not find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. Notevo gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
 
 ![Home Page](showCase_imgs/HomePage.png)
 
@@ -18,28 +18,28 @@ I built Notevo because I couldn't find a note-taking app that hit the sweet spot
 
 ### Workspaces and Organization
 
-- **Workspaces** — Top-level containers for your projects (star, rename, or manage access).
-- **Tables** — Group notes, PDFs, links, and whiteboards neatly inside any workspace.
-- **Drag-and-drop reordering** — Reorder notes smoothly within tables using `@hello-pangea/dnd`.
-- **Searchable Move Dialog** — Move notes, links, PDFs, or tables across different workspaces and tables.
-- **Favorites & Pinning** — Star notes, whiteboards, links, or PDFs for instant access.
-- **Human-friendly URLs** — Clean, slug-based routing for workspaces and nested items.
+- **Workspaces**: Top-level containers for your projects (star, rename, or manage access).
+- **Tables**: Group notes, PDFs, links, and whiteboards neatly inside any workspace.
+- **Drag and Drop Reordering**: Reorder notes smoothly within tables using `@hello-pangea/dnd`.
+- **Searchable Move Dialog**: Move notes, links, PDFs, or tables across different workspaces and tables.
+- **Favorites & Pinning**: Star notes, whiteboards, links, or PDFs for instant access.
+- **Human-Friendly URLs**: Clean, slug-based routing for workspaces and nested items.
 
 ### Rich Text Editor
 
-- **Notion-style block editor** — Powered by TipTap and Novel.
-- **Drag handle** — Grab and reorder blocks easily.
-- **Full table support** — Insert tables with headers, rows, and resizable cells.
-- **Code syntax highlighting** — Highlighted code blocks using lowlight and Shiki themes.
-- **Table of contents** — Automatically generated heading structure.
-- **Typography & styling** — Bold, italic, underline, highlight colors, and text alignment.
-- **Inline media & blocks** — Task lists, blockquotes, images, and links.
-- **Adjustable width** — Switch note reading view between narrow, standard, and wide.
-- **Auto-save & pending drafts** — Debounced real-time saving and quick instant note creation.
+- **Notion-Style Block Editor**: Powered by TipTap and Novel.
+- **Drag Handle**: Grab and reorder blocks easily.
+- **Full Table Support**: Insert tables with headers, rows, and resizable cells.
+- **Code Syntax Highlighting**: Highlighted code blocks using lowlight and Shiki themes.
+- **Table of Contents**: Automatically generated heading structure.
+- **Typography & Styling**: Bold, italic, underline, highlight colors, and text alignment.
+- **Inline Media & Blocks**: Task lists, blockquotes, images, and links.
+- **Adjustable Width**: Switch note reading view between narrow, standard, and wide.
+- **Auto-Save & Pending Drafts**: Debounced real-time saving and quick instant note creation.
 
 ### AI Assistant
 
-- **Contextual AI selector** — Select text to trigger smart commands:
+- **Contextual AI Selector**: Select text to trigger smart commands:
   - Improve writing
   - Fix grammar
   - Make shorter / Make longer
@@ -98,7 +98,7 @@ Export notes into standard file formats:
 
 ### Folder Drop Upload
 
-- Drag-and-drop entire local folders into the app.
+- Drag and drop entire local folders into the app.
 - Automatically processes and maps directories and PDFs into workspaces and tables.
 
 ### Dashboard & Analytics
