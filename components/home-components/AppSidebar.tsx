@@ -93,6 +93,7 @@ import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
 import NoteContextMenu from "./NoteContextMenu";
+import SidebarItemContextMenu from "./SidebarItemContextMenu";
 import { FaGithub } from "react-icons/fa6";
 import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
@@ -875,6 +876,7 @@ const PinnedUploadItem = memo(
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
     const updatePdf = useMutation(api.pdfs.updatePdf);
+    const deletePdf = useMutation(api.pdfs.deletePdf);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const pdfPath = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`;
@@ -976,95 +978,106 @@ const PinnedUploadItem = memo(
       ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
     return (
-      <SidebarGroupContent
-        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <SidebarItemContextMenu
+        itemName={pdf.title || "Untitled"}
+        itemLabel="Upload"
+        favorite={pdf.favorite}
+        onRename={(title) => updatePdf({ _id: pdf._id, title })}
+        onToggleFavorite={() =>
+          updatePdf({ _id: pdf._id, favorite: !pdf.favorite })
+        }
+        onDelete={() => deletePdf({ _id: pdf._id })}
       >
-        <SidebarMenu className="flex-1">
-          <SidebarMenuItem>
-            {isEditing ? (
-              <Input
-                ref={inputRef}
-                value={editedTitle}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                onKeyDown={handleInputKeyPress}
-                aria-label="pinned upload title"
-                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
-              />
-            ) : (
-              <Tooltip open={titleTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="SidebarMenuButton"
-                    className={`px-2 my-0.5 h-8 group flex-1 ${
-                      isActive ? "bg-border" : ""
-                    }`}
-                    asChild
-                    onDoubleClick={handleDoubleClick}
-                    {...titleTooltip.triggerProps}
-                  >
-                    <IntentPrefetchLink
-                      href={pdfHref}
-                      className="flex items-center gap-2 flex-grow min-w-0"
-                      onClick={(event) => {
-                        if (event.button === 0 && event.altKey) {
-                          event.preventDefault();
-                          openPane({
-                            type: "pdf",
-                            id: pdf._id,
-                            title: pdf.title || "Untitled",
-                          });
-                          titleTooltip.hide();
-                        }
-                      }}
-                    >
-                      {isHovered || isActive ? (
-                        <ChevronRight
-                          size="16"
-                          className="text-muted-foreground flex-shrink-0"
-                        />
-                      ) : (
-                        <FileText
-                          size="16"
-                          className="text-muted-foreground flex-shrink-0"
-                        />
-                      )}
-                      <span className={textClassName}>
-                        {formatWorkspaceName(pdf.title || "Untitled")}
-                      </span>
-                    </IntentPrefetchLink>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  sideOffset={5}
-                  className=" !app-radius-none py-[5px]"
-                >
-                  {pdf.title || "Untitled"}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <div
-          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
-          onMouseEnter={titleTooltip.hide}
+        <SidebarGroupContent
+          className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+          onMouseEnter={handleContentMouseEnter}
+          onMouseLeave={handleContentMouseLeave}
         >
-          <OpenInPaneButton
-            label="open-upload-in-pane"
-            onOpen={() =>
-              openPane({
-                type: "pdf",
-                id: pdf._id,
-                title: pdf.title || "Untitled",
-              })
-            }
-          />
-          <PdfSettingsSidebar pdfId={pdf._id} />
-        </div>
-      </SidebarGroupContent>
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              {isEditing ? (
+                <Input
+                  ref={inputRef}
+                  value={editedTitle}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  onKeyDown={handleInputKeyPress}
+                  aria-label="pinned upload title"
+                  className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                />
+              ) : (
+                <Tooltip open={titleTooltip.open}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="SidebarMenuButton"
+                      className={`px-2 my-0.5 h-8 group flex-1 ${
+                        isActive ? "bg-border" : ""
+                      }`}
+                      asChild
+                      onDoubleClick={handleDoubleClick}
+                      {...titleTooltip.triggerProps}
+                    >
+                      <IntentPrefetchLink
+                        href={pdfHref}
+                        className="flex items-center gap-2 flex-grow min-w-0"
+                        onClick={(event) => {
+                          if (event.button === 0 && event.altKey) {
+                            event.preventDefault();
+                            openPane({
+                              type: "pdf",
+                              id: pdf._id,
+                              title: pdf.title || "Untitled",
+                            });
+                            titleTooltip.hide();
+                          }
+                        }}
+                      >
+                        {isHovered || isActive ? (
+                          <ChevronRight
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        ) : (
+                          <FileText
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        )}
+                        <span className={textClassName}>
+                          {formatWorkspaceName(pdf.title || "Untitled")}
+                        </span>
+                      </IntentPrefetchLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={5}
+                    className=" !app-radius-none py-[5px]"
+                  >
+                    {pdf.title || "Untitled"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <div
+            className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+            onMouseEnter={titleTooltip.hide}
+          >
+            <OpenInPaneButton
+              label="open-upload-in-pane"
+              onOpen={() =>
+                openPane({
+                  type: "pdf",
+                  id: pdf._id,
+                  title: pdf.title || "Untitled",
+                })
+              }
+            />
+            <PdfSettingsSidebar pdfId={pdf._id} />
+          </div>
+        </SidebarGroupContent>
+      </SidebarItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1205,6 +1218,7 @@ const PinnedWhiteboardItem = memo(
       whiteboard.title || "Untitled",
     );
     const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
+    const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const whiteboardSlug = buildItemSlug(
@@ -1319,89 +1333,103 @@ const PinnedWhiteboardItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarGroupContent
-        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <SidebarItemContextMenu
+        itemName={whiteboard.title || "Untitled"}
+        itemLabel="Whiteboard"
+        favorite={whiteboard.favorite}
+        onRename={(title) => updateWhiteboard({ _id: whiteboard._id, title })}
+        onToggleFavorite={() =>
+          updateWhiteboard({
+            _id: whiteboard._id,
+            favorite: !whiteboard.favorite,
+          })
+        }
+        onDelete={() => deleteWhiteboard({ _id: whiteboard._id })}
       >
-        <SidebarMenu className="flex-1">
-          <SidebarMenuItem>
-            {isEditing ? (
-              <Input
-                ref={inputRef}
-                value={editedTitle}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                onKeyDown={handleInputKeyPress}
-                aria-label="pinned whiteboard title"
-                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
-              />
-            ) : (
-              <Tooltip open={titleTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="SidebarMenuButton"
-                    className={`px-2 my-0.5 h-8 group flex-1 ${
-                      isActive ? "bg-border" : ""
-                    }`}
-                    asChild
-                    onDoubleClick={handleDoubleClick}
-                    {...titleTooltip.triggerProps}
-                  >
-                    <IntentPrefetchLink
-                      href={whiteboardHref}
-                      className="flex items-center gap-2 flex-grow min-w-0"
-                      onClick={(event) => {
-                        if (event.button === 0 && event.altKey) {
-                          event.preventDefault();
-                          toast({
-                            variant: "destructive",
-                            title: "Cannot open in side pane",
-                            description:
-                              "Whiteboards cannot be opened in a side pane.",
-                          });
-                        }
-                      }}
-                    >
-                      {isHovered || isActive ? (
-                        <ChevronRight
-                          size="16"
-                          className="text-muted-foreground flex-shrink-0"
-                        />
-                      ) : (
-                        <PenTool
-                          size="16"
-                          className="text-muted-foreground flex-shrink-0"
-                        />
-                      )}
-                      <span className={textClassName}>
-                        {formatWorkspaceName(whiteboard.title || "Untitled")}
-                      </span>
-                    </IntentPrefetchLink>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  sideOffset={5}
-                  className=" !app-radius-none py-[5px]"
-                >
-                  {whiteboard.title || "Untitled"}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <div
-          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
-          onMouseEnter={titleTooltip.hide}
+        <SidebarGroupContent
+          className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+          onMouseEnter={handleContentMouseEnter}
+          onMouseLeave={handleContentMouseLeave}
         >
-          <WhiteboardSettingsSidebar
-            whiteboardId={whiteboard._id}
-            whiteboardTitle={whiteboard.title}
-            ContainerClassName=""
-          />
-        </div>
-      </SidebarGroupContent>
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              {isEditing ? (
+                <Input
+                  ref={inputRef}
+                  value={editedTitle}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  onKeyDown={handleInputKeyPress}
+                  aria-label="pinned whiteboard title"
+                  className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                />
+              ) : (
+                <Tooltip open={titleTooltip.open}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="SidebarMenuButton"
+                      className={`px-2 my-0.5 h-8 group flex-1 ${
+                        isActive ? "bg-border" : ""
+                      }`}
+                      asChild
+                      onDoubleClick={handleDoubleClick}
+                      {...titleTooltip.triggerProps}
+                    >
+                      <IntentPrefetchLink
+                        href={whiteboardHref}
+                        className="flex items-center gap-2 flex-grow min-w-0"
+                        onClick={(event) => {
+                          if (event.button === 0 && event.altKey) {
+                            event.preventDefault();
+                            toast({
+                              variant: "destructive",
+                              title: "Cannot open in side pane",
+                              description:
+                                "Whiteboards cannot be opened in a side pane.",
+                            });
+                          }
+                        }}
+                      >
+                        {isHovered || isActive ? (
+                          <ChevronRight
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        ) : (
+                          <PenTool
+                            size="16"
+                            className="text-muted-foreground flex-shrink-0"
+                          />
+                        )}
+                        <span className={textClassName}>
+                          {formatWorkspaceName(whiteboard.title || "Untitled")}
+                        </span>
+                      </IntentPrefetchLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={5}
+                    className=" !app-radius-none py-[5px]"
+                  >
+                    {whiteboard.title || "Untitled"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <div
+            className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+            onMouseEnter={titleTooltip.hide}
+          >
+            <WhiteboardSettingsSidebar
+              whiteboardId={whiteboard._id}
+              whiteboardTitle={whiteboard.title}
+              ContainerClassName=""
+            />
+          </div>
+        </SidebarGroupContent>
+      </SidebarItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1572,6 +1600,8 @@ const PinnedLinkItem = memo(
     const titleTooltip = useHoverTooltip(400);
     const { toast } = useToast();
     const [isHovered, setIsHovered] = useState(false);
+    const updateLink = useMutation(api.links.updateLink);
+    const deleteLink = useMutation(api.links.deleteLink);
 
     const displayTitle =
       link.title ||
@@ -1592,71 +1622,82 @@ const PinnedLinkItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarGroupContent
-        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <SidebarItemContextMenu
+        itemName={displayTitle}
+        itemLabel="Link"
+        favorite={link.favorite}
+        onToggleFavorite={() =>
+          updateLink({ _id: link._id, favorite: !link.favorite })
+        }
+        onDelete={() => deleteLink({ _id: link._id })}
       >
-        <SidebarMenu className="flex-1">
-          <SidebarMenuItem>
-            <Tooltip open={titleTooltip.open}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="SidebarMenuButton"
-                  className="px-2 my-0.5 h-8 group flex-1"
-                  asChild
-                  {...titleTooltip.triggerProps}
-                >
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 flex-grow min-w-0"
-                    onClick={(event) => {
-                      if (event.altKey) {
-                        event.preventDefault();
-                        toast({
-                          variant: "destructive",
-                          title: "Cannot open in side pane",
-                          description: "Links cannot be opened in a side pane.",
-                        });
-                      }
-                    }}
-                  >
-                    {isHovered ? (
-                      <ExternalLink
-                        size="16"
-                        className="text-muted-foreground flex-shrink-0"
-                      />
-                    ) : (
-                      <SidebarLinkFavicon
-                        url={link.url}
-                        className="h-4 w-4 flex-shrink-0"
-                      />
-                    )}
-                    <span className={textClassName}>
-                      {formatWorkspaceName(displayTitle)}
-                    </span>
-                  </a>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="right"
-                sideOffset={5}
-                className=" !app-radius-none py-[5px]"
-              >
-                {displayTitle}
-              </TooltipContent>
-            </Tooltip>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <div
-          className={`absolute right-0 flex items-center ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
-          onMouseEnter={titleTooltip.hide}
+        <SidebarGroupContent
+          className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+          onMouseEnter={handleContentMouseEnter}
+          onMouseLeave={handleContentMouseLeave}
         >
-          <LinkSettingsSidebar linkId={link._id} />
-        </div>
-      </SidebarGroupContent>
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              <Tooltip open={titleTooltip.open}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className="px-2 my-0.5 h-8 group flex-1"
+                    asChild
+                    {...titleTooltip.triggerProps}
+                  >
+                    <a
+                      href={link.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 flex-grow min-w-0"
+                      onClick={(event) => {
+                        if (event.altKey) {
+                          event.preventDefault();
+                          toast({
+                            variant: "destructive",
+                            title: "Cannot open in side pane",
+                            description:
+                              "Links cannot be opened in a side pane.",
+                          });
+                        }
+                      }}
+                    >
+                      {isHovered ? (
+                        <ExternalLink
+                          size="16"
+                          className="text-muted-foreground flex-shrink-0"
+                        />
+                      ) : (
+                        <SidebarLinkFavicon
+                          url={link.url}
+                          className="h-4 w-4 flex-shrink-0"
+                        />
+                      )}
+                      <span className={textClassName}>
+                        {formatWorkspaceName(displayTitle)}
+                      </span>
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  sideOffset={5}
+                  className=" !app-radius-none py-[5px]"
+                >
+                  {displayTitle}
+                </TooltipContent>
+              </Tooltip>
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <div
+            className={`absolute right-0 flex items-center ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
+            onMouseEnter={titleTooltip.hide}
+          >
+            <LinkSettingsSidebar linkId={link._id} />
+          </div>
+        </SidebarGroupContent>
+      </SidebarItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1977,6 +2018,9 @@ const WorkspaceItem = memo(
         );
       }
     });
+    const deleteWorkingSpace = useMutation(
+      api.workingSpaces.deleteWorkingSpace,
+    );
     const inputRef = useRef<HTMLInputElement>(null);
 
     const workspaceHref = `/home/${workingSpace._id}`;
@@ -2059,89 +2103,96 @@ const WorkspaceItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarGroupContent
-        className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <SidebarItemContextMenu
+        itemName={workingSpace.name || "Untitled"}
+        itemLabel="Workspace"
+        onRename={(name) => updateWorkingSpace({ _id: workingSpace._id, name })}
+        onDelete={() => deleteWorkingSpace({ _id: workingSpace._id })}
       >
-        <SidebarMenu className="flex-1">
-          <SidebarMenuItem>
-            {isEditing ? (
-              <Input
-                ref={inputRef}
-                value={editedName}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                onKeyDown={handleInputKeyPress}
-                aria-label="work space name"
-                className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
-              />
-            ) : (
-              <Tooltip open={titleTooltip.open}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="SidebarMenuButton"
-                    className={`px-2 my-0.5 h-8 group flex-1 justify-start ${
-                      isActive ? "bg-border" : ""
-                    }`}
-                    asChild
-                    onDoubleClick={handleDoubleClick}
-                    {...titleTooltip.triggerProps}
-                  >
-                    <IntentPrefetchLink
-                      href={workspaceHref}
-                      className="flex items-center gap-2 flex-grow min-w-0"
-                      onClick={(event) => {
-                        if (event.button === 0 && event.altKey) {
-                          event.preventDefault();
-                          openPane({
-                            type: "workspace",
-                            id: workingSpace._id,
-                            title: workingSpace.name || "Untitled",
-                          });
-                          titleTooltip.hide();
-                        }
-                      }}
-                    >
-                      {isHovered || isActive ? (
-                        <FolderOpen
-                          size="16"
-                          className="flex-shrink-0 text-muted-foreground"
-                        />
-                      ) : (
-                        <FolderClosed
-                          size="16"
-                          className="flex-shrink-0 text-muted-foreground"
-                        />
-                      )}
-                      <span className={textClassName}>
-                        {formatWorkspaceName(workingSpace.name || "Untitled")}
-                      </span>
-                    </IntentPrefetchLink>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="right"
-                  sideOffset={5}
-                  className="!app-radius-none py-[5px]"
-                >
-                  {workingSpace.name || "Untitled"}
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <div
-          className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-          onMouseEnter={titleTooltip.hide}
+        <SidebarGroupContent
+          className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
+          onMouseEnter={handleContentMouseEnter}
+          onMouseLeave={handleContentMouseLeave}
         >
-          <WorkingSpaceSettingsSidbar
-            workingSpaceId={workingSpace._id}
-            workingspaceName={workingSpace.name}
-            ContainerClassName=""
-          />
-        </div>
-      </SidebarGroupContent>
+          <SidebarMenu className="flex-1">
+            <SidebarMenuItem>
+              {isEditing ? (
+                <Input
+                  ref={inputRef}
+                  value={editedName}
+                  onChange={handleInputChange}
+                  onBlur={handleInputBlur}
+                  onKeyDown={handleInputKeyPress}
+                  aria-label="work space name"
+                  className="flex-1 h-3 pl-8 pr-2 py-0 my-0 text-sm focus-visible:outline-none border-0 border-transparent  focus-visible:ring-0 focus-visible:ring-offset-0 app-radius-lg"
+                />
+              ) : (
+                <Tooltip open={titleTooltip.open}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="SidebarMenuButton"
+                      className={`px-2 my-0.5 h-8 group flex-1 justify-start ${
+                        isActive ? "bg-border" : ""
+                      }`}
+                      asChild
+                      onDoubleClick={handleDoubleClick}
+                      {...titleTooltip.triggerProps}
+                    >
+                      <IntentPrefetchLink
+                        href={workspaceHref}
+                        className="flex items-center gap-2 flex-grow min-w-0"
+                        onClick={(event) => {
+                          if (event.button === 0 && event.altKey) {
+                            event.preventDefault();
+                            openPane({
+                              type: "workspace",
+                              id: workingSpace._id,
+                              title: workingSpace.name || "Untitled",
+                            });
+                            titleTooltip.hide();
+                          }
+                        }}
+                      >
+                        {isHovered || isActive ? (
+                          <FolderOpen
+                            size="16"
+                            className="flex-shrink-0 text-muted-foreground"
+                          />
+                        ) : (
+                          <FolderClosed
+                            size="16"
+                            className="flex-shrink-0 text-muted-foreground"
+                          />
+                        )}
+                        <span className={textClassName}>
+                          {formatWorkspaceName(workingSpace.name || "Untitled")}
+                        </span>
+                      </IntentPrefetchLink>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    sideOffset={5}
+                    className="!app-radius-none py-[5px]"
+                  >
+                    {workingSpace.name || "Untitled"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </SidebarMenuItem>
+          </SidebarMenu>
+          <div
+            className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            onMouseEnter={titleTooltip.hide}
+          >
+            <WorkingSpaceSettingsSidbar
+              workingSpaceId={workingSpace._id}
+              workingspaceName={workingSpace.name}
+              ContainerClassName=""
+            />
+          </div>
+        </SidebarGroupContent>
+      </SidebarItemContextMenu>
     );
   },
   (prevProps, nextProps) => {

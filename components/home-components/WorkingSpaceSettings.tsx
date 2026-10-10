@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -37,6 +38,8 @@ interface WorkingSpaceSettings {
   workingSpaceId: Id<"workingSpaces">;
   className?: string;
   workingspaceName: string | any;
+  contextMenuPosition?: { x: number; y: number } | null;
+  onContextMenuClose?: () => void;
 }
 
 const WORKSPACE_NAME_MAX_LENGTH = 30;
@@ -57,6 +60,8 @@ export default function WorkingSpaceSettings({
   className,
   workingSpaceId,
   workingspaceName,
+  contextMenuPosition,
+  onContextMenuClose,
 }: WorkingSpaceSettings) {
   const [inputValue, setInputValue] = useState(workingspaceName);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -77,6 +82,10 @@ export default function WorkingSpaceSettings({
       }, 10);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (contextMenuPosition) setOpen(true);
+  }, [contextMenuPosition]);
 
   const tables = useQuery(api.notesTables.getTables, {
     workingSpaceId,
@@ -219,6 +228,7 @@ export default function WorkingSpaceSettings({
         open={open}
         onOpenChange={(next) => {
           setOpen(next);
+          if (!next) onContextMenuClose?.();
           if (next) tooltip.hide();
         }}
       >
@@ -239,6 +249,25 @@ export default function WorkingSpaceSettings({
             Rename, Delete
           </TooltipContent>
         </Tooltip>
+        {open &&
+          contextMenuPosition &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <DropdownMenuTrigger asChild>
+              <span
+                aria-hidden
+                style={{
+                  position: "fixed",
+                  left: contextMenuPosition.x,
+                  top: contextMenuPosition.y,
+                  width: 0,
+                  height: 0,
+                  pointerEvents: "none",
+                }}
+              />
+            </DropdownMenuTrigger>,
+            document.body,
+          )}
         <DropdownMenuContent
           side="bottom"
           align="start"
