@@ -2,12 +2,6 @@
 
 > A minimal, structured note-taking app: simpler than Notion, more organized than Google Keep.
 
-[![Website](https://img.shields.io/badge/Website-notevo.me-644A40?style=for-the-badge&logo=globe&logoColor=white)](https://notevo.me)
-[![@Moe](https://img.shields.io/badge/@Moe-mohammedh.dev-333333?style=for-the-badge&logo=aboutdotme&logoColor=white)](https://www.mohammedh.dev/)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Notevo-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/company/notevo)
-[![GitHub](https://img.shields.io/badge/GitHub-Notevo-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/notevome/Notevo)
-[![Email](https://img.shields.io/badge/Email-support@notevo.me-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:support@notevo.me)
-
 I built Notevo because I could not find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. Notevo gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
 
 ![Home Page](showCase_imgs/HomePage.png)
