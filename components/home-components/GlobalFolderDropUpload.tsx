@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
-import { Upload, FolderOpen, FileUp, Loader2 } from "lucide-react";
+import { FolderOpen, FileUp, Loader2 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "@/cache/useQuery";
@@ -16,7 +16,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { generateSlug } from "@/lib/generateSlug";
 import { buildItemSlug } from "@/lib/slug";
 import { cn } from "@/lib/utils";
 
@@ -36,7 +35,7 @@ type FileSystemEntryLike = {
   isFile: boolean;
   isDirectory: boolean;
   name: string;
-  file?: (callback: (file: File) => void) => void;
+  file?: (success: (file: File) => void, error?: (e: unknown) => void) => void;
   createReader?: () => {
     readEntries: (callback: (entries: FileSystemEntryLike[]) => void) => void;
   };
@@ -73,11 +72,7 @@ async function collectFilesFromEntry(
 ): Promise<void> {
   if (entry.isFile && entry.file) {
     const file = await new Promise<File>((resolve, reject) => {
-      try {
-        entry.file?.(resolve);
-      } catch (error) {
-        reject(error);
-      }
+      entry.file?.(resolve, reject);
     });
 
     if (isPdfFile(file)) {
@@ -116,49 +111,58 @@ async function collectFilesFromHandle(
 
 async function extractPdfFilesFromDrop(dataTransfer: DataTransfer) {
   const files: File[] = [];
-  const folderNames: string[] = [];
-  const items = Array.from(dataTransfer.items ?? []);
+  const directoryNames: string[] = [];
+  const looseFileNames: string[] = [];
 
-  for (const item of items) {
-    if (item.kind !== "file") continue;
+  const sources = Array.from(dataTransfer.items ?? [])
+    .filter((item) => item.kind === "file")
+    .map((item) => {
+      const withHandle = item as DataTransferItem & {
+        getAsFileSystemHandle?: () => Promise<FileSystemHandleLike | null>;
+        webkitGetAsEntry?: () => FileSystemEntryLike | null;
+      };
 
-    const itemWithHandle = item as DataTransferItem & {
-      getAsFileSystemHandle?: () => Promise<FileSystemHandleLike>;
-      webkitGetAsEntry?: () => FileSystemEntryLike | null;
-    };
+      return {
+        handlePromise: withHandle.getAsFileSystemHandle?.() ?? null,
+        entry: withHandle.webkitGetAsEntry?.() ?? null,
+        file: item.getAsFile(),
+      };
+    });
 
-    if (itemWithHandle.getAsFileSystemHandle) {
-      const handle = await itemWithHandle.getAsFileSystemHandle();
-      folderNames.push(handle.name);
+  for (const source of sources) {
+    const handle = source.handlePromise
+      ? await source.handlePromise.catch(() => null)
+      : null;
+
+    if (handle) {
+      (handle.kind === "directory" ? directoryNames : looseFileNames).push(
+        handle.name,
+      );
       await collectFilesFromHandle(handle, files);
       continue;
     }
 
-    if (itemWithHandle.webkitGetAsEntry) {
-      const entry = itemWithHandle.webkitGetAsEntry();
-      if (entry) {
-        folderNames.push(entry.name);
-        await collectFilesFromEntry(entry, files);
-        continue;
-      }
+    if (source.entry) {
+      (source.entry.isDirectory ? directoryNames : looseFileNames).push(
+        source.entry.name,
+      );
+      await collectFilesFromEntry(source.entry, files);
+      continue;
     }
 
-    const fallbackFile = item.getAsFile();
-    if (fallbackFile && isPdfFile(fallbackFile)) {
-      folderNames.push(fallbackFile.name);
-      files.push(fallbackFile);
+    if (source.file && isPdfFile(source.file)) {
+      looseFileNames.push(source.file.name);
+      files.push(source.file);
     }
   }
 
+  const totalSources = directoryNames.length + looseFileNames.length;
   const folderName =
-    folderNames.find((name) => !name.toLowerCase().endsWith(".pdf")) ??
-    folderNames[0] ??
-    "Uploaded folder";
+    totalSources === 1
+      ? (directoryNames[0] ?? looseFileNames[0])
+      : `${totalSources} items`;
 
-  return {
-    files,
-    folderName,
-  };
+  return { files, folderName: folderName || "Uploaded folder" };
 }
 
 export default function GlobalFolderDropUpload() {
@@ -234,7 +238,7 @@ export default function GlobalFolderDropUpload() {
         }
 
         toast({
-          title: "Folder uploaded",
+          title: "Upload complete",
           description: `${files.length} PDF${files.length > 1 ? "s" : ""} from "${folderName}" added to ${DEFAULT_TABLE_NAME}.`,
         });
 
@@ -244,10 +248,10 @@ export default function GlobalFolderDropUpload() {
           router.push(`/home/${workingSpaceId}`);
         }
       } catch (error) {
-        console.error("Folder upload failed:", error);
+        console.error("Upload failed:", error);
         toast({
           title: "Upload failed",
-          description: "We couldn't upload that folder.",
+          description: "We couldn't upload those files.",
           variant: "destructive",
         });
       } finally {
@@ -279,7 +283,8 @@ export default function GlobalFolderDropUpload() {
       if (!files.length) {
         toast({
           title: "No PDFs found",
-          description: "Drop a folder that contains at least one PDF file.",
+          description:
+            "Drop one or more PDF files, or a folder that contains PDFs.",
           variant: "destructive",
         });
         return;
@@ -370,7 +375,7 @@ export default function GlobalFolderDropUpload() {
             <div className=" mb-3 w-full h-full flex flex-col items-center justify-center gap-2 ">
               <FolderOpen size={32} className=" text-muted-foreground mt-0.5" />
               <h3 className="text-xl  font-semibold text-foreground">
-                Drop folder to upload PDFs
+                Drop PDFs to upload
               </h3>
               <p className="mt-2 max-w-72 text-sm text-center text-muted-foreground">
                 We&apos;ll use the "{DEFAULT_TABLE_NAME}" table if it already
@@ -389,7 +394,7 @@ export default function GlobalFolderDropUpload() {
               className="animate-spin text-muted-foreground mt-0.5"
             />
             <h3 className="text-xl font-semibold text-foreground">
-              Uploading folder...
+              Uploading...
             </h3>
           </div>
         </div>
@@ -410,7 +415,7 @@ export default function GlobalFolderDropUpload() {
             <DialogDescription>
               Select where to upload{" "}
               <span className="font-medium text-foreground">
-                {pendingUpload?.folderName ?? "this folder"}
+                {pendingUpload?.folderName ?? "these files"}
               </span>
               <br />
               We&apos;ll use the "{DEFAULT_TABLE_NAME}" table there if it
