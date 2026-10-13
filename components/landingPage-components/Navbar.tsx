@@ -37,7 +37,8 @@ export default function Navbar() {
         }}
       >
         <div
-          className={`fixed top-0 w-full min-h-[6rem] bg-gradient-to-b  ${inView ? "opacity-100" : "opacity-0"} from-background  from-0% to-100% to-transparent -z-50 left-0 pointer-events-none`}
+          className={`fixed top-0 w-full min-h-[4rem]  ${inView ? "opacity-100" : "opacity-0"} backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black,transparent)]
+           [-webkit-mask-image:linear-gradient(to_bottom,black,transparent) -z-50 left-0 pointer-events-none`}
         />
 
         <div className="flex justify-start items-center gap-[5.5rem]">

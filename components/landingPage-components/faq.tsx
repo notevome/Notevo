@@ -25,7 +25,7 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-2xl mx-auto md:mx-0 min-h-[500px] flex-1"
+          className="max-w-2xl mx-auto md:mx-0 min-h-[350px] flex-1"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem

@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { GridPaperSheet, LinedPaperSheet } from "./ScatteredPapers";
+import { NOISE_PNG } from "@/lib/data";
 
 export interface FolderCardItem {
   id: string;
@@ -91,6 +92,18 @@ export default function HeroFolder({
           <div className="flex-1 h-3 sm:h-4 bg-transparent border-b-2 border-border " />
 
           <div className="relative shadow-[inset_0_20px_30px_0px_rgba(0,0,0,0.1)] flex items-center border-2 border-border border-b-0 bg-primary pt-2 px-2 [clip-path:polygon(45px_0%,100%_0%,100%_100%,0%_100%)] pl-6">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none select-none absolute inset-0"
+              style={{
+                backgroundImage: `url(${NOISE_PNG})`,
+                backgroundRepeat: "repeat",
+                backgroundSize: "128px 128px",
+                opacity: 0.05,
+                mixBlendMode: "multiply",
+                zIndex: 900002,
+              }}
+            />
             <div className="flex items-center gap-1 sm:gap-2 pb-1.5 pt-0.5">
               {cards.map((card, idx) => {
                 const isActive = activeIndex === idx;
@@ -133,6 +146,18 @@ export default function HeroFolder({
         </div>
 
         <div className=" shadow-[inset_10px_-20px_20px_0px_rgba(0,0,0,0.2)] relative w-full border-2 border-border border-t-0 bg-primary overflow-hidden min-h-[380px]  md:min-h-[880px] flex items-center justify-center">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none select-none absolute inset-0"
+            style={{
+              backgroundImage: `url(${NOISE_PNG})`,
+              backgroundRepeat: "repeat",
+              backgroundSize: "128px 128px",
+              opacity: 0.05,
+              mixBlendMode: "multiply",
+              zIndex: 8,
+            }}
+          />
           <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-hidden">
             <div className="absolute w-[95%] h-[92%] top-14 -right-2 z-[5] -rotate-[2deg] origin-bottom-left">
               <GridPaperSheet className="w-full h-full" />
