@@ -24,7 +24,7 @@ import { useForm } from "react-hook-form";
 import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
-import { NOISE_PNG } from "@/lib/data";
+import { PAPER_PNG } from "@/lib/data";
 import NotevoLogo from "@/public/Notevo-logo.svg";
 import NoteImage from "@/public/LightModeImage.svg";
 function SignInWithMagicLink({
@@ -108,10 +108,10 @@ export default function SignInPage() {
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0"
         style={{
-          backgroundImage: `url(${NOISE_PNG})`,
+          backgroundImage: `url(${PAPER_PNG})`,
           backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.07,
+          backgroundSize: "643px 360px",
+          opacity: 0.3,
           mixBlendMode: "multiply",
           zIndex: 5,
         }}
@@ -229,7 +229,7 @@ export default function SignInPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="text-balance text-center text-xs text-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-muted-foreground">
+          <div className="text-balance font-semibold text-center text-xs text-foreground [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-muted-foreground">
             By signing up and continue, you agree to our{" "}
             <Link target="_blank" prefetch={true} href="/terms-of-service">
               Terms of Service

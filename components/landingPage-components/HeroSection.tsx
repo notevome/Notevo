@@ -9,7 +9,7 @@ import MaxWContainer from "../ui/MaxWContainer";
 import { useMediaQuery } from "react-responsive";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { useTheme } from "next-themes";
-import { NOISE_PNG } from "@/lib/data";
+import { PAPER_PNG } from "@/lib/data";
 import { PaperPieceIcon } from "../ui/paper-pice";
 import { Badge } from "../ui/badge";
 import HeroFolder from "./HeroFolder";
@@ -71,10 +71,10 @@ export default function HeroSection() {
         aria-hidden="true"
         className="pointer-events-none select-none absolute inset-0 mask-image-gradient"
         style={{
-          backgroundImage: `url(${NOISE_PNG})`,
+          backgroundImage: `url(${PAPER_PNG})`,
           backgroundRepeat: "repeat",
-          backgroundSize: "128px 128px",
-          opacity: 0.07,
+          backgroundSize: "643px 360px",
+          opacity: 0.5,
           mixBlendMode: "multiply",
           zIndex: 5,
         }}
