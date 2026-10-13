@@ -952,6 +952,11 @@ export default function SearchDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && isLoading) {
+      e.preventDefault();
+      return;
+    }
+
     const showCreationChoices =
       !isLoading && !hasResults && Boolean(debouncedQuery.trim());
     if (showCreationChoices) {
