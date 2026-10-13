@@ -951,8 +951,14 @@ export default function SearchDialog({
     }
   };
 
+  const isDebouncing = query !== debouncedQuery;
+  const isLoading = isDebouncing || searchTargets === undefined;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && isLoading) {
+    if (
+      isLoading &&
+      (e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp")
+    ) {
       e.preventDefault();
       return;
     }
@@ -1029,8 +1035,6 @@ export default function SearchDialog({
     }
   };
 
-  const isDebouncing = query !== debouncedQuery;
-  const isLoading = isDebouncing || searchTargets === undefined;
   const isCreationChooserOpen =
     !isLoading && !hasResults && Boolean(debouncedQuery.trim());
 
