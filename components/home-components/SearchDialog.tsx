@@ -1319,13 +1319,13 @@ export default function SearchDialog({
               </span>
               <span className="flex justify-center items-center gap-2">
                 <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                  {isCreationChooserOpen ? "Enter" : <Undo2 size={14} />}
+                  <Undo2 size={14} />
                 </kbd>
                 <p className="text-foreground text-xs">
                   {isCreationChooserOpen ? "Choose" : "Open"}
                 </p>
               </span>
-              {!isMobile && (
+              {!isMobile && !isCreationChooserOpen && (
                 <span className="flex justify-center items-center gap-2">
                   <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
                     Alt + click
