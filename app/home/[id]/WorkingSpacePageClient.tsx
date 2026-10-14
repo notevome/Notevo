@@ -1201,6 +1201,15 @@ function SliderTabsList({
     tables,
   );
 
+  // The picked-up tab is pulled out of the strip while it is being dragged, so
+  // only the drag ghost + the dashed drop slot are visible. Hiding is deferred
+  // one tick because changing the layout inside `dragstart` makes browsers
+  // cancel the drag. The element stays mounted so `dragend` still fires.
+  const [hiddenTabId, setHiddenTabId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!draggingId) setHiddenTabId(null);
+  }, [draggingId]);
+
   return (
     <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
@@ -1281,6 +1290,17 @@ function SliderTabsList({
                       }}
                     />
                   )}
+                {hiddenTabId === table._id && !dropTarget && (
+                  <div
+                    className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                    style={{ width: draggedSize?.width ?? 128 }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      handleDrop();
+                    }}
+                  />
+                )}
                 <div
                   draggable
                   onDragStart={(e) => {
@@ -1290,6 +1310,8 @@ function SliderTabsList({
                       width: rect.width,
                       height: rect.height,
                     });
+                    const id = table._id;
+                    setTimeout(() => setHiddenTabId(id), 0);
                   }}
                   onDragOver={(e) => handleDragOverItem(e, table._id)}
                   onDrop={(e) => {
@@ -1299,7 +1321,7 @@ function SliderTabsList({
                   onDragEnd={handleDragEnd}
                   className={cn(
                     "cursor-grab active:cursor-grabbing",
-                    draggingId === table._id && "opacity-70 transition-opacity",
+                    hiddenTabId === table._id && "hidden",
                   )}
                 >
                   <TableTab data-table-id={table._id} table={table} />
@@ -1997,6 +2019,14 @@ export function NotesDroppableContainer({
     filteredItems,
     { newItemPosition: "start" },
   );
+
+  // Pull the picked-up card out of the layout while it is dragged. Deferred one
+  // tick because changing layout inside `dragstart` cancels the drag in
+  // browsers; the element stays mounted so `dragend` still fires.
+  const [hiddenItemId, setHiddenItemId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!draggingId) setHiddenItemId(null);
+  }, [draggingId]);
   const displayItems =
     searchQuery.trim() || contentFilter !== "all" || subFilterValue
       ? filteredItems
@@ -2294,6 +2324,9 @@ export function NotesDroppableContainer({
                     {dropTarget?.id === item._id &&
                       dropTarget.position === "before" &&
                       dropPlaceholder}
+                    {hiddenItemId === item._id &&
+                      !dropTarget &&
+                      dropPlaceholder}
                     <div
                       draggable={draggableEnabled}
                       onDragStart={(e) => {
@@ -2303,6 +2336,8 @@ export function NotesDroppableContainer({
                           width: rect.width,
                           height: rect.height,
                         });
+                        const id = item._id;
+                        setTimeout(() => setHiddenItemId(id), 0);
                       }}
                       onDragOver={(e) => handleDragOverItem(e, item._id)}
                       onDrop={(e) => {
@@ -2328,8 +2363,7 @@ export function NotesDroppableContainer({
                       className={cn(
                         draggableEnabled &&
                           "cursor-grab active:cursor-grabbing",
-                        draggingId === item._id &&
-                          "opacity-70 transition-opacity",
+                        hiddenItemId === item._id && "hidden",
                       )}
                     >
                       {isGridLayout ? (
@@ -3322,10 +3356,7 @@ function TimelineMiniCard({
         </div>
       </div>
       {item.kind !== "note" && (
-        <div
-          className="hidden"
-          onClick={(event) => event.stopPropagation()}
-        >
+        <div className="hidden" onClick={(event) => event.stopPropagation()}>
           <WorkspaceItemSettings
             item={item}
             contextMenuPosition={contextMenuPosition}
