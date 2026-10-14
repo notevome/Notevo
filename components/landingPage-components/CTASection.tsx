@@ -1,20 +1,13 @@
 "use client";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
 export default function CTASection() {
   return (
     <section className="relative isolate overflow-hidden bg-background">
       <div className="mx-auto max-w-7xl px-6 pb-24 pt-10 sm:pb-32 lg:flex lg:px-8 lg:py-40">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto max-w-2xl flex-shrink-0 lg:mx-0 lg:max-w-xl lg:pt-8"
-        >
+        <div className="mx-auto max-w-2xl flex-shrink-0 lg:mx-0 lg:max-w-xl lg:pt-8">
           <h2 className="mt-10 text-4xl font-bold tracking-tight text-foreground sm:text-6xl">
             Ready to get started?
           </h2>
@@ -37,7 +30,7 @@ export default function CTASection() {
               View pricing <span aria-hidden="true">→</span>
             </Link>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

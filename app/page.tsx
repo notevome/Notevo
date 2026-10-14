@@ -6,7 +6,6 @@ import Navbar from "@/components/landingPage-components/Navbar";
 import { redirect } from "next/navigation";
 import Footer from "@/components/landingPage-components/Footer";
 import MoreAboutMe from "@/components/landingPage-components/MoreAboutMe";
-import PricingSection from "@/components/landingPage-components/pricingSection";
 import { isAuthenticatedNextjs } from "@convex-dev/auth/nextjs/server";
 import FAQ from "@/components/landingPage-components/faq";
 export default async function HomePage() {
@@ -26,7 +25,6 @@ export default async function HomePage() {
           <FeaturesSection />
           <MoreAboutMe />
           <FAQ />
-          {/* <PricingSection /> */}
         </div>
         <Footer />
       </div>

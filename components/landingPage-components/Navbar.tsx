@@ -20,21 +20,11 @@ export default function Navbar() {
   });
 
   return (
-    <motion.header
-      initial={{ y: -80, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ ease: "linear", duration: 0.5 }}
-      className=" sticky top-2 w-full z-50 transition-all"
-    >
-      <motion.div
+    <header className="sticky top-2 w-full z-50 transition-all">
+      <div
         className={cn(
           "container mx-auto flex justify-between items-center p-4 my-2 app-radius-lg transition-all duration-300 bg-transparent",
         )}
-        transition={{
-          ease: "easeInOut",
-          duration: 0.1,
-          delay: 0,
-        }}
       >
         <div
           className={`fixed top-0 w-full min-h-[4rem]  ${inView ? "opacity-100" : "opacity-0"} backdrop-blur-xl [mask-image:linear-gradient(to_bottom,black,transparent)]
@@ -80,8 +70,7 @@ export default function Navbar() {
             Login Or Create An Account
           </Link>
         </Button>
-      </motion.div>
-    </motion.header>
+      </div>
+    </header>
   );
 }
-3;

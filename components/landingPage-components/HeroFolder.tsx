@@ -184,6 +184,7 @@ export default function HeroFolder({
               return (
                 <motion.div
                   key={card.id}
+                  initial={false}
                   animate={{
                     scale: isShufflingOut ? 0.95 : scale,
                     x: isShufflingOut ? 60 : xOffset,
