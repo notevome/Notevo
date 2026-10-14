@@ -37,7 +37,7 @@ const AccordionTrigger = React.forwardRef<
       {...props}
     >
       {children}
-      <div className="h-8 w-8 shrink-0 text-primary bg-secondary app-radius-md p-0.5  shadow-[inset_0_2px_0_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.1)]">
+      <div className="h-8 w-8 shrink-0 text-primary bg-secondary app-radius-md p-0.5  shadow-[inset_0_2px_4px_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.1)]">
         <ChevronDown
           strokeWidth={3}
           className="h-7 w-7 shrink-0 text-primary transition-transform duration-200"

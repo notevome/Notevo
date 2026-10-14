@@ -11,13 +11,15 @@ export default function FAQ() {
   return (
     <section
       id="faq"
-      className="relative py-12 sm:py-16 md:py-20 Desktop:py-24 "
+      className="relative my-12 sm:my-16 md:my-20 Desktop:py-24 "
     >
       <MaxWContainer className="md:flex justify-between items-start !max-w-[1300px] ">
-        <div className="md:sticky top-24 md:max-w-lg">
+        <div className="md:sticky top-16 md:max-w-lg">
           <SectionHeading
             SectionTitle="Frequently Asked Questions"
             SectionSubTitle="if your interested in learning more about Notevo. "
+            classNameSubTitle=" mx-1"
+            className=" text-start"
           />
         </div>
 
@@ -25,13 +27,13 @@ export default function FAQ() {
           type="single"
           collapsible
           defaultValue="shipping"
-          className="max-w-2xl mx-auto md:mx-0 min-h-[350px] flex-1"
+          className="max-w-2xl mx-auto md:mx-0 min-h-[305px] flex-1"
         >
           {AccordionData.map((item, index) => (
             <AccordionItem
               key={index}
               value={item.itmevalue}
-              className="mb-3.5 shadow-[inset_0_2px_0_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.1)]"
+              className="mb-3.5 shadow-[inset_0_2px_4px_0_hsl(var(--border)/0.8),inset_0_-2px_4px_2px_rgba(0,0,0,0.1)]"
             >
               <AccordionTrigger className="animated-highlight-container text-2xl font-medium">
                 {" "}

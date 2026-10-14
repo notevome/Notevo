@@ -150,13 +150,13 @@ export default function Footer() {
               reserved.
             </div>
             <p className="text-start text-muted-foreground text-sm">
-              Designed and built by{" "}
+              Designed and built with love by{" "}
               <Link
                 href="https://www.mohammedh.dev/"
                 className="hover:underline"
                 target="_blank"
               >
-                @Mohammed H.
+                @Moe H.
               </Link>
             </p>
           </div>

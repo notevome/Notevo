@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useEffect, useRef, useState } from "react";
@@ -56,11 +55,6 @@ export default function HeroSection() {
     {},
     { initialNumItems: 6 },
   );
-  const [showBackground, setShowBackground] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => setShowBackground(true), 650);
-    return () => clearTimeout(timer);
-  }, []);
 
   return (
     <section
@@ -126,17 +120,8 @@ export default function HeroSection() {
         />
       </div>
       <MaxWContainer className="z-[6] w-full relative flex flex-col items-start justify-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          className="relative space-y-4 text-start"
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.45, delay: 0.2 }}
-          >
+        <div className="relative space-y-4 text-start">
+          <div>
             <h1
               style={{
                 textShadow: "-0.5vh -0.5vh 0 #644A40",
@@ -147,12 +132,12 @@ export default function HeroSection() {
               <br />
               <span className="relative inline-block">
                 <span className="text-start ">Note Taking</span>
-                <motion.svg
+                <svg
                   viewBox="0 0 300 40"
                   preserveAspectRatio="none"
                   className="absolute left-0 -bottom-4 w-full h-8"
                 >
-                  <motion.path
+                  <path
                     d="M 5 25 Q 40 22, 80 26 T 150 24 T 220 26 T 295 24"
                     fill="none"
                     stroke="currentColor"
@@ -160,38 +145,21 @@ export default function HeroSection() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     className="text-primary/70"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={
-                      showBackground
-                        ? { pathLength: 1, opacity: 1 }
-                        : { pathLength: 0, opacity: 0 }
-                    }
-                    transition={{ duration: 1, ease: "easeOut", delay: 0.14 }}
                   />
-                </motion.svg>
+                </svg>
               </span>
             </h1>
-          </motion.div>
-          <motion.p
-            className="text-start max-w-2xl text-xl md:text-3xl md:leading-12 leading-6 text-muted-foreground font-bold md:py-0 py-3"
-            initial={{ opacity: 0, y: 20, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.45, delay: 0.2 }}
-          >
+          </div>
+          <p className="text-start max-w-2xl text-xl md:text-3xl md:leading-12 leading-6 text-muted-foreground font-bold md:py-0 py-3">
             Notevo helps you capture your thoughts{" "}
             <br className="hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
             and organize them in one clean, modern interface.
-          </motion.p>
-        </motion.div>
+          </p>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.38 }}
-          className="relative w-full pt-4"
-        >
+        <div className="relative w-full pt-4">
           <HeroFolder />
-        </motion.div>
+        </div>
       </MaxWContainer>
     </section>
   );
