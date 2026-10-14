@@ -8,6 +8,7 @@ import {
   File,
   FileText,
   Search,
+  Settings,
   ChevronRight,
   Folder,
   FolderOpen,
@@ -40,6 +41,7 @@ import { buildItemSlug } from "@/lib/slug";
 import { generateSlug } from "@/lib/generateSlug";
 import { prefetchNote } from "@/lib/notePrefetchCache";
 import { useHomePane } from "./HomePaneDrawer";
+import AccountSettingsDialog from "./AccountSettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ShortcutBadge } from "../ui/shortcut-badge";
@@ -55,6 +57,13 @@ interface SearchDialogProps {
   showTrigger?: boolean;
   enableShortcut?: boolean;
 }
+
+const SETTINGS_KEYWORDS = ["settings"];
+
+const matchesSettings = (query: string) => {
+  const q = query.trim().toLowerCase();
+  return q.length >= 1 && SETTINGS_KEYWORDS.some((k) => k.includes(q));
+};
 
 type EmptyWorkspaceCleanupResult =
   | "deleted"
@@ -538,6 +547,8 @@ export default function SearchDialog({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
     Id<"workingSpaces"> | ""
   >("");
+  const [settingsFocused, setSettingsFocused] = useState(true);
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingItem, setIsCreatingItem] = useState(false);
   const [creatingNotesTableId, setCreatingNotesTableId] =
@@ -582,6 +593,7 @@ export default function SearchDialog({
   const searchTargets = useQuery(api.notes.getWorkspaceTree, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
+  const viewer = useQuery(api.users.viewer, {});
   const creationWorkspaces = useQuery(
     api.workingSpaces.getRecentWorkingSpaces,
     creationKind ? {} : "skip",
@@ -825,8 +837,13 @@ export default function SearchDialog({
     setCreationKind(null);
     setSelectedWorkspaceId("");
     setCreationSelectionIndex(0);
+    setSettingsFocused(true);
     setTimeout(() => inputRef.current?.focus(), 0);
   }, [open]);
+
+  useEffect(() => {
+    setSettingsFocused(true);
+  }, [debouncedQuery]);
 
   useEffect(() => {
     if (!searchTargets) return;
@@ -953,6 +970,15 @@ export default function SearchDialog({
 
   const isDebouncing = query !== debouncedQuery;
   const isLoading = isDebouncing || searchTargets === undefined;
+  const showSettings =
+    !isLoading && !creationKind && matchesSettings(debouncedQuery);
+  const isSettingsSelected = showSettings && settingsFocused;
+
+  const handleOpenSettings = () => {
+    setOpen(false);
+    setQuery("");
+    setIsAccountSettingsOpen(true);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (
@@ -961,6 +987,28 @@ export default function SearchDialog({
     ) {
       e.preventDefault();
       return;
+    }
+
+    if (showSettings) {
+      if (e.key === "Enter" && settingsFocused) {
+        e.preventDefault();
+        handleOpenSettings();
+        return;
+      }
+      if (e.key === "ArrowDown" && settingsFocused) {
+        e.preventDefault();
+        setSettingsFocused(false);
+        return;
+      }
+      if (
+        e.key === "ArrowUp" &&
+        !settingsFocused &&
+        (hasResults ? selectedIndex === 0 : creationSelectionIndex === 0)
+      ) {
+        e.preventDefault();
+        setSettingsFocused(true);
+        return;
+      }
     }
 
     const showCreationChoices =
@@ -1039,310 +1087,351 @@ export default function SearchDialog({
     !isLoading && !hasResults && Boolean(debouncedQuery.trim());
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      {showTrigger && (
-        <DialogTrigger asChild>
-          <Button
-            variant="SidebarMenuButton"
-            size="sm"
-            className="px-2 h-8 group outline-none border-none"
-          >
-            <Search className="text-muted-foreground" size={iconSize} />
-            {showTitle && (
-              <div className="w-full flex items-center justify-between gap-1">
-                Search
-                <span className="inline-flex gap-1">
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                    <span className="text-xs">Ctrl</span>
-                  </kbd>
-                  <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                    <span className="text-xs">K</span>
-                  </kbd>
-                </span>
-              </div>
+    <>
+      <AccountSettingsDialog
+        open={isAccountSettingsOpen}
+        onOpenChange={setIsAccountSettingsOpen}
+        user={viewer}
+      />
+      <Dialog open={open} onOpenChange={setOpen}>
+        {showTrigger && (
+          <DialogTrigger asChild>
+            <Button
+              variant="SidebarMenuButton"
+              size="sm"
+              className="px-2 h-8 group outline-none border-none"
+            >
+              <Search className="text-muted-foreground" size={iconSize} />
+              {showTitle && (
+                <div className="w-full flex items-center justify-between gap-1">
+                  Search
+                  <span className="inline-flex gap-1">
+                    <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                      <span className="text-xs">Ctrl</span>
+                    </kbd>
+                    <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
+                      <span className="text-xs">K</span>
+                    </kbd>
+                  </span>
+                </div>
+              )}
+            </Button>
+          </DialogTrigger>
+        )}
+
+        <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
+          <DialogTitle className="sr-only">
+            Search Notes and Whiteboards
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Search across workspaces, tables, notes, and whiteboards, then open
+            the selected result.
+          </DialogDescription>
+
+          <div className="flex items-center border-b border-border px-4 py-2">
+            {isDebouncing ? (
+              <LoadingAnimation className="h-4 w-4 mr-3 text-muted-foreground shrink-0" />
+            ) : (
+              <Search className="h-5 w-5 mr-3 text-muted-foreground shrink-0" />
             )}
-          </Button>
-        </DialogTrigger>
-      )}
-
-      <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
-        <DialogTitle className="sr-only">
-          Search Notes and Whiteboards
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          Search across workspaces, tables, notes, and whiteboards, then open
-          the selected result.
-        </DialogDescription>
-
-        <div className="flex items-center border-b border-border px-4 py-2">
-          {isDebouncing ? (
-            <LoadingAnimation className="h-4 w-4 mr-3 text-muted-foreground shrink-0" />
-          ) : (
-            <Search className="h-5 w-5 mr-3 text-muted-foreground shrink-0" />
-          )}
-          <Input
-            ref={inputRef}
-            placeholder="Search workspaces, tables, notes and whiteboards..."
-            className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0 text-sm bg-transparent"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-        </div>
-
-        <div
-          ref={resultsScrollRef}
-          onScroll={handleResultsScroll}
-          className=" sm:min-h-[50vh] sm:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
-        >
-          {canScroll && scrollTop > 8 && (
-            <div
-              className="pointer-events-none absolute top-[49px] left-0 right-0 z-10 h-20 bg-gradient-to-b from-card/90 from-20% to-transparent"
-              aria-hidden
+            <Input
+              ref={inputRef}
+              placeholder="Search workspaces, tables, notes and whiteboards..."
+              className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0 text-sm bg-transparent"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
-          )}
-          {hasMoreBelow && (
-            <div
-              className="pointer-events-none absolute bottom-[44px] left-0 right-0 z-10 h-20 bg-gradient-to-t from-card/90 from-20% to-transparent"
-              aria-hidden
-            />
-          )}
+          </div>
 
-          {isLoading ? (
-            <SearchLoadingSkeleton />
-          ) : !hasResults ? (
-            !debouncedQuery.trim() ? (
-              <div className="py-16 text-center text-sm text-muted-foreground">
-                <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
-                <p className="font-medium">No items found</p>
-                <p className="text-xs mt-1">
-                  Search for something or create a new item.
-                </p>
-              </div>
-            ) : creationKind ? (
-              <div className="mx-auto max-w-xl space-y-3 py-6">
-                <div className="min-w-0 px-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {selectedWorkspaceId
-                      ? `Choose a table in ${selectedWorkspace?.name || "workspace"}`
-                      : "Choose a workspace"}
-                  </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    Create {creationKind} &quot;{debouncedQuery.trim()}&quot;
+          <div
+            ref={resultsScrollRef}
+            onScroll={handleResultsScroll}
+            className=" sm:min-h-[50vh] sm:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
+          >
+            {canScroll && scrollTop > 8 && (
+              <div
+                className="pointer-events-none absolute top-[49px] left-0 right-0 z-10 h-20 bg-gradient-to-b from-card/90 from-20% to-transparent"
+                aria-hidden
+              />
+            )}
+            {hasMoreBelow && (
+              <div
+                className="pointer-events-none absolute bottom-[44px] left-0 right-0 z-10 h-20 bg-gradient-to-t from-card/90 from-20% to-transparent"
+                aria-hidden
+              />
+            )}
+
+            {showSettings && (
+              <Button
+                type="button"
+                variant="ghost"
+                data-selected={isSettingsSelected}
+                className={cn(
+                  "mb-2 h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                  isSettingsSelected && "bg-accent",
+                )}
+                onMouseMove={() => setSettingsFocused(true)}
+                onClick={handleOpenSettings}
+              >
+                <Settings className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  <HighlightedText
+                    text="Settings"
+                    query={debouncedQuery.trim()}
+                  />
+                </span>
+              </Button>
+            )}
+
+            {isLoading ? (
+              <SearchLoadingSkeleton />
+            ) : !hasResults ? (
+              !debouncedQuery.trim() ? (
+                <div className="py-16 text-center text-sm text-muted-foreground">
+                  <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
+                  <p className="font-medium">No items found</p>
+                  <p className="text-xs mt-1">
+                    Search for something or create a new item.
                   </p>
                 </div>
+              ) : creationKind ? (
+                <div className="mx-auto max-w-xl space-y-3 py-6">
+                  <div className="min-w-0 px-2">
+                    <p className="text-sm font-medium text-foreground">
+                      {selectedWorkspaceId
+                        ? `Choose a table in ${selectedWorkspace?.name || "workspace"}`
+                        : "Choose a workspace"}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      Create {creationKind} &quot;{debouncedQuery.trim()}&quot;
+                    </p>
+                  </div>
 
-                {!selectedWorkspaceId ? (
-                  creationWorkspaces === undefined ? (
+                  {!selectedWorkspaceId ? (
+                    creationWorkspaces === undefined ? (
+                      <SearchLoadingSkeleton />
+                    ) : creationWorkspaces.length ? (
+                      <div
+                        className="space-y-1"
+                        role="listbox"
+                        aria-label="Workspaces"
+                      >
+                        {creationWorkspaces.map((workspace, index) => (
+                          <Button
+                            key={workspace._id}
+                            type="button"
+                            role="option"
+                            aria-selected={creationSelectionIndex === index}
+                            variant="ghost"
+                            className={cn(
+                              "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                              creationSelectionIndex === index && "bg-accent",
+                            )}
+                            onMouseMove={() => setCreationSelectionIndex(index)}
+                            onClick={() => {
+                              setSelectedWorkspaceId(workspace._id);
+                              setCreationSelectionIndex(0);
+                            }}
+                          >
+                            <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate">
+                              {workspace.name || "Untitled workspace"}
+                            </span>
+                          </Button>
+                        ))}
+                      </div>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-auto w-full justify-start gap-3 px-3 py-3 text-left"
+                        disabled={isCreatingWorkspace || isCreatingItem}
+                        onClick={() => void handleCreateWorkspaceForItem()}
+                      >
+                        {isCreatingWorkspace || isCreatingItem ? (
+                          <LoadingAnimation className="h-4 w-4 shrink-0" />
+                        ) : (
+                          <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        )}
+                        <span className="truncate">
+                          Create workspace and {creationKind} &quot;
+                          {debouncedQuery.trim()}&quot;
+                        </span>
+                      </Button>
+                    )
+                  ) : creationTables === undefined ? (
                     <SearchLoadingSkeleton />
-                  ) : creationWorkspaces.length ? (
+                  ) : creationTables.length ? (
                     <div
                       className="space-y-1"
                       role="listbox"
-                      aria-label="Workspaces"
+                      aria-label="Tables"
                     >
-                      {creationWorkspaces.map((workspace, index) => (
+                      {creationTables.map((table, index) => (
                         <Button
-                          key={workspace._id}
+                          key={table._id}
                           type="button"
                           role="option"
                           aria-selected={creationSelectionIndex === index}
                           variant="ghost"
+                          disabled={isCreatingItem}
                           className={cn(
                             "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
                             creationSelectionIndex === index && "bg-accent",
                           )}
                           onMouseMove={() => setCreationSelectionIndex(index)}
-                          onClick={() => {
-                            setSelectedWorkspaceId(workspace._id);
-                            setCreationSelectionIndex(0);
-                          }}
+                          onClick={() =>
+                            void handleCreateItemFromSearch(table._id)
+                          }
                         >
-                          <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          {creatingNotesTableId === table._id ? (
+                            <LoadingAnimation className="h-4 w-4 shrink-0" />
+                          ) : (
+                            <Table className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          )}
                           <span className="truncate">
-                            {workspace.name || "Untitled workspace"}
+                            {table.name || "Untitled table"}
                           </span>
                         </Button>
                       ))}
                     </div>
                   ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="h-auto w-full justify-start gap-3 px-3 py-3 text-left"
-                      disabled={isCreatingWorkspace || isCreatingItem}
-                      onClick={() => void handleCreateWorkspaceForItem()}
-                    >
-                      {isCreatingWorkspace || isCreatingItem ? (
-                        <LoadingAnimation className="h-4 w-4 shrink-0" />
-                      ) : (
-                        <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      )}
-                      <span className="truncate">
-                        Create workspace and {creationKind} &quot;
-                        {debouncedQuery.trim()}&quot;
-                      </span>
-                    </Button>
-                  )
-                ) : creationTables === undefined ? (
-                  <SearchLoadingSkeleton />
-                ) : creationTables.length ? (
-                  <div className="space-y-1" role="listbox" aria-label="Tables">
-                    {creationTables.map((table, index) => (
-                      <Button
-                        key={table._id}
-                        type="button"
-                        role="option"
-                        aria-selected={creationSelectionIndex === index}
-                        variant="ghost"
-                        disabled={isCreatingItem}
-                        className={cn(
-                          "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
-                          creationSelectionIndex === index && "bg-accent",
-                        )}
-                        onMouseMove={() => setCreationSelectionIndex(index)}
-                        onClick={() =>
-                          void handleCreateItemFromSearch(table._id)
-                        }
-                      >
-                        {creatingNotesTableId === table._id ? (
-                          <LoadingAnimation className="h-4 w-4 shrink-0" />
-                        ) : (
-                          <Table className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        )}
-                        <span className="truncate">
-                          {table.name || "Untitled table"}
-                        </span>
-                      </Button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    This workspace has no tables. Choose another workspace or
-                    create a table first.
+                    <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+                      This workspace has no tables. Choose another workspace or
+                      create a table first.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="mx-auto max-w-xl space-y-2 py-6">
+                  <p className="mb-3 px-2 text-sm text-muted-foreground">
+                    No results found for &quot;{debouncedQuery.trim()}&quot;.
+                    Create it instead:
                   </p>
-                )}
-              </div>
+                  <Button
+                    type="button"
+                    data-selected={creationSelectionIndex === 0}
+                    variant="ghost"
+                    className={cn(
+                      "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                      !isSettingsSelected &&
+                        creationSelectionIndex === 0 &&
+                        "bg-accent",
+                    )}
+                    onMouseMove={() => setCreationSelectionIndex(0)}
+                    disabled={isCreatingWorkspace}
+                    onClick={() => void handleCreateWorkspaceFromSearch()}
+                  >
+                    {isCreatingWorkspace ? (
+                      <LoadingAnimation className="h-4 w-4 shrink-0" />
+                    ) : (
+                      <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="truncate">
+                      Create workspace &quot;{debouncedQuery.trim()}&quot;
+                    </span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    data-selected={creationSelectionIndex === 1}
+                    className={cn(
+                      "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                      !isSettingsSelected &&
+                        creationSelectionIndex === 1 &&
+                        "bg-accent",
+                    )}
+                    onMouseMove={() => setCreationSelectionIndex(1)}
+                    onClick={() => {
+                      setSelectedWorkspaceId("");
+                      setCreationKind("note");
+                      setCreationSelectionIndex(0);
+                    }}
+                  >
+                    <SquarePen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      Create note &quot;{debouncedQuery.trim()}&quot;
+                    </span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    data-selected={creationSelectionIndex === 2}
+                    className={cn(
+                      "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                      !isSettingsSelected &&
+                        creationSelectionIndex === 2 &&
+                        "bg-accent",
+                    )}
+                    onMouseMove={() => setCreationSelectionIndex(2)}
+                    onClick={() => {
+                      setSelectedWorkspaceId("");
+                      setCreationKind("whiteboard");
+                      setCreationSelectionIndex(0);
+                    }}
+                  >
+                    <PanelTop className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">
+                      Create whiteboard &quot;{debouncedQuery.trim()}&quot;
+                    </span>
+                  </Button>
+                </div>
+              )
             ) : (
-              <div className="mx-auto max-w-xl space-y-2 py-6">
-                <p className="mb-3 px-2 text-sm text-muted-foreground">
-                  No results found for &quot;{debouncedQuery.trim()}&quot;.
-                  Create it instead:
-                </p>
-                <Button
-                  type="button"
-                  data-selected={creationSelectionIndex === 0}
-                  variant="ghost"
-                  className={cn(
-                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
-                    creationSelectionIndex === 0 && "bg-accent",
-                  )}
-                  onMouseMove={() => setCreationSelectionIndex(0)}
-                  disabled={isCreatingWorkspace}
-                  onClick={() => void handleCreateWorkspaceFromSearch()}
-                >
-                  {isCreatingWorkspace ? (
-                    <LoadingAnimation className="h-4 w-4 shrink-0" />
-                  ) : (
-                    <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  )}
-                  <span className="truncate">
-                    Create workspace &quot;{debouncedQuery.trim()}&quot;
-                  </span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  data-selected={creationSelectionIndex === 1}
-                  className={cn(
-                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
-                    creationSelectionIndex === 1 && "bg-accent",
-                  )}
-                  onMouseMove={() => setCreationSelectionIndex(1)}
-                  onClick={() => {
-                    setSelectedWorkspaceId("");
-                    setCreationKind("note");
-                    setCreationSelectionIndex(0);
-                  }}
-                >
-                  <SquarePen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">
-                    Create note &quot;{debouncedQuery.trim()}&quot;
-                  </span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  data-selected={creationSelectionIndex === 2}
-                  className={cn(
-                    "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
-                    creationSelectionIndex === 2 && "bg-accent",
-                  )}
-                  onMouseMove={() => setCreationSelectionIndex(2)}
-                  onClick={() => {
-                    setSelectedWorkspaceId("");
-                    setCreationKind("whiteboard");
-                    setCreationSelectionIndex(0);
-                  }}
-                >
-                  <PanelTop className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">
-                    Create whiteboard &quot;{debouncedQuery.trim()}&quot;
-                  </span>
-                </Button>
-              </div>
-            )
-          ) : (
-            <WorkspaceTree
-              searchTargets={searchTargets!}
-              expandedWorkspaceIds={expandedWorkspaceIds}
-              toggleWorkspace={toggleWorkspace}
-              onNoteClick={handleNoteClick}
-              selectedNoteId={
-                allNotes[selectedIndex]
-                  ? String(allNotes[selectedIndex]._id)
-                  : undefined
-              }
-              query={debouncedQuery}
-            />
-          )}
-        </div>
+              <WorkspaceTree
+                searchTargets={searchTargets!}
+                expandedWorkspaceIds={expandedWorkspaceIds}
+                toggleWorkspace={toggleWorkspace}
+                onNoteClick={handleNoteClick}
+                selectedNoteId={
+                  allNotes[selectedIndex] && !isSettingsSelected
+                    ? String(allNotes[selectedIndex]._id)
+                    : undefined
+                }
+                query={debouncedQuery}
+              />
+            )}
+          </div>
 
-        <DialogFooter className="border-t border-border px-4 py-2.5 bg-muted">
-          <div className="w-full flex justify-between items-center">
-            <span className="flex justify-center items-center gap-2 space-x-2">
-              <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                  <ArrowDownUp size={14} />
-                </kbd>
-                <p className="text-foreground font-mono text-xs">Navigate</p>
-              </span>
-              <span className="flex justify-center items-center gap-2">
-                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                  <Undo2 size={14} />
-                </kbd>
-                <p className="text-foreground text-xs">
-                  {isCreationChooserOpen ? "Choose" : "Open"}
-                </p>
-              </span>
-              {!isMobile && !isCreationChooserOpen && (
+          <DialogFooter className="border-t border-border px-4 py-2.5 bg-muted">
+            <div className="w-full flex justify-between items-center">
+              <span className="flex justify-center items-center gap-2 space-x-2">
                 <span className="flex justify-center items-center gap-2">
                   <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                    Alt + click
+                    <ArrowDownUp size={14} />
                   </kbd>
-                  <p className="text-foreground text-xs">Open in pane</p>
+                  <p className="text-foreground font-mono text-xs">Navigate</p>
                 </span>
-              )}
-            </span>
-            <span className="flex justify-center items-center gap-2">
-              <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
-                ESC
-              </kbd>
-              <p className="text-foreground  text-xs">Close</p>
-            </span>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                <span className="flex justify-center items-center gap-2">
+                  <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                    <Undo2 size={14} />
+                  </kbd>
+                  <p className="text-foreground text-xs">
+                    {isCreationChooserOpen && !isSettingsSelected
+                      ? "Choose"
+                      : "Open"}
+                  </p>
+                </span>
+                {!isMobile && !isCreationChooserOpen && !isSettingsSelected && (
+                  <span className="flex justify-center items-center gap-2">
+                    <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                      Alt + click
+                    </kbd>
+                    <p className="text-foreground text-xs">Open in pane</p>
+                  </span>
+                )}
+              </span>
+              <span className="flex justify-center items-center gap-2">
+                <kbd className="pointer-events-none border border-border inline-flex h-6 select-none items-center gap-1.5 app-radius-md bg-background px-2 font-mono text-[11px] font-medium text-muted-foreground">
+                  ESC
+                </kbd>
+                <p className="text-foreground  text-xs">Close</p>
+              </span>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
