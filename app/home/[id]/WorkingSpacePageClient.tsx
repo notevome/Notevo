@@ -18,7 +18,10 @@ import {
   StickyNote,
   X,
   Filter,
+  Pencil,
+  FileOutput,
 } from "lucide-react";
+import { FaRegTrashCan } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
 import {
@@ -49,6 +52,7 @@ import LinkSettings from "@/components/home-components/LinkSettings";
 import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import NoteContextMenu from "@/components/home-components/NoteContextMenu";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
+import MoveTableDialog from "@/components/home-components/MoveTableDialog";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
@@ -821,6 +825,7 @@ function TableTab({ table }: { table: any }) {
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [contextMenuOpen, setContextMenuOpen] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({
     x: 0,
@@ -1060,7 +1065,7 @@ function TableTab({ table }: { table: any }) {
           <DropdownMenuContent
             align="start"
             side="bottom"
-            className="z-[10000] w-40"
+            className="z-[10000] w-44"
           >
             <DropdownMenuItem
               onClick={() => {
@@ -1069,16 +1074,27 @@ function TableTab({ table }: { table: any }) {
                 setContextMenuOpen(false);
               }}
             >
+              <Pencil className="h-4 w-4 text-muted-foreground" />
               Rename table
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setContextMenuOpen(false);
+                setIsMoveDialogOpen(true);
+              }}
+            >
+              <FileOutput className="h-4 w-4 text-muted-foreground" />
+              Move table
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="hover:text-destructive"
+              className="hover:text-destructive focus:text-destructive group/delete"
               onClick={() => {
                 setContextMenuOpen(false);
                 setIsDeleteAlertOpen(true);
               }}
             >
+              <FaRegTrashCan className="h-4 w-4 text-muted-foreground group-hover/delete:text-destructive group-focus/delete:text-destructive" />
               Delete table
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -1114,6 +1130,16 @@ function TableTab({ table }: { table: any }) {
           </AlertDialogFooter>{" "}
         </AlertDialogContent>
       </AlertDialog>
+
+      <MoveTableDialog
+        open={isMoveDialogOpen}
+        onOpenChange={setIsMoveDialogOpen}
+        table={{
+          _id: table._id,
+          name: table.name,
+          workingSpaceId: table.workingSpaceId,
+        }}
+      />
     </>
   );
 }
