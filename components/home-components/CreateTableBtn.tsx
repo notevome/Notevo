@@ -9,10 +9,10 @@ import type { Id } from "@/convex/_generated/dataModel";
 import LoadingAnimation from "../ui/LoadingAnimation";
 
 interface CreateTableBtnProps {
-  workingSpaceId: Id<"workingSpaces">;
+  workingSpaceId: Id<"folders">;
   className?: string;
   label?: string;
-  onCreated?: (tableId: Id<"notesTables">) => void | Promise<void>;
+  onCreated?: (tableId: Id<"tables">) => void | Promise<void>;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
 }
@@ -27,26 +27,26 @@ export default function CreateTableBtn({
 }: CreateTableBtnProps) {
   const [isCreating, setIsCreating] = useState(false);
   const createTable = useMutation(
-    api.notesTables.createTable,
+    api.tables.createTable,
   ).withOptimisticUpdate((local, args) => {
-    const { workingSpaceId: wsId, name } = args;
-    if (wsId !== workingSpaceId) return;
+    const { folderId: fId, name } = args;
+    if (fId && fId !== workingSpaceId) return;
 
     const now = Date.now();
     const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as Id<"notesTables">;
+    const tempId = `${uuid}-${now}` as Id<"tables">;
 
     // Update the getTables query
-    const currentTables = local.getQuery(api.notesTables.getTables, {
-      workingSpaceId: wsId,
+    const currentTables = local.getQuery(api.tables.getTables, {
+      folderId: workingSpaceId,
     });
     if (currentTables !== undefined) {
-      local.setQuery(api.notesTables.getTables, { workingSpaceId: wsId }, [
+      local.setQuery(api.tables.getTables, { folderId: workingSpaceId }, [
         {
           _id: tempId,
           _creationTime: now,
           name: name || "Untitled",
-          workingSpaceId: wsId,
+          folderId: workingSpaceId,
           slug: "untitled",
           createdAt: now,
           updatedAt: now,
@@ -60,7 +60,7 @@ export default function CreateTableBtn({
     try {
       setIsCreating(true);
       const tableId = await createTable({
-        workingSpaceId: workingSpaceId,
+        folderId: workingSpaceId,
         name: "Untitled",
       });
       await onCreated?.(tableId);

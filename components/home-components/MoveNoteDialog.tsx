@@ -34,11 +34,11 @@ interface MoveNoteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   note: {
-    _id: Id<"notes">;
+    _id: Id<"documents">;
     title?: string;
     slug?: string;
-    workingSpaceId?: Id<"workingSpaces">;
-    notesTableId?: Id<"notesTables">;
+    workingSpaceId?: Id<"folders">;
+    notesTableId?: Id<"tables">;
   };
 }
 
@@ -77,20 +77,20 @@ export default function MoveNoteDialog({
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
+  const moveTargets = useQuery(api.documents.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
-  const moveNote = useMutation(api.notes.moveNote).withOptimisticUpdate(
+  const moveNote = useMutation(api.documents.moveNote).withOptimisticUpdate(
     (local, args) => {
-      const currentNote = local.getQuery(api.notes.getNoteById, {
+      const currentNote = local.getQuery(api.documents.getNoteById, {
         _id: args._id,
       });
 
       if (!currentNote) return;
 
       const targets =
-        local.getQuery(api.notes.getWorkspaceTreeForMove, {
+        local.getQuery(api.documents.getWorkspaceTreeForMove, {
           searchQuery: undefined,
         }) ?? [];
       const targetWorkspace = targets.find(
@@ -98,20 +98,19 @@ export default function MoveNoteDialog({
       );
 
       local.setQuery(
-        api.notes.getNoteById,
+        api.documents.getNoteById,
         { _id: args._id },
         {
           ...currentNote,
-          workingSpaceId: args.targetWorkingSpaceId,
-          notesTableId: args.targetNotesTableId,
-          workingSpacesSlug:
-            targetWorkspace?.slug ?? currentNote.workingSpacesSlug,
+          folderId: args.targetFolderId ?? args.targetWorkingSpaceId,
+          tableId: args.targetTableId ?? args.targetNotesTableId,
+          folderSlug: targetWorkspace?.slug ?? (currentNote as any).folderSlug,
           updatedAt: Date.now(),
         },
       );
     },
   );
-  const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWorkingSpace = useMutation(api.folders.createFolder);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -176,8 +175,8 @@ export default function MoveNoteDialog({
   };
 
   const handleMove = async (
-    targetWorkingSpaceId: Id<"workingSpaces">,
-    targetNotesTableId: Id<"notesTables">,
+    targetWorkingSpaceId: Id<"folders">,
+    targetNotesTableId: Id<"tables">,
   ) => {
     try {
       setMovingTableId(String(targetNotesTableId));
@@ -197,7 +196,7 @@ export default function MoveNoteDialog({
       onOpenChange(false);
       toast({
         variant: "default",
-        title: "Note moved successfully ",
+        title: "Document moved successfully",
         description: "hey go and take a look at your stuff !!",
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm">
@@ -216,7 +215,7 @@ export default function MoveNoteDialog({
       console.error(" Failed to move note:", error);
       toast({
         variant: "destructive",
-        title: "Failed to move note",
+        title: "Failed to move document",
         description: "Try again later",
       });
     } finally {
@@ -235,7 +234,7 @@ export default function MoveNoteDialog({
             {note.title || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            Select a destination table in this workspace or any other workspace.
+            Select a destination table in this folder or any other folder.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-muted">
@@ -245,7 +244,7 @@ export default function MoveNoteDialog({
               ref={searchInputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search workspaces and tables..."
+              placeholder="Search folders and tables..."
               className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
           </div>
@@ -282,10 +281,10 @@ export default function MoveNoteDialog({
               <p className="font-medium text-foreground">
                 {debouncedQuery
                   ? `No targets found for "${debouncedQuery}"`
-                  : "No workspaces found"}
+                  : "No folders found"}
               </p>
               <p className="mt-1">
-                Create a workspace or table, then move this note there.
+                Create a folder or table, then move this document there.
               </p>
             </div>
           ) : (
@@ -329,7 +328,7 @@ export default function MoveNoteDialog({
                       <div className="space-y-0.5 px-1 py-1">
                         {tables.length === 0 ? (
                           <div className=" flex flex-col justify-center items-center gap-2 app-radius-lg mx-2 py-3 bg-card text-xs text-muted-foreground/60 text-center">
-                            No tables in this workspace yet.
+                            No tables in this folder yet.
                             <CreateTableBtn
                               workingSpaceId={workspace._id}
                               variant="secondary"

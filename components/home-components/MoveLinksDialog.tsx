@@ -34,8 +34,8 @@ interface MoveLinkDialogProps {
   link: {
     _id: Id<"links">;
     title?: string;
-    workingSpaceId?: Id<"workingSpaces">;
-    notesTableId?: Id<"notesTables">;
+    workingSpaceId?: Id<"folders">;
+    notesTableId?: Id<"tables">;
   };
 }
 
@@ -71,7 +71,7 @@ export default function MoveLinkDialog({
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
 
-  const moveTargets = useQuery(api.notes.getWorkspaceTreeForMove, {
+  const moveTargets = useQuery(api.documents.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
@@ -95,7 +95,7 @@ export default function MoveLinkDialog({
       );
     },
   );
-  const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWorkingSpace = useMutation(api.folders.createFolder);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -160,8 +160,8 @@ export default function MoveLinkDialog({
   };
 
   const handleMove = async (
-    targetWorkingSpaceId: Id<"workingSpaces">,
-    targetNotesTableId: Id<"notesTables">,
+    targetWorkingSpaceId: Id<"folders">,
+    targetNotesTableId: Id<"tables">,
   ) => {
     try {
       setMovingTableId(String(targetNotesTableId));
@@ -211,7 +211,7 @@ export default function MoveLinkDialog({
             {link.title || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            Select a destination table in this workspace or any other workspace.
+            Select a destination table in this folder or any other folder.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-muted">
@@ -221,7 +221,7 @@ export default function MoveLinkDialog({
               ref={searchInputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search workspaces and tables..."
+              placeholder="Search folders and tables..."
               className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
           </div>
@@ -258,7 +258,7 @@ export default function MoveLinkDialog({
               <p className="font-medium text-foreground">
                 {debouncedQuery
                   ? `No targets found for "${debouncedQuery}"`
-                  : "No workspaces found"}
+                  : "No folders found"}
               </p>
               <p className="mt-1">
                 Create a workspace or table, then move this link there.
@@ -305,7 +305,7 @@ export default function MoveLinkDialog({
                       <div className="space-y-0.5 px-1 py-1">
                         {tables.length === 0 ? (
                           <div className="flex flex-col justify-center items-center gap-2 app-radius-lg mx-2 py-3 bg-card text-xs text-muted-foreground/60 text-center">
-                            No tables in this workspace yet.
+                            No tables in this folder yet.
                             <CreateTableBtn
                               workingSpaceId={workspace._id}
                               variant="secondary"

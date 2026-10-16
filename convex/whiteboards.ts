@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
 
@@ -17,29 +18,34 @@ async function requireOwner(ctx: any, whiteboardId: any) {
 export const createWhiteboard = mutation({
   args: {
     title: v.string(),
-    workingSpaceId: v.id("workingSpaces"),
-    notesTableId: v.id("notesTables"),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new ConvexError("Not authenticated");
 
-    const [workspace, table] = await Promise.all([
-      ctx.db.get(args.workingSpaceId),
-      ctx.db.get(args.notesTableId),
-    ]);
-    if (!workspace || workspace.userId !== userId) {
-      throw new ConvexError("Workspace not found or not authorized");
+    const folderId = (args.folderId ?? args.workingSpaceId) as any;
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+
+    const [folder, table] = (await Promise.all([
+      ctx.db.get(folderId),
+      ctx.db.get(tableId),
+    ])) as [Doc<"folders"> | null, Doc<"tables"> | null];
+    if (!folder || folder.userId !== userId) {
+      throw new ConvexError("Folder not found or not authorized");
     }
-    if (!table || table.workingSpaceId !== args.workingSpaceId) {
-      throw new ConvexError("Table does not belong to the provided workspace");
+    if (!table || (table.folderId && table.folderId !== folderId)) {
+      throw new ConvexError("Table does not belong to the provided folder");
     }
 
     const now = Date.now();
     return await ctx.db.insert("whiteboards", {
       userId,
-      workingSpaceId: args.workingSpaceId,
-      notesTableId: args.notesTableId,
+      folderId,
+      tableId,
       title: args.title.trim() || "Untitled whiteboard",
       createdAt: now,
       updatedAt: now,
@@ -49,22 +55,24 @@ export const createWhiteboard = mutation({
 
 export const getWhiteboardsByTableId = query({
   args: {
-    notesTableId: v.id("notesTables"),
+    tableId: v.optional(v.id("tables")),
+    notesTableId: v.optional(v.any()),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new ConvexError("Not authenticated");
-    const table = await ctx.db.get(args.notesTableId);
-    const workspace = table && (await ctx.db.get(table.workingSpaceId));
-    if (!table || !workspace || workspace.userId !== userId) {
-      throw new ConvexError("Table not found or not authorized");
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+    const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
+    if (table?.folderId) {
+      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      if (!folder || folder.userId !== userId) {
+        throw new ConvexError("Table not found or not authorized");
+      }
     }
     return await ctx.db
       .query("whiteboards")
-      .withIndex("by_notesTableId", (q) =>
-        q.eq("notesTableId", args.notesTableId),
-      )
+      .withIndex("by_tableId", (q) => q.eq("tableId", tableId))
       .order("desc")
       .paginate(args.paginationOpts);
   },
@@ -119,28 +127,33 @@ export const updateWhiteboard = mutation({
 export const moveWhiteboard = mutation({
   args: {
     _id: v.id("whiteboards"),
-    targetWorkingSpaceId: v.id("workingSpaces"),
-    targetNotesTableId: v.id("notesTables"),
+    targetFolderId: v.optional(v.id("folders")),
+    targetTableId: v.optional(v.id("tables")),
+    targetWorkingSpaceId: v.optional(v.any()),
+    targetNotesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     await requireOwner(ctx, args._id);
     const userId = await getAuthUserId(ctx);
-    const [workspace, table] = await Promise.all([
-      ctx.db.get(args.targetWorkingSpaceId),
-      ctx.db.get(args.targetNotesTableId),
-    ]);
-    if (!workspace || workspace.userId !== userId) {
-      throw new ConvexError("Target workspace not found or not authorized");
+    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
+    const targetTableId = (args.targetTableId ?? args.targetNotesTableId) as any;
+
+    const [folder, table] = (await Promise.all([
+      ctx.db.get(targetFolderId),
+      ctx.db.get(targetTableId),
+    ])) as [Doc<"folders"> | null, Doc<"tables"> | null];
+    if (!folder || folder.userId !== userId) {
+      throw new ConvexError("Target folder not found or not authorized");
     }
-    if (!table || table.workingSpaceId !== args.targetWorkingSpaceId) {
-      throw new ConvexError("Target table does not belong to this workspace");
+    if (!table || (table.folderId && table.folderId !== targetFolderId)) {
+      throw new ConvexError("Target table does not belong to this folder");
     }
     await ctx.db.patch(args._id, {
-      workingSpaceId: args.targetWorkingSpaceId,
-      notesTableId: args.targetNotesTableId,
+      folderId: targetFolderId,
+      tableId: targetTableId,
       updatedAt: Date.now(),
     });
-    return { workingSpaceId: args.targetWorkingSpaceId };
+    return { folderId: targetFolderId, workingSpaceId: targetFolderId };
   },
 });
 

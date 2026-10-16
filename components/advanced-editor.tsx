@@ -56,7 +56,7 @@ const TailwindAdvancedEditor = ({
   onUpdate: (editor: EditorInstance) => void;
   editorBubblePlacement: Boolean;
   renderedInPane?: boolean;
-  workingSpaceId?: Id<"workingSpaces">;
+  workingSpaceId?: Id<"folders">;
 }) => {
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);

@@ -219,7 +219,7 @@ function OgPreviewImage({
 }
 
 interface PublicNoteProp {
-  noteId: Id<"notes">;
+  noteId: Id<"documents">;
   noteTitle: string | any;
   BtnClassName?: string;
 }
@@ -241,14 +241,14 @@ export default function PublicNote({
   const { theme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark" || theme === "dark";
 
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+  const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, title, body, published } = args;
 
-      const note = local.getQuery(api.notes.getNoteById, { _id });
+      const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note) {
         local.setQuery(
-          api.notes.getNoteById,
+          api.documents.getNoteById,
           { _id },
           {
             ...note,
@@ -262,7 +262,7 @@ export default function PublicNote({
     },
   );
 
-  const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
+  const getNote = useQuery(api.documents.getNoteById, { _id: noteId });
 
   useEffect(() => {
     if (!getNote?.published || ogPreloadedRef.current) return;
@@ -331,8 +331,8 @@ export default function PublicNote({
         </DropdownMenuTrigger>
         <TooltipContent side="bottom" alignOffset={0} align="end">
           {getNote?.published
-            ? "Take a look at your published note"
-            : "Publish your note to the web"}
+            ? "Take a look at your published document"
+            : "Publish your document to the web"}
         </TooltipContent>
       </Tooltip>
 
@@ -433,12 +433,12 @@ export default function PublicNote({
                         NOTEVO.ME
                       </p>
                       <p className="text-xs font-bold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
+                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
                         - Notevo
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
+                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
                       </p>
                     </div>
                   </div>
@@ -455,7 +455,7 @@ export default function PublicNote({
                     />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-xs font-semibold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
+                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
                         - Notevo
                       </p>
                       <p className="text-[11px] text-muted-foreground">
@@ -479,12 +479,12 @@ export default function PublicNote({
                         notevo.me
                       </p>
                       <p className="text-xs font-bold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
+                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
                         - Notevo
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
+                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
                       </p>
                     </div>
                   </div>
@@ -497,12 +497,12 @@ export default function PublicNote({
                         notevo.me
                       </p>
                       <p className="text-xs font-bold text-primary hover:underline cursor-pointer line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
+                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
                         - Notevo
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
+                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
                       </p>
                       <OgPreviewImage
                         src={`/api/og?id=${noteId}`}
@@ -544,7 +544,7 @@ export default function PublicNote({
                           isDark ? "text-emerald-50" : "text-[#084c44]",
                         )}
                       >
-                        {getNote?.title?.trim() || noteTitle || "Untitled note"}{" "}
+                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
                         - Notevo
                       </p>
                       <p
@@ -554,7 +554,7 @@ export default function PublicNote({
                         )}
                       >
                         {getNote?.preview?.trim() ||
-                          "No Description. This is a shared note on Notevo. View and read this note on Notevo"}
+                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
                       </p>
                       <p
                         className={cn(
@@ -573,7 +573,7 @@ export default function PublicNote({
                   Published to the web
                 </h1>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Copy the link, share notes with the world :
+                  Copy the link, share documents with the world:
                 </p>
               </span>
               <span className="w-full relative">

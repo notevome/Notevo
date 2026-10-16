@@ -28,44 +28,44 @@ import { Settings, Users, Trash2 } from "lucide-react";
 import { usePathname, useRouter, redirect } from "next/navigation";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 
-interface WorkingSpaceSettingsSidbarProps {
-  workingSpaceId: Id<"workingSpaces">;
+interface FolderSettingsSidebarProps {
+  workingSpaceId: Id<"folders">;
   ContainerClassName?: string;
   workingspaceName: string | any;
 }
 
-export default function WorkingSpaceSettingsSidbar({
+export default function FolderSettingsSidebar({
   workingSpaceId,
   ContainerClassName,
   workingspaceName,
-}: WorkingSpaceSettingsSidbarProps) {
+}: FolderSettingsSidebarProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const router = useRouter();
   const workspaceHref = `/home/${workingSpaceId}`;
   const PathName = usePathname();
-  const tables = useQuery(api.notesTables.getTables, {
-    workingSpaceId,
+  const tables = useQuery(api.tables.getTables, {
+    folderId: workingSpaceId,
   });
 
   const DeleteWorkingSpace = useMutation(
-    api.workingSpaces.deleteWorkingSpace,
+    api.folders.deleteFolder,
   ).withOptimisticUpdate((local, args) => {
     const { _id } = args;
 
     // Remove from getRecentWorkingSpaces
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       const filteredWorkspaces = workspaces.filter((ws: any) => ws._id !== _id);
       local.setQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
         {},
         filteredWorkspaces,
       );
     }
 
     // Remove single workspace query - server will handle the deletion
-    const workspace = local.getQuery(api.workingSpaces.getWorkingSpaceById, {
+    const workspace = local.getQuery(api.folders.getFolderById, {
       _id,
     });
     if (workspace) return;
@@ -128,7 +128,7 @@ export default function WorkingSpaceSettingsSidbar({
             sideOffset={5}
             className="!app-radius-none"
           >
-            Delete workspace
+            Delete folder
           </TooltipContent>
         </Tooltip>
       </div>
@@ -136,11 +136,11 @@ export default function WorkingSpaceSettingsSidbar({
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Workspace Deletion</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Folder Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
               {hasContent ? (
                 <>
-                  This workspace contains:
+                  This folder contains:
                   <span className="mt-2 block space-y-1">
                     {tableCount > 0 && (
                       <span className="block">
@@ -152,12 +152,12 @@ export default function WorkingSpaceSettingsSidbar({
                     )}
                   </span>
                   <span className="mt-2 block">
-                    Deleting this workspace will permanently remove all tables,
-                    notes, and their data.
+                    Deleting this folder will permanently remove all tables,
+                    documents, and their data.
                   </span>
                 </>
               ) : (
-                "Are you sure you want to delete this workspace? This action cannot be undone."
+                "Are you sure you want to delete this folder? This action cannot be undone."
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

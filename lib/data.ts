@@ -77,8 +77,8 @@ export const HowToStartSteps = [
   {
     id: "2",
     StepNum: "2",
-    Title: "Create Workspace",
-    Body: "Setting up your workspace is easier than you might think. and from there you can create tables and organize your stuff",
+    Title: "Create Folder",
+    Body: "Setting up your folder is easier than you might think. From there, you can create tables and organize your work.",
   },
   {
     id: "3",
@@ -94,12 +94,12 @@ export const pricingPlans = {
     description: "Perfect for getting started with basic features",
     price: 0,
     features: [
-      { name: "Up to 1 workspace", included: true },
+      { name: "Up to 1 folder", included: true },
       { name: "Up to 2 Tables", included: true },
-      { name: "Basic note editor", included: true },
-      { name: "20 notes", included: true },
-      { name: "Unlimited workspaces", included: false },
-      { name: "Unlimited notes", included: false },
+      { name: "Basic document editor", included: true },
+      { name: "20 documents", included: true },
+      { name: "Unlimited folders", included: false },
+      { name: "Unlimited documents", included: false },
       { name: "Priority support", included: false },
     ],
   },
@@ -108,10 +108,10 @@ export const pricingPlans = {
     description: "Everything you need for unlimited productivity",
     price: 6,
     features: [
-      { name: "Unlimited workspaces", included: true },
+      { name: "Unlimited folders", included: true },
       { name: "Unlimited Tables", included: true },
-      { name: "Advanced note editor", included: true },
-      { name: "Unlimited notes", included: true },
+      { name: "Advanced document editor", included: true },
+      { name: "Unlimited documents", included: true },
       { name: "Custom templates", included: true },
       { name: "Collaboration features", included: true },
       { name: "Priority support", included: true },
@@ -123,37 +123,37 @@ export const Features = [
   {
     title: "Rich Text Editor",
     description:
-      "Create and edit notes with a Notion style WYSIWYG editor, powered by tiptap.dev text formatting.",
+      "Create and edit documents with a Notion-style WYSIWYG editor, powered by tiptap.dev text formatting.",
     icon: FileText,
   },
   {
     title: "Simple Organization",
     description:
-      "Organize your thoughts, manage your workspaces, and boost your productivity with Notevo's intuitive organization system.",
+      "Organize your thoughts, manage your folders, and boost your productivity with Notevo's intuitive organization system.",
     icon: LayoutGrid,
   },
   {
     title: "Don't Loss Ur Stuff",
     description:
-      "Sometimes you forget the name of your note but still remember the name of the folder or table. With Notevo, you can search the full hierarchy.",
+      "Sometimes you forget the name of your document but still remember the name of the folder or table. With Notevo, you can search the full hierarchy.",
     icon: FolderSearch,
   },
   {
-    title: "Publish Your Notes",
+    title: "Publish Your Documents",
     description:
-      "Share your notes with the world in one click. Publish any note as a public page and let others read, explore, and benefit from your ideas.",
+      "Share your documents with the world in one click. Publish any document as a public page and let others read, explore, and benefit from your ideas.",
     icon: Cloud,
   },
   {
     title: "Download Your Stuff",
     description:
-      "Export and download your notes anytime, anywhere. Keep a local copy of everything you create your data, your way.",
+      "Export and download your documents anytime, anywhere. Keep a local copy of everything you create—your data, your way.",
     icon: FileDown,
   },
   {
-    title: "Move Your Notes",
+    title: "Move Your Documents",
     description:
-      "Move your notes around and organize your thoughts, manage your workspace and you know your notes your way.",
+      "Move your documents around, organize your thoughts, and manage your folders your way.",
     icon: FileSymlink,
   },
 ] as const;

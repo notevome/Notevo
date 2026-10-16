@@ -88,19 +88,19 @@ function PlatformIcon({
   }
 }
 
-interface WorkingspaceNewDropdownBtnProps {
-  notesTableId?: Id<"notesTables">;
+interface FolderNewDropdownBtnProps {
+  notesTableId?: Id<"tables">;
   workingSpacesSlug?: string;
-  workingSpaceId?: Id<"workingSpaces">;
+  workingSpaceId?: Id<"folders">;
   className?: string;
 }
 
-export default function WorkingspaceNewDropdownBtn({
+export default function FolderNewDropdownBtn({
   notesTableId,
   workingSpacesSlug,
   workingSpaceId,
   className,
-}: WorkingspaceNewDropdownBtnProps) {
+}: FolderNewDropdownBtnProps) {
   const { toast } = useToast();
   const pathname = usePathname();
   const router = useRouter();
@@ -461,7 +461,7 @@ export default function WorkingspaceNewDropdownBtn({
             >
               <span className="flex items-center gap-2">
                 <FileText className="h-4 w-4 text-muted-foreground" />
-                New Note
+                New Document
               </span>
               <span className="inline-flex gap-0.5">
                 <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">

@@ -131,7 +131,7 @@ export default function HeroSection() {
               <span>Simple, Structured</span>
               <br />
               <span className="relative inline-block">
-                <span className="text-start ">Note Taking</span>
+                <span className="text-start ">Document Creation</span>
                 <svg
                   viewBox="0 0 300 40"
                   preserveAspectRatio="none"

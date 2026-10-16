@@ -3,7 +3,7 @@ import type { FunctionReturnType } from "convex/server";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 
-export type PrefetchedNote = FunctionReturnType<typeof api.notes.getNoteById>;
+export type PrefetchedNote = FunctionReturnType<typeof api.documents.getDocumentById>;
 
 const NOTE_CACHE_TTL_MS = 5 * 60_000;
 const MAX_CACHED_NOTES = 100;
@@ -44,7 +44,7 @@ export function prefetchNote(
   if (existingRequest) return existingRequest;
 
   const request = convex
-    .query(api.notes.getNoteById, { _id: noteId as Id<"notes"> })
+    .query(api.documents.getDocumentById, { _id: noteId as Id<"documents"> })
     .then((note) => {
       cachePrefetchedNote(note);
       return note;

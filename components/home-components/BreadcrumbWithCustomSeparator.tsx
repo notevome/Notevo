@@ -24,12 +24,12 @@ export default function BreadcrumbWithCustomSeparator() {
   const isTabletPro_horizontal = useMediaQuery({ maxWidth: 1366 });
 
   const homeIndex = pathSegments.findIndex((segment) => segment === "home");
-  const workingSpaceId: Id<"workingSpaces"> | null =
+  const workingSpaceId: Id<"folders"> | null =
     homeIndex >= 0 && pathSegments.length > homeIndex + 1
-      ? (pathSegments[homeIndex + 1] as Id<"workingSpaces">)
+      ? (pathSegments[homeIndex + 1] as Id<"folders">)
       : null;
 
-  const workspaceData = useQuery(api.workingSpaces.getRecentWorkingSpaces);
+  const workspaceData = useQuery(api.folders.getRecentFolders);
   const workspaceDatafilter =
     workingSpaceId && workspaceData
       ? workspaceData.find(

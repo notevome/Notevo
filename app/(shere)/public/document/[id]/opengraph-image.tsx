@@ -27,16 +27,16 @@ export default async function Image({ params }: Props) {
   const resolvedParams = await params;
   const id = resolvedParams?.id;
 
-  let title = "Untitled note.";
+  let title = "Untitled document.";
   let preview =
-    "No Description. This is a shared note on Notevo. View and read this note on Notevo.";
+    "No description. This is a shared document on Notevo. View and read this document on Notevo.";
 
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (convexUrl && id) {
       const convex = new ConvexHttpClient(convexUrl);
-      const note = await convex.query(api.notes.getNoteById, {
-        _id: id as Id<"notes">,
+      const note = await convex.query(api.documents.getNoteById, {
+        _id: id as Id<"documents">,
         isPublish: true,
       });
 

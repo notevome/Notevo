@@ -67,8 +67,8 @@ interface WhiteboardSettingsProps {
     title: string;
     favorite?: boolean;
     snapshot?: string;
-    workingSpaceId: Id<"workingSpaces">;
-    notesTableId: Id<"notesTables">;
+    workingSpaceId: Id<"folders">;
+    notesTableId: Id<"tables">;
     createdAt: number;
     updatedAt: number;
   };
@@ -129,15 +129,15 @@ export default function WhiteboardSettings({
   const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
   const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
   const moveWhiteboard = useMutation(api.whiteboards.moveWhiteboard);
-  const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWorkingSpace = useMutation(api.folders.createFolder);
   const moveTargets = useQuery(
-    api.notes.getWorkspaceTreeForMove,
+    api.documents.getWorkspaceTreeForMove,
     moveOpen ? { searchQuery: debouncedQuery || undefined } : "skip",
   ) as
     | Array<{
-        _id: Id<"workingSpaces">;
+        _id: Id<"folders">;
         name?: string;
-        tables?: Array<{ _id: Id<"notesTables">; name?: string }>;
+        tables?: Array<{ _id: Id<"tables">; name?: string }>;
       }>
     | undefined;
 
@@ -288,8 +288,8 @@ export default function WhiteboardSettings({
   };
 
   const move = async (
-    targetWorkingSpaceId: Id<"workingSpaces">,
-    targetNotesTableId: Id<"notesTables">,
+    targetWorkingSpaceId: Id<"folders">,
+    targetNotesTableId: Id<"tables">,
   ) => {
     try {
       setMovingTableId(String(targetNotesTableId));
@@ -488,8 +488,7 @@ export default function WhiteboardSettings({
               {whiteboard.title || "Untitled"}
             </DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-              Select a destination table in this workspace or any other
-              workspace.
+              Select a destination table in this folder or any other folder.
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-muted">
@@ -499,7 +498,7 @@ export default function WhiteboardSettings({
                 ref={searchInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search workspaces and tables..."
+                placeholder="Search folders and tables..."
                 className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
               />
             </div>
@@ -515,7 +514,7 @@ export default function WhiteboardSettings({
               ) : (
                 <Plus className="h-4 w-4" />
               )}{" "}
-              Workspace
+              Folder
             </Button>
           </div>
           <div className="min-h-[320px] max-h-[350px] overflow-y-auto [&::-webkit-scrollbar]:w-[0.4rem] scrollbar-gutter-stable [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3 bg-card">
@@ -534,10 +533,10 @@ export default function WhiteboardSettings({
                 <p className="font-medium text-foreground">
                   {debouncedQuery
                     ? `No targets found for \"${debouncedQuery}\"`
-                    : "No workspaces found"}
+                    : "No folders found"}
                 </p>
                 <p className="mt-1">
-                  Create a workspace or table, then move this whiteboard there.
+                  Create a folder or table, then move this whiteboard there.
                 </p>
               </div>
             ) : (

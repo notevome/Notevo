@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
 import { buildItemSlug, extractIdFromSlug } from "../lib/slug";
@@ -9,35 +10,37 @@ import {
   truncateText,
 } from "../lib/parse-tiptap-content";
 
-const NOTE_PREVIEW_MAX_CHARS = 200;
-const TREE_NOTES_PER_TABLE = 3;
-const TREE_TABLES_PER_WORKSPACE = 3;
+const DOCUMENT_PREVIEW_MAX_CHARS = 200;
+const TREE_DOCUMENTS_PER_TABLE = 3;
+const TREE_TABLES_PER_FOLDER = 3;
 
 function normalizeSearchText(value: string | undefined) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function computeNotePreview(body: string | undefined): string | undefined {
+function computeDocumentPreview(body: string | undefined): string | undefined {
   if (!body) return undefined;
   const text = extractTextFromTiptap(body).replace(/\s+/g, " ").trim();
   if (!text) return undefined;
-  return truncateText(text, NOTE_PREVIEW_MAX_CHARS);
+  return truncateText(text, DOCUMENT_PREVIEW_MAX_CHARS);
 }
 
-function toNoteListItem(note: any) {
-  // Strip the heavy `body` field from list payloads to reduce bandwidth.
-  // Pages that need the full content should call `getNoteById`.
-  const preview = note.preview ?? computeNotePreview(note.body);
-  const { body, ...rest } = note;
+function toDocumentListItem(doc: any) {
+  const preview = doc.preview ?? computeDocumentPreview(doc.body);
+  const { body, ...rest } = doc;
   return { ...rest, preview };
 }
 
-export const createNote = mutation({
+export const createDocument = mutation({
   args: {
     title: v.string(),
-    notesTableId: v.optional(v.id("notesTables")),
-    workingSpacesSlug: v.string(),
-    workingSpaceId: v.id("workingSpaces"),
+    tableId: v.optional(v.id("tables")),
+    folderSlug: v.optional(v.string()),
+    folderId: v.optional(v.id("folders")),
+    // Compat fields
+    notesTableId: v.optional(v.any()),
+    workingSpacesSlug: v.optional(v.string()),
+    workingSpaceId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -45,48 +48,50 @@ export const createNote = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { title, notesTableId, workingSpacesSlug, workingSpaceId } = args;
+    const tableId = args.tableId ?? (args.notesTableId as any);
+    const folderId = args.folderId ?? (args.workingSpaceId as any);
+    const folderSlug = args.folderSlug ?? args.workingSpacesSlug ?? "";
 
-    if (notesTableId) {
-      const table = await ctx.db.get(notesTableId);
+    if (tableId) {
+      const table = await ctx.db.get(tableId);
       if (!table) {
         throw new ConvexError("Table not found");
       }
     }
 
-    const workspace = await ctx.db.get(workingSpaceId);
-
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
+    if (folderId) {
+      const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+      if (!folder) {
+        throw new ConvexError("Folder not found");
+      }
+      if (folder.userId !== userId) {
+        throw new ConvexError("Not authorized to create documents in this folder");
+      }
     }
 
-    if (workspace.userId !== userId) {
-      throw new ConvexError("Not authorized to create notes in this workspace");
-    }
-
-    const generateSlugName = generateSlug(title);
-
+    const generateSlugName = generateSlug(args.title);
     let slug = generateSlugName;
-    let existingNote = await ctx.db
-      .query("notes")
+    let existingDoc = await ctx.db
+      .query("documents")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
-    while (existingNote) {
+    while (existingDoc) {
       slug = `${generateSlugName}-${counter}`;
-      existingNote = await ctx.db
-        .query("notes")
+      existingDoc = await ctx.db
+        .query("documents")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
-    const note = {
-      userId: userId,
-      title,
-      ...(notesTableId ? { notesTableId } : {}),
-      workingSpacesSlug,
-      slug: slug,
-      workingSpaceId: workingSpaceId,
+
+    const doc = {
+      userId,
+      title: args.title,
+      ...(tableId ? { tableId } : {}),
+      folderSlug,
+      slug,
+      folderId,
       favorite: false,
       published: false,
       preview: undefined,
@@ -94,14 +99,14 @@ export const createNote = mutation({
       updatedAt: Date.now(),
     };
 
-    const newNote = await ctx.db.insert("notes", note);
-    return newNote;
+    return await ctx.db.insert("documents", doc as any);
   },
 });
+export const createNote = createDocument;
 
-export const updateNote = mutation({
+export const updateDocument = mutation({
   args: {
-    _id: v.id("notes"),
+    _id: v.id("documents"),
     title: v.optional(v.string()),
     body: v.optional(v.string()),
     order: v.optional(v.number()),
@@ -115,53 +120,54 @@ export const updateNote = mutation({
     }
 
     const { _id, title, body, order, favorite, published } = args;
-    const note = await ctx.db.get(_id);
-    if (!note) {
-      throw new ConvexError("Note not found");
+    const doc = await ctx.db.get(_id);
+    if (!doc) {
+      throw new ConvexError("Document not found");
     }
 
-    if (note.userId !== userId) {
-      throw new ConvexError("Not authorized to update this note");
+    if (doc.userId !== userId) {
+      throw new ConvexError("Not authorized to update this document");
     }
 
-    const generateSlugName = generateSlug(title ?? note.title ?? "Untitled");
+    const generateSlugName = generateSlug(title ?? doc.title ?? "Untitled");
     let slug = generateSlugName;
-    let existingNote = await ctx.db
-      .query("notes")
+    let existingDoc = await ctx.db
+      .query("documents")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
-    while (existingNote && existingNote._id !== _id) {
+    while (existingDoc && existingDoc._id !== _id) {
       slug = `${generateSlugName}-${counter}`;
-      existingNote = await ctx.db
-        .query("notes")
+      existingDoc = await ctx.db
+        .query("documents")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
 
     const update = {
-      ...note,
-      title: title ?? note.title,
-      body: body ?? note.body,
+      ...doc,
+      title: title ?? doc.title,
+      body: body ?? doc.body,
       preview:
-        body !== undefined ? computeNotePreview(body) : (note as any).preview,
-      slug: slug,
+        body !== undefined ? computeDocumentPreview(body) : (doc as any).preview,
+      slug,
       updatedAt: Date.now(),
-      order: order ?? note.order,
-      favorite: favorite ?? note.favorite,
-      published: published ?? note.published,
+      order: order ?? doc.order,
+      favorite: favorite ?? doc.favorite,
+      published: published ?? doc.published,
     };
 
-    const updatedNote = await ctx.db.replace(_id, update);
-    return updatedNote;
+    return await ctx.db.replace(_id, update);
   },
 });
+export const updateNote = updateDocument;
 
-export const updateNoteOrder = mutation({
+export const updateDocumentOrder = mutation({
   args: {
-    tableId: v.id("notesTables"),
-    noteIds: v.array(v.id("notes")),
+    tableId: v.id("tables"),
+    documentIds: v.optional(v.array(v.id("documents"))),
+    noteIds: v.optional(v.array(v.id("documents"))),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -169,53 +175,53 @@ export const updateNoteOrder = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { tableId, noteIds } = args;
+    const { tableId } = args;
+    const documentIds = args.documentIds ?? args.noteIds ?? [];
 
-    // Verify the table belongs to this user's work
-    const table = await ctx.db.get(tableId);
+    const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
     if (!table) {
       throw new ConvexError("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace || workspace.userId !== userId) {
-      throw new ConvexError(
-        "Not authorized to update note order in this table",
-      );
+    if (table.folderId) {
+      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      if (folder && folder.userId !== userId) {
+        throw new ConvexError("Not authorized to update order in this table");
+      }
     }
 
-    const updates = await Promise.all(
-      noteIds.map(async (noteId, index) => {
-        const note = await ctx.db.get(noteId);
-        if (!note) {
-          throw new ConvexError(`Note ${noteId} not found`);
+    await Promise.all(
+      documentIds.map(async (docId, index) => {
+        const doc = await ctx.db.get(docId);
+        if (!doc) {
+          throw new ConvexError(`Document ${docId} not found`);
         }
 
-        if (note.notesTableId !== tableId) {
+        if (doc.tableId !== tableId) {
           throw new ConvexError(
-            `Note ${noteId} does not belong to table ${tableId}`,
+            `Document ${docId} does not belong to table ${tableId}`,
           );
         }
 
-        // Verify note belongs to this user
-        if (note.userId !== userId) {
-          throw new ConvexError(`Not authorized to update note ${noteId}`);
+        if (doc.userId !== userId) {
+          throw new ConvexError(`Not authorized to update document ${docId}`);
         }
 
-        return ctx.db.patch(noteId, {
+        return ctx.db.patch(docId, {
           order: index,
           updatedAt: Date.now(),
         });
       }),
     );
 
-    return { success: true, updatedNotes: noteIds.length };
+    return { success: true, updatedDocuments: documentIds.length };
   },
 });
+export const updateNoteOrder = updateDocumentOrder;
 
-export const deleteNote = mutation({
+export const deleteDocument = mutation({
   args: {
-    _id: v.id("notes"),
+    _id: v.id("documents"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -224,24 +230,25 @@ export const deleteNote = mutation({
     }
 
     const { _id } = args;
-    const note = await ctx.db.get(_id);
-    if (!note) {
-      throw new ConvexError("Note not found");
+    const doc = await ctx.db.get(_id);
+    if (!doc) {
+      throw new ConvexError("Document not found");
     }
 
-    // Verify the note belongs to this user
-    if (note.userId !== userId) {
-      throw new ConvexError("Not authorized to delete this note");
+    if (doc.userId !== userId) {
+      throw new ConvexError("Not authorized to delete this document");
     }
 
     await ctx.db.delete(_id);
     return _id;
   },
 });
+export const deleteNote = deleteDocument;
 
-export const getNotesByTableId = query({
+export const getDocumentsByTableId = query({
   args: {
-    notesTableId: v.id("notesTables"),
+    tableId: v.optional(v.id("tables")),
+    notesTableId: v.optional(v.any()),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
@@ -250,27 +257,30 @@ export const getNotesByTableId = query({
       throw new ConvexError("Not authenticated");
     }
 
-    const { notesTableId, paginationOpts } = args;
+    const tableId = (args.tableId ?? args.notesTableId) as any;
 
-    // Get notes that belong to both the authenticated user and the specified workspace
     const result = await ctx.db
-      .query("notes")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", notesTableId))
+      .query("documents")
+      .withIndex("by_tableId", (q) => q.eq("tableId", tableId))
       .order("desc")
-      .paginate(paginationOpts);
+      .paginate(args.paginationOpts);
 
     return {
       ...result,
-      page: result.page.map(toNoteListItem),
+      page: result.page.map(toDocumentListItem),
     };
   },
 });
+export const getNotesByTableId = getDocumentsByTableId;
 
-export const moveNote = mutation({
+export const moveDocument = mutation({
   args: {
-    _id: v.id("notes"),
-    targetWorkingSpaceId: v.id("workingSpaces"),
-    targetNotesTableId: v.id("notesTables"),
+    _id: v.id("documents"),
+    targetFolderId: v.optional(v.id("folders")),
+    targetTableId: v.optional(v.id("tables")),
+    // Compat args
+    targetWorkingSpaceId: v.optional(v.any()),
+    targetNotesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -278,100 +288,106 @@ export const moveNote = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { _id, targetWorkingSpaceId, targetNotesTableId } = args;
-    const note = await ctx.db.get(_id);
-    if (!note) {
-      throw new ConvexError("Note not found");
+    const { _id } = args;
+    const targetFolderId = args.targetFolderId ?? args.targetWorkingSpaceId;
+    const targetTableId = args.targetTableId ?? args.targetNotesTableId;
+
+    const doc = await ctx.db.get(_id);
+    if (!doc) {
+      throw new ConvexError("Document not found");
     }
 
-    if (note.userId !== userId) {
-      throw new ConvexError("Not authorized to move this note");
+    if (doc.userId !== userId) {
+      throw new ConvexError("Not authorized to move this document");
     }
 
-    const targetWorkspace = await ctx.db.get(targetWorkingSpaceId);
-    if (!targetWorkspace) {
-      throw new ConvexError("Target workspace not found");
+    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    if (!targetFolder) {
+      throw new ConvexError("Target folder not found");
     }
 
-    if (targetWorkspace.userId !== userId) {
-      throw new ConvexError("Not authorized to use this workspace");
+    if (targetFolder.userId !== userId) {
+      throw new ConvexError("Not authorized to use this folder");
     }
 
-    const targetTable = await ctx.db.get(targetNotesTableId);
+    const targetTable = (await ctx.db.get(targetTableId)) as Doc<"tables"> | null;
     if (!targetTable) {
       throw new ConvexError("Target table not found");
     }
 
-    if (targetTable.workingSpaceId !== targetWorkingSpaceId) {
-      throw new ConvexError("Target table does not belong to this workspace");
+    if (targetTable.folderId && targetTable.folderId !== targetFolderId) {
+      throw new ConvexError("Target table does not belong to this folder");
     }
 
     await ctx.db.patch(_id, {
-      workingSpaceId: targetWorkingSpaceId,
-      workingSpacesSlug: targetWorkspace.slug ?? note.workingSpacesSlug,
-      notesTableId: targetNotesTableId,
+      folderId: targetFolderId,
+      folderSlug: targetFolder.slug ?? doc.folderSlug,
+      tableId: targetTableId,
       updatedAt: Date.now(),
     });
 
     return {
+      documentId: _id,
       noteId: _id,
-      workingSpaceId: targetWorkingSpaceId,
-      workingSpacesSlug: targetWorkspace.slug,
-      notesTableId: targetNotesTableId,
-      slug: note.slug,
+      folderId: targetFolderId,
+      workingSpaceId: targetFolderId,
+      folderSlug: targetFolder.slug,
+      workingSpacesSlug: targetFolder.slug,
+      tableId: targetTableId,
+      notesTableId: targetTableId,
+      slug: doc.slug,
     };
   },
 });
+export const moveNote = moveDocument;
 
-export const getNoteByUserId = query({
+export const getDocumentByUserId = query({
   args: {
     paginationOpts: paginationOptsValidator,
     searchQuery: v.optional(v.string()),
   },
   handler: async (ctx, { paginationOpts, searchQuery }) => {
     const userId = await getAuthUserId(ctx);
-
     if (!userId) {
       throw new ConvexError("Not authenticated");
     }
 
-    // If there's a search query, filter notes by title
     if (searchQuery && searchQuery.trim() !== "") {
-      const allNotes = await ctx.db
-        .query("notes")
+      const allDocs = await ctx.db
+        .query("documents")
         .withIndex("by_userId", (q) => q.eq("userId", userId))
         .order("desc")
         .collect();
 
       const lowerQuery = normalizeSearchText(searchQuery);
-      const matchedNotes = allNotes.filter((note) => {
-        return normalizeSearchText(note.title).includes(lowerQuery);
-      });
+      const matchedDocs = allDocs.filter((d) =>
+        normalizeSearchText(d.title).includes(lowerQuery),
+      );
 
       return {
-        page: matchedNotes.map(toNoteListItem),
+        page: matchedDocs.map(toDocumentListItem),
         continueCursor: "",
         isDone: true,
       };
     }
 
-    // No search query - return paginated results
     const result = await ctx.db
-      .query("notes")
+      .query("documents")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .paginate(paginationOpts);
 
     return {
       ...result,
-      page: result.page.map(toNoteListItem),
+      page: result.page.map(toDocumentListItem),
     };
   },
 });
+export const getNoteByUserId = getDocumentByUserId;
 
-export const getNoteById = query({
+export const getDocumentById = query({
   args: {
-    _id: v.id("notes"),
+    _id: v.id("documents"),
     isPublish: v.optional(v.boolean()) || false,
   },
   handler: async (ctx, args) => {
@@ -380,23 +396,24 @@ export const getNoteById = query({
     if (!userId && isPublish === false) {
       throw new ConvexError("Not authenticated");
     }
-    const note = await ctx.db.get(_id);
-    if (!note) {
-      throw new ConvexError("Note not found");
+    const doc = await ctx.db.get(_id);
+    if (!doc) {
+      throw new ConvexError("Document not found");
     }
-    if (note.userId !== userId && note.published === false) {
-      throw new ConvexError("You are not authorized to access this note");
+    if (doc.userId !== userId && doc.published === false) {
+      throw new ConvexError("You are not authorized to access this document");
     }
-    return note;
+    return doc;
   },
 });
+export const getNoteById = getDocumentById;
 
 export const getItemType = query({
   args: { id: v.string() },
   handler: async (ctx, args) => {
     if (!args.id) return null;
-    const noteId = ctx.db.normalizeId("notes", args.id);
-    if (noteId) return "note";
+    const docId = ctx.db.normalizeId("documents", args.id);
+    if (docId) return "note";
     const wbId = ctx.db.normalizeId("whiteboards", args.id);
     if (wbId) return "whiteboard";
     const pdfId = ctx.db.normalizeId("pdfs", args.id);
@@ -405,7 +422,7 @@ export const getItemType = query({
   },
 });
 
-export const getFavNotes = query({
+export const getFavDocuments = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
     const userId = await getAuthUserId(ctx);
@@ -413,7 +430,7 @@ export const getFavNotes = query({
       throw new ConvexError("Not authenticated");
     }
     const result = await ctx.db
-      .query("notes")
+      .query("documents")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("favorite"), true))
       .order("desc")
@@ -421,16 +438,16 @@ export const getFavNotes = query({
 
     const validPage = (
       await Promise.all(
-        result.page.map(async (note) => {
-          if (note.workingSpaceId) {
-            const ws = await ctx.db.get(note.workingSpaceId);
-            if (!ws) return null;
+        result.page.map(async (doc) => {
+          if (doc.folderId) {
+            const folder = await ctx.db.get(doc.folderId);
+            if (!folder) return null;
           }
-          if (note.notesTableId) {
-            const table = await ctx.db.get(note.notesTableId);
+          if (doc.tableId) {
+            const table = await ctx.db.get(doc.tableId);
             if (!table) return null;
           }
-          return toNoteListItem(note);
+          return toDocumentListItem(doc);
         }),
       )
     ).filter((x): x is NonNullable<typeof x> => x !== null);
@@ -441,7 +458,9 @@ export const getFavNotes = query({
     };
   },
 });
-export const getWorkspaceTreeForMove = query({
+export const getFavNotes = getFavDocuments;
+
+export const getFolderTreeForMove = query({
   args: {
     searchQuery: v.optional(v.string()),
   },
@@ -454,19 +473,17 @@ export const getWorkspaceTreeForMove = query({
     const normalizedQuery = normalizeSearchText(searchQuery?.trim());
     const isSearching = normalizedQuery.length > 0;
 
-    const workspaces = await ctx.db
-      .query("workingSpaces")
+    const folders = await ctx.db
+      .query("folders")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
 
     const targets = await Promise.all(
-      workspaces.map(async (workspace) => {
+      folders.map(async (folder) => {
         const allTables = await ctx.db
-          .query("notesTables")
-          .withIndex("by_workingSpaceId", (q) =>
-            q.eq("workingSpaceId", workspace._id),
-          )
+          .query("tables")
+          .withIndex("by_folderId", (q) => q.eq("folderId", folder._id))
           .collect();
 
         const sortedTables = allTables.sort(
@@ -474,19 +491,15 @@ export const getWorkspaceTreeForMove = query({
         );
 
         if (!isSearching) {
-          // No filtering here: every workspace and every table is a valid
-          // move destination, whether or not it has content yet.
-          return { ...workspace, tables: sortedTables };
+          return { ...folder, tables: sortedTables };
         }
 
-        const workspaceMatches = normalizeSearchText(workspace.name).includes(
+        const folderMatches = normalizeSearchText(folder.name).includes(
           normalizedQuery,
         );
 
-        // Workspace name matched: keep all its tables so the user can
-        // still pick any of them, not just ones whose name also matched.
-        if (workspaceMatches) {
-          return { ...workspace, tables: sortedTables };
+        if (folderMatches) {
+          return { ...folder, tables: sortedTables };
         }
 
         const matchingTables = sortedTables.filter((table) =>
@@ -494,7 +507,7 @@ export const getWorkspaceTreeForMove = query({
         );
 
         if (matchingTables.length > 0) {
-          return { ...workspace, tables: matchingTables };
+          return { ...folder, tables: matchingTables };
         }
 
         return null;
@@ -504,7 +517,9 @@ export const getWorkspaceTreeForMove = query({
     return targets.filter(Boolean) as NonNullable<(typeof targets)[number]>[];
   },
 });
-export const getWorkspaceTree = query({
+export const getWorkspaceTreeForMove = getFolderTreeForMove;
+
+export const getFolderTree = query({
   args: {
     searchQuery: v.optional(v.string()),
   },
@@ -517,19 +532,17 @@ export const getWorkspaceTree = query({
     const normalizedQuery = normalizeSearchText(searchQuery?.trim());
     const isSearching = normalizedQuery.length > 0;
 
-    const workspaces = await ctx.db
-      .query("workingSpaces")
+    const folders = await ctx.db
+      .query("folders")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
 
     const targets = await Promise.all(
-      workspaces.map(async (workspace) => {
+      folders.map(async (folder) => {
         const allTables = await ctx.db
-          .query("notesTables")
-          .withIndex("by_workingSpaceId", (q) =>
-            q.eq("workingSpaceId", workspace._id),
-          )
+          .query("tables")
+          .withIndex("by_folderId", (q) => q.eq("folderId", folder._id))
           .collect();
 
         const sortedTables = allTables.sort(
@@ -538,81 +551,67 @@ export const getWorkspaceTree = query({
 
         const tablesToProcess = isSearching
           ? sortedTables
-          : sortedTables.slice(0, TREE_TABLES_PER_WORKSPACE);
+          : sortedTables.slice(0, TREE_TABLES_PER_FOLDER);
 
-        const tablesWithNotes = await Promise.all(
+        const tablesWithDocs = await Promise.all(
           tablesToProcess.map(async (table) => {
             if (isSearching) {
-              const allNotes = await ctx.db
-                .query("notes")
-                .withIndex("by_notesTableId", (q) =>
-                  q.eq("notesTableId", table._id),
-                )
+              const allDocs = await ctx.db
+                .query("documents")
+                .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
                 .order("desc")
                 .collect();
               const allPdfs = await ctx.db
                 .query("pdfs")
-                .withIndex("by_notesTableId", (q) =>
-                  q.eq("notesTableId", table._id),
-                )
+                .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
                 .order("desc")
                 .collect();
               const allLinks = await ctx.db
                 .query("links")
-                .withIndex("by_notesTableId", (q) =>
-                  q.eq("notesTableId", table._id),
-                )
+                .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
                 .order("desc")
                 .collect();
               const allWhiteboards = await ctx.db
                 .query("whiteboards")
-                .withIndex("by_notesTableId", (q) =>
-                  q.eq("notesTableId", table._id),
-                )
+                .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
                 .order("desc")
                 .collect();
 
               return {
                 ...table,
-                notes: allNotes.map(({ body, ...rest }) => rest),
+                notes: allDocs.map(({ body, ...rest }) => rest),
+                documents: allDocs.map(({ body, ...rest }) => rest),
                 pdfs: allPdfs,
                 links: allLinks,
                 whiteboards: allWhiteboards,
               };
             }
 
-            const firstNotes = await ctx.db
-              .query("notes")
-              .withIndex("by_notesTableId", (q) =>
-                q.eq("notesTableId", table._id),
-              )
+            const firstDocs = await ctx.db
+              .query("documents")
+              .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
               .order("desc")
-              .take(TREE_NOTES_PER_TABLE);
+              .take(TREE_DOCUMENTS_PER_TABLE);
             const firstPdfs = await ctx.db
               .query("pdfs")
-              .withIndex("by_notesTableId", (q) =>
-                q.eq("notesTableId", table._id),
-              )
+              .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
               .order("desc")
-              .take(TREE_NOTES_PER_TABLE);
+              .take(TREE_DOCUMENTS_PER_TABLE);
             const firstLinks = await ctx.db
               .query("links")
-              .withIndex("by_notesTableId", (q) =>
-                q.eq("notesTableId", table._id),
-              )
+              .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
               .order("desc")
-              .take(TREE_NOTES_PER_TABLE);
+              .take(TREE_DOCUMENTS_PER_TABLE);
             const firstWhiteboards = await ctx.db
               .query("whiteboards")
-              .withIndex("by_notesTableId", (q) =>
-                q.eq("notesTableId", table._id),
-              )
+              .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
               .order("desc")
-              .take(TREE_NOTES_PER_TABLE);
+              .take(TREE_DOCUMENTS_PER_TABLE);
 
             return {
               ...table,
-              notes: firstNotes.map(({ body, ...rest }) => rest),
+              notes: firstDocs.map(({ body, ...rest }) => rest),
+              documents: firstDocs.map(({ body, ...rest }) => rest),
               pdfs: firstPdfs,
               links: firstLinks,
               whiteboards: firstWhiteboards,
@@ -620,24 +619,21 @@ export const getWorkspaceTree = query({
           }),
         );
 
-        // Only keep tables that have at least one note, pdf, or link
-        const nonEmptyTables = tablesWithNotes.filter(
+        const nonEmptyTables = tablesWithDocs.filter(
           (table) =>
-            table.notes.length > 0 ||
+            table.documents.length > 0 ||
             table.pdfs.length > 0 ||
             (table.links?.length ?? 0) > 0 ||
             (table.whiteboards?.length ?? 0) > 0,
         );
 
-        // Drop workspace entirely if it has no non-empty tables
         if (nonEmptyTables.length === 0) return null;
 
         if (!isSearching) {
-          return { ...workspace, tables: nonEmptyTables };
+          return { ...folder, tables: nonEmptyTables };
         }
 
-        // Search path
-        const workspaceMatches = normalizeSearchText(workspace.name).includes(
+        const folderMatches = normalizeSearchText(folder.name).includes(
           normalizedQuery,
         );
 
@@ -646,8 +642,8 @@ export const getWorkspaceTree = query({
             const tableMatches = normalizeSearchText(table.name).includes(
               normalizedQuery,
             );
-            const matchingNotes = table.notes.filter((note: any) =>
-              normalizeSearchText(note.title).includes(normalizedQuery),
+            const matchingDocs = table.documents.filter((d: any) =>
+              normalizeSearchText(d.title).includes(normalizedQuery),
             );
             const matchingPdfs = table.pdfs.filter((pdf: any) =>
               normalizeSearchText(pdf.title).includes(normalizedQuery),
@@ -656,20 +652,21 @@ export const getWorkspaceTree = query({
               normalizeSearchText(link.title).includes(normalizedQuery),
             );
             const matchingWhiteboards = (table.whiteboards ?? []).filter(
-              (whiteboard: any) =>
-                normalizeSearchText(whiteboard.title).includes(normalizedQuery),
+              (board: any) =>
+                normalizeSearchText(board.title).includes(normalizedQuery),
             );
 
             if (tableMatches) return table;
             if (
-              matchingNotes.length > 0 ||
+              matchingDocs.length > 0 ||
               matchingPdfs.length > 0 ||
               matchingLinks.length > 0 ||
               matchingWhiteboards.length > 0
             )
               return {
                 ...table,
-                notes: matchingNotes,
+                notes: matchingDocs,
+                documents: matchingDocs,
                 pdfs: matchingPdfs,
                 links: matchingLinks,
                 whiteboards: matchingWhiteboards,
@@ -679,21 +676,22 @@ export const getWorkspaceTree = query({
           })
           .filter(Boolean);
 
-        // Drop workspace if no tables matched and workspace name didn't match
         if (filteredTables.length === 0) return null;
 
-        return { ...workspace, tables: filteredTables };
+        return { ...folder, tables: filteredTables };
       }),
     );
 
     return targets.filter(Boolean) as NonNullable<(typeof targets)[number]>[];
   },
 });
+export const getWorkspaceTree = getFolderTree;
 
 export const getMentionItems = query({
   args: {
     query: v.optional(v.string()),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
+    folderId: v.optional(v.id("folders")),
+    workingSpaceId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -704,24 +702,24 @@ export const getMentionItems = query({
     const normalizedQuery = normalizeSearchText(args.query?.trim());
     const isSearching = normalizedQuery.length > 0;
 
-    const workspaces = await ctx.db
-      .query("workingSpaces")
+    const folders = await ctx.db
+      .query("folders")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .collect();
-    const wsMap = new Map(workspaces.map((ws) => [String(ws._id), ws]));
+    const folderMap = new Map(folders.map((f) => [String(f._id), f]));
 
     const allTables: any[] = [];
-    for (const ws of workspaces) {
+    for (const f of folders) {
       const tables = await ctx.db
-        .query("notesTables")
-        .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", ws._id))
+        .query("tables")
+        .withIndex("by_folderId", (q) => q.eq("folderId", f._id))
         .collect();
       allTables.push(...tables);
     }
     const tableMap = new Map(allTables.map((t) => [String(t._id), t]));
 
-    const rawNotes = await ctx.db
-      .query("notes")
+    const rawDocs = await ctx.db
+      .query("documents")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .take(isSearching ? 60 : 30);
@@ -744,41 +742,41 @@ export const getMentionItems = query({
       .order("desc")
       .take(isSearching ? 40 : 20);
 
-    const formatNote = (note: any) => {
-      const ws = note.workingSpaceId
-        ? wsMap.get(String(note.workingSpaceId))
+    const formatDoc = (doc: any) => {
+      const folder = doc.folderId
+        ? folderMap.get(String(doc.folderId))
         : undefined;
-      const table = note.notesTableId
-        ? tableMap.get(String(note.notesTableId))
+      const table = doc.tableId
+        ? tableMap.get(String(doc.tableId))
         : undefined;
-      const preview = note.preview ?? computeNotePreview(note.body);
+      const preview = doc.preview ?? computeDocumentPreview(doc.body);
       return {
-        _id: String(note._id),
+        _id: String(doc._id),
         kind: "note" as const,
-        title: note.title || "Untitled note",
+        title: doc.title || "Untitled note",
         subtitle: preview
           ? truncateText(preview, 80)
           : table?.name
             ? `In ${table.name}`
             : undefined,
-        preview: preview,
-        href: `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+        preview,
+        href: `/home/${doc.folderId}/${buildItemSlug(doc.title || doc.slug, doc._id)}`,
         tableName: table?.name,
-        workingSpaceId: note.workingSpaceId
-          ? String(note.workingSpaceId)
-          : undefined,
-        workingSpaceName: ws?.name,
-        createdAt: note.createdAt,
-        updatedAt: note.updatedAt,
+        workingSpaceId: doc.folderId ? String(doc.folderId) : undefined,
+        folderId: doc.folderId ? String(doc.folderId) : undefined,
+        workingSpaceName: folder?.name,
+        folderName: folder?.name,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
       };
     };
 
     const formatWhiteboard = (board: any) => {
-      const ws = board.workingSpaceId
-        ? wsMap.get(String(board.workingSpaceId))
+      const folder = board.folderId
+        ? folderMap.get(String(board.folderId))
         : undefined;
-      const table = board.notesTableId
-        ? tableMap.get(String(board.notesTableId))
+      const table = board.tableId
+        ? tableMap.get(String(board.tableId))
         : undefined;
       return {
         _id: String(board._id),
@@ -787,46 +785,46 @@ export const getMentionItems = query({
         subtitle: table?.name ? `In ${table.name}` : "Whiteboard",
         snapshot: board.snapshot,
         preview: board.preview,
-        href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
+        href: `/home/${board.folderId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
         tableName: table?.name,
-        workingSpaceId: board.workingSpaceId
-          ? String(board.workingSpaceId)
-          : undefined,
-        workingSpaceName: ws?.name,
+        workingSpaceId: board.folderId ? String(board.folderId) : undefined,
+        folderId: board.folderId ? String(board.folderId) : undefined,
+        workingSpaceName: folder?.name,
+        folderName: folder?.name,
         createdAt: board.createdAt,
         updatedAt: board.updatedAt,
       };
     };
 
     const formatPdf = (pdf: any) => {
-      const ws = pdf.workingSpaceId
-        ? wsMap.get(String(pdf.workingSpaceId))
+      const folder = pdf.folderId
+        ? folderMap.get(String(pdf.folderId))
         : undefined;
-      const table = pdf.notesTableId
-        ? tableMap.get(String(pdf.notesTableId))
+      const table = pdf.tableId
+        ? tableMap.get(String(pdf.tableId))
         : undefined;
       return {
         _id: String(pdf._id),
         kind: "pdf" as const,
         title: pdf.title || "Untitled PDF",
         subtitle: table?.name ? `In ${table.name}` : "PDF upload",
-        href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
+        href: `/home/${pdf.folderId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
         tableName: table?.name,
-        workingSpaceId: pdf.workingSpaceId
-          ? String(pdf.workingSpaceId)
-          : undefined,
-        workingSpaceName: ws?.name,
+        workingSpaceId: pdf.folderId ? String(pdf.folderId) : undefined,
+        folderId: pdf.folderId ? String(pdf.folderId) : undefined,
+        workingSpaceName: folder?.name,
+        folderName: folder?.name,
         createdAt: pdf.createdAt,
         updatedAt: pdf.updatedAt,
       };
     };
 
     const formatLink = (link: any) => {
-      const ws = link.workingSpaceId
-        ? wsMap.get(String(link.workingSpaceId))
+      const folder = link.folderId
+        ? folderMap.get(String(link.folderId))
         : undefined;
-      const table = link.notesTableId
-        ? tableMap.get(String(link.notesTableId))
+      const table = link.tableId
+        ? tableMap.get(String(link.tableId))
         : undefined;
       const title =
         link.title ||
@@ -845,22 +843,22 @@ export const getMentionItems = query({
         metadata: link.metadata,
         href: link.url,
         tableName: table?.name,
-        workingSpaceId: link.workingSpaceId
-          ? String(link.workingSpaceId)
-          : undefined,
-        workingSpaceName: ws?.name,
+        workingSpaceId: link.folderId ? String(link.folderId) : undefined,
+        folderId: link.folderId ? String(link.folderId) : undefined,
+        workingSpaceName: folder?.name,
+        folderName: folder?.name,
         createdAt: link.createdAt,
         updatedAt: link.updatedAt,
       };
     };
 
-    let formattedNotes = rawNotes.map(formatNote);
+    let formattedDocs = rawDocs.map(formatDoc);
     let formattedWhiteboards = rawWhiteboards.map(formatWhiteboard);
     let formattedPdfs = rawPdfs.map(formatPdf);
     let formattedLinks = rawLinks.map(formatLink);
 
     if (isSearching) {
-      formattedNotes = formattedNotes.filter(
+      formattedDocs = formattedDocs.filter(
         (n) =>
           normalizeSearchText(n.title).includes(normalizedQuery) ||
           normalizeSearchText(n.preview).includes(normalizedQuery) ||
@@ -885,17 +883,18 @@ export const getMentionItems = query({
     }
 
     const all = [
-      ...formattedNotes,
+      ...formattedDocs,
       ...formattedWhiteboards,
       ...formattedPdfs,
       ...formattedLinks,
     ];
 
-    if (args.workingSpaceId) {
-      const targetWs = String(args.workingSpaceId);
+    const targetFolderId = args.folderId ?? args.workingSpaceId;
+    if (targetFolderId) {
+      const targetStr = String(targetFolderId);
       all.sort((a, b) => {
-        const aMatches = a.workingSpaceId === targetWs ? 1 : 0;
-        const bMatches = b.workingSpaceId === targetWs ? 1 : 0;
+        const aMatches = a.folderId === targetStr ? 1 : 0;
+        const bMatches = b.folderId === targetStr ? 1 : 0;
         if (aMatches !== bMatches) return bMatches - aMatches;
         return (b.updatedAt || b.createdAt) - (a.updatedAt || a.createdAt);
       });
@@ -952,25 +951,27 @@ export const resolveHoverItem = query({
       try {
         const doc = await ctx.db.get(itemId as any);
         if (doc) {
-          if ("body" in doc || kind === "note") {
-            const note = doc as any;
-            const preview = note.preview ?? computeNotePreview(note.body);
+          if ("body" in doc || kind === "note" || kind === "document") {
+            const documentItem = doc as any;
+            const preview =
+              documentItem.preview ?? computeDocumentPreview(documentItem.body);
+            const folderId = documentItem.folderId ?? documentItem.workingSpaceId;
             return {
               kind: "note" as const,
-              _id: String(note._id),
-              title: note.title || "Untitled note",
-              preview: preview,
-              createdAt: note.createdAt,
-              updatedAt: note.updatedAt,
-              workingSpaceId: note.workingSpaceId
-                ? String(note.workingSpaceId)
-                : undefined,
-              slug: note.slug,
-              href: `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+              _id: String(documentItem._id),
+              title: documentItem.title || "Untitled note",
+              preview,
+              createdAt: documentItem.createdAt,
+              updatedAt: documentItem.updatedAt,
+              workingSpaceId: folderId ? String(folderId) : undefined,
+              folderId: folderId ? String(folderId) : undefined,
+              slug: documentItem.slug,
+              href: `/home/${folderId}/${buildItemSlug(documentItem.title || documentItem.slug, documentItem._id)}`,
             };
           }
           if ("snapshot" in doc || kind === "whiteboard") {
             const board = doc as any;
+            const folderId = board.folderId ?? board.workingSpaceId;
             return {
               kind: "whiteboard" as const,
               _id: String(board._id),
@@ -979,24 +980,23 @@ export const resolveHoverItem = query({
               preview: board.preview,
               createdAt: board.createdAt,
               updatedAt: board.updatedAt,
-              workingSpaceId: board.workingSpaceId
-                ? String(board.workingSpaceId)
-                : undefined,
-              href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
+              workingSpaceId: folderId ? String(folderId) : undefined,
+              folderId: folderId ? String(folderId) : undefined,
+              href: `/home/${folderId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
             };
           }
           if ("storageId" in doc || kind === "pdf") {
             const pdf = doc as any;
+            const folderId = pdf.folderId ?? pdf.workingSpaceId;
             return {
               kind: "pdf" as const,
               _id: String(pdf._id),
               title: pdf.title || "Untitled PDF",
               createdAt: pdf.createdAt,
               updatedAt: pdf.updatedAt,
-              workingSpaceId: pdf.workingSpaceId
-                ? String(pdf.workingSpaceId)
-                : undefined,
-              href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
+              workingSpaceId: folderId ? String(folderId) : undefined,
+              folderId: folderId ? String(folderId) : undefined,
+              href: `/home/${folderId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
             };
           }
           if ("platform" in doc || kind === "link") {

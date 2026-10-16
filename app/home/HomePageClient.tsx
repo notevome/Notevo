@@ -18,8 +18,8 @@ import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import WorkingSpaceSettings from "@/components/home-components/WorkingSpaceSettings";
-import WorkingSpaceNotFound from "@/components/home-components/WorkingSpaceNotFound";
+import FolderSettings from "@/components/home-components/FolderSettings";
+import FolderNotFound from "@/components/home-components/FolderNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import { buildItemSlug } from "@/lib/slug";
@@ -58,13 +58,13 @@ const workspaceNameSchema = z
 export default function HomePageClient() {
   const viewerQuery = useQuery(api.users.viewer, {});
   const recentWorkspacesQuery = useQuery(
-    api.workingSpaces.getRecentWorkingSpaces,
+    api.folders.getRecentFolders,
     {},
   );
   const { results: recentNotesResults, status: recentNotesStatus } =
-    usePaginatedQuery(api.notes.getNoteByUserId, {}, { initialNumItems: 5 });
+    usePaginatedQuery(api.documents.getNoteByUserId, {}, { initialNumItems: 5 });
   const { results: pinnedNotesResults, status: pinnedNotesStatus } =
-    usePaginatedQuery(api.notes.getFavNotes, {}, { initialNumItems: 5 });
+    usePaginatedQuery(api.documents.getFavNotes, {}, { initialNumItems: 5 });
 
   useEffect(() => {
     if (viewerQuery !== undefined) homeMemoryCache.viewer = viewerQuery;
@@ -94,19 +94,19 @@ export default function HomePageClient() {
       ? homeMemoryCache.pinnedNotes
       : pinnedNotesResults;
 
-  const createWorkingSpace = useMutation(
-    api.workingSpaces.createWorkingSpace,
+  const createFolder = useMutation(
+    api.folders.createFolder,
   ).withOptimisticUpdate((local, args) => {
     const { name } = args;
     const now = Date.now();
     const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as any as Id<"workingSpaces">;
+    const tempId = `${uuid}-${now}` as any as Id<"folders">;
 
     const currentWorkspaces = local.getQuery(
-      api.workingSpaces.getRecentWorkingSpaces,
+      api.folders.getRecentFolders,
     );
     if (currentWorkspaces !== undefined) {
-      local.setQuery(api.workingSpaces.getRecentWorkingSpaces, {}, [
+      local.setQuery(api.folders.getRecentFolders, {}, [
         {
           _id: tempId,
           _creationTime: now,
@@ -121,8 +121,8 @@ export default function HomePageClient() {
     }
   });
 
-  const handleCreateWorkingSpace = async () => {
-    await createWorkingSpace({ name: "Untitled" });
+  const handleCreateFolder = async () => {
+    await createFolder({ name: "Untitled" });
   };
 
   useEffect(() => {
@@ -170,7 +170,7 @@ export default function HomePageClient() {
             )}
           </h1>
           <p className="text-white/90 text-md ">
-            Organize your thoughts , and manage your workspaces,
+            Organize your thoughts, and manage your folders,
           </p>
         </header>
       </div>
@@ -178,16 +178,16 @@ export default function HomePageClient() {
       <div className="mb-8">
         <div className="mb-4 flex justify-between items-center">
           <h2 className="text-foreground text-xl font-semibold">
-            Your Workspaces
+            Your Folders
           </h2>
           <Button
             variant="outline"
             size="sm"
-            onClick={handleCreateWorkingSpace}
+            onClick={handleCreateFolder}
             disabled={recentWorkspaces === undefined}
           >
             <FolderPlus size={16} className="h-4 w-4 sm:mr-2 mr-0" />
-            <span className="hidden sm:block">New Workspace</span>
+            <span className="hidden sm:block">New Folder</span>
           </Button>
         </div>
 
@@ -203,13 +203,13 @@ export default function HomePageClient() {
               <WorkspaceCard
                 key={workspace._id}
                 workspace={workspace}
-                handleCreateWorkingSpace={handleCreateWorkingSpace}
+                handleCreateFolder={handleCreateFolder}
                 loading={false}
               />
             ))}
           </Slider>
         ) : (
-          <WorkingSpaceNotFound />
+          <FolderNotFound />
         )}
       </div>
 
@@ -217,7 +217,7 @@ export default function HomePageClient() {
         <div className="mb-8">
           <div className="mb-4">
             <h2 className="text-foreground text-xl font-semibold">
-              Recent Notes
+              Recent Documents
             </h2>
           </div>
 
@@ -380,7 +380,7 @@ function Slider({
   );
 }
 interface Workspace {
-  _id: Id<"workingSpaces">;
+  _id: Id<"folders">;
   name: string;
   slug?: string;
   favorite?: boolean;
@@ -391,13 +391,13 @@ interface Workspace {
 
 interface WorkspaceCardProps {
   workspace: Workspace;
-  handleCreateWorkingSpace: () => void;
+  handleCreateFolder: () => void;
   loading: boolean;
 }
 
 function WorkspaceCard({
   workspace,
-  handleCreateWorkingSpace,
+  handleCreateFolder,
   loading,
 }: WorkspaceCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
@@ -409,13 +409,13 @@ function WorkspaceCard({
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
-    api.workingSpaces.updateWorkingSpace,
+    api.folders.updateFolder,
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       local.setQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
         {},
         workspaces.map((ws: any) =>
           ws._id === _id
@@ -424,10 +424,10 @@ function WorkspaceCard({
         ),
       );
     }
-    const ws = local.getQuery(api.workingSpaces.getWorkingSpaceById, { _id });
+    const ws = local.getQuery(api.folders.getFolderById, { _id });
     if (ws) {
       local.setQuery(
-        api.workingSpaces.getWorkingSpaceById,
+        api.folders.getFolderById,
         { _id },
         { ...ws, name: name ?? ws.name, updatedAt: Date.now() },
       );
@@ -453,7 +453,7 @@ function WorkspaceCard({
     const trimmed = result.data;
     if (trimmed !== (workspace.name || "Untitled")) {
       try {
-        await updateWorkingSpace({ _id: workspace._id, name: trimmed });
+        await updateWorkingSpace({ _id: workspace._id as any, name: trimmed });
       } catch (error) {
         console.error("Error updating workspace name:", error);
         setEditedName(workspace.name || "Untitled");
@@ -516,8 +516,8 @@ function WorkspaceCard({
             </CardTitle>
           )}
           <div className="absolute top-1.5 right-2 z-[2]">
-            <WorkingSpaceSettings
-              workingSpaceId={workspace._id}
+            <FolderSettings
+              workingSpaceId={workspace._id as any}
               workingspaceName={workspace.name}
               contextMenuPosition={contextMenuPosition}
               onContextMenuClose={() => setContextMenuPosition(null)}
@@ -546,11 +546,11 @@ function WorkspaceCard({
 }
 
 interface Note {
-  _id: Id<"notes">;
+  _id: Id<"documents">;
   title?: string;
   slug?: string;
   workingSpacesSlug?: string;
-  workingSpaceId?: Id<"workingSpaces">;
+  workingSpaceId?: Id<"folders">;
   userId?: Id<"users">;
   body?: string;
   preview?: string;

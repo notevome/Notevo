@@ -7,7 +7,7 @@ import { createContext, useContext, type ReactNode } from "react";
 export type HomeDataContextValue = {
   preloadedViewer: Preloaded<typeof api.users.viewer>;
   preloadedRecentWorkspaces: Preloaded<
-    typeof api.workingSpaces.getRecentWorkingSpaces
+    typeof api.folders.getRecentFolders
   >;
 };
 

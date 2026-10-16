@@ -24,9 +24,9 @@ interface MoveTableDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   table: {
-    _id: Id<"notesTables">;
+    _id: Id<"tables">;
     name?: string;
-    workingSpaceId: Id<"workingSpaces">;
+    workingSpaceId: Id<"folders">;
   };
 }
 
@@ -64,20 +64,20 @@ export default function MoveTableDialog({
   // A table's destination is a workspace itself, so this uses a flat
   // workspace list rather than the workspace > table tree used by
   // MoveNoteDialog / MovePdfDialog / MoveLinkDialog.
-  const moveTargets = useQuery(api.notesTables.getWorkspacesForMove, {
+  const moveTargets = useQuery(api.tables.getWorkspacesForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
-  const moveTable = useMutation(api.notesTables.moveTable).withOptimisticUpdate(
+  const moveTable = useMutation(api.tables.moveTable).withOptimisticUpdate(
     (local, args) => {
-      const currentTable = local.getQuery(api.notesTables.getTableById, {
+      const currentTable = local.getQuery(api.tables.getTableById, {
         _id: args._id,
       });
 
       if (!currentTable) return;
 
       local.setQuery(
-        api.notesTables.getTableById,
+        api.tables.getTableById,
         { _id: args._id },
         {
           ...currentTable,
@@ -87,7 +87,7 @@ export default function MoveTableDialog({
       );
     },
   );
-  const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWorkingSpace = useMutation(api.folders.createFolder);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -125,7 +125,7 @@ export default function MoveTableDialog({
     }
   };
 
-  const handleMove = async (targetWorkingSpaceId: Id<"workingSpaces">) => {
+  const handleMove = async (targetWorkingSpaceId: Id<"folders">) => {
     try {
       setMovingWorkspaceId(String(targetWorkingSpaceId));
       const result = await moveTable({
@@ -140,7 +140,7 @@ export default function MoveTableDialog({
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}?tableId=${table._id}`}
+              href={`/home/${result.folderId}?tableId=${table._id}`}
               className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />
@@ -172,7 +172,7 @@ export default function MoveTableDialog({
             {table.name || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            Select a destination workspace. Notes, uploads, and links inside
+            Select a destination folder. Documents, uploads, and links inside
             this table move with it.
           </DialogDescription>
         </DialogHeader>
@@ -183,7 +183,7 @@ export default function MoveTableDialog({
               ref={searchInputRef}
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search workspaces..."
+              placeholder="Search folders..."
               className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
           </div>
@@ -220,7 +220,7 @@ export default function MoveTableDialog({
               <p className="font-medium text-foreground">
                 {debouncedQuery
                   ? `No workspaces found for "${debouncedQuery}"`
-                  : "No workspaces found"}
+                  : "No folders found"}
               </p>
               <p className="mt-1">
                 Create a workspace to move this table there.

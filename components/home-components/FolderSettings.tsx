@@ -34,8 +34,8 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
-interface WorkingSpaceSettings {
-  workingSpaceId: Id<"workingSpaces">;
+interface FolderSettingsProps {
+  workingSpaceId: Id<"folders">;
   className?: string;
   workingspaceName: string | any;
   contextMenuPosition?: { x: number; y: number } | null;
@@ -56,13 +56,13 @@ const formatTimestamp = (timestamp?: number) => {
   });
 };
 
-export default function WorkingSpaceSettings({
+export default function FolderSettings({
   className,
   workingSpaceId,
   workingspaceName,
   contextMenuPosition,
   onContextMenuClose,
-}: WorkingSpaceSettings) {
+}: FolderSettingsProps) {
   const [inputValue, setInputValue] = useState(workingspaceName);
   const [isDeleting, setIsDeleting] = useState(false);
   const [open, setOpen] = useState(false);
@@ -87,20 +87,20 @@ export default function WorkingSpaceSettings({
     if (contextMenuPosition) setOpen(true);
   }, [contextMenuPosition]);
 
-  const tables = useQuery(api.notesTables.getTables, {
-    workingSpaceId,
+  const tables = useQuery(api.tables.getTables, {
+    folderId: workingSpaceId,
   });
-  const workspace = useQuery(api.workingSpaces.getWorkingSpaceById, {
+  const workspace = useQuery(api.folders.getFolderById, {
     _id: workingSpaceId,
   });
 
   const updateWorkingSpace = useMutation(
-    api.workingSpaces.updateWorkingSpace,
+    api.folders.updateFolder,
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
 
     // Update in getRecentWorkingSpaces
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       const updatedWorkspaces = workspaces.map((ws: any) =>
         ws._id === _id
@@ -112,19 +112,19 @@ export default function WorkingSpaceSettings({
           : ws,
       );
       local.setQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
         {},
         updatedWorkspaces,
       );
     }
 
     // Update single workspace query
-    const workspace = local.getQuery(api.workingSpaces.getWorkingSpaceById, {
+    const workspace = local.getQuery(api.folders.getFolderById, {
       _id,
     });
     if (workspace) {
       local.setQuery(
-        api.workingSpaces.getWorkingSpaceById,
+        api.folders.getFolderById,
         { _id },
         {
           ...workspace,
@@ -135,23 +135,23 @@ export default function WorkingSpaceSettings({
     }
   });
   const DeleteWorkingSpace = useMutation(
-    api.workingSpaces.deleteWorkingSpace,
+    api.folders.deleteFolder,
   ).withOptimisticUpdate((local, args) => {
     const { _id } = args;
 
     // Remove from getRecentWorkingSpaces
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       const filteredWorkspaces = workspaces.filter((ws: any) => ws._id !== _id);
       local.setQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
         {},
         filteredWorkspaces,
       );
     }
 
     // Remove single workspace query - server will handle the deletion
-    const workspace = local.getQuery(api.workingSpaces.getWorkingSpaceById, {
+    const workspace = local.getQuery(api.folders.getFolderById, {
       _id,
     });
     if (workspace) {
@@ -318,11 +318,11 @@ export default function WorkingSpaceSettings({
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Workspace Deletion</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Folder Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
               {hasContent ? (
                 <>
-                  This workspace contains:
+                  This folder contains:
                   <div className="mt-2 space-y-1">
                     {tableCount > 0 && (
                       <span>
@@ -334,12 +334,12 @@ export default function WorkingSpaceSettings({
                     )}
                   </div>
                   <div className="mt-2">
-                    Deleting this workspace will permanently remove all tables,
-                    notes, and their data.
+                    Deleting this folder will permanently remove all tables,
+                    documents, and their data.
                   </div>
                 </>
               ) : (
-                "Are you sure you want to delete this workspace? This action cannot be undone."
+                "Are you sure you want to delete this folder? This action cannot be undone."
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

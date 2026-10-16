@@ -72,16 +72,16 @@ export default function Loading() {
             <SkeletonTextAnimation className="mx-0 min-w-52 h-10" />
           </h1>
           <p className="text-white/90 text-md">
-            Organize your thoughts , and manage your workspaces,
+            Organize your thoughts, and manage your folders,
           </p>
         </header>
       </div>
 
-      {/* Workspaces Slider */}
+      {/* Folders slider */}
       <div className="mb-8">
         <div className="mb-4 flex justify-between items-center">
           <h2 className="text-foreground text-xl font-semibold">
-            Your Workspaces
+            Your Folders
           </h2>
           <Skeleton className="h-9 w-36" />
         </div>
@@ -92,11 +92,11 @@ export default function Loading() {
         </SliderRow>
       </div>
 
-      {/* Recent Notes Slider */}
+      {/* Recent documents slider */}
       <div className="mb-8">
         <div className="mb-4">
           <h2 className="text-foreground text-xl font-semibold">
-            Recent Notes
+            Recent Documents
           </h2>
         </div>
         <SliderRow>

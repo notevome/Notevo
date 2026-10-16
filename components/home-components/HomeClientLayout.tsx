@@ -76,7 +76,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const homepage = pathname === "/home";
   const { activeDraftToken, getDraft, finishDraft } =
     usePendingNoteDraftContext();
-  const rawNoteId = searchParams.get("id") as Id<"notes"> | null;
+  const rawNoteId = searchParams.get("id") as Id<"documents"> | null;
   const rawPdfId = searchParams.get("pdfId") as Id<"pdfs"> | null;
   const rawWhiteboardId = searchParams.get(
     "whiteboardId",
@@ -102,11 +102,11 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     ? getPrefetchedNote(String(cachedRouteNoteId))
     : undefined;
   const promotedNote = useQuery(
-    api.notes.getNoteById,
+    api.documents.getNoteById,
     activeDraftNoteId ? { _id: activeDraftNoteId } : "skip",
   );
   const [promotedNoteRoute, setPromotedNoteRoute] = useState<{
-    noteId: Id<"notes">;
+    noteId: Id<"documents">;
     note: NonNullable<typeof promotedNote>;
   } | null>(null);
   const draftTokenToRender = resolveDraftTokenToRender({
@@ -157,7 +157,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   ]);
 
   const detectedItemType = useQuery(
-    api.notes.getItemType,
+    api.documents.getItemType,
     !currentItemSlug?.startsWith("draft-") &&
       !cachedRouteNote &&
       !rawNoteId &&
@@ -175,8 +175,8 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
     rawPdfId || (detectedItemType === "pdf" ? (slugId as Id<"pdfs">) : null);
   const noteid =
     rawNoteId ||
-    (cachedRouteNote?._id as Id<"notes"> | undefined) ||
-    (detectedItemType === "note" ? (slugId as Id<"notes">) : null);
+    (cachedRouteNote?._id as Id<"documents"> | undefined) ||
+    (detectedItemType === "note" ? (slugId as Id<"documents">) : null);
   const promotedNoteRouteIsCurrent =
     promotedNoteRoute && slugId === String(promotedNoteRoute.noteId);
   const cachedNoteRouteIsCurrent = Boolean(

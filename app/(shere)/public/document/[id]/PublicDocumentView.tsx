@@ -51,8 +51,8 @@ export default function PublicDocumentView() {
   };
 
   const params = useParams();
-  const noteid = params.id as Id<"notes">;
-  const getNote = useQuery(api.notes.getNoteById, {
+  const noteid = params.id as Id<"documents">;
+  const getNote = useQuery(api.documents.getNoteById, {
     _id: noteid,
     isPublish: true,
   });
@@ -70,7 +70,7 @@ export default function PublicDocumentView() {
   }, [getNote]);
 
   if (getNote === undefined) return <NoteLoadingSkeletonUI />;
-  if (getNote === null) return <p>Note not found!</p>;
+  if (getNote === null) return <p>Document not found!</p>;
 
   const PublicNoteTitle = formatUserNoteTitle(
     `${parseSlug(`${getNote.title}`)}`,
@@ -205,7 +205,7 @@ export default function PublicDocumentView() {
                 }
               }}
               aria-label="note title"
-              placeholder="Untitled Note"
+              placeholder="Untitled Document"
               autoFocus={true}
               rows={1}
               style={{ resize: "none", overflow: "hidden" }}

@@ -51,7 +51,7 @@ export default async function ItemPage({
         : null;
 
   if (resolvedNoteId) {
-    return <NotePageClient noteId={resolvedNoteId as Id<"notes">} />;
+    return <NotePageClient noteId={resolvedNoteId as Id<"documents">} />;
   }
 
   if (!routeSegment) {

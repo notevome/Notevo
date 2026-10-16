@@ -18,17 +18,17 @@ export function StatsRow({
 
   const stats = [
     {
-      title: "Workspaces",
+      title: "Folders",
       value: workspaceCount,
       icon: <Notebook className="h-4 w-4 text-brand_tertiary/70" />,
     },
     {
-      title: "Total Notes",
+      title: "Total Documents",
       value: notesCount,
       icon: <FileText className="h-4 w-4 text-brand_tertiary/70" />,
     },
     {
-      title: "Pinned Notes",
+      title: "Pinned Documents",
       value: pinnedCount,
       icon: <Pin className="h-4 w-4 text-brand_tertiary/70" />,
     },
@@ -44,7 +44,7 @@ export function StatsRow({
         <Card className="bg-card">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-card-foreground">
-              Total Notes
+              Total Documents
             </CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -53,7 +53,7 @@ export function StatsRow({
               {notesCount}
             </div>
             <p className="text-xs text-muted-foreground">
-              {notesCount === 1 ? "Note" : "Notes"} in total
+              {notesCount === 1 ? "Document" : "Documents"} in total
             </p>
           </CardContent>
         </Card>

@@ -71,7 +71,7 @@ export default function NoteDownloadDropdown({
               {...tooltip.triggerProps}
             >
               <Download className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">Download note</span>
+              <span className="sr-only">Download document</span>
             </Button>
           </TooltipTrigger>
         </DropdownMenuTrigger>

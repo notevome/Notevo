@@ -9,20 +9,20 @@ import LoadingAnimation from "../ui/LoadingAnimation";
 import { Card, CardContent } from "../ui/card";
 import Link from "next/link";
 
-export default function WorkingSpaceNotFound() {
+export default function FolderNotFound() {
   const createWorkingSpace = useMutation(
-    api.workingSpaces.createWorkingSpace,
+    api.folders.createFolder,
   ).withOptimisticUpdate((local, args) => {
     const { name } = args;
     const now = Date.now();
     const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as Id<"workingSpaces">;
+    const tempId = `${uuid}-${now}` as Id<"folders">;
 
     const currentWorkspaces = local.getQuery(
-      api.workingSpaces.getRecentWorkingSpaces,
+      api.folders.getRecentFolders,
     );
     if (currentWorkspaces !== undefined) {
-      local.setQuery(api.workingSpaces.getRecentWorkingSpaces, {}, [
+      local.setQuery(api.folders.getRecentFolders, {}, [
         {
           _id: tempId,
           _creationTime: now,
@@ -54,13 +54,13 @@ export default function WorkingSpaceNotFound() {
               <FolderX className="h-14 w-14 text-primary" />
             </div>
             <h3 className="mt-4 text-lg font-semibold text-foreground">
-              Workspace not found
+              Folder not found
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              You don't have any workspaces yet.
+              You don't have any folders yet.
             </p>
             <Button className="mt-4" onClick={handleCreateWorkingSpace}>
-              Create a new workspace
+              Create a new folder
             </Button>
           </div>
         </div>

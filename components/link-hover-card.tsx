@@ -63,7 +63,7 @@ function HoverCardDataResolver({
   const shouldQuery = hoveredLink.pinned || !cached;
 
   const queryResult = useQuery(
-    api.notes.resolveHoverItem,
+    api.documents.resolveHoverItem,
     shouldQuery && (hoveredLink.itemId || hoveredLink.href)
       ? {
           itemId: hoveredLink.itemId,
