@@ -46,7 +46,7 @@ import MoveNoteDialog from "./MoveNoteDialog";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
 
 interface NoteContextMenuProps {
-  noteId: Id<"notes">;
+  noteId: Id<"documents">;
   noteTitle: string | any;
   children: React.ReactNode;
 }
@@ -83,13 +83,13 @@ export default function NoteContextMenu({
   // Cursor position for the virtual trigger anchor
   const [triggerPos, setTriggerPos] = useState({ x: 0, y: 0 });
 
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+  const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, title, body, favorite } = args;
-      const note = local.getQuery(api.notes.getNoteById, { _id });
+      const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note) {
         local.setQuery(
-          api.notes.getNoteById,
+          api.documents.getNoteById,
           { _id },
           {
             ...note,
@@ -103,8 +103,8 @@ export default function NoteContextMenu({
     },
   );
 
-  const deleteNote = useMutation(api.notes.deleteNote);
-  const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
+  const deleteNote = useMutation(api.documents.deleteNote);
+  const getNote = useQuery(api.documents.getNoteById, { _id: noteId });
 
   const currentSlug = pathname.split("/").filter(Boolean).pop();
   const currentNoteId =
@@ -241,7 +241,7 @@ export default function NoteContextMenu({
                 onBlur={() => void handleBlur()}
                 onKeyDown={handleKeyDown}
                 onPointerDown={(e) => e.stopPropagation()}
-                placeholder="Rename your note"
+                placeholder="Rename your document"
                 className="text-foreground h-7"
               />
             </DropdownMenuGroup>
@@ -249,7 +249,7 @@ export default function NoteContextMenu({
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => void handleFavoritePin()}>
                 <Pin size={14} className="mr-2 text-muted-foreground" />
-                {getNote.favorite ? "Unpin Note" : "Pin Note"}
+                {getNote.favorite ? "Unpin Document" : "Pin Document"}
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -349,9 +349,9 @@ export default function NoteContextMenu({
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Note Deletion</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Document Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this note? This action cannot be
+              Are you sure you want to delete this document? This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

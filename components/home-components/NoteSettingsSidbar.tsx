@@ -32,7 +32,7 @@ import {
 } from "next/navigation";
 import { extractIdFromSlug } from "@/lib/slug";
 interface NoteSettingsSidbarProps {
-  noteId: Id<"notes"> | any;
+  noteId: Id<"documents"> | any;
   noteTitle: string | any;
   ContainerClassName?: string | any;
 }
@@ -49,14 +49,14 @@ export default function NoteSettingsSidbar({
     searchParams.get("id") || extractIdFromSlug(pathSegments[2]);
   const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+  const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, favorite } = args;
       // Update single note query
-      const note = local.getQuery(api.notes.getNoteById, { _id });
+      const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note && favorite !== undefined) {
         local.setQuery(
-          api.notes.getNoteById,
+          api.documents.getNoteById,
           { _id },
           {
             ...note,
@@ -67,12 +67,12 @@ export default function NoteSettingsSidbar({
       }
     },
   );
-  const deleteNote = useMutation(api.notes.deleteNote).withOptimisticUpdate(
+  const deleteNote = useMutation(api.documents.deleteNote).withOptimisticUpdate(
     (local, args) => {
       const { _id } = args;
 
       // Get the note - for optimistic IDs, this will help identify it
-      const note = local.getQuery(api.notes.getNoteById, { _id });
+      const note = local.getQuery(api.documents.getNoteById, { _id });
       if (!note) return;
 
       // For optimistic IDs, the mutation will fail before running
@@ -80,7 +80,7 @@ export default function NoteSettingsSidbar({
       // Note: Paginated queries will sync automatically when the server confirms deletion
     },
   );
-  const getNote = useQuery(api.notes.getNoteById, { _id: noteId });
+  const getNote = useQuery(api.documents.getNoteById, { _id: noteId });
 
   const initiateDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (event.button === 0 && event.shiftKey) {
@@ -147,7 +147,7 @@ export default function NoteSettingsSidbar({
             sideOffset={5}
             className="!app-radius-none"
           >
-            {getNote?.favorite ? "Unpin note" : "Pin note"}
+            {getNote?.favorite ? "Unpin document" : "Pin document"}
           </TooltipContent>
         </Tooltip>
 
@@ -168,7 +168,7 @@ export default function NoteSettingsSidbar({
             sideOffset={5}
             className=" !app-radius-none"
           >
-            Delete note
+            Delete document
           </TooltipContent>
         </Tooltip>
       </div>
@@ -176,9 +176,9 @@ export default function NoteSettingsSidbar({
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Note Deletion</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Document Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              {`Are you sure you want to delete this note? This action cannot be
+              {`Are you sure you want to delete this document? This action cannot be
               undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>

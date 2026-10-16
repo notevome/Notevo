@@ -18,14 +18,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const siteUrl = process.env.SITE_URL || "https://notevo.me";
 
   let title = "Document - Notevo";
-  let description = "View and read this shared note on Notevo.";
+  let description = "View and read this shared document on Notevo.";
 
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
     if (convexUrl && id) {
       const convex = new ConvexHttpClient(convexUrl);
-      const note = await convex.query(api.notes.getNoteById, {
-        _id: id as Id<"notes">,
+      const note = await convex.query(api.documents.getNoteById, {
+        _id: id as Id<"documents">,
         isPublish: true,
       });
 

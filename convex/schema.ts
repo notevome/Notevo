@@ -10,7 +10,7 @@ export default defineSchema({
     body: v.string(),
   }),
 
-  workingSpaces: defineTable({
+  folders: defineTable({
     name: v.string(),
     slug: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
@@ -21,21 +21,22 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_slug", ["slug"]),
 
-  notesTables: defineTable({
+  tables: defineTable({
     name: v.optional(v.string()),
     slug: v.optional(v.string()),
-    workingSpaceId: v.id("workingSpaces"),
+    folderId: v.optional(v.id("folders")),
+    workingSpaceId: v.optional(v.any()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
-    .index("by_workingSpaceId", ["workingSpaceId"])
+    .index("by_folderId", ["folderId"])
     .index("by_slug", ["slug"]),
 
-  notes: defineTable({
+  documents: defineTable({
     title: v.optional(v.string()),
     slug: v.optional(v.string()),
-    workingSpacesSlug: v.optional(v.string()),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
+    folderSlug: v.optional(v.string()),
+    folderId: v.optional(v.id("folders")),
     userId: v.optional(v.id("users")),
     body: v.optional(v.string()),
     preview: v.optional(v.string()),
@@ -44,41 +45,50 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
     tags: v.optional(v.array(v.id("tags"))),
-    notesTableId: v.optional(v.id("notesTables")),
+    tableId: v.optional(v.id("tables")),
     order: v.optional(v.number()),
+    notesTableId: v.optional(v.any()),
+    workingSpaceId: v.optional(v.any()),
   })
-    .index("by_notesTableId", ["notesTableId"])
-    .index("by_workingSpaceId", ["workingSpaceId"])
+    .index("by_tableId", ["tableId"])
+    .index("by_folderId", ["folderId"])
     .index("by_slug", ["slug"])
     .index("by_userId", ["userId"]),
 
+  terminologyMigrationMap: defineTable({
+    sourceTable: v.string(),
+    sourceId: v.string(),
+    destinationId: v.string(),
+  }).index("by_source", ["sourceTable", "sourceId"]),
+
   tags: defineTable({
     name: v.optional(v.string()),
-    noteId: v.optional(v.id("notes")),
+    documentId: v.optional(v.id("documents")),
   }),
 
-  // New table for PDF uploads
   pdfs: defineTable({
     storageId: v.id("_storage"),
     userId: v.id("users"),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
-    notesTableId: v.optional(v.id("notesTables")),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
     title: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workingSpaceId", ["workingSpaceId"])
-    .index("by_notesTableId", ["notesTableId"]),
+    .index("by_folderId", ["folderId"])
+    .index("by_tableId", ["tableId"]),
 
   whiteboards: defineTable({
     userId: v.id("users"),
-    workingSpaceId: v.id("workingSpaces"),
-    notesTableId: v.id("notesTables"),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
     title: v.string(),
-    // A serialized Excalidraw scene. Keeping this with the board makes each
-    // canvas available wherever the owner signs in.
     snapshot: v.optional(v.string()),
     preview: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
@@ -86,22 +96,24 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workingSpaceId", ["workingSpaceId"])
-    .index("by_notesTableId", ["notesTableId"]),
+    .index("by_folderId", ["folderId"])
+    .index("by_tableId", ["tableId"]),
 
   links: defineTable({
     url: v.string(),
     platform: linkPlatformValidator,
     metadata: linkMetadataValidator,
     userId: v.id("users"),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
-    notesTableId: v.optional(v.id("notesTables")),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
     title: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_userId", ["userId"])
-    .index("by_workingSpaceId", ["workingSpaceId"])
-    .index("by_notesTableId", ["notesTableId"]),
+    .index("by_folderId", ["folderId"])
+    .index("by_tableId", ["tableId"]),
 });

@@ -20,7 +20,7 @@ export default function ItemPageClient({ rawItemId }: ItemPageClientProps) {
     : null;
   const resolvedId = extractIdFromSlug(rawItemId) || rawItemId;
   const itemType = useQuery(
-    api.notes.getItemType,
+    api.documents.getItemType,
     draftToken ? "skip" : { id: resolvedId },
   );
 
@@ -42,5 +42,5 @@ export default function ItemPageClient({ rawItemId }: ItemPageClientProps) {
     return <PdfViewerPageClient pdfId={resolvedId as Id<"pdfs">} />;
   }
 
-  return <NotePageClient noteId={resolvedId as Id<"notes">} />;
+  return <NotePageClient noteId={resolvedId as Id<"documents">} />;
 }

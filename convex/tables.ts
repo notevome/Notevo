@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
 import { ConvexError } from "convex/values";
@@ -7,7 +8,8 @@ import { ConvexError } from "convex/values";
 export const createTable = mutation({
   args: {
     name: v.string(),
-    workingSpaceId: v.id("workingSpaces"),
+    folderId: v.optional(v.id("folders")),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -15,46 +17,46 @@ export const createTable = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { name, workingSpaceId } = args;
-
-    // Verify the user owns the workspace
-    const workspace = await ctx.db.get(workingSpaceId);
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
+    const folderId = args.folderId ?? (args.workingSpaceId as any);
+    if (!folderId) {
+      throw new ConvexError("Folder ID is required");
     }
 
-    if (workspace.userId !== userId) {
-      throw new ConvexError(
-        "Not authorized to create tables in this workspace",
-      );
+    // Verify ownership
+    const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+    if (!folder) {
+      throw new ConvexError("Folder not found");
     }
 
-    const generateSlugName = generateSlug(name);
-    // Check if the slug already exists and add incremental number if it does
+    if (folder.userId !== userId) {
+      throw new ConvexError("Not authorized to create tables in this folder");
+    }
+
+    const generateSlugName = generateSlug(args.name);
     let slug = generateSlugName;
     let existingTableBySlug = await ctx.db
-      .query("notesTables")
+      .query("tables")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
     while (existingTableBySlug) {
       slug = `${generateSlugName}-${counter}`;
       existingTableBySlug = await ctx.db
-        .query("notesTables")
+        .query("tables")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
 
     const table = {
-      name,
-      workingSpaceId,
+      name: args.name,
+      folderId: folderId as any,
       slug: slug,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
 
-    const newTable = await ctx.db.insert("notesTables", table);
+    const newTable = await ctx.db.insert("tables", table);
     return newTable;
   },
 });
@@ -62,7 +64,8 @@ export const createTable = mutation({
 export const getOrCreateTable = mutation({
   args: {
     name: v.string(),
-    workingSpaceId: v.id("workingSpaces"),
+    folderId: v.optional(v.id("folders")),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -70,23 +73,25 @@ export const getOrCreateTable = mutation({
       throw new Error("Not authenticated");
     }
 
-    const { name, workingSpaceId } = args;
-    const normalizedName = name.trim().toLowerCase();
-
-    const workspace = await ctx.db.get(workingSpaceId);
-    if (!workspace) {
-      throw new Error("Workspace not found");
+    const folderId = args.folderId ?? (args.workingSpaceId as any);
+    if (!folderId) {
+      throw new Error("Folder ID is required");
     }
 
-    if (workspace.userId !== userId) {
-      throw new Error("Not authorized to create tables in this workspace");
+    const normalizedName = args.name.trim().toLowerCase();
+
+    const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+    if (!folder) {
+      throw new Error("Folder not found");
+    }
+
+    if (folder.userId !== userId) {
+      throw new Error("Not authorized to create tables in this folder");
     }
 
     const tables = await ctx.db
-      .query("notesTables")
-      .withIndex("by_workingSpaceId", (q) =>
-        q.eq("workingSpaceId", workingSpaceId),
-      )
+      .query("tables")
+      .withIndex("by_folderId", (q) => q.eq("folderId", folderId as any))
       .collect();
 
     const existingTable = tables.find(
@@ -100,25 +105,25 @@ export const getOrCreateTable = mutation({
       return existingTable._id;
     }
 
-    const generateSlugName = generateSlug(name);
+    const generateSlugName = generateSlug(args.name);
     let slug = generateSlugName;
     let existingTableBySlug = await ctx.db
-      .query("notesTables")
+      .query("tables")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
     while (existingTableBySlug) {
       slug = `${generateSlugName}-${counter}`;
       existingTableBySlug = await ctx.db
-        .query("notesTables")
+        .query("tables")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
 
-    return ctx.db.insert("notesTables", {
-      name,
-      workingSpaceId,
+    return ctx.db.insert("tables", {
+      name: args.name,
+      folderId: folderId as any,
       slug,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -128,7 +133,7 @@ export const getOrCreateTable = mutation({
 
 export const updateTable = mutation({
   args: {
-    _id: v.id("notesTables"),
+    _id: v.id("tables"),
     name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -143,31 +148,24 @@ export const updateTable = mutation({
       throw new ConvexError("Table not found");
     }
 
-    // Verify the user owns the workspace that contains this table
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
-    }
-
-    if (workspace.userId !== userId) {
-      throw new ConvexError(
-        "Not authorized to update tables in this workspace",
-      );
+    const folder = table.folderId
+      ? ((await ctx.db.get(table.folderId)) as Doc<"folders"> | null)
+      : null;
+    if (!folder || folder.userId !== userId) {
+      throw new ConvexError("Not authorized to update tables in this folder");
     }
 
     const generateSlugName = generateSlug(name ?? table.name ?? "Untitled");
-    // Check if the slug already exists and add incremental number if it does
     let slug = generateSlugName;
     let existingTable = await ctx.db
-      .query("notesTables")
+      .query("tables")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
     while (existingTable && existingTable._id !== _id) {
-      // Skip the current table
       slug = `${generateSlugName}-${counter}`;
       existingTable = await ctx.db
-        .query("notesTables")
+        .query("tables")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
@@ -175,7 +173,7 @@ export const updateTable = mutation({
 
     const update = {
       name: name ?? table.name,
-      workingSpaceId: table.workingSpaceId,
+      folderId: table.folderId,
       slug: slug,
       createdAt: table.createdAt,
       updatedAt: Date.now(),
@@ -188,7 +186,7 @@ export const updateTable = mutation({
 
 export const deleteTable = mutation({
   args: {
-    _id: v.id("notesTables"),
+    _id: v.id("tables"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -202,54 +200,46 @@ export const deleteTable = mutation({
       throw new Error("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
+    const folder = table.folderId
+      ? ((await ctx.db.get(table.folderId)) as Doc<"folders"> | null)
+      : null;
+    if (!folder || folder.userId !== userId) {
+      throw new ConvexError("Not authorized to delete tables in this folder");
     }
 
-    if (workspace.userId !== userId) {
-      throw new ConvexError(
-        "Not authorized to delete tables in this workspace",
-      );
-    }
-
-    const notesToDelete = await ctx.db
-      .query("notes")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+    const documentsToDelete = await ctx.db
+      .query("documents")
+      .withIndex("by_tableId", (q) => q.eq("tableId", _id))
       .collect();
 
     const pdfsToDelete = await ctx.db
       .query("pdfs")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .withIndex("by_tableId", (q) => q.eq("tableId", _id))
       .collect();
     const whiteboardsToDelete = await ctx.db
       .query("whiteboards")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .withIndex("by_tableId", (q) => q.eq("tableId", _id))
       .collect();
     const linksToDelete = await ctx.db
       .query("links")
-      .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+      .withIndex("by_tableId", (q) => q.eq("tableId", _id))
       .collect();
 
-    for (const note of notesToDelete) {
-      if (note.tags) {
-        for (const tagId of note.tags) {
+    for (const doc of documentsToDelete) {
+      if (doc.tags) {
+        for (const tagId of doc.tags) {
           try {
             await ctx.db.delete(tagId);
-          } catch {
-            // Tag may already be deleted
-          }
+          } catch {}
         }
       }
-      await ctx.db.delete(note._id);
+      await ctx.db.delete(doc._id);
     }
 
     for (const pdf of pdfsToDelete) {
       try {
         await ctx.storage.delete(pdf.storageId);
-      } catch {
-        // Storage file may already be deleted
-      }
+      } catch {}
       await ctx.db.delete(pdf._id);
     }
 
@@ -268,7 +258,8 @@ export const deleteTable = mutation({
 
 export const getTables = query({
   args: {
-    workingSpaceId: v.id("workingSpaces"), // Changed from v.any() to be more type-safe
+    folderId: v.optional(v.id("folders")),
+    workingSpaceId: v.optional(v.id("workingSpaces")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -276,23 +267,19 @@ export const getTables = query({
       throw new Error("Not authenticated");
     }
 
-    const { workingSpaceId } = args;
-
-    // Verify the user owns the workspace
-    const workspace = await ctx.db.get(workingSpaceId);
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
+    const folderId = args.folderId ?? (args.workingSpaceId as any);
+    if (!folderId) {
+      return [];
     }
 
-    if (workspace.userId !== userId) {
-      throw new ConvexError("Not authorized to view tables in this workspace");
+    const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+    if (!folder || folder.userId !== userId) {
+      return [];
     }
 
     const tables = await ctx.db
-      .query("notesTables")
-      .withIndex("by_workingSpaceId", (q) =>
-        q.eq("workingSpaceId", workingSpaceId),
-      )
+      .query("tables")
+      .withIndex("by_folderId", (q) => q.eq("folderId", folderId as any))
       .collect();
 
     return tables;
@@ -301,7 +288,7 @@ export const getTables = query({
 
 export const getTableById = query({
   args: {
-    _id: v.id("notesTables"),
+    _id: v.id("tables"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -314,19 +301,18 @@ export const getTableById = query({
       throw new ConvexError("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace) {
-      throw new ConvexError("Workspace not found");
-    }
-
-    if (workspace.userId !== userId) {
-      throw new ConvexError("Not authorized to view this table");
+    if (table.folderId) {
+      const folder = await ctx.db.get(table.folderId);
+      if (folder && folder.userId !== userId) {
+        throw new ConvexError("Not authorized to view this table");
+      }
     }
 
     return table;
   },
 });
-export const getWorkspacesForMove = query({
+
+export const getFoldersForMove = query({
   args: {
     searchQuery: v.optional(v.string()),
   },
@@ -336,27 +322,30 @@ export const getWorkspacesForMove = query({
       throw new ConvexError("Not authenticated");
     }
 
-    const workspaces = await ctx.db
-      .query("workingSpaces")
+    const folders = await ctx.db
+      .query("folders")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
 
     const normalizedQuery = normalizeSearchText(searchQuery?.trim());
     if (!normalizedQuery) {
-      return workspaces;
+      return folders;
     }
 
-    return workspaces.filter((workspace) =>
-      normalizeSearchText(workspace.name).includes(normalizedQuery),
+    return folders.filter((folder) =>
+      normalizeSearchText(folder.name).includes(normalizedQuery),
     );
   },
 });
 
+export const getWorkspacesForMove = getFoldersForMove;
+
 export const moveTable = mutation({
   args: {
-    _id: v.id("notesTables"),
-    targetWorkingSpaceId: v.id("workingSpaces"),
+    _id: v.id("tables"),
+    targetFolderId: v.optional(v.id("folders")),
+    targetWorkingSpaceId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -364,83 +353,78 @@ export const moveTable = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { _id, targetWorkingSpaceId } = args;
+    const { _id } = args;
+    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
+    if (!targetFolderId) {
+      throw new ConvexError("Target folder ID is required");
+    }
 
     const table = await ctx.db.get(_id);
     if (!table) {
       throw new ConvexError("Table not found");
     }
 
-    const currentWorkspace = await ctx.db.get(table.workingSpaceId);
-    if (!currentWorkspace || currentWorkspace.userId !== userId) {
-      throw new ConvexError("Not authorized to move this table");
+    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    if (!targetFolder || targetFolder.userId !== userId) {
+      throw new ConvexError("Target folder not found or unauthorized");
     }
 
-    const targetWorkspace = await ctx.db.get(targetWorkingSpaceId);
-    if (!targetWorkspace) {
-      throw new ConvexError("Target workspace not found");
-    }
-    if (targetWorkspace.userId !== userId) {
-      throw new ConvexError("Not authorized to use this workspace");
-    }
-
-    if (table.workingSpaceId === targetWorkingSpaceId) {
-      // No-op move: already in the target workspace.
+    if (table.folderId === targetFolderId) {
       return {
         tableId: _id,
-        workingSpaceId: targetWorkingSpaceId,
-        workingSpacesSlug: targetWorkspace.slug,
+        folderId: targetFolderId,
+        folderSlug: targetFolder.slug,
       };
     }
 
     await ctx.db.patch(_id, {
-      workingSpaceId: targetWorkingSpaceId,
+      folderId: targetFolderId,
       updatedAt: Date.now(),
     });
 
-    const [notesInTable, pdfsInTable, linksInTable, whiteboardsInTable] =
+    const [documentsInTable, pdfsInTable, linksInTable, whiteboardsInTable] =
       await Promise.all([
         ctx.db
-          .query("notes")
-          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .query("documents")
+          .withIndex("by_tableId", (q) => q.eq("tableId", _id))
           .collect(),
         ctx.db
           .query("pdfs")
-          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .withIndex("by_tableId", (q) => q.eq("tableId", _id))
           .collect(),
         ctx.db
           .query("links")
-          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .withIndex("by_tableId", (q) => q.eq("tableId", _id))
           .collect(),
         ctx.db
           .query("whiteboards")
-          .withIndex("by_notesTableId", (q) => q.eq("notesTableId", _id))
+          .withIndex("by_tableId", (q) => q.eq("tableId", _id))
           .collect(),
       ]);
 
     await Promise.all([
-      ...notesInTable.map((note) =>
-        ctx.db.patch(note._id, {
-          workingSpaceId: targetWorkingSpaceId,
-          workingSpacesSlug: targetWorkspace.slug ?? note.workingSpacesSlug,
+      ...documentsInTable.map((doc) =>
+        ctx.db.patch(doc._id, {
+          folderId: targetFolderId,
+          folderSlug: targetFolder.slug ?? doc.folderSlug,
           updatedAt: Date.now(),
         }),
       ),
       ...pdfsInTable.map((pdf) =>
         ctx.db.patch(pdf._id, {
-          workingSpaceId: targetWorkingSpaceId,
+          folderId: targetFolderId,
           updatedAt: Date.now(),
         }),
       ),
       ...linksInTable.map((link) =>
         ctx.db.patch(link._id, {
-          workingSpaceId: targetWorkingSpaceId,
+          folderId: targetFolderId,
           updatedAt: Date.now(),
         }),
       ),
       ...whiteboardsInTable.map((whiteboard) =>
         ctx.db.patch(whiteboard._id, {
-          workingSpaceId: targetWorkingSpaceId,
+          folderId: targetFolderId,
           updatedAt: Date.now(),
         }),
       ),
@@ -448,8 +432,8 @@ export const moveTable = mutation({
 
     return {
       tableId: _id,
-      workingSpaceId: targetWorkingSpaceId,
-      workingSpacesSlug: targetWorkspace.slug,
+      folderId: targetFolderId,
+      folderSlug: targetFolder.slug,
     };
   },
 });

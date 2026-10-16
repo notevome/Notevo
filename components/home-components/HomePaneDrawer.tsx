@@ -15,7 +15,7 @@ import { ChevronsRight, MoveDiagonal2, X } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import NotePageClient from "@/app/home/[id]/[itemId]/NotePageClient";
 import PdfViewerPageClient from "@/app/home/[id]/[itemId]/PdfViewerPageClient";
-import WorkingSpacePageClient from "@/app/home/[id]/WorkingSpacePageClient";
+import FolderPageClient from "@/app/home/[id]/FolderPageClient";
 import { Button } from "@/components/ui/button";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import {
@@ -45,20 +45,20 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export type HomePaneItem =
   | {
       type: "note";
-      id: Id<"notes">;
+      id: Id<"documents">;
       title?: string;
       slug?: string;
-      workingSpaceId?: Id<"workingSpaces">;
+      workingSpaceId?: Id<"folders">;
     }
   | {
       type: "pdf";
       id: Id<"pdfs">;
       title?: string;
-      workingSpaceId?: Id<"workingSpaces">;
+      workingSpaceId?: Id<"folders">;
     }
   | {
       type: "workspace";
-      id: Id<"workingSpaces">;
+      id: Id<"folders">;
       title?: string;
     };
 
@@ -88,8 +88,8 @@ function getPaneTitle(item: HomePaneItem | null) {
   if (!item) return "Pane";
   if (item.title) return parseSlug(item.title);
   if (item.type === "pdf") return "Upload";
-  if (item.type === "workspace") return "Workspace";
-  return "Note";
+  if (item.type === "workspace") return "Folder";
+  return "Document";
 }
 
 function HomePaneContent({ item }: { item: HomePaneItem }) {
@@ -102,7 +102,7 @@ function HomePaneContent({ item }: { item: HomePaneItem }) {
   }
 
   return (
-    <WorkingSpacePageClient
+    <FolderPageClient
       key={item.id}
       workingSpaceId={item.id}
       renderedInPane
@@ -141,7 +141,7 @@ function HomePaneDrawer({
   const expandTooltip = useHoverTooltip(150);
 
   const noteDoc = useQuery(
-    api.notes.getNoteById,
+    api.documents.getNoteById,
     activeItem?.type === "note" ? { _id: activeItem.id } : "skip",
   );
   const pdfDoc = useQuery(
@@ -189,7 +189,7 @@ function HomePaneDrawer({
     if (activeItem && !fullPageHref) {
       // eslint-disable-next-line no-console
       console.warn(
-        "[HomePaneDrawer] could not build full-page href — no workspaceId resolved.",
+        "[HomePaneDrawer] could not build full-page href — no folder ID resolved.",
         { activeItem, noteDoc, pdfDoc, pathname, workspaceId },
       );
     }

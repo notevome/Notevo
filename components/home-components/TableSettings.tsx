@@ -35,7 +35,7 @@ import { Label } from "../ui/label";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import MoveTableDialog from "./MoveTableDialog";
 interface TableSettingsProps {
-  notesTableId: Id<"notesTables"> | any; // Strongly typed Id
+  notesTableId: Id<"tables"> | any; // Strongly typed Id
   tableName: string | any;
 }
 
@@ -62,17 +62,17 @@ export default function TableSettings({
   const [isAlertOpen, setIsAlertOpen] = useState(false); // Alert Dialog State
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const table = useQuery(api.notesTables.getTableById, { _id: notesTableId });
+  const table = useQuery(api.tables.getTableById, { _id: notesTableId });
   const updateTable = useMutation(
-    api.notesTables.updateTable,
+    api.tables.updateTable,
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
 
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
-        const tables = local.getQuery(api.notesTables.getTables, {
-          workingSpaceId: ws._id,
+        const tables = local.getQuery(api.tables.getTables, {
+          folderId: ws._id,
         });
         if (tables && Array.isArray(tables)) {
           const tableIndex = tables.findIndex((t: any) => t._id === _id);
@@ -87,8 +87,8 @@ export default function TableSettings({
                 : t,
             );
             local.setQuery(
-              api.notesTables.getTables,
-              { workingSpaceId: ws._id },
+              api.tables.getTables,
+              { folderId: ws._id },
               updatedTables,
             );
             break;
@@ -98,23 +98,23 @@ export default function TableSettings({
     }
   });
   const deleteTable = useMutation(
-    api.notesTables.deleteTable,
+    api.tables.deleteTable,
   ).withOptimisticUpdate((local, args) => {
     const { _id } = args;
 
     // Try to find and remove the table from cached queries
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
-        const tables = local.getQuery(api.notesTables.getTables, {
-          workingSpaceId: ws._id,
+        const tables = local.getQuery(api.tables.getTables, {
+          folderId: ws._id,
         });
         if (tables && Array.isArray(tables)) {
           if (tables.some((t: any) => t._id === _id)) {
             const filteredTables = tables.filter((t: any) => t._id !== _id);
             local.setQuery(
-              api.notesTables.getTables,
-              { workingSpaceId: ws._id },
+              api.tables.getTables,
+              { folderId: ws._id },
               filteredTables,
             );
             break;
@@ -303,7 +303,7 @@ export default function TableSettings({
           table={{
             _id: notesTableId,
             name: table.name,
-            workingSpaceId: table.workingSpaceId,
+            workingSpaceId: (table.folderId ?? (table as any).workingSpaceId) as Id<"folders">,
           }}
         />
       )}

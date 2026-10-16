@@ -77,11 +77,11 @@ export function RecentActivityList() {
   const getActivityDescription = (type: string) => {
     switch (type) {
       case "note_created":
-        return "Created a new note";
+        return "Created a new document";
       case "workspace_created":
-        return "Created a new workspace";
+        return "Created a new folder";
       case "note_pinned":
-        return "Pinned a note";
+        return "Pinned a document";
       default:
         return "Performed an action";
     }

@@ -16,15 +16,15 @@ import { api } from "@/convex/_generated/api";
 
 type DraftPhase = "creating" | "saving" | "ready" | "error";
 const PENDING_NOTE_DRAFTS_KEY = "notevo_pending_note_drafts";
-const DEFAULT_DRAFT_TITLE = "New Quick Access Notes";
+const DEFAULT_DRAFT_TITLE = "New Quick Access Document";
 
 export interface PendingNoteDraft {
   token: string;
-  workingSpaceId: Id<"workingSpaces">;
+  workingSpaceId: Id<"folders">;
   workingSpacesSlug: string;
   originPath: string;
-  notesTableId?: Id<"notesTables">;
-  noteId?: Id<"notes">;
+  notesTableId?: Id<"tables">;
+  noteId?: Id<"documents">;
   title: string;
   initialTitle?: string;
   content?: JSONContent;
@@ -36,12 +36,12 @@ export interface PendingNoteDraft {
 interface PendingNoteDraftContextValue {
   isHydrated: boolean;
   beginNoteDraft: (args: {
-    workingSpaceId: Id<"workingSpaces">;
+    workingSpaceId: Id<"folders">;
     workingSpacesSlug: string;
     originPath: string;
-    notesTableId?: Id<"notesTables">;
+    notesTableId?: Id<"tables">;
     title?: string;
-  }) => { token: string; completion: Promise<Id<"notes">> };
+  }) => { token: string; completion: Promise<Id<"documents">> };
   activeDraftToken: string | null;
   getDraft: (token: string) => PendingNoteDraft | undefined;
   updateDraft: (
@@ -64,16 +64,16 @@ export function PendingNoteDraftProvider({
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeDraftToken, setActiveDraftToken] = useState<string | null>(null);
   const draftsRef = useRef(drafts);
-  const jobsRef = useRef(new Map<string, Promise<Id<"notes">>>());
-  const persistRef = useRef<(token: string) => Promise<Id<"notes">>>(
+  const jobsRef = useRef(new Map<string, Promise<Id<"documents">>>());
+  const persistRef = useRef<(token: string) => Promise<Id<"documents">>>(
     async () => {
       throw new Error("Draft persistence is not ready");
     },
   );
 
-  const getOrCreateTable = useMutation(api.notesTables.getOrCreateTable);
-  const createNote = useMutation(api.notes.createNote);
-  const updateNote = useMutation(api.notes.updateNote);
+  const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
+  const createNote = useMutation(api.documents.createNote);
+  const updateNote = useMutation(api.documents.updateNote);
 
   useEffect(() => {
     let restoredDrafts: Record<string, PendingNoteDraft> = {};
@@ -154,7 +154,7 @@ export function PendingNoteDraftProvider({
   );
 
   const persistDraft = useCallback(
-    (token: string): Promise<Id<"notes">> => {
+    (token: string): Promise<Id<"documents">> => {
       const existingJob = jobsRef.current.get(token);
       if (existingJob) return existingJob;
 
@@ -172,7 +172,7 @@ export function PendingNoteDraftProvider({
           if (!draft.notesTableId) {
             const notesTableId = await getOrCreateTable({
               name: DEFAULT_DRAFT_TITLE,
-              workingSpaceId: draft.workingSpaceId,
+              folderId: draft.workingSpaceId,
             });
             draft = { ...draftsRef.current[token], notesTableId };
             storeDraft(token, draft);
@@ -191,7 +191,7 @@ export function PendingNoteDraftProvider({
           }
 
           const noteId = draft.noteId;
-          if (!noteId) throw new Error("Note creation did not return an ID");
+          if (!noteId) throw new Error("Document creation did not return an ID");
 
           while (true) {
             const currentDraft = draftsRef.current[token];
@@ -233,7 +233,7 @@ export function PendingNoteDraftProvider({
               error:
                 error instanceof Error
                   ? error.message
-                  : "Could not save this note.",
+                  : "Could not save this document.",
             });
           }
           throw error;
@@ -263,10 +263,10 @@ export function PendingNoteDraftProvider({
 
   const beginNoteDraft = useCallback(
     (args: {
-      workingSpaceId: Id<"workingSpaces">;
+      workingSpaceId: Id<"folders">;
       workingSpacesSlug: string;
       originPath: string;
-      notesTableId?: Id<"notesTables">;
+      notesTableId?: Id<"tables">;
       title?: string;
     }) => {
       const token = crypto.randomUUID().replaceAll("-", "");

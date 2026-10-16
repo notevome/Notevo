@@ -78,7 +78,7 @@ import NoteSettingsSidbar from "./NoteSettingsSidbar";
 import PdfSettingsSidebar from "./PdfSettingsSidebar";
 import LinkSettingsSidebar from "./LinkSettingsSidebar";
 import WhiteboardSettingsSidebar from "./WhiteboardSettingsSidebar";
-import WorkingSpaceSettingsSidbar from "./WorkingSpaceSettingsSidbar";
+import FolderSettingsSidebar from "./FolderSettingsSidebar";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
@@ -103,9 +103,9 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
 
 interface SidebarHeaderSectionProps {
-  getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
+  getWorkingSpaces: Doc<"folders">[] | undefined;
   handleCreateNote: (
-    workingSpaceId: Id<"workingSpaces">,
+    workingSpaceId: Id<"folders">,
     workingSpacesSlug: string,
   ) => void;
   handleCreateWorkingSpace: () => Promise<void>;
@@ -276,7 +276,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   }, [getWorkingSpaces, savedWorkspaceId]);
 
   const firstCreatedWorkspace = useMemo(() => {
-    return getWorkingSpaces?.reduce<Doc<"workingSpaces"> | undefined>(
+    return getWorkingSpaces?.reduce<Doc<"folders"> | undefined>(
       (oldestWorkspace, workingSpace) => {
         if (!oldestWorkspace) return workingSpace;
 
@@ -324,7 +324,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
   }, [firstCreatedWorkspace, savedWorkspaceId]);
 
   const createNoteInWorkspace = useCallback(
-    async (workingSpace: Doc<"workingSpaces">) => {
+    async (workingSpace: Doc<"folders">) => {
       const workspaceId = String(workingSpace._id);
 
       setSavedWorkspaceId(workspaceId);
@@ -360,7 +360,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             className="font-medium w-full h-9 flex justify-start items-center gap-1.5"
             onClick={handleCreateWorkingSpace}
           >
-            <FolderPlus size={16} /> Create Workspace
+            <FolderPlus size={16} /> Create Folder
           </Button>
         </div>
       )}
@@ -374,7 +374,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
                 onMouseDown={() => void createNoteInWorkspace(workingSpace)}
               >
-                <SquarePen size={16} className=" mt-px" /> New Note
+                <SquarePen size={16} className=" mt-px" /> New Document
               </Button>
             </div>
           ))
@@ -384,7 +384,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                 className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
               >
-                <SquarePen size={16} className=" mt-px" /> New Note
+                <SquarePen size={16} className=" mt-px" /> New Document
               </Button>
               <DropdownMenu onOpenChange={popupGuard}>
                 <DropdownMenuTrigger asChild>
@@ -403,7 +403,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
                   <DropdownMenuGroup className="relative flex-col ">
                     <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
                       <Folders size={14} className=" mb-0.5" />
-                      Workspaces
+                      Folders
                     </DropdownMenuLabel>
                     <div
                       className={`absolute top-[21px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
@@ -497,7 +497,7 @@ const SidebarNavigation = memo(function SidebarNavigation({
 });
 
 interface PinnedNoteItemProps {
-  note: Doc<"notes">;
+  note: Doc<"documents">;
   pathname: string;
   open: boolean;
 }
@@ -509,14 +509,14 @@ const PinnedNoteItem = memo(
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-    const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+    const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
       (local, args) => {
         const { _id, title, favorite } = args;
         // Update single note query if it exists
-        const note = local.getQuery(api.notes.getNoteById, { _id });
+        const note = local.getQuery(api.documents.getNoteById, { _id });
         if (note) {
           local.setQuery(
-            api.notes.getNoteById,
+            api.documents.getNoteById,
             { _id },
             {
               ...note,
@@ -755,7 +755,7 @@ const PinnedNoteItem = memo(
 );
 
 interface PinnedNotesListProps {
-  favoriteNotes: Doc<"notes">[];
+  favoriteNotes: Doc<"documents">[];
   pathname: string;
   open: boolean;
   status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
@@ -779,7 +779,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
     return (
       <SidebarGroup className={condensed ? "p-0" : undefined}>
         <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-          <span>{condensed ? "Notes" : "Pinned Notes"}</span>
+          <span>{condensed ? "Documents" : "Pinned Documents"}</span>
         </SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
@@ -817,7 +817,7 @@ const PinnedNotesList = memo(function PinnedNotesList({
           onClick={() => setIsExpanded((currentValue) => !currentValue)}
           className=" px-0 h-6 text-xs gap-0.5 text-muted-foreground flex items-center justify-center"
         >
-          <span>{condensed ? "Notes" : "Pinned Notes"}</span>
+          <span>{condensed ? "Documents" : "Pinned Documents"}</span>
           {isExpanded ? <ChevronDown size="13" /> : <ChevronRight size="13" />}
         </Button>
       </SidebarGroupLabel>
@@ -1812,7 +1812,7 @@ const PinnedLinksList = memo(function PinnedLinksList({
 });
 
 interface PinnedItemsSectionProps {
-  favoriteNotes: Doc<"notes">[];
+  favoriteNotes: Doc<"documents">[];
   favoritePdfs: Doc<"pdfs">[];
   favoriteWhiteboards: Doc<"whiteboards">[];
   favoriteLinks: Doc<"links">[];
@@ -1963,7 +1963,7 @@ const PinnedItemsSection = memo(function PinnedItemsSection({
 });
 
 interface WorkspaceItemProps {
-  workingSpace: Doc<"workingSpaces">;
+  workingSpace: Doc<"folders">;
   pathname: string;
   open: boolean;
 }
@@ -1978,12 +1978,12 @@ const WorkspaceItem = memo(
       workingSpace.name || "Untitled",
     );
     const updateWorkingSpace = useMutation(
-      api.workingSpaces.updateWorkingSpace,
+      api.folders.updateFolder,
     ).withOptimisticUpdate((local, args) => {
       const { _id, name } = args;
       // Update in getRecentWorkingSpaces
       const workspaces = local.getQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
       );
       if (workspaces && Array.isArray(workspaces)) {
         const updatedWorkspaces = workspaces.map((ws: any) =>
@@ -1996,19 +1996,19 @@ const WorkspaceItem = memo(
             : ws,
         );
         local.setQuery(
-          api.workingSpaces.getRecentWorkingSpaces,
+          api.folders.getRecentFolders,
           {},
           updatedWorkspaces,
         );
       }
 
       // Update single workspace query if it exists
-      const workspace = local.getQuery(api.workingSpaces.getWorkingSpaceById, {
+      const workspace = local.getQuery(api.folders.getFolderById, {
         _id,
       });
       if (workspace) {
         local.setQuery(
-          api.workingSpaces.getWorkingSpaceById,
+          api.folders.getFolderById,
           { _id },
           {
             ...workspace,
@@ -2019,7 +2019,7 @@ const WorkspaceItem = memo(
       }
     });
     const deleteWorkingSpace = useMutation(
-      api.workingSpaces.deleteWorkingSpace,
+      api.folders.deleteFolder,
     );
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -2105,7 +2105,7 @@ const WorkspaceItem = memo(
     return (
       <SidebarItemContextMenu
         itemName={workingSpace.name || "Untitled"}
-        itemLabel="Workspace"
+        itemLabel="Folder"
         onRename={(name) => updateWorkingSpace({ _id: workingSpace._id, name })}
         onDelete={() => deleteWorkingSpace({ _id: workingSpace._id })}
       >
@@ -2185,7 +2185,7 @@ const WorkspaceItem = memo(
             className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             onMouseEnter={titleTooltip.hide}
           >
-            <WorkingSpaceSettingsSidbar
+            <FolderSettingsSidebar
               workingSpaceId={workingSpace._id}
               workingspaceName={workingSpace.name}
               ContainerClassName=""
@@ -2206,7 +2206,7 @@ const WorkspaceItem = memo(
 );
 
 interface WorkspacesListProps {
-  getWorkingSpaces: Doc<"workingSpaces">[] | undefined;
+  getWorkingSpaces: Doc<"folders">[] | undefined;
   handleCreateWorkingSpace: () => Promise<void>;
   pathname: string;
   open: boolean;
@@ -2223,7 +2223,7 @@ const WorkspacesList = memo(function WorkspacesList({
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-muted-foreground flex items-center justify-between">
-        <span>Workspaces</span>
+        <span>Folders</span>
       </SidebarGroupLabel>
       <Tooltip open={addWorkspaceTooltip.open}>
         <TooltipTrigger asChild>
@@ -2233,7 +2233,7 @@ const WorkspacesList = memo(function WorkspacesList({
             className=" !app-radius-none"
           >
             <Plus size={16} className=" text-muted-foreground" />{" "}
-            <span className="sr-only">Add Workspace</span>
+            <span className="sr-only">New Folder</span>
           </SidebarGroupAction>
         </TooltipTrigger>
         <TooltipContent
@@ -2241,7 +2241,7 @@ const WorkspacesList = memo(function WorkspacesList({
           sideOffset={5}
           className=" text-xs py-0.5 px-1.5 !app-radius-none"
         >
-          Add Workspace
+          New Folder
         </TooltipContent>
       </Tooltip>
       {getWorkingSpaces?.map((workingSpace) => (
@@ -2428,19 +2428,19 @@ const AppSidebar = React.memo(function AppSidebar() {
   const router = useRouter();
   const { beginNoteDraft } = usePendingNoteDraftContext();
   const createWorkingSpace = useMutation(
-    api.workingSpaces.createWorkingSpace,
+    api.folders.createFolder,
   ).withOptimisticUpdate((local, args) => {
     const { name } = args;
     const now = Date.now();
     const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as any as Id<"workingSpaces">;
+    const tempId = `${uuid}-${now}` as any as Id<"folders">;
 
     // Update the getRecentWorkingSpaces query
     const currentWorkspaces = local.getQuery(
-      api.workingSpaces.getRecentWorkingSpaces,
+      api.folders.getRecentFolders,
     );
     if (currentWorkspaces !== undefined) {
-      local.setQuery(api.workingSpaces.getRecentWorkingSpaces, {}, [
+      local.setQuery(api.folders.getRecentFolders, {}, [
         {
           _id: tempId as any,
           _creationTime: now,
@@ -2455,12 +2455,12 @@ const AppSidebar = React.memo(function AppSidebar() {
     }
   });
   const getWorkingSpaces = useQuery(
-    api.workingSpaces.getRecentWorkingSpaces,
+    api.folders.getRecentFolders,
     {},
   );
   const User = useQuery(api.users.viewer, {});
   const { results, status, loadMore } = usePaginatedQuery(
-    api.notes.getFavNotes,
+    api.documents.getFavNotes,
     {},
     { initialNumItems: 5 },
   );
@@ -2484,7 +2484,7 @@ const AppSidebar = React.memo(function AppSidebar() {
     { initialNumItems: 5 },
   );
   const cleanupOrphanedItems = useMutation(
-    api.workingSpaces.cleanupOrphanedItems,
+    api.folders.cleanupOrphanedItems,
   );
   useEffect(() => {
     cleanupOrphanedItems().catch(() => {});

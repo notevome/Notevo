@@ -7,31 +7,31 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { FileText, Plus, Table } from "lucide-react";
 
 interface TablesNotFoundProps {
-  workingSpaceId: Id<"workingSpaces">;
+  workingSpaceId: Id<"folders">;
 }
 
 export default function TablesNotFound({
   workingSpaceId,
 }: TablesNotFoundProps) {
   const createTable = useMutation(
-    api.notesTables.createTable,
+    api.tables.createTable,
   ).withOptimisticUpdate((local, args) => {
-    const { workingSpaceId: wsId, name } = args;
-    if (wsId !== workingSpaceId) return;
+    const { folderId: fId, name } = args;
+    if (fId && fId !== workingSpaceId) return;
     const now = Date.now();
     const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as Id<"notesTables">;
+    const tempId = `${uuid}-${now}` as Id<"tables">;
 
-    const currentTables = local.getQuery(api.notesTables.getTables, {
-      workingSpaceId: wsId,
+    const currentTables = local.getQuery(api.tables.getTables, {
+      folderId: workingSpaceId,
     });
     if (currentTables !== undefined) {
-      local.setQuery(api.notesTables.getTables, { workingSpaceId: wsId }, [
+      local.setQuery(api.tables.getTables, { folderId: workingSpaceId }, [
         {
           _id: tempId,
           _creationTime: now,
           name: name || "New Table",
-          workingSpaceId: wsId,
+          folderId: workingSpaceId,
           slug: "untitled",
           createdAt: now,
           updatedAt: now,
@@ -45,7 +45,7 @@ export default function TablesNotFound({
     try {
       await createTable({
         name: "New Table",
-        workingSpaceId: workingSpaceId,
+        folderId: workingSpaceId,
       });
     } catch (error) {
       console.error(error);

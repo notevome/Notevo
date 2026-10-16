@@ -176,12 +176,12 @@ export default function GlobalFolderDropUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [isWorkspaceDialogOpen, setIsWorkspaceDialogOpen] = useState(false);
 
-  const workspaces = useQuery(api.workingSpaces.getRecentWorkingSpaces, {}) as
-    | Array<{ _id: Id<"workingSpaces">; name: string; slug?: string }>
+  const workspaces = useQuery(api.folders.getRecentFolders, {}) as
+    | Array<{ _id: Id<"folders">; name: string; slug?: string }>
     | undefined;
 
-  const createWorkingSpace = useMutation(api.workingSpaces.createWorkingSpace);
-  const getOrCreateTable = useMutation(api.notesTables.getOrCreateTable);
+  const createWorkingSpace = useMutation(api.folders.createFolder);
+  const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
 
@@ -192,13 +192,13 @@ export default function GlobalFolderDropUpload() {
     async (
       files: File[],
       folderName: string,
-      workingSpaceId: Id<"workingSpaces">,
+      workingSpaceId: Id<"folders">,
     ) => {
       setIsUploading(true);
       try {
         const tableId = await getOrCreateTable({
           name: DEFAULT_TABLE_NAME,
-          workingSpaceId,
+          folderId: workingSpaceId,
         });
 
         let firstPdfRoute: string | null = null;
@@ -411,7 +411,7 @@ export default function GlobalFolderDropUpload() {
       >
         <DialogContent className="app-radius-lg px-4 pb-3 pt-4 sm:max-w-md bg-card">
           <DialogHeader className="mb-2 pl-1">
-            <DialogTitle>Choose Workspace</DialogTitle>
+            <DialogTitle>Choose Folder</DialogTitle>
             <DialogDescription>
               Select where to upload{" "}
               <span className="font-medium text-foreground">

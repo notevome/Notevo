@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 const siteUrl = "https://notevo.me";
 const siteName = "Notevo";
-const defaultTitle = "Notevo - Simple, Structured Note Taking";
+const defaultTitle = "Notevo - Simple, Structured Documents";
 const defaultDescription =
-  "Notevo helps you capture your thoughts, organize them effortlessly and interact with your notes in one clean, modern interface.";
+  "Notevo helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.";
 
 interface GenerateMetadataParams {
   title?: string;
@@ -29,14 +29,14 @@ export function generateMetadata({
   const imageUrl = image.startsWith("http") ? image : `${siteUrl}${image}`;
 
   const defaultKeywords = [
-    "note taking",
-    "AI notes",
+    "document creation",
+    "AI documents",
     "productivity",
     "organization",
-    "smart notes",
-    "note organizer",
-    "collaborative notes",
-    "workspace",
+    "smart documents",
+    "document organizer",
+    "collaborative documents",
+    "folder",
   ];
 
   return {

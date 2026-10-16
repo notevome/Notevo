@@ -277,7 +277,7 @@ const CONTENT_FILTER_OPTIONS: {
   icon: FilterIconComponent;
 }[] = [
   { value: "all", label: "All", icon: Layers },
-  { value: "note", label: "Notes", icon: StickyNote },
+  { value: "note", label: "Documents", icon: StickyNote },
   { value: "pdf", label: "PDFs", icon: FileText },
   { value: "whiteboard", label: "Whiteboards", icon: PenTool },
   { value: "youtube", label: "YouTube Videos", icon: YouTubeIcon },
@@ -442,11 +442,11 @@ function GroupAvatar({
 }
 
 interface Note {
-  _id: Id<"notes">;
+  _id: Id<"documents">;
   title?: string;
   slug?: string;
   workingSpacesSlug?: string;
-  workingSpaceId?: Id<"workingSpaces">;
+  workingSpaceId?: Id<"folders">;
   userId?: Id<"users">;
   body?: string;
   preview?: string;
@@ -454,7 +454,7 @@ interface Note {
   createdAt: number;
   updatedAt: number;
   tags?: Id<"tags">[];
-  notesTableId?: Id<"notesTables"> | any | undefined;
+  notesTableId?: Id<"tables"> | any | undefined;
   order?: number;
 }
 
@@ -464,8 +464,8 @@ interface PdfItem {
   title?: string;
   favorite?: boolean;
   userId?: Id<"users">;
-  workingSpaceId?: Id<"workingSpaces">;
-  notesTableId?: Id<"notesTables">;
+  workingSpaceId?: Id<"folders">;
+  notesTableId?: Id<"tables">;
   fileUrl?: string | null;
   createdAt: number;
   updatedAt: number;
@@ -494,8 +494,8 @@ interface LinkItem {
   title?: string;
   favorite?: boolean;
   userId?: Id<"users">;
-  workingSpaceId?: Id<"workingSpaces">;
-  notesTableId?: Id<"notesTables">;
+  workingSpaceId?: Id<"folders">;
+  notesTableId?: Id<"tables">;
   createdAt: number;
   updatedAt: number;
   kind: "link";
@@ -508,8 +508,8 @@ interface WhiteboardItem {
   snapshot?: string;
   preview?: string;
   userId: Id<"users">;
-  workingSpaceId: Id<"workingSpaces">;
-  notesTableId: Id<"notesTables">;
+  workingSpaceId: Id<"folders">;
+  notesTableId: Id<"tables">;
   createdAt: number;
   updatedAt: number;
   kind: "whiteboard";
@@ -522,11 +522,11 @@ type WorkspaceEntry =
   | WhiteboardItem;
 
 interface NotesDroppableContainerProps {
-  tableId: Id<"notesTables">;
+  tableId: Id<"tables">;
   viewMode: ViewMode;
   notes?: Note[];
   workspaceSlug?: string;
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   tables: any[];
@@ -563,9 +563,9 @@ interface EmptySearchResultsProps {
 }
 
 interface EmptyTableStateProps {
-  tableId: Id<"notesTables">;
+  tableId: Id<"tables">;
   workspaceSlug?: string;
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
 }
 
 const STORAGE_KEYS = {
@@ -834,21 +834,21 @@ function TableTab({ table }: { table: any }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const updateTable = useMutation(
-    api.notesTables.updateTable,
+    api.tables.updateTable,
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
-        const tables = local.getQuery(api.notesTables.getTables, {
-          workingSpaceId: ws._id,
+        const tables = local.getQuery(api.tables.getTables, {
+          folderId: ws._id,
         });
         if (tables && Array.isArray(tables)) {
           const found = tables.some((t: any) => t._id === _id);
           if (found) {
             local.setQuery(
-              api.notesTables.getTables,
-              { workingSpaceId: ws._id },
+              api.tables.getTables,
+              { folderId: ws._id },
               tables.map((t: any) =>
                 t._id === _id
                   ? { ...t, name: name ?? t.name, updatedAt: Date.now() }
@@ -862,20 +862,20 @@ function TableTab({ table }: { table: any }) {
     }
   });
   const deleteTable = useMutation(
-    api.notesTables.deleteTable,
+    api.tables.deleteTable,
   ).withOptimisticUpdate((local, args) => {
     const { _id } = args;
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       for (const ws of workspaces) {
-        const tables = local.getQuery(api.notesTables.getTables, {
-          workingSpaceId: ws._id,
+        const tables = local.getQuery(api.tables.getTables, {
+          folderId: ws._id,
         });
         if (tables && Array.isArray(tables)) {
           if (tables.some((t: any) => t._id === _id)) {
             local.setQuery(
-              api.notesTables.getTables,
-              { workingSpaceId: ws._id },
+              api.tables.getTables,
+              { folderId: ws._id },
               tables.filter((t: any) => t._id !== _id),
             );
             break;
@@ -1373,23 +1373,23 @@ function SliderTabsList({
   );
 }
 
-export default function WorkingSpacePageClient({
+export default function FolderPageClient({
   workingSpaceId,
   renderedInPane = false,
 }: {
-  workingSpaceId: Id<"workingSpaces">;
+  workingSpaceId: Id<"folders">;
   renderedInPane?: boolean;
 }) {
   const cached = workspacePageMemoryCache.get(
     workingSpaceId as unknown as string,
   );
   const workspaceQuery = useQuery(
-    api.workingSpaces.getWorkingSpaceById,
+    api.folders.getFolderById,
     workingSpaceId ? { _id: workingSpaceId } : "skip",
   ) as any;
   const tablesQuery = useQuery(
-    api.notesTables.getTables,
-    workingSpaceId ? { workingSpaceId } : "skip",
+    api.tables.getTables,
+    workingSpaceId ? { folderId: workingSpaceId } : "skip",
   ) as any;
 
   const workspace = workspaceQuery ?? cached?.workspace;
@@ -1414,13 +1414,13 @@ export default function WorkingSpacePageClient({
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
   const updateWorkingSpace = useMutation(
-    api.workingSpaces.updateWorkingSpace,
+    api.folders.updateFolder,
   ).withOptimisticUpdate((local, args) => {
     const { _id, name } = args;
-    const workspaces = local.getQuery(api.workingSpaces.getRecentWorkingSpaces);
+    const workspaces = local.getQuery(api.folders.getRecentFolders);
     if (workspaces && Array.isArray(workspaces)) {
       local.setQuery(
-        api.workingSpaces.getRecentWorkingSpaces,
+        api.folders.getRecentFolders,
         {},
         workspaces.map((ws: any) =>
           ws._id === _id
@@ -1429,10 +1429,10 @@ export default function WorkingSpacePageClient({
         ),
       );
     }
-    const ws = local.getQuery(api.workingSpaces.getWorkingSpaceById, { _id });
+    const ws = local.getQuery(api.folders.getFolderById, { _id });
     if (ws) {
       local.setQuery(
-        api.workingSpaces.getWorkingSpaceById,
+        api.folders.getFolderById,
         { _id },
         { ...ws, name: name ?? ws.name, updatedAt: Date.now() },
       );
@@ -1618,7 +1618,7 @@ export default function WorkingSpacePageClient({
                     setEditedName(editedName);
                     setIsEditingName(false);
                   }}
-                  placeholder="Untitled WorkSpace"
+                  placeholder="Untitled Folder"
                   className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[4rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
                 />
               ) : (
@@ -1701,7 +1701,7 @@ export function NotesDroppableContainer({
     status: notesStatus,
     loadMore: loadMoreNotes,
   } = usePaginatedQuery(
-    api.notes.getNotesByTableId,
+    api.documents.getNotesByTableId,
     { notesTableId: tableId },
     { initialNumItems: 5 },
   );
@@ -2070,7 +2070,7 @@ export function NotesDroppableContainer({
             <Input
               ref={searchInputRef as any}
               type="text"
-              placeholder="Search notes and uploads..."
+              placeholder="Search documents and uploads..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
@@ -2483,7 +2483,7 @@ function CalendarTimelineView({
   onLoadMore,
 }: {
   items: WorkspaceEntry[];
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
   paginationStatus: string;
   onLoadMore: () => void;
 }) {
@@ -3025,7 +3025,7 @@ function TimelineClusterSlider({
   workspaceId,
 }: {
   entries: WorkspaceEntry[];
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -3264,7 +3264,7 @@ function TimelineMiniCard({
   workspaceId,
 }: {
   item: WorkspaceEntry;
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
 }) {
   const [contextMenuPosition, setContextMenuPosition] = useState<{
     x: number;
@@ -3439,7 +3439,7 @@ function TimelineMiniCard({
 
 function getWorkspaceItemDetails(
   item: WorkspaceEntry,
-  workspaceId?: Id<"workingSpaces">,
+  workspaceId?: Id<"folders">,
 ) {
   if (item.kind === "whiteboard") {
     const board = item as WhiteboardItem;
@@ -3596,7 +3596,7 @@ function ItemKindIcon({
     const NoteIcon = empty ? EmptyFileIcon : FileText;
     return (
       <NoteIcon
-        aria-label={empty ? "Empty note" : "Note"}
+        aria-label={empty ? "Empty document" : "Document"}
         className={cn("shrink-0 text-muted-foreground", className)}
       />
     );
@@ -3663,7 +3663,7 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   searchQuery,
 }: {
   item: WorkspaceEntry;
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {
@@ -3843,7 +3843,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   searchQuery,
 }: {
   item: WorkspaceEntry;
-  workspaceId?: Id<"workingSpaces">;
+  workspaceId?: Id<"folders">;
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {

@@ -38,8 +38,8 @@ export function ReadOnlyWarning() {
           <div className="flex-1">
             <h3 className="font-semibold text-foreground">Read only</h3>
             <p className="text-base text-muted-foreground mt-1">
-              You're viewing a live copy of the original note. Your changes
-              won't affect the original but you can download your edited copy
+              You're viewing a live copy of the original document. Your changes
+              won't affect the original, but you can download your edited copy
               anytime.
             </p>
           </div>

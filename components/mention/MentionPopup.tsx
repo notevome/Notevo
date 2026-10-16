@@ -29,7 +29,7 @@ import {
   type MentionPluginState,
 } from "./mention-extension";
 import { cacheItem } from "./mention-cache";
-import { LinkFaviconBadge } from "@/components/WorkspacePreviewComponents";
+import { LinkFaviconBadge } from "@/components/FolderPreviewComponents";
 import { cn } from "@/lib/utils";
 
 const SKELETON_ROWS = [
@@ -88,7 +88,7 @@ function HighlightText({ text, query }: { text: string; query?: string }) {
 
 interface MentionPopupProps {
   editor: EditorInstance | null;
-  workingSpaceId?: Id<"workingSpaces">;
+  workingSpaceId?: Id<"folders">;
 }
 
 type FilterCategory = "all" | "note" | "whiteboard" | "pdf" | "link";
@@ -105,7 +105,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
   const query = pluginState?.query ?? "";
 
   const items = useQuery(
-    api.notes.getMentionItems,
+    api.documents.getMentionItems,
     pluginState?.isOpen
       ? {
           query: query || undefined,
@@ -293,7 +293,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
           {(
             [
               { key: "all", label: "All" },
-              { key: "note", label: "Notes" },
+              { key: "note", label: "Documents" },
               { key: "whiteboard", label: "Whiteboards" },
               { key: "pdf", label: "PDFs" },
               { key: "link", label: "Links" },
@@ -375,7 +375,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
                         item.subtitle ||
                         (item.kind === "link"
                           ? item.url
-                          : item.tableName || "Workspace")
+                          : item.tableName || "Folder")
                       }
                       query={query}
                     />

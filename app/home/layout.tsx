@@ -7,7 +7,7 @@ import { generateMetadata as generateSEOMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = generateSEOMetadata({
   title: "Home",
-  description: "Your Notevo Home - manage your notes and workspaces",
+  description: "Your Notevo Home - manage your documents and folders",
   path: "/home",
   noindex: true, // Private pages should not be indexed
 });

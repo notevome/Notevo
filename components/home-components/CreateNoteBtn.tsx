@@ -1,10 +1,10 @@
 import type { Id } from "@/convex/_generated/dataModel";
-import WorkingspaceNewDropdownBtn from "./workingspace-new-dropdown-btn";
+import FolderNewDropdownBtn from "./folder-new-dropdown-btn";
 
 interface CreateNoteBtnProps {
-  CNBP_notesTableId: Id<"notesTables"> | undefined;
+  CNBP_notesTableId: Id<"tables"> | undefined;
   workingSpacesSlug: string | any;
-  workingSpaceId: Id<"workingSpaces"> | any;
+  workingSpaceId: Id<"folders"> | any;
   className?: string;
 }
 
@@ -15,7 +15,7 @@ export default function CreateNoteBtn({
   className,
 }: CreateNoteBtnProps) {
   return (
-    <WorkingspaceNewDropdownBtn
+    <FolderNewDropdownBtn
       notesTableId={CNBP_notesTableId}
       workingSpacesSlug={workingSpacesSlug}
       workingSpaceId={workingSpaceId}

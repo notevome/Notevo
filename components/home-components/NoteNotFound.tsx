@@ -9,7 +9,7 @@ import Link from "next/link";
 interface NoteNotFoundProps {
   notesTableId: string | any;
   workingSpacesSlug: string | any;
-  workingSpaceId: Id<"workingSpaces">;
+  workingSpaceId: Id<"folders">;
 }
 export default function NoteNotFound({
   notesTableId,
@@ -24,7 +24,7 @@ export default function NoteNotFound({
             <FileX className="h-10 w-10 text-muted-foreground" />
           </div>
           <h3 className="mt-4 text-lg font-semibold text-foreground">
-            Note not found
+            Document not found
           </h3>
           <p className="mt-2 text-sm text-muted-foreground">
             The note you're looking for doesn't exist or you don't have access

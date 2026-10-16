@@ -3,15 +3,15 @@ import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { generateSlug } from "../lib/generateSlug";
 
-// Add every new workspace-owned content table here so empty-workspace cleanup stays safe.
-const WORKSPACE_CONTENT_TABLES = [
-  "notes",
+// Add every new folder-owned content table here so empty-folder cleanup stays safe.
+const FOLDER_CONTENT_TABLES = [
+  "documents",
   "pdfs",
   "whiteboards",
   "links",
 ] as const;
 
-export const createWorkingSpace = mutation({
+export const createFolder = mutation({
   args: {
     name: v.string(),
   },
@@ -24,61 +24,61 @@ export const createWorkingSpace = mutation({
     const generateSlugName = generateSlug(name);
 
     let slug = generateSlugName;
-    let existingWorkingSpace = await ctx.db
-      .query("workingSpaces")
+    let existingFolder = await ctx.db
+      .query("folders")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
-    while (existingWorkingSpace) {
+    while (existingFolder) {
       slug = `${generateSlugName}-${counter}`;
-      existingWorkingSpace = await ctx.db
-        .query("workingSpaces")
+      existingFolder = await ctx.db
+        .query("folders")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
-    const workingSpace = {
+    const folder = {
       name,
       userId,
       slug: slug,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
-    const newWorkingSpace = await ctx.db.insert("workingSpaces", workingSpace);
+    const newFolder = await ctx.db.insert("folders", folder);
 
-    const tableName = "Notes";
-    const tableSlugBase = `${generateSlug(tableName)}-${slug || String(newWorkingSpace)}`;
+    const tableName = "Documents";
+    const tableSlugBase = `${generateSlug(tableName)}-${slug || String(newFolder)}`;
     let tableSlug = tableSlugBase;
     let existingTable = await ctx.db
-      .query("notesTables")
+      .query("tables")
       .withIndex("by_slug", (q) => q.eq("slug", tableSlug))
       .first();
     let tableCounter = 1;
     while (existingTable) {
       tableSlug = `${tableSlugBase}-${tableCounter}`;
       existingTable = await ctx.db
-        .query("notesTables")
+        .query("tables")
         .withIndex("by_slug", (q) => q.eq("slug", tableSlug))
         .first();
       tableCounter++;
     }
 
     const now = Date.now();
-    await ctx.db.insert("notesTables", {
+    await ctx.db.insert("tables", {
       name: tableName,
-      workingSpaceId: newWorkingSpace,
+      folderId: newFolder,
       slug: tableSlug,
       createdAt: now,
       updatedAt: now,
     });
 
-    return newWorkingSpace;
+    return newFolder;
   },
 });
 
-export const updateWorkingSpace = mutation({
+export const updateFolder = mutation({
   args: {
-    _id: v.id("workingSpaces"),
+    _id: v.id("folders"),
     name: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -87,48 +87,47 @@ export const updateWorkingSpace = mutation({
       throw new ConvexError("Not authenticated");
     }
     const { _id, name } = args;
-    const workingSpace = await ctx.db.get(_id);
-    if (!workingSpace) {
-      throw new ConvexError("WorkingSpace not found");
+    const folder = await ctx.db.get(_id);
+    if (!folder) {
+      throw new ConvexError("Folder not found");
     }
 
-    // Authorization check: verify the workspace belongs to the authenticated user
-    if (workingSpace.userId !== userId) {
-      throw new ConvexError("Not authorized to update this workspace");
+    // Authorization check: verify the folder belongs to the authenticated user
+    if (folder.userId !== userId) {
+      throw new ConvexError("Not authorized to update this folder");
     }
 
     const generateSlugName = generateSlug(name ?? "Untitled");
     // Check if the slug already exists and add incremental number if it does
     let slug = generateSlugName;
-    let existingWorkingSpace = await ctx.db
-      .query("workingSpaces")
+    let existingFolder = await ctx.db
+      .query("folders")
       .withIndex("by_slug", (q) => q.eq("slug", slug))
       .first();
     let counter = 1;
-    while (existingWorkingSpace && existingWorkingSpace._id !== _id) {
-      // Skip current workspace
+    while (existingFolder && existingFolder._id !== _id) {
       slug = `${generateSlugName}-${counter}`;
-      existingWorkingSpace = await ctx.db
-        .query("workingSpaces")
+      existingFolder = await ctx.db
+        .query("folders")
         .withIndex("by_slug", (q) => q.eq("slug", slug))
         .first();
       counter++;
     }
     const update = {
-      name: name ?? workingSpace.name,
-      userId: workingSpace.userId, // Preserve the original user ID
+      name: name ?? folder.name,
+      userId: folder.userId, // Preserve the original user ID
       slug: slug,
-      createdAt: workingSpace.createdAt,
+      createdAt: folder.createdAt,
       updatedAt: Date.now(),
     };
-    const updatedWorkingSpace = await ctx.db.replace(_id, update);
-    return updatedWorkingSpace;
+    const updatedFolder = await ctx.db.replace(_id, update);
+    return updatedFolder;
   },
 });
 
-export const deleteWorkingSpace = mutation({
+export const deleteFolder = mutation({
   args: {
-    _id: v.id("workingSpaces"),
+    _id: v.id("folders"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -137,111 +136,111 @@ export const deleteWorkingSpace = mutation({
     }
 
     const { _id } = args;
-    const workingSpace = await ctx.db.get(_id);
+    const folder = await ctx.db.get(_id);
 
-    if (!workingSpace) {
-      throw new ConvexError("WorkingSpace not found");
+    if (!folder) {
+      throw new ConvexError("Folder not found");
     }
 
-    if (workingSpace.userId !== userId) {
-      throw new ConvexError("Not authorized to delete this workspace");
+    if (folder.userId !== userId) {
+      throw new ConvexError("Not authorized to delete this folder");
     }
 
     const tables = await ctx.db
-      .query("notesTables")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .query("tables")
+      .withIndex("by_folderId", (q) => q.eq("folderId", _id))
       .collect();
 
-    const notesByWorkspace = await ctx.db
-      .query("notes")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+    const documentsByFolder = await ctx.db
+      .query("documents")
+      .withIndex("by_folderId", (q) => q.eq("folderId", _id))
       .collect();
-    const notesByTable = (
+    const documentsByTable = (
       await Promise.all(
         tables.map((table) =>
           ctx.db
-            .query("notes")
-            .withIndex("by_notesTableId", (q) =>
-              q.eq("notesTableId", table._id),
+            .query("documents")
+            .withIndex("by_tableId", (q) =>
+              q.eq("tableId", table._id),
             )
             .collect(),
         ),
       )
     ).flat();
-    const notesToDelete = [...notesByWorkspace, ...notesByTable].filter(
-      (note, index, arr) =>
-        arr.findIndex((candidate) => candidate._id === note._id) === index,
+    const documentsToDelete = [...documentsByFolder, ...documentsByTable].filter(
+      (doc, index, arr) =>
+        arr.findIndex((candidate) => candidate._id === doc._id) === index,
     );
 
-    const pdfsByWorkspace = await ctx.db
+    const pdfsByFolder = await ctx.db
       .query("pdfs")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .withIndex("by_folderId", (q) => q.eq("folderId", _id))
       .collect();
     const pdfsByTable = (
       await Promise.all(
         tables.map((table) =>
           ctx.db
             .query("pdfs")
-            .withIndex("by_notesTableId", (q) =>
-              q.eq("notesTableId", table._id),
+            .withIndex("by_tableId", (q) =>
+              q.eq("tableId", table._id),
             )
             .collect(),
         ),
       )
     ).flat();
-    const pdfsToDelete = [...pdfsByWorkspace, ...pdfsByTable].filter(
+    const pdfsToDelete = [...pdfsByFolder, ...pdfsByTable].filter(
       (pdf, index, arr) =>
         arr.findIndex((candidate) => candidate._id === pdf._id) === index,
     );
 
-    const whiteboardsByWorkspace = await ctx.db
+    const whiteboardsByFolder = await ctx.db
       .query("whiteboards")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .withIndex("by_folderId", (q) => q.eq("folderId", _id))
       .collect();
     const whiteboardsByTable = (
       await Promise.all(
         tables.map((table) =>
           ctx.db
             .query("whiteboards")
-            .withIndex("by_notesTableId", (q) =>
-              q.eq("notesTableId", table._id),
+            .withIndex("by_tableId", (q) =>
+              q.eq("tableId", table._id),
             )
             .collect(),
         ),
       )
     ).flat();
     const whiteboardsToDelete = [
-      ...whiteboardsByWorkspace,
+      ...whiteboardsByFolder,
       ...whiteboardsByTable,
     ].filter(
       (wb, index, arr) =>
         arr.findIndex((candidate) => candidate._id === wb._id) === index,
     );
 
-    const linksByWorkspace = await ctx.db
+    const linksByFolder = await ctx.db
       .query("links")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", _id))
+      .withIndex("by_folderId", (q) => q.eq("folderId", _id))
       .collect();
     const linksByTable = (
       await Promise.all(
         tables.map((table) =>
           ctx.db
             .query("links")
-            .withIndex("by_notesTableId", (q) =>
-              q.eq("notesTableId", table._id),
+            .withIndex("by_tableId", (q) =>
+              q.eq("tableId", table._id),
             )
             .collect(),
         ),
       )
     ).flat();
-    const linksToDelete = [...linksByWorkspace, ...linksByTable].filter(
+    const linksToDelete = [...linksByFolder, ...linksByTable].filter(
       (link, index, arr) =>
         arr.findIndex((candidate) => candidate._id === link._id) === index,
     );
 
-    for (const note of notesToDelete) {
-      if (note.tags) {
-        for (const tagId of note.tags) {
+    for (const doc of documentsToDelete) {
+      if (doc.tags) {
+        for (const tagId of doc.tags) {
           try {
             await ctx.db.delete(tagId);
           } catch {
@@ -249,7 +248,7 @@ export const deleteWorkingSpace = mutation({
           }
         }
       }
-      await ctx.db.delete(note._id);
+      await ctx.db.delete(doc._id);
     }
 
     for (const pdf of pdfsToDelete) {
@@ -279,9 +278,9 @@ export const deleteWorkingSpace = mutation({
   },
 });
 
-export const deleteWorkingSpaceIfEmpty = mutation({
+export const deleteFolderIfEmpty = mutation({
   args: {
-    _id: v.id("workingSpaces"),
+    _id: v.id("folders"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -289,22 +288,22 @@ export const deleteWorkingSpaceIfEmpty = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const workspace = await ctx.db.get(args._id);
-    if (!workspace || workspace.userId !== userId) {
+    const folder = await ctx.db.get(args._id);
+    if (!folder || folder.userId !== userId) {
       return "unavailable" as const;
     }
 
     const tables = await ctx.db
-      .query("notesTables")
-      .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", args._id))
+      .query("tables")
+      .withIndex("by_folderId", (q) => q.eq("folderId", args._id))
       .collect();
 
-    const hasWorkspaceItems = async (
-      tableName: (typeof WORKSPACE_CONTENT_TABLES)[number],
+    const hasFolderItems = async (
+      tableName: (typeof FOLDER_CONTENT_TABLES)[number],
     ) => {
       const directItems = await ctx.db
         .query(tableName)
-        .withIndex("by_workingSpaceId", (q) => q.eq("workingSpaceId", args._id))
+        .withIndex("by_folderId", (q: any) => q.eq("folderId", args._id))
         .first();
       if (directItems) return true;
 
@@ -312,8 +311,8 @@ export const deleteWorkingSpaceIfEmpty = mutation({
         tables.map((table) =>
           ctx.db
             .query(tableName)
-            .withIndex("by_notesTableId", (q) =>
-              q.eq("notesTableId", table._id),
+            .withIndex("by_tableId", (q: any) =>
+              q.eq("tableId", table._id),
             )
             .first(),
         ),
@@ -322,7 +321,7 @@ export const deleteWorkingSpaceIfEmpty = mutation({
     };
 
     const containsItems = await Promise.all(
-      WORKSPACE_CONTENT_TABLES.map((tableName) => hasWorkspaceItems(tableName)),
+      FOLDER_CONTENT_TABLES.map((tableName) => hasFolderItems(tableName)),
     );
     if (containsItems.some(Boolean)) {
       return "not-empty" as const;
@@ -345,7 +344,7 @@ export const cleanupOrphanedItems = mutation({
         deletedLinks: 0,
         deletedWhiteboards: 0,
         deletedPdfs: 0,
-        deletedNotes: 0,
+        deletedDocuments: 0,
       };
     }
 
@@ -357,12 +356,12 @@ export const cleanupOrphanedItems = mutation({
     let deletedLinks = 0;
     for (const link of userLinks) {
       let orphan = false;
-      if (link.workingSpaceId) {
-        const ws = await ctx.db.get(link.workingSpaceId);
-        if (!ws) orphan = true;
+      if (link.folderId) {
+        const folder = await ctx.db.get(link.folderId);
+        if (!folder) orphan = true;
       }
-      if (link.notesTableId) {
-        const tbl = await ctx.db.get(link.notesTableId);
+      if (link.tableId) {
+        const tbl = await ctx.db.get(link.tableId);
         if (!tbl) orphan = true;
       }
       if (orphan) {
@@ -379,12 +378,12 @@ export const cleanupOrphanedItems = mutation({
     let deletedWhiteboards = 0;
     for (const wb of userWhiteboards) {
       let orphan = false;
-      if (wb.workingSpaceId) {
-        const ws = await ctx.db.get(wb.workingSpaceId);
-        if (!ws) orphan = true;
+      if (wb.folderId) {
+        const folder = await ctx.db.get(wb.folderId);
+        if (!folder) orphan = true;
       }
-      if (wb.notesTableId) {
-        const tbl = await ctx.db.get(wb.notesTableId);
+      if (wb.tableId) {
+        const tbl = await ctx.db.get(wb.tableId);
         if (!tbl) orphan = true;
       }
       if (orphan) {
@@ -401,12 +400,12 @@ export const cleanupOrphanedItems = mutation({
     let deletedPdfs = 0;
     for (const pdf of userPdfs) {
       let orphan = false;
-      if (pdf.workingSpaceId) {
-        const ws = await ctx.db.get(pdf.workingSpaceId);
-        if (!ws) orphan = true;
+      if (pdf.folderId) {
+        const folder = await ctx.db.get(pdf.folderId);
+        if (!folder) orphan = true;
       }
-      if (pdf.notesTableId) {
-        const tbl = await ctx.db.get(pdf.notesTableId);
+      if (pdf.tableId) {
+        const tbl = await ctx.db.get(pdf.tableId);
         if (!tbl) orphan = true;
       }
       if (orphan) {
@@ -418,32 +417,32 @@ export const cleanupOrphanedItems = mutation({
       }
     }
 
-    const userNotes = await ctx.db
-      .query("notes")
+    const userDocuments = await ctx.db
+      .query("documents")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .collect();
 
-    let deletedNotes = 0;
-    for (const note of userNotes) {
+    let deletedDocuments = 0;
+    for (const doc of userDocuments) {
       let orphan = false;
-      if (note.workingSpaceId) {
-        const ws = await ctx.db.get(note.workingSpaceId);
-        if (!ws) orphan = true;
+      if (doc.folderId) {
+        const folder = await ctx.db.get(doc.folderId);
+        if (!folder) orphan = true;
       }
-      if (note.notesTableId) {
-        const tbl = await ctx.db.get(note.notesTableId);
+      if (doc.tableId) {
+        const tbl = await ctx.db.get(doc.tableId);
         if (!tbl) orphan = true;
       }
       if (orphan) {
-        if (note.tags) {
-          for (const tagId of note.tags) {
+        if (doc.tags) {
+          for (const tagId of doc.tags) {
             try {
               await ctx.db.delete(tagId);
             } catch {}
           }
         }
-        await ctx.db.delete(note._id);
-        deletedNotes++;
+        await ctx.db.delete(doc._id);
+        deletedDocuments++;
       }
     }
 
@@ -451,32 +450,30 @@ export const cleanupOrphanedItems = mutation({
       deletedLinks,
       deletedWhiteboards,
       deletedPdfs,
-      deletedNotes,
+      deletedDocuments,
     };
   },
 });
 
-export const getRecentWorkingSpaces = query({
+export const getRecentFolders = query({
   args: {},
   handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError("Not authenticated");
     }
-    // This function is already secure since it only returns workspaces belonging to the authenticated user
-    // However, I fixed the sorting to be by updatedAt in descending order to get truly recent workspaces
-    const recentWorkingSpaces = await ctx.db
-      .query("workingSpaces")
+    const recentFolders = await ctx.db
+      .query("folders")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .order("desc") // Changed from "asc" to "desc" to get newest first
+      .order("desc")
       .collect();
-    return recentWorkingSpaces;
+    return recentFolders;
   },
 });
 
-export const getWorkingSpaceById = query({
+export const getFolderById = query({
   args: {
-    _id: v.id("workingSpaces"),
+    _id: v.id("folders"),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -485,16 +482,16 @@ export const getWorkingSpaceById = query({
     }
 
     const { _id } = args;
-    const workingSpace = await ctx.db.get(_id);
+    const folder = await ctx.db.get(_id);
 
-    if (!workingSpace) {
-      throw new ConvexError("WorkingSpace not found");
+    if (!folder) {
+      throw new ConvexError("Folder not found");
     }
 
-    if (workingSpace.userId !== userId) {
-      throw new ConvexError("Not authorized to access this workspace");
+    if (folder.userId !== userId) {
+      throw new ConvexError("Not authorized to access this folder");
     }
 
-    return workingSpace;
+    return folder;
   },
 });

@@ -60,7 +60,7 @@ export function dismissMention(view: EditorView) {
 
 const MAX_QUERY_LENGTH = 60;
 
-const MENTION_PLACEHOLDER = "Search notes, PDFs, whiteboards or links…";
+const MENTION_PLACEHOLDER = "Search documents, PDFs, whiteboards or links…";
 const MENTION_EMPTY_CLASS = "mention-query-empty";
 const PLACEHOLDER_STYLE_ID = "mention-placeholder-style";
 

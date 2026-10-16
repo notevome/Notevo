@@ -26,7 +26,7 @@ const featureVideos: Record<string, { video: string; poster: string }> = {
     poster:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/notevo-search_dd7jou.jpg",
   },
-  "Publish Your Notes": {
+  "Publish Your Documents": {
     video:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.mp4",
     poster:
@@ -38,7 +38,7 @@ const featureVideos: Record<string, { video: string; poster: string }> = {
     poster:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/notevo-Downloadyoursfuff_zhgjsp.jpg",
   },
-  "Move Your Notes": {
+  "Move Your Documents": {
     video:
       "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/notevo-moveyourstuff_xyxnhr.mp4",
     poster:
@@ -210,7 +210,7 @@ export default function FeaturesSection() {
       <MaxWContainer className="relative z-10">
         <SectionHeading
           SectionTitle="Features you'll love"
-          SectionSubTitle="Everything you need to take your notes without the hassle."
+          SectionSubTitle="Everything you need to create documents without the hassle."
         />
         <div className="space-y-32 py-12">
           {Features.map((feature, index) => {

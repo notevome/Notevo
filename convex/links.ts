@@ -4,6 +4,7 @@ import {
   internalMutation,
   internalQuery,
 } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { linkMetadataValidator, linkPlatformValidator } from "./linkValidators";
@@ -13,29 +14,31 @@ import { ConvexError } from "convex/values";
 async function assertTableAccess(
   ctx: { db: any },
   userId: string,
-  notesTableId: string | undefined,
-  workingSpaceId: string | undefined,
+  tableId: string | undefined,
+  folderId: string | undefined,
 ) {
-  if (workingSpaceId) {
-    const workspace = await ctx.db.get(workingSpaceId);
-    if (!workspace || workspace.userId !== userId) {
-      throw new Error("Workspace not found or not authorized");
+  if (folderId) {
+    const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+    if (!folder || folder.userId !== userId) {
+      throw new Error("Folder not found or not authorized");
     }
   }
 
-  if (notesTableId) {
-    const table = await ctx.db.get(notesTableId);
+  if (tableId) {
+    const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
     if (!table) {
       throw new Error("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace || workspace.userId !== userId) {
-      throw new Error("Workspace not found or not authorized");
+    if (table.folderId) {
+      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      if (!folder || folder.userId !== userId) {
+        throw new Error("Folder not found or not authorized");
+      }
     }
 
-    if (workingSpaceId && table.workingSpaceId !== workingSpaceId) {
-      throw new Error("Table does not belong to the provided workspace");
+    if (folderId && table.folderId && table.folderId !== folderId) {
+      throw new Error("Table does not belong to the provided folder");
     }
   }
 }
@@ -46,8 +49,10 @@ export const createLink = mutation({
     platform: linkPlatformValidator,
     metadata: linkMetadataValidator,
     title: v.optional(v.string()),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
-    notesTableId: v.optional(v.id("notesTables")),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -55,12 +60,10 @@ export const createLink = mutation({
       throw new Error("Unauthenticated");
     }
 
-    await assertTableAccess(
-      ctx,
-      userId,
-      args.notesTableId,
-      args.workingSpaceId,
-    );
+    const folderId = (args.folderId ?? args.workingSpaceId) as any;
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+
+    await assertTableAccess(ctx, userId, tableId, folderId);
 
     const now = Date.now();
     return await ctx.db.insert("links", {
@@ -69,8 +72,8 @@ export const createLink = mutation({
       metadata: args.metadata,
       title: args.title,
       userId,
-      workingSpaceId: args.workingSpaceId,
-      notesTableId: args.notesTableId,
+      folderId,
+      tableId,
       favorite: false,
       createdAt: now,
       updatedAt: now,
@@ -80,7 +83,8 @@ export const createLink = mutation({
 
 export const getLinksByTableId = query({
   args: {
-    notesTableId: v.id("notesTables"),
+    tableId: v.optional(v.id("tables")),
+    notesTableId: v.optional(v.any()),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
@@ -89,21 +93,22 @@ export const getLinksByTableId = query({
       throw new Error("Unauthenticated");
     }
 
-    const table = await ctx.db.get(args.notesTableId);
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+    const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
     if (!table) {
       throw new Error("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace || workspace.userId !== userId) {
-      throw new Error("Workspace not found or not authorized");
+    if (table.folderId) {
+      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      if (!folder || folder.userId !== userId) {
+        throw new Error("Folder not found or not authorized");
+      }
     }
 
     return await ctx.db
       .query("links")
-      .withIndex("by_notesTableId", (q) =>
-        q.eq("notesTableId", args.notesTableId),
-      )
+      .withIndex("by_tableId", (q) => q.eq("tableId", tableId))
       .order("desc")
       .paginate(args.paginationOpts);
   },
@@ -146,12 +151,12 @@ export const getFavLinks = query({
     const validPage = (
       await Promise.all(
         result.page.map(async (link) => {
-          if (link.workingSpaceId) {
-            const ws = await ctx.db.get(link.workingSpaceId);
-            if (!ws) return null;
+          if (link.folderId) {
+            const folder = await ctx.db.get(link.folderId);
+            if (!folder) return null;
           }
-          if (link.notesTableId) {
-            const table = await ctx.db.get(link.notesTableId);
+          if (link.tableId) {
+            const table = await ctx.db.get(link.tableId);
             if (!table) return null;
           }
           return link;
@@ -250,10 +255,6 @@ export const internalGetLinksMissingChannelInfo = internalQuery({
   },
 });
 
-// Returns ALL links for a platform, regardless of whether metadata fields
-// are already populated. Used by the "force refresh" backfill so stale
-// data (from an older version of the fetch logic) gets overwritten, not
-// just links that are missing data entirely.
 export const internalGetLinksByPlatform = internalQuery({
   args: {
     platform: linkPlatformValidator,
@@ -270,8 +271,10 @@ export const internalGetLinksByPlatform = internalQuery({
 export const moveLink = mutation({
   args: {
     _id: v.id("links"),
-    targetWorkingSpaceId: v.id("workingSpaces"),
-    targetNotesTableId: v.id("notesTables"),
+    targetFolderId: v.optional(v.id("folders")),
+    targetTableId: v.optional(v.id("tables")),
+    targetWorkingSpaceId: v.optional(v.any()),
+    targetNotesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -279,7 +282,9 @@ export const moveLink = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { _id, targetWorkingSpaceId, targetNotesTableId } = args;
+    const { _id } = args;
+    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
+    const targetTableId = (args.targetTableId ?? args.targetNotesTableId) as any;
 
     const link = await ctx.db.get(_id);
     if (!link) {
@@ -290,32 +295,31 @@ export const moveLink = mutation({
       throw new ConvexError("Not authorized to move this link");
     }
 
-    const targetWorkspace = await ctx.db.get(targetWorkingSpaceId);
-    if (!targetWorkspace) {
-      throw new ConvexError("Target workspace not found");
-    }
-    if (targetWorkspace.userId !== userId) {
-      throw new ConvexError("Not authorized to use this workspace");
+    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    if (!targetFolder || targetFolder.userId !== userId) {
+      throw new ConvexError("Target folder not found or unauthorized");
     }
 
-    const targetTable = await ctx.db.get(targetNotesTableId);
+    const targetTable = (await ctx.db.get(targetTableId)) as Doc<"tables"> | null;
     if (!targetTable) {
       throw new ConvexError("Target table not found");
     }
-    if (targetTable.workingSpaceId !== targetWorkingSpaceId) {
-      throw new ConvexError("Target table does not belong to this workspace");
+    if (targetTable.folderId && targetTable.folderId !== targetFolderId) {
+      throw new ConvexError("Target table does not belong to this folder");
     }
 
     await ctx.db.patch(_id, {
-      workingSpaceId: targetWorkingSpaceId,
-      notesTableId: targetNotesTableId,
+      folderId: targetFolderId,
+      tableId: targetTableId,
       updatedAt: Date.now(),
     });
 
     return {
       linkId: _id,
-      workingSpaceId: targetWorkingSpaceId,
-      notesTableId: targetNotesTableId,
+      folderId: targetFolderId,
+      workingSpaceId: targetFolderId,
+      tableId: targetTableId,
+      notesTableId: targetTableId,
       title: link.title,
     };
   },

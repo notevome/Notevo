@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    let title = searchParams.get("title") || "Untitled note.";
+    let title = searchParams.get("title") || "Untitled document.";
     let preview =
       searchParams.get("description") ||
-      "No Description. This is a shared note on Notevo. View and read this note on Notevo";
+      "No description. This is a shared document on Notevo. View and read this document on Notevo";
 
     // Fetch live note from Convex database
     if (id) {
@@ -28,8 +28,8 @@ export async function GET(request: NextRequest) {
       if (convexUrl) {
         try {
           const convex = new ConvexHttpClient(convexUrl);
-          const note = await convex.query(api.notes.getNoteById, {
-            _id: id as Id<"notes">,
+          const note = await convex.query(api.documents.getNoteById, {
+            _id: id as Id<"documents">,
             isPublish: true,
           });
 

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
-import WorkingSpacePageClient from "./WorkingSpacePageClient";
+import FolderPageClient from "./FolderPageClient";
 
-export default async function WorkingSpacePage({
+export default async function FolderPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -13,5 +13,5 @@ export default async function WorkingSpacePage({
     redirect("/");
   }
 
-  return <WorkingSpacePageClient workingSpaceId={id as Id<"workingSpaces">} />;
+  return <FolderPageClient workingSpaceId={id as any} />;
 }

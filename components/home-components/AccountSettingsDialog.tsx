@@ -646,7 +646,7 @@ export default function AccountSettingsDialog({
               <p className="font-medium text-destructive">Delete account</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Permanently deleting your user will remove access to your
-                workspaces, notes, uploads, and account data.
+                folders, documents, uploads, and account data.
               </p>
               <p className="mt-3 text-sm text-muted-foreground">
                 You are signed in as {user?.email}
@@ -675,7 +675,7 @@ export default function AccountSettingsDialog({
               <AlertDialogTitle>Delete your account?</AlertDialogTitle>
               <AlertDialogDescription>
                 This will permanently delete your account and remove access to
-                your workspaces, notes, uploads, and account data. This action
+                your folders, documents, uploads, and account data. This action
                 cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>

@@ -24,7 +24,7 @@ import {
   formatHandle,
   isSocialLinkPlatform,
   isAvatarFallbackThumbnail,
-} from "@/components/WorkspacePreviewComponents";
+} from "@/components/FolderPreviewComponents";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
@@ -315,7 +315,7 @@ export function ItemHoverCardContent({
             }}
             className="inline-flex w-full items-center justify-center gap-1.5 h-8 px-3 text-xs font-medium app-radius-md bg-border text-muted-foreground hover:brightness-150 transition-colors shadow-sm"
           >
-            <span>Open note</span>
+            <span>Open document</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </IntentPrefetchLink>
         </div>

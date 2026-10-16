@@ -17,27 +17,27 @@ export function QuickActions({
 }: QuickActionsProps) {
   const actions = [
     {
-      title: "New Workspace",
-      description: "Create a new workspace",
+      title: "New Folder",
+      description: "Create a new folder",
       icon: <FolderPlus className="h-5 w-5" />,
       onClick: onCreateWorkspace,
       loading: loading,
     },
     {
-      title: "New Note",
-      description: "Create a new note",
+      title: "New Document",
+      description: "Create a new document",
       icon: <FileText className="h-5 w-5" />,
       onClick: () => {},
     },
     {
       title: "Search",
-      description: "Search your notes",
+      description: "Search your documents",
       icon: <Search className="h-5 w-5" />,
       onClick: () => {},
     },
     {
       title: "Favorites",
-      description: "View pinned notes",
+      description: "View pinned documents",
       icon: <Star className="h-5 w-5" />,
       onClick: () => {},
     },
@@ -55,7 +55,7 @@ export function QuickActions({
           <div className="grid gap-2">
             <Button variant="outline" className="w-full justify-start">
               <Plus className="mr-2 h-4 w-4" />
-              New Note
+              New Document
             </Button>
             <Button variant="outline" className="w-full justify-start">
               <Table className="mr-2 h-4 w-4" />

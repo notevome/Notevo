@@ -76,7 +76,7 @@ export default function PendingNoteDraftPageClient({
               }
             }}
             aria-label="note title"
-            placeholder="Untitled Note"
+            placeholder="Untitled Document"
             rows={1}
             style={{ resize: "none", overflow: "hidden", width: "100%" }}
             className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] !text-4xl md:!text-5xl !leading-tight font-bold placeholder:text-muted-foreground/50 !app-radius-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -94,7 +94,7 @@ export default function PendingNoteDraftPageClient({
           role="alert"
           className="mt-4 flex flex-wrap items-center gap-3 text-sm text-destructive"
         >
-          <span>{draft.error || "Could not save this note."}</span>
+          <span>{draft.error || "Could not save this document."}</span>
           <Button size="sm" variant="outline" onClick={() => retryDraft(token)}>
             Retry save
           </Button>

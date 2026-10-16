@@ -4,7 +4,7 @@ import { generateMetadata as generateSEOMetadata } from "@/lib/seo";
 export const metadata: Metadata = generateSEOMetadata({
   title: "Notevo - Terms of Service",
   description:
-    "Read Notevo's Terms of Service to understand the rules and guidelines for using our note taking platform. Learn about account management, liability, and user responsibilities.",
+    "Read Notevo's Terms of Service to understand the rules and guidelines for using our document platform. Learn about account management, liability, and user responsibilities.",
   path: "/terms-of-service",
   keywords: [
     "terms of service",

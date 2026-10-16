@@ -33,12 +33,12 @@ export default function NotePageClient({
   initialNote,
   renderedInPane = false,
 }: {
-  noteId: Id<"notes">;
-  initialNote?: FunctionReturnType<typeof api.notes.getNoteById>;
+  noteId: Id<"documents">;
+  initialNote?: FunctionReturnType<typeof api.documents.getNoteById>;
   renderedInPane?: boolean;
 }) {
   const { noteWidth } = useNoteWidth();
-  const note = useQuery(api.notes.getNoteById, { _id: noteId });
+  const note = useQuery(api.documents.getNoteById, { _id: noteId });
   const [lastNote, setLastNote] = useState<typeof note>(() => {
     return (
       (getPrefetchedNote(String(noteId)) as typeof note) ??
@@ -66,13 +66,13 @@ export default function NotePageClient({
 
   const stableNote = note ?? lastNote;
 
-  const updateNote = useMutation(api.notes.updateNote).withOptimisticUpdate(
+  const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
       const { _id, body } = args;
-      const note = local.getQuery(api.notes.getNoteById, { _id });
+      const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note) {
         local.setQuery(
-          api.notes.getNoteById,
+          api.documents.getNoteById,
           { _id },
           {
             ...note,
@@ -164,7 +164,7 @@ export default function NotePageClient({
         try {
           updateNote({ _id: noteId, title: trimmedTitle });
         } catch (error) {
-          console.error("Error updating note title:", error);
+          console.error("Error updating document title:", error);
           setEditedTitle(currentTitle);
         }
       }
@@ -252,7 +252,7 @@ export default function NotePageClient({
               }
             }}
             aria-label="note title"
-            placeholder="Untitled Note"
+            placeholder="Untitled Document"
             rows={1}
             style={{ resize: "none", overflow: "hidden", width: "100%" }}
             className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] !text-4xl md:!text-5xl !leading-tight font-bold placeholder:text-muted-foreground/50 !app-radius-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"

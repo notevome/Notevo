@@ -1,4 +1,5 @@
 import { mutation, query } from "./_generated/server";
+import { Doc } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { paginationOptsValidator } from "convex/server";
@@ -14,8 +15,10 @@ export const sendPdf = mutation({
   args: {
     storageId: v.id("_storage"),
     title: v.optional(v.string()),
-    workingSpaceId: v.optional(v.id("workingSpaces")),
-    notesTableId: v.optional(v.id("notesTables")),
+    folderId: v.optional(v.id("folders")),
+    tableId: v.optional(v.id("tables")),
+    workingSpaceId: v.optional(v.any()),
+    notesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -23,29 +26,32 @@ export const sendPdf = mutation({
       throw new Error("Unauthenticated");
     }
 
-    if (args.workingSpaceId) {
-      const workspace = await ctx.db.get(args.workingSpaceId);
-      if (!workspace || workspace.userId !== userId) {
-        throw new Error("Workspace not found or not authorized");
+    const folderId = (args.folderId ?? args.workingSpaceId) as any;
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+
+    if (folderId) {
+      const folder = (await ctx.db.get(folderId)) as Doc<"folders"> | null;
+      if (!folder || folder.userId !== userId) {
+        throw new Error("Folder not found or not authorized");
       }
     }
 
-    if (args.notesTableId) {
-      const table = await ctx.db.get(args.notesTableId);
+    if (tableId) {
+      const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
       if (!table) {
         throw new Error("Table not found");
       }
 
-      if (args.workingSpaceId && table.workingSpaceId !== args.workingSpaceId) {
-        throw new Error("Table does not belong to the provided workspace");
+      if (folderId && table.folderId && table.folderId !== folderId) {
+        throw new Error("Table does not belong to the provided folder");
       }
     }
 
     const pdfId = await ctx.db.insert("pdfs", {
       storageId: args.storageId,
       userId,
-      workingSpaceId: args.workingSpaceId,
-      notesTableId: args.notesTableId,
+      folderId,
+      tableId,
       title: args.title,
       favorite: false,
       createdAt: Date.now(),
@@ -58,7 +64,8 @@ export const sendPdf = mutation({
 
 export const getPdfsByTableId = query({
   args: {
-    notesTableId: v.id("notesTables"),
+    tableId: v.optional(v.id("tables")),
+    notesTableId: v.optional(v.any()),
     paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
@@ -67,21 +74,22 @@ export const getPdfsByTableId = query({
       throw new Error("Unauthenticated");
     }
 
-    const table = await ctx.db.get(args.notesTableId);
+    const tableId = (args.tableId ?? args.notesTableId) as any;
+    const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
     if (!table) {
       throw new Error("Table not found");
     }
 
-    const workspace = await ctx.db.get(table.workingSpaceId);
-    if (!workspace || workspace.userId !== userId) {
-      throw new Error("Workspace not found or not authorized");
+    if (table.folderId) {
+      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      if (!folder || folder.userId !== userId) {
+        throw new Error("Folder not found or not authorized");
+      }
     }
 
     const result = await ctx.db
       .query("pdfs")
-      .withIndex("by_notesTableId", (q) =>
-        q.eq("notesTableId", args.notesTableId),
-      )
+      .withIndex("by_tableId", (q) => q.eq("tableId", tableId))
       .order("desc")
       .paginate(args.paginationOpts);
 
@@ -136,12 +144,12 @@ export const getFavPdfs = query({
     const validPage = (
       await Promise.all(
         result.page.map(async (pdf) => {
-          if (pdf.workingSpaceId) {
-            const ws = await ctx.db.get(pdf.workingSpaceId);
-            if (!ws) return null;
+          if (pdf.folderId) {
+            const folder = await ctx.db.get(pdf.folderId);
+            if (!folder) return null;
           }
-          if (pdf.notesTableId) {
-            const table = await ctx.db.get(pdf.notesTableId);
+          if (pdf.tableId) {
+            const table = await ctx.db.get(pdf.tableId);
             if (!table) return null;
           }
           return pdf;
@@ -184,8 +192,10 @@ export const updatePdf = mutation({
 export const movePdf = mutation({
   args: {
     _id: v.id("pdfs"),
-    targetWorkingSpaceId: v.id("workingSpaces"),
-    targetNotesTableId: v.id("notesTables"),
+    targetFolderId: v.optional(v.id("folders")),
+    targetTableId: v.optional(v.id("tables")),
+    targetWorkingSpaceId: v.optional(v.any()),
+    targetNotesTableId: v.optional(v.any()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -193,35 +203,40 @@ export const movePdf = mutation({
       throw new Error("Unauthenticated");
     }
 
+    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
+    const targetTableId = (args.targetTableId ?? args.targetNotesTableId) as any;
+
     const pdf = await ctx.db.get(args._id);
     if (!pdf || pdf.userId !== userId) {
       throw new Error("PDF not found or not authorized");
     }
 
-    const targetWorkspace = await ctx.db.get(args.targetWorkingSpaceId);
-    if (!targetWorkspace || targetWorkspace.userId !== userId) {
-      throw new Error("Target workspace not found or not authorized");
+    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    if (!targetFolder || targetFolder.userId !== userId) {
+      throw new Error("Target folder not found or not authorized");
     }
 
-    const targetTable = await ctx.db.get(args.targetNotesTableId);
+    const targetTable = (await ctx.db.get(targetTableId)) as Doc<"tables"> | null;
     if (!targetTable) {
       throw new Error("Target table not found");
     }
 
-    if (targetTable.workingSpaceId !== args.targetWorkingSpaceId) {
-      throw new Error("Target table does not belong to this workspace");
+    if (targetTable.folderId && targetTable.folderId !== targetFolderId) {
+      throw new Error("Target table does not belong to this folder");
     }
 
     await ctx.db.patch(args._id, {
-      workingSpaceId: args.targetWorkingSpaceId,
-      notesTableId: args.targetNotesTableId,
+      folderId: targetFolderId,
+      tableId: targetTableId,
       updatedAt: Date.now(),
     });
 
     return {
       pdfId: args._id,
-      workingSpaceId: args.targetWorkingSpaceId,
-      notesTableId: args.targetNotesTableId,
+      folderId: targetFolderId,
+      workingSpaceId: targetFolderId,
+      tableId: targetTableId,
+      notesTableId: targetTableId,
       title: pdf.title,
     };
   },

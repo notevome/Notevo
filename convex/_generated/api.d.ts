@@ -11,19 +11,20 @@
 import type * as Linkmetadata from "../Linkmetadata.js";
 import type * as ResendMagicLink from "../ResendMagicLink.js";
 import type * as auth from "../auth.js";
+import type * as documents from "../documents.js";
 import type * as files from "../files.js";
+import type * as folders from "../folders.js";
 import type * as http from "../http.js";
 import type * as linkValidators from "../linkValidators.js";
 import type * as links from "../links.js";
 import type * as messages from "../messages.js";
-import type * as notes from "../notes.js";
-import type * as notesTables from "../notesTables.js";
+import type * as migrations_renameTerminology from "../migrations/renameTerminology.js";
 import type * as otp_ResendOTP from "../otp/ResendOTP.js";
 import type * as otp_VerificationCodeEmail from "../otp/VerificationCodeEmail.js";
 import type * as pdfs from "../pdfs.js";
+import type * as tables from "../tables.js";
 import type * as users from "../users.js";
 import type * as whiteboards from "../whiteboards.js";
-import type * as workingSpaces from "../workingSpaces.js";
 
 import type {
   ApiFromModules,
@@ -35,19 +36,20 @@ declare const fullApi: ApiFromModules<{
   Linkmetadata: typeof Linkmetadata;
   ResendMagicLink: typeof ResendMagicLink;
   auth: typeof auth;
+  documents: typeof documents;
   files: typeof files;
+  folders: typeof folders;
   http: typeof http;
   linkValidators: typeof linkValidators;
   links: typeof links;
   messages: typeof messages;
-  notes: typeof notes;
-  notesTables: typeof notesTables;
+  "migrations/renameTerminology": typeof migrations_renameTerminology;
   "otp/ResendOTP": typeof otp_ResendOTP;
   "otp/VerificationCodeEmail": typeof otp_VerificationCodeEmail;
   pdfs: typeof pdfs;
+  tables: typeof tables;
   users: typeof users;
   whiteboards: typeof whiteboards;
-  workingSpaces: typeof workingSpaces;
 }>;
 
 /**

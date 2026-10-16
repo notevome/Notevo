@@ -545,24 +545,24 @@ export default function SearchDialog({
   >(null);
   const [creationSelectionIndex, setCreationSelectionIndex] = useState(0);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
-    Id<"workingSpaces"> | ""
+    Id<"folders"> | ""
   >("");
   const [settingsFocused, setSettingsFocused] = useState(true);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingItem, setIsCreatingItem] = useState(false);
   const [creatingNotesTableId, setCreatingNotesTableId] =
-    useState<Id<"notesTables"> | null>(null);
+    useState<Id<"tables"> | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const convex = useConvex();
   const { beginNoteDraft } = usePendingNoteDraftContext();
   const { toast } = useToast();
-  const createWorkspace = useMutation(api.workingSpaces.createWorkingSpace);
+  const createWorkspace = useMutation(api.folders.createFolder);
   const deleteWorkspaceIfEmpty = useMutation(
-    api.workingSpaces.deleteWorkingSpaceIfEmpty,
+    api.folders.deleteFolderIfEmpty,
   );
-  const getOrCreateNotesTable = useMutation(api.notesTables.getOrCreateTable);
+  const getOrCreateNotesTable = useMutation(api.tables.getOrCreateTable);
   const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const prefetchedRef = useRef<Set<string>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
@@ -590,32 +590,32 @@ export default function SearchDialog({
     return () => clearTimeout(timer);
   }, [query]);
 
-  const searchTargets = useQuery(api.notes.getWorkspaceTree, {
+  const searchTargets = useQuery(api.documents.getWorkspaceTree, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
   const viewer = useQuery(api.users.viewer, {});
   const creationWorkspaces = useQuery(
-    api.workingSpaces.getRecentWorkingSpaces,
+    api.folders.getRecentFolders,
     creationKind ? {} : "skip",
   );
   const creationTables = useQuery(
-    api.notesTables.getTables,
+    api.tables.getTables,
     creationKind && selectedWorkspaceId
-      ? { workingSpaceId: selectedWorkspaceId }
+      ? { folderId: selectedWorkspaceId }
       : "skip",
   );
   const selectedWorkspace = creationWorkspaces?.find(
-    (workspace) => workspace._id === selectedWorkspaceId,
+    (workspace: any) => workspace._id === selectedWorkspaceId,
   );
 
   const cleanupEmptyWorkspace = useCallback(
     async (
-      workspaceId: Id<"workingSpaces">,
+      workspaceId: Id<"folders">,
     ): Promise<EmptyWorkspaceCleanupResult> => {
       try {
         return await deleteWorkspaceIfEmpty({ _id: workspaceId });
       } catch (error) {
-        console.error("Failed to clean up empty workspace:", error);
+        console.error("Failed to clean up empty folder:", error);
         return "failed";
       }
     },
@@ -665,9 +665,9 @@ export default function SearchDialog({
       setQuery("");
       router.push(`/home/${workspaceId}`);
     } catch (error) {
-      console.error("Failed to create workspace from search:", error);
+      console.error("Failed to create folder from search:", error);
       toast({
-        title: "Could not create workspace",
+        title: "Could not create folder",
         description: "Please try again.",
         variant: "destructive",
       });
@@ -680,16 +680,16 @@ export default function SearchDialog({
     const title = debouncedQuery.trim();
     if (!title || !creationKind || isCreatingWorkspace) return;
 
-    let createdWorkspaceId: Id<"workingSpaces"> | null = null;
+    let createdWorkspaceId: Id<"folders"> | null = null;
     setIsCreatingWorkspace(true);
     try {
       const workspaceId = await createWorkspace({ name: title });
       createdWorkspaceId = workspaceId;
       const [workspace, notesTableId] = await Promise.all([
-        convex.query(api.workingSpaces.getWorkingSpaceById, {
+        convex.query(api.folders.getFolderById, {
           _id: workspaceId,
         }),
-        getOrCreateNotesTable({ name: "Notes", workingSpaceId: workspaceId }),
+        getOrCreateNotesTable({ name: "Documents", folderId: workspaceId }),
       ]);
 
       if (creationKind === "note") {
@@ -705,9 +705,9 @@ export default function SearchDialog({
           const cleanupResult = await cleanupEmptyWorkspace(workspaceId);
           if (cleanupResult === "failed") {
             toast({
-              title: "Note could not be saved",
+              title: "Document could not be saved",
               description:
-                "The workspace could not be cleaned up after the save failed.",
+                "The folder could not be cleaned up after the save failed.",
               variant: "destructive",
             });
           }
@@ -729,7 +729,7 @@ export default function SearchDialog({
       setQuery("");
       router.push(`/home/${workspaceId}/${buildItemSlug(title, whiteboardId)}`);
     } catch (error) {
-      console.error("Failed to create workspace item from search:", error);
+      console.error("Failed to create folder item from search:", error);
       let cleanupFailed = false;
       if (createdWorkspaceId) {
         cleanupFailed =
@@ -738,7 +738,7 @@ export default function SearchDialog({
       toast({
         title: `Could not create ${creationKind}`,
         description: cleanupFailed
-          ? "Please try again. The new empty workspace could not be removed."
+          ? "Please try again. The new empty folder could not be removed."
           : "Please try again.",
         variant: "destructive",
       });
@@ -763,7 +763,7 @@ export default function SearchDialog({
   ]);
 
   const handleCreateItemFromSearch = useCallback(
-    async (notesTableId: Id<"notesTables">) => {
+    async (notesTableId: Id<"tables">) => {
       const title = debouncedQuery.trim();
       if (
         !title ||
@@ -1121,10 +1121,10 @@ export default function SearchDialog({
 
         <DialogContent className="p-0 overflow-hidden bg-card border-border sm:h-fit h-dvh w-full max-w-full sm:w-[90vw] sm:max-w-3xl md:max-w-4xl gap-0 shadow-2xl z-[900001]">
           <DialogTitle className="sr-only">
-            Search Notes and Whiteboards
+            Search Documents and Whiteboards
           </DialogTitle>
           <DialogDescription className="sr-only">
-            Search across workspaces, tables, notes, and whiteboards, then open
+            Search across folders, tables, documents, and whiteboards, then open
             the selected result.
           </DialogDescription>
 
@@ -1136,7 +1136,7 @@ export default function SearchDialog({
             )}
             <Input
               ref={inputRef}
-              placeholder="Search workspaces, tables, notes and whiteboards..."
+              placeholder="Search folders, tables, documents and whiteboards..."
               className="flex-1 border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none px-0 text-sm bg-transparent"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -1200,8 +1200,8 @@ export default function SearchDialog({
                   <div className="min-w-0 px-2">
                     <p className="text-sm font-medium text-foreground">
                       {selectedWorkspaceId
-                        ? `Choose a table in ${selectedWorkspace?.name || "workspace"}`
-                        : "Choose a workspace"}
+                        ? `Choose a table in ${selectedWorkspace?.name || "folder"}`
+                        : "Choose a folder"}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       Create {creationKind} &quot;{debouncedQuery.trim()}&quot;
@@ -1215,9 +1215,9 @@ export default function SearchDialog({
                       <div
                         className="space-y-1"
                         role="listbox"
-                        aria-label="Workspaces"
+                        aria-label="Folders"
                       >
-                        {creationWorkspaces.map((workspace, index) => (
+                        {creationWorkspaces.map((workspace: any, index: number) => (
                           <Button
                             key={workspace._id}
                             type="button"
@@ -1236,7 +1236,7 @@ export default function SearchDialog({
                           >
                             <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
                             <span className="truncate">
-                              {workspace.name || "Untitled workspace"}
+                              {workspace.name || "Untitled folder"}
                             </span>
                           </Button>
                         ))}
@@ -1255,7 +1255,7 @@ export default function SearchDialog({
                           <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
                         )}
                         <span className="truncate">
-                          Create workspace and {creationKind} &quot;
+                          Create folder and {creationKind === "note" ? "document" : creationKind} &quot;
                           {debouncedQuery.trim()}&quot;
                         </span>
                       </Button>
@@ -1298,7 +1298,7 @@ export default function SearchDialog({
                     </div>
                   ) : (
                     <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                      This workspace has no tables. Choose another workspace or
+                      This folder has no tables. Choose another folder or
                       create a table first.
                     </p>
                   )}
@@ -1329,7 +1329,7 @@ export default function SearchDialog({
                       <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
                     )}
                     <span className="truncate">
-                      Create workspace &quot;{debouncedQuery.trim()}&quot;
+                      Create folder &quot;{debouncedQuery.trim()}&quot;
                     </span>
                   </Button>
                   <Button
@@ -1351,7 +1351,7 @@ export default function SearchDialog({
                   >
                     <SquarePen className="h-4 w-4 shrink-0 text-muted-foreground" />
                     <span className="truncate">
-                      Create note &quot;{debouncedQuery.trim()}&quot;
+                      Create document &quot;{debouncedQuery.trim()}&quot;
                     </span>
                   </Button>
                   <Button
