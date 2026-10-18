@@ -9,8 +9,19 @@ import {
   type ChangeEvent,
 } from "react";
 import { insertAtTop, useAction, useMutation } from "convex/react";
+import { useQuery } from "@/cache/useQuery";
+import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, FileUp, FileText, Link2, PanelTop } from "lucide-react";
+import {
+  ChevronDown,
+  FileSymlink,
+  FileUp,
+  FileText,
+  Link2,
+  PanelTop,
+  Plus,
+  SquarePen,
+} from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -32,6 +43,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
+import { buildItemSlug } from "@/lib/slug";
+import {
+  recordLastVisitedLocation,
+  getLastVisitedLocation,
+} from "@/lib/last-visited";
 import {
   FaYoutube,
   FaXTwitter,
@@ -93,6 +109,11 @@ interface FolderNewDropdownBtnProps {
   workingSpacesSlug?: string;
   workingSpaceId?: Id<"folders">;
   className?: string;
+  buttonClassName?: string;
+  chevronClassName?: string;
+  variant?: "outline" | "default";
+  showIcon?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 export default function FolderNewDropdownBtn({
@@ -100,6 +121,11 @@ export default function FolderNewDropdownBtn({
   workingSpacesSlug,
   workingSpaceId,
   className,
+  buttonClassName,
+  chevronClassName,
+  variant = "outline",
+  showIcon = false,
+  onOpenChange,
 }: FolderNewDropdownBtnProps) {
   const { toast } = useToast();
   const pathname = usePathname();
@@ -114,6 +140,65 @@ export default function FolderNewDropdownBtn({
   const [linkTitle, setLinkTitle] = useState("");
   const [isInsertingLink, setIsInsertingLink] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
+
+  const getWorkingSpaces = useQuery(api.folders.getRecentFolders);
+  const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
+
+  const [lastLoc, setLastLoc] = useState(() => getLastVisitedLocation());
+
+  useEffect(() => {
+    setLastLoc(getLastVisitedLocation());
+  }, [pathname, workingSpaceId, notesTableId]);
+
+  const activeWorkingSpace = useMemo(() => {
+    if (workingSpaceId && getWorkingSpaces) {
+      const match = getWorkingSpaces.find((w) => w._id === workingSpaceId);
+      if (match) return match;
+    }
+    const freshLoc = getLastVisitedLocation();
+    if (freshLoc.folderId && getWorkingSpaces) {
+      const match = getWorkingSpaces.find(
+        (w) => String(w._id) === freshLoc.folderId,
+      );
+      if (match) return match;
+    }
+    return getWorkingSpaces?.[0];
+  }, [workingSpaceId, getWorkingSpaces]);
+
+  const resolvedWorkingSpaceId = workingSpaceId ?? activeWorkingSpace?._id;
+  const resolvedWorkingSpacesSlug =
+    workingSpacesSlug ?? activeWorkingSpace?.slug ?? "";
+
+  const tables = useQuery(
+    api.tables.getTables,
+    resolvedWorkingSpaceId ? { folderId: resolvedWorkingSpaceId } : "skip",
+  );
+
+  const resolveTargetTableId = useCallback(async (): Promise<
+    Id<"tables"> | undefined
+  > => {
+    if (notesTableId) return notesTableId;
+
+    const freshLoc = getLastVisitedLocation();
+    if (freshLoc.tableId && tables && Array.isArray(tables)) {
+      const match = tables.find((t: any) => String(t._id) === freshLoc.tableId);
+      if (match) return match._id;
+    }
+
+    if (tables && tables.length > 0) {
+      return tables[0]._id;
+    }
+
+    if (resolvedWorkingSpaceId) {
+      const created = await getOrCreateTable({
+        name: "Documents",
+        folderId: resolvedWorkingSpaceId,
+      });
+      return created;
+    }
+
+    return undefined;
+  }, [notesTableId, tables, resolvedWorkingSpaceId, getOrCreateTable]);
 
   const detectedPlatform = useMemo(() => {
     if (!linkUrl.trim()) return null;
@@ -151,38 +236,66 @@ export default function FolderNewDropdownBtn({
   const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
   const isDisabled = useMemo(
-    () => !notesTableId || !workingSpaceId || !workingSpacesSlug || isUploading,
-    [isUploading, notesTableId, workingSpaceId, workingSpacesSlug],
+    () => !resolvedWorkingSpaceId || isUploading,
+    [isUploading, resolvedWorkingSpaceId],
   );
 
-  const handleCreateNote = useCallback(() => {
-    if (!notesTableId || !workingSpaceId || !workingSpacesSlug) return;
+  const navigateToSavedTable = useCallback(
+    (folderId: Id<"folders">, tableId: Id<"tables">) => {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("active_table", String(tableId));
+        window.dispatchEvent(
+          new CustomEvent("notevo:switch-table", {
+            detail: { tableId: String(tableId) },
+          }),
+        );
+      }
+      recordLastVisitedLocation(folderId, tableId);
+      router.push(`/home/${folderId}?table=${tableId}`);
+    },
+    [router],
+  );
+
+  const handleCreateNote = useCallback(async () => {
+    if (!resolvedWorkingSpaceId) return;
+    const targetTableId = await resolveTargetTableId();
+    if (!targetTableId) return;
+
+    recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
 
     const { token } = beginNoteDraft({
-      notesTableId,
+      notesTableId: targetTableId,
       title: "Untitled",
-      workingSpaceId,
-      workingSpacesSlug,
+      workingSpaceId: resolvedWorkingSpaceId,
+      workingSpacesSlug: resolvedWorkingSpacesSlug,
       originPath: pathname,
     });
-    router.push(`/home/${workingSpaceId}/draft-${token}`);
+    router.push(`/home/${resolvedWorkingSpaceId}/draft-${token}`);
   }, [
     beginNoteDraft,
-    notesTableId,
     pathname,
+    resolveTargetTableId,
+    resolvedWorkingSpaceId,
+    resolvedWorkingSpacesSlug,
     router,
-    workingSpaceId,
-    workingSpacesSlug,
   ]);
 
   const handleCreateWhiteboard = useCallback(async () => {
-    if (!notesTableId || !workingSpaceId) return;
+    if (!resolvedWorkingSpaceId) return;
     try {
-      await createWhiteboard({
+      const targetTableId = await resolveTargetTableId();
+      if (!targetTableId) return;
+
+      recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
+
+      const whiteboardId = await createWhiteboard({
         title: "Untitled whiteboard",
-        notesTableId,
-        workingSpaceId,
+        notesTableId: targetTableId,
+        workingSpaceId: resolvedWorkingSpaceId,
       });
+      router.push(
+        `/home/${resolvedWorkingSpaceId}/${buildItemSlug("Untitled whiteboard", whiteboardId)}`,
+      );
     } catch (error) {
       console.error("Failed to create whiteboard:", error);
       toast({
@@ -191,11 +304,17 @@ export default function FolderNewDropdownBtn({
         variant: "destructive",
       });
     }
-  }, [createWhiteboard, notesTableId, toast, workingSpaceId]);
+  }, [
+    createWhiteboard,
+    resolveTargetTableId,
+    resolvedWorkingSpaceId,
+    router,
+    toast,
+  ]);
 
   const uploadPdfFile = useCallback(
     async (file: File) => {
-      if (!notesTableId || !workingSpaceId) return;
+      if (!resolvedWorkingSpaceId) return;
 
       if (file.type !== "application/pdf") {
         toast({
@@ -208,6 +327,11 @@ export default function FolderNewDropdownBtn({
 
       setIsUploading(true);
       try {
+        const targetTableId = await resolveTargetTableId();
+        if (!targetTableId) return;
+
+        recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
+
         const uploadUrl = await generateUploadUrl({});
         const response = await fetch(uploadUrl, {
           method: "POST",
@@ -228,8 +352,48 @@ export default function FolderNewDropdownBtn({
         await sendPdf({
           storageId,
           title: file.name.replace(/\.pdf$/i, ""),
-          workingSpaceId,
-          notesTableId,
+          workingSpaceId: resolvedWorkingSpaceId,
+          notesTableId: targetTableId,
+        });
+
+        const targetTable = tables?.find(
+          (t: any) => String(t._id) === String(targetTableId),
+        );
+        const targetTableName = targetTable?.name || "Table";
+        const targetFolderName = activeWorkingSpace?.name || "Folder";
+
+        toast({
+          variant: "default",
+          title: "PDF uploaded successfully",
+          description: "hey go and take a look at your stuff !!",
+          action: (
+            <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
+              <Link
+                href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    sessionStorage.setItem(
+                      "active_table",
+                      String(targetTableId),
+                    );
+                    window.dispatchEvent(
+                      new CustomEvent("notevo:switch-table", {
+                        detail: { tableId: String(targetTableId) },
+                      }),
+                    );
+                  }
+                  recordLastVisitedLocation(
+                    resolvedWorkingSpaceId,
+                    targetTableId,
+                  );
+                }}
+                className="flex justify-center items-center gap-2 text-xs"
+              >
+                <FileSymlink size={16} />
+                Checkout
+              </Link>
+            </Button>
+          ),
         });
       } catch (error) {
         console.error("Failed to upload PDF:", error);
@@ -242,11 +406,20 @@ export default function FolderNewDropdownBtn({
         setIsUploading(false);
       }
     },
-    [generateUploadUrl, notesTableId, sendPdf, toast, workingSpaceId],
+    [
+      activeWorkingSpace?.name,
+      generateUploadUrl,
+      navigateToSavedTable,
+      resolveTargetTableId,
+      resolvedWorkingSpaceId,
+      sendPdf,
+      tables,
+      toast,
+    ],
   );
 
   const handleInsertLink = useCallback(async () => {
-    if (!notesTableId || !workingSpaceId) return;
+    if (!resolvedWorkingSpaceId) return;
 
     const trimmedUrl = linkUrl.trim();
     if (!trimmedUrl) {
@@ -277,6 +450,11 @@ export default function FolderNewDropdownBtn({
 
     setIsInsertingLink(true);
     try {
+      const targetTableId = await resolveTargetTableId();
+      if (!targetTableId) return;
+
+      recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
+
       let fetchedTitle: string | undefined;
       let metadata:
         | Awaited<ReturnType<typeof fetchLinkMetadata>>["metadata"]
@@ -294,12 +472,43 @@ export default function FolderNewDropdownBtn({
         platform,
         metadata,
         title: userTitle ?? fetchedTitle,
-        workingSpaceId,
-        notesTableId,
+        workingSpaceId: resolvedWorkingSpaceId,
+        notesTableId: targetTableId,
       });
       setLinkUrl("");
       setLinkTitle("");
       setIsLinkDialogOpen(false);
+
+      toast({
+        variant: "default",
+        title: "Link added successfully",
+        description: "hey go and take a look at your stuff !!",
+        action: (
+          <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
+            <Link
+              href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  sessionStorage.setItem("active_table", String(targetTableId));
+                  window.dispatchEvent(
+                    new CustomEvent("notevo:switch-table", {
+                      detail: { tableId: String(targetTableId) },
+                    }),
+                  );
+                }
+                recordLastVisitedLocation(
+                  resolvedWorkingSpaceId,
+                  targetTableId,
+                );
+              }}
+              className="flex justify-center items-center gap-2 text-xs"
+            >
+              <FileSymlink size={16} />
+              Checkout
+            </Link>
+          </Button>
+        ),
+      });
     } catch (error) {
       console.error("Failed to insert link:", error);
       toast({
@@ -311,13 +520,16 @@ export default function FolderNewDropdownBtn({
       setIsInsertingLink(false);
     }
   }, [
+    activeWorkingSpace?.name,
     createLink,
     fetchLinkMetadata,
     linkTitle,
     linkUrl,
-    notesTableId,
+    navigateToSavedTable,
+    resolveTargetTableId,
+    resolvedWorkingSpaceId,
+    tables,
     toast,
-    workingSpaceId,
   ]);
 
   const handleSelectInsertLink = useCallback(() => {
@@ -434,66 +646,85 @@ export default function FolderNewDropdownBtn({
       >
         <Button
           type="button"
-          variant="outline"
+          variant={variant}
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className="h-9 !app-radius-none"
+          className={cn("h-9 !app-radius-none", buttonClassName)}
         >
+          {showIcon && (
+            <SquarePen
+              strokeWidth={2.3}
+              size={16}
+              className=" inline-block mr-px shrink-0"
+            />
+          )}
           {isUploading ? "Uploading..." : "New"}
         </Button>
 
-        <DropdownMenu>
+        <DropdownMenu onOpenChange={onOpenChange}>
           <DropdownMenuTrigger asChild>
             <Button
               type="button"
-              variant="outline"
+              variant={variant}
               disabled={isDisabled}
-              className="h-9 px-1 border-l-0 !app-radius-none"
+              className={cn(
+                "h-9 px-1 border-l-0 !app-radius-none",
+                chevronClassName,
+              )}
               aria-label="open-create-menu"
             >
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-60">
+          <DropdownMenuContent align="end" className="w-72">
             <DropdownMenuItem
-              className="justify-between"
+              className="justify-between cursor-pointer"
               onClick={() => void handleSelectNote()}
             >
-              <span className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
+              <span className="flex items-center gap-2 whitespace-nowrap">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                 New Document
               </span>
-              <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">Ctrl + Shift</span>
+              <span className="inline-flex items-center gap-1 shrink-0 ml-auto">
+                <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center justify-center app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  Ctrl
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">O</span>
+                <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center justify-center app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  Shift
+                </kbd>
+                <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center justify-center app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  O
                 </kbd>
               </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSelectUpload}>
-              <FileUp className="h-4 w-4 text-muted-foreground" />
-              Upload PDF
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => void handleSelectWhiteboard()}>
-              <PanelTop className="h-4 w-4 text-muted-foreground" />
-              New Whiteboard
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="justify-between"
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => void handleSelectWhiteboard()}
+            >
+              <PanelTop className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="whitespace-nowrap">New Whiteboard</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={handleSelectUpload}
+            >
+              <FileUp className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="whitespace-nowrap">New Upload</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="justify-between cursor-pointer"
               onClick={handleSelectInsertLink}
             >
-              <span className="flex items-center gap-2">
-                <Link2 className="h-4 w-4 text-muted-foreground" />
-                Insert Link
+              <span className="flex items-center gap-2 whitespace-nowrap">
+                <Link2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                New Link
               </span>
-              <span className="inline-flex gap-0.5">
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">Shift</span>
+              <span className="inline-flex items-center gap-1 shrink-0 ml-auto">
+                <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center justify-center app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  Shift
                 </kbd>
-                <kbd className="pointer-events-none border border-border ml-auto inline-flex h-5 select-none items-center gap-1 app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-                  <span className="text-[10px]">L</span>
+                <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center justify-center app-radius-md bg-card px-1.5 font-mono text-[10px] font-medium text-muted-foreground whitespace-nowrap">
+                  L
                 </kbd>
               </span>
             </DropdownMenuItem>

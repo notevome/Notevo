@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import PdfSettings from "@/components/home-components/PdfSettings";
+import { recordLastVisitedLocation } from "@/lib/last-visited";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
@@ -1011,6 +1012,15 @@ export default function PdfViewerPageClient({
   renderedInPane?: boolean;
 }) {
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
+
+  useEffect(() => {
+    if (pdf) {
+      recordLastVisitedLocation(
+        (pdf as any).workingSpaceId || (pdf as any).folderId,
+        (pdf as any).notesTableId || (pdf as any).tableId,
+      );
+    }
+  }, [pdf]);
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
