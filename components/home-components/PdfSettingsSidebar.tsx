@@ -24,6 +24,8 @@ import { Button } from "@/components/ui/button";
 import { Pin, PinOff, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { extractIdFromSlug } from "@/lib/slug";
 
 interface PdfSettingsSidebarProps {
   pdfId: Id<"pdfs">;
@@ -38,6 +40,17 @@ export default function PdfSettingsSidebar({
   const updatePdf = useMutation(api.pdfs.updatePdf);
   const deletePdf = useMutation(api.pdfs.deletePdf);
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const currentSlug = pathSegments.length >= 3 ? pathSegments[2] : null;
+  const currentPdfId =
+    searchParams.get("pdfId") ||
+    (currentSlug ? extractIdFromSlug(currentSlug) : null);
+  const isViewingCurrentPdf =
+    currentPdfId === String(pdfId) ||
+    (currentSlug !== null && currentSlug === String(pdfId));
 
   const handleFavoritePin = async () => {
     if (!pdf) return;
@@ -53,6 +66,9 @@ export default function PdfSettingsSidebar({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
+      if (isViewingCurrentPdf) {
+        router.back();
+      }
       await deletePdf({ _id: pdfId });
     } catch (error) {
       console.error("Failed to delete PDF:", error);
@@ -115,7 +131,11 @@ export default function PdfSettingsSidebar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+          <TooltipContent
+            side="right"
+            sideOffset={5}
+            className="!app-radius-none"
+          >
             Delete upload
           </TooltipContent>
         </Tooltip>

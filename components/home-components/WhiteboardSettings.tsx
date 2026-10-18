@@ -266,10 +266,9 @@ export default function WhiteboardSettings({
   };
 
   const remove = async () => {
+    router.back();
     if (onDelete) {
       onDelete(whiteboard._id);
-    } else {
-      router.push(`/home/${whiteboard.workingSpaceId}`);
     }
     await deleteWhiteboard({ _id: whiteboard._id });
     setDeleteOpen(false);
@@ -360,125 +359,128 @@ export default function WhiteboardSettings({
                     dismissHint();
                   }}
                 >
-                {IconVariant === "vertical_icon" ? (
-                  <FaEllipsisVertical
-                    size={18}
-                    className="text-muted-foreground"
-                  />
-                ) : (
-                  <FaEllipsis size={22} className="text-muted-foreground" />
-                )}
-              </Button>
-            </TooltipTrigger>
-          </DropdownMenuTrigger>
-          <TooltipContent side="bottom" align="end">
-            Rename, Pin, Move, Download, Delete
-          </TooltipContent>
-        </Tooltip>
-        {open &&
-          contextMenuPosition &&
-          typeof document !== "undefined" &&
-          createPortal(
-            <DropdownMenuTrigger asChild>
-              <span
-                aria-hidden
-                style={{
-                  position: "fixed",
-                  left: contextMenuPosition.x,
-                  top: contextMenuPosition.y,
-                  width: 0,
-                  height: 0,
-                  pointerEvents: "none",
+                  {IconVariant === "vertical_icon" ? (
+                    <FaEllipsisVertical
+                      size={18}
+                      className="text-muted-foreground"
+                    />
+                  ) : (
+                    <FaEllipsis size={22} className="text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+            </DropdownMenuTrigger>
+            <TooltipContent side="bottom" align="end">
+              Rename, Pin, Move, Download, Delete
+            </TooltipContent>
+          </Tooltip>
+          {open &&
+            contextMenuPosition &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <DropdownMenuTrigger asChild>
+                <span
+                  aria-hidden
+                  style={{
+                    position: "fixed",
+                    left: contextMenuPosition.x,
+                    top: contextMenuPosition.y,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </DropdownMenuTrigger>,
+              document.body,
+            )}
+          <DropdownMenuContent
+            align="end"
+            className="z-[10000] w-48 space-y-4 px-1.5 pb-1.5 pt-0 text-muted-foreground"
+          >
+            <DropdownMenuGroup>
+              <Label>Rename :</Label>
+              <Input
+                ref={inputRef}
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  debouncedRenameWhiteboard(event.target.value.trim());
                 }}
+                onBlur={() => debouncedRenameWhiteboard.flush()}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    debouncedRenameWhiteboard.flush();
+                    setOpen(false);
+                  }
+                }}
+                className="h-8 text-foreground"
+                placeholder="Rename"
               />
-            </DropdownMenuTrigger>,
-            document.body,
-          )}
-        <DropdownMenuContent
-          align="end"
-          className="z-[10000] w-48 space-y-4 px-1.5 pb-1.5 pt-0 text-muted-foreground"
-        >
-          <DropdownMenuGroup>
-            <Label>Rename :</Label>
-            <Input
-              ref={inputRef}
-              value={title}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                debouncedRenameWhiteboard(event.target.value.trim());
-              }}
-              onBlur={() => debouncedRenameWhiteboard.flush()}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  debouncedRenameWhiteboard.flush();
-                  setOpen(false);
+            </DropdownMenuGroup>
+            <DropdownMenuGroup>
+              <Button
+                variant="SidebarMenuButton"
+                className="h-8 w-full px-2 text-sm"
+                onClick={() =>
+                  void updateWhiteboard({
+                    _id: whiteboard._id,
+                    favorite: !whiteboard.favorite,
+                  })
                 }
-              }}
-              className="h-8 text-foreground"
-              placeholder="Rename"
-            />
-          </DropdownMenuGroup>
-          <DropdownMenuGroup>
-            <Button
-              variant="SidebarMenuButton"
-              className="h-8 w-full px-2 text-sm"
-              onClick={() =>
-                void updateWhiteboard({
-                  _id: whiteboard._id,
-                  favorite: !whiteboard.favorite,
-                })
-              }
-            >
-              <Pin size={14} className="text-muted-foreground" />
-              {whiteboard.favorite ? "Unpin Whiteboard" : "Pin Whiteboard"}
-            </Button>
-            <Button
-              variant="SidebarMenuButton"
-              className="h-8 w-full px-2 text-sm"
-              onClick={() => {
-                setOpen(false);
-                setMoveOpen(true);
-              }}
-            >
-              <FileOutput size={14} className="text-muted-foreground" />
-              Move Whiteboard
-            </Button>
-            <Button
-              variant="SidebarMenuButton"
-              className="h-8 w-full px-2 text-sm"
-              onClick={download}
-            >
-              <Download size={14} className="text-muted-foreground" />
-              Download.excalidraw
-            </Button>
-            <DropdownMenuSeparator />
-            <Button
-              variant="SidebarMenuButton_destructive"
-              className="h-8 w-full px-2 text-sm text-foreground"
-              onClick={(event) => {
-                if (event.shiftKey) void remove();
-                else {
+              >
+                <Pin size={14} className="text-muted-foreground" />
+                {whiteboard.favorite ? "Unpin Whiteboard" : "Pin Whiteboard"}
+              </Button>
+              <Button
+                variant="SidebarMenuButton"
+                className="h-8 w-full px-2 text-sm"
+                onClick={() => {
                   setOpen(false);
-                  setDeleteOpen(true);
-                }
-              }}
-            >
-              <FaRegTrashCan size={14} className="text-muted-foreground" />
-              Delete
-            </Button>
-            <DropdownMenuSeparator />
-            <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
-              <p>Last updated {formatNoteTimestamp(whiteboard.updatedAt)}</p>
-              <p>Created {formatNoteTimestamp(whiteboard.createdAt)}</p>
-            </div>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {syncBrowserChrome && (
-        <SettingsMoveHint hasSeenHint={hasSeenHint} dismissHint={dismissHint} />
-      )}
-    </div>
+                  setMoveOpen(true);
+                }}
+              >
+                <FileOutput size={14} className="text-muted-foreground" />
+                Move Whiteboard
+              </Button>
+              <Button
+                variant="SidebarMenuButton"
+                className="h-8 w-full px-2 text-sm"
+                onClick={download}
+              >
+                <Download size={14} className="text-muted-foreground" />
+                Download.excalidraw
+              </Button>
+              <DropdownMenuSeparator />
+              <Button
+                variant="SidebarMenuButton_destructive"
+                className="h-8 w-full px-2 text-sm text-foreground"
+                onClick={(event) => {
+                  if (event.shiftKey) void remove();
+                  else {
+                    setOpen(false);
+                    setDeleteOpen(true);
+                  }
+                }}
+              >
+                <FaRegTrashCan size={14} className="text-muted-foreground" />
+                Delete
+              </Button>
+              <DropdownMenuSeparator />
+              <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
+                <p>Last updated {formatNoteTimestamp(whiteboard.updatedAt)}</p>
+                <p>Created {formatNoteTimestamp(whiteboard.createdAt)}</p>
+              </div>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {syncBrowserChrome && (
+          <SettingsMoveHint
+            hasSeenHint={hasSeenHint}
+            dismissHint={dismissHint}
+          />
+        )}
+      </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">

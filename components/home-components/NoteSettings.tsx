@@ -121,7 +121,8 @@ export default function NoteSettings({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const currentSlug = pathname.split("/").filter(Boolean).pop();
-  const currentNoteId = searchParams.get("id") || extractIdFromSlug(currentSlug);
+  const currentNoteId =
+    searchParams.get("id") || extractIdFromSlug(currentSlug);
   const isViewingThisNote = currentNoteId === noteId;
 
   // Download hook
@@ -202,8 +203,7 @@ export default function NoteSettings({
     setIsAlertOpen(false);
     try {
       if (isViewingThisNote) {
-        router.push(`/home/${getNote.workingSpaceId}`);
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        router.back();
         await deleteNote({ _id: noteId });
       } else {
         await deleteNote({ _id: noteId });
@@ -277,143 +277,146 @@ export default function NoteSettings({
           </Tooltip>
 
           <DropdownMenuContent
-          side="bottom"
-          align={DropdownMenuContentAlign}
-          alignOffset={1}
-          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground"
-        >
-          <DropdownMenuGroup className="relative">
-            <Label>Rename :</Label>
-            <Input
-              type="text"
-              value={inputValue}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              onKeyDown={handleKeyDown}
-              placeholder="Rename your document"
-              className="text-foreground h-8"
-              ref={inputRef}
-            />
-          </DropdownMenuGroup>
+            side="bottom"
+            align={DropdownMenuContentAlign}
+            alignOffset={1}
+            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground"
+          >
+            <DropdownMenuGroup className="relative">
+              <Label>Rename :</Label>
+              <Input
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                placeholder="Rename your document"
+                className="text-foreground h-8"
+                ref={inputRef}
+              />
+            </DropdownMenuGroup>
 
-          <DropdownMenuGroup>
-            <Button
-              variant="SidebarMenuButton"
-              className="w-full h-8 px-2 text-sm"
-              onClick={handleFavoritePin}
-              aria-label="pin-note"
-            >
-              <Pin size={14} className="text-muted-foreground" />
-              {getNote?.favorite ? "Unpin Document" : "Pin Document"}
-            </Button>
+            <DropdownMenuGroup>
+              <Button
+                variant="SidebarMenuButton"
+                className="w-full h-8 px-2 text-sm"
+                onClick={handleFavoritePin}
+                aria-label="pin-note"
+              >
+                <Pin size={14} className="text-muted-foreground" />
+                {getNote?.favorite ? "Unpin Document" : "Pin Document"}
+              </Button>
 
-            <Button
-              variant="SidebarMenuButton"
-              className="w-full h-8 px-2 text-sm"
-              onClick={handleMoveDialogOpen}
-              aria-label="move-note"
-            >
-              <FileOutput size={14} className="text-muted-foreground" />
-              Move Note
-            </Button>
+              <Button
+                variant="SidebarMenuButton"
+                className="w-full h-8 px-2 text-sm"
+                onClick={handleMoveDialogOpen}
+                aria-label="move-note"
+              >
+                <FileOutput size={14} className="text-muted-foreground" />
+                Move Note
+              </Button>
 
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground">
-                <Download size={14} className="text-muted-foreground" />
-                Download
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent className="w-48">
-                <DropdownMenuItem
-                  className="text-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => handleDownload("markdown")}
-                >
-                  <FileText size={16} className="text-muted-foreground" />
-                  Markdown (.md)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => handleDownload("json")}
-                >
-                  <FileJson size={16} className="text-muted-foreground" />
-                  JSON
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => handleDownload("docx")}
-                >
-                  <FileType size={16} className="text-muted-foreground" />
-                  Word (.docx)
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-sm cursor-pointer flex items-center gap-2"
-                  onClick={() => handleDownload("pdf")}
-                >
-                  <FileDown size={16} className="text-muted-foreground" />
-                  PDF
-                </DropdownMenuItem>
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground">
+                  <Download size={14} className="text-muted-foreground" />
+                  Download
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent className="w-48">
+                  <DropdownMenuItem
+                    className="text-sm cursor-pointer flex items-center gap-2"
+                    onClick={() => handleDownload("markdown")}
+                  >
+                    <FileText size={16} className="text-muted-foreground" />
+                    Markdown (.md)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm cursor-pointer flex items-center gap-2"
+                    onClick={() => handleDownload("json")}
+                  >
+                    <FileJson size={16} className="text-muted-foreground" />
+                    JSON
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm cursor-pointer flex items-center gap-2"
+                    onClick={() => handleDownload("docx")}
+                  >
+                    <FileType size={16} className="text-muted-foreground" />
+                    Word (.docx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-sm cursor-pointer flex items-center gap-2"
+                    onClick={() => handleDownload("pdf")}
+                  >
+                    <FileDown size={16} className="text-muted-foreground" />
+                    PDF
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
 
-            {ShowWidthOp && (
-              <>
-                <Button
-                  variant="SidebarMenuButton"
-                  className="w-full h-8 px-2 text-sm"
-                  onClick={toggleWidth}
-                  aria-label="toggle-note-width"
-                >
-                  {noteWidth === "false" ? (
-                    <>
-                      <ChevronsLeftRightEllipsis
-                        size={14}
-                        className="text-muted-foreground"
-                      />
-                      Full width
-                    </>
-                  ) : (
-                    <>
-                      <ChevronsRightLeft
-                        size={14}
-                        className="text-muted-foreground"
-                      />
-                      Max width
-                    </>
-                  )}
-                </Button>
-              </>
-            )}
+              {ShowWidthOp && (
+                <>
+                  <Button
+                    variant="SidebarMenuButton"
+                    className="w-full h-8 px-2 text-sm"
+                    onClick={toggleWidth}
+                    aria-label="toggle-note-width"
+                  >
+                    {noteWidth === "false" ? (
+                      <>
+                        <ChevronsLeftRightEllipsis
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                        Full width
+                      </>
+                    ) : (
+                      <>
+                        <ChevronsRightLeft
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                        Max width
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
 
-            <DropdownMenuSeparator />
-            <Button
-              variant="SidebarMenuButton_destructive"
-              className="w-full h-8 px-2 text-sm text-foreground"
-              onClick={initiateDelete}
-              aria-label="delete-note"
-            >
-              <FaRegTrashCan size={14} className="text-muted-foreground" />
-              Delete
-            </Button>
+              <DropdownMenuSeparator />
+              <Button
+                variant="SidebarMenuButton_destructive"
+                className="w-full h-8 px-2 text-sm text-foreground"
+                onClick={initiateDelete}
+                aria-label="delete-note"
+              >
+                <FaRegTrashCan size={14} className="text-muted-foreground" />
+                Delete
+              </Button>
 
-            <DropdownMenuSeparator />
-            <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
-              <p>Last updated {updatedAtText}</p>
-              <p>Created {createdAtText}</p>
-            </div>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {ShowWidthOp && (
-        <SettingsMoveHint hasSeenHint={hasSeenHint} dismissHint={dismissHint} />
-      )}
-    </div>
+              <DropdownMenuSeparator />
+              <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
+                <p>Last updated {updatedAtText}</p>
+                <p>Created {createdAtText}</p>
+              </div>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {ShowWidthOp && (
+          <SettingsMoveHint
+            hasSeenHint={hasSeenHint}
+            dismissHint={dismissHint}
+          />
+        )}
+      </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm Document Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this document? This action cannot be
-              undone.
+              Are you sure you want to delete this document? This action cannot
+              be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <p>

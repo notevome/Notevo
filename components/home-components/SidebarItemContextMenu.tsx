@@ -34,7 +34,6 @@ type SidebarItemContextMenuProps = {
   onDelete: () => Promise<unknown> | void;
 };
 
-/** A pointer-positioned context menu shared by non-note sidebar entries. */
 export default function SidebarItemContextMenu({
   children,
   itemName,
