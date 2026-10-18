@@ -59,6 +59,10 @@ import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useToast } from "@/hooks/use-toast";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import CreateTableBtn from "./CreateTableBtn";
+import {
+  SettingsMoveHint,
+  useSettingsMoveHint,
+} from "@/components/ui/settings-move-hint";
 
 interface WhiteboardSettingsProps {
   whiteboardId?: Id<"whiteboards">;
@@ -106,6 +110,8 @@ export default function WhiteboardSettings({
     whiteboardId ? { _id: whiteboardId } : "skip",
   );
   const whiteboard = whiteboardProp ?? fetchedWhiteboard;
+
+  const { hasSeenHint, dismissHint } = useSettingsMoveHint();
 
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(whiteboard?.title ?? "");
@@ -323,24 +329,37 @@ export default function WhiteboardSettings({
 
   return (
     <>
-      <DropdownMenu
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (!next) onContextMenuClose?.();
-          if (next) tooltip.hide();
-        }}
-      >
-        <Tooltip open={tooltip.open}>
-          <DropdownMenuTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                variant="Trigger"
-                size="icon"
-                className={cn("h-8 w-8 ", className)}
-                {...tooltip.triggerProps}
-                aria-label="whiteboard-options"
-              >
+      <div className="relative inline-flex items-center">
+        {syncBrowserChrome && !hasSeenHint && (
+          <div
+            aria-hidden="true"
+            className="absolute -inset-1 pointer-events-none border-2 border-dashed border-muted-foreground bg-muted animate-pulse app-radius-sm z-10"
+          />
+        )}
+        <DropdownMenu
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (!next) onContextMenuClose?.();
+            if (next) {
+              tooltip.hide();
+              dismissHint();
+            }
+          }}
+        >
+          <Tooltip open={tooltip.open}>
+            <DropdownMenuTrigger asChild>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="Trigger"
+                  size="icon"
+                  className={cn("h-8 w-8 ", className)}
+                  {...tooltip.triggerProps}
+                  aria-label="whiteboard-options"
+                  onClick={() => {
+                    dismissHint();
+                  }}
+                >
                 {IconVariant === "vertical_icon" ? (
                   <FaEllipsisVertical
                     size={18}
@@ -456,6 +475,10 @@ export default function WhiteboardSettings({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      {syncBrowserChrome && (
+        <SettingsMoveHint hasSeenHint={hasSeenHint} dismissHint={dismissHint} />
+      )}
+    </div>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">

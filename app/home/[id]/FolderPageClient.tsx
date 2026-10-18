@@ -57,6 +57,7 @@ import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
+import { recordLastVisitedLocation } from "@/lib/last-visited";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -1520,7 +1521,11 @@ export default function FolderPageClient({
 
   const [activeTableId, setActiveTableId] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      return sessionStorage.getItem(STORAGE_KEYS.ACTIVE_TABLE) || "";
+      return (
+        sessionStorage.getItem(STORAGE_KEYS.ACTIVE_TABLE) ||
+        localStorage.getItem("notevo_last_visited_table_id") ||
+        ""
+      );
     }
     return "";
   });
@@ -1539,11 +1544,18 @@ export default function FolderPageClient({
     return tables[0]._id;
   }, [tables, activeTableId]);
 
+  useEffect(() => {
+    if (workingSpaceId) {
+      recordLastVisitedLocation(workingSpaceId, defaultTableId);
+    }
+  }, [workingSpaceId, defaultTableId]);
+
   const handleTabChange = (tableId: string) => {
     setActiveTableId(tableId);
     if (typeof window !== "undefined") {
       sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
     }
+    recordLastVisitedLocation(workingSpaceId, tableId);
   };
 
   const prevTableIdsRef = useRef<Set<string> | null>(null);
@@ -1557,6 +1569,31 @@ export default function FolderPageClient({
     if (newTable) {
       handleTabChange(String(newTable._id));
     }
+  }, [tables]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleSwitchTable = (e: Event) => {
+      const customEvent = e as CustomEvent<{ tableId: string }>;
+      if (customEvent.detail?.tableId) {
+        handleTabChange(customEvent.detail.tableId);
+      }
+    };
+    window.addEventListener("notevo:switch-table", handleSwitchTable);
+
+    const params = new URLSearchParams(window.location.search);
+    const tableParam = params.get("table") || params.get("tableId");
+    if (
+      tableParam &&
+      tables &&
+      tables.some((t: any) => String(t._id) === tableParam)
+    ) {
+      handleTabChange(tableParam);
+    }
+
+    return () => {
+      window.removeEventListener("notevo:switch-table", handleSwitchTable);
+    };
   }, [tables]);
 
   const [searchQuery, setSearchQuery] = useState<string>("");

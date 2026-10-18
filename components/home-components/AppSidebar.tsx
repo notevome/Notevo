@@ -1,7 +1,6 @@
 "use client";
 import {
   Notebook,
-  Folders,
   Plus,
   Pin,
   FileText,
@@ -79,6 +78,7 @@ import PdfSettingsSidebar from "./PdfSettingsSidebar";
 import LinkSettingsSidebar from "./LinkSettingsSidebar";
 import WhiteboardSettingsSidebar from "./WhiteboardSettingsSidebar";
 import FolderSettingsSidebar from "./FolderSettingsSidebar";
+import FolderNewDropdownBtn from "./folder-new-dropdown-btn";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
@@ -109,6 +109,7 @@ interface SidebarHeaderSectionProps {
     workingSpacesSlug: string,
   ) => void;
   handleCreateWorkingSpace: () => Promise<void>;
+  newButtonVariant?: "default" | "outline";
 }
 
 const workspaceNameSchema = z
@@ -211,137 +212,10 @@ function useStoredExpandedState(storageKey: string, defaultValue = true) {
 
 const SidebarHeaderSection = memo(function SidebarHeaderSection({
   getWorkingSpaces,
-  handleCreateNote,
   handleCreateWorkingSpace,
+  newButtonVariant = "default",
 }: SidebarHeaderSectionProps) {
-  const [canScrollBottom, setCanScrollBottom] = useState(false);
-  const [canScrollTop, setCanScrollTop] = useState(false);
-  const scrollElementRef = useRef<HTMLDivElement | null>(null);
   const popupGuard = useSidebarPopupGuard();
-
-  const handleSidebarScroll = useCallback((el: HTMLDivElement | null) => {
-    if (!el) return;
-
-    const scrollTop = el.scrollTop;
-    const scrollHeight = el.scrollHeight;
-    const clientHeight = el.clientHeight;
-    setCanScrollBottom(scrollHeight - scrollTop - clientHeight > 1);
-
-    setCanScrollTop(scrollTop > 1);
-  }, []);
-
-  const setContainerRef = useCallback(
-    (el: HTMLDivElement | null) => {
-      scrollElementRef.current = el;
-      if (!el) return;
-
-      handleSidebarScroll(el);
-
-      const observer = new ResizeObserver(() => {
-        handleSidebarScroll(el);
-      });
-      observer.observe(el);
-
-      (el as any)._cleanupObserver = () => observer.disconnect();
-    },
-    [handleSidebarScroll],
-  );
-  useEffect(() => {
-    return () => {
-      if (
-        scrollElementRef.current &&
-        (scrollElementRef.current as any)._cleanupObserver
-      ) {
-        (scrollElementRef.current as any)._cleanupObserver();
-      }
-    };
-  }, []);
-
-  const [savedWorkspaceId, setSavedWorkspaceId] = useState<
-    string | null | undefined
-  >(undefined);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setSavedWorkspaceId(
-      window.localStorage.getItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY),
-    );
-  }, []);
-
-  const savedWorkspace = useMemo(() => {
-    if (!savedWorkspaceId) return undefined;
-    return getWorkingSpaces?.find(
-      (workingSpace) => String(workingSpace._id) === savedWorkspaceId,
-    );
-  }, [getWorkingSpaces, savedWorkspaceId]);
-
-  const firstCreatedWorkspace = useMemo(() => {
-    return getWorkingSpaces?.reduce<Doc<"folders"> | undefined>(
-      (oldestWorkspace, workingSpace) => {
-        if (!oldestWorkspace) return workingSpace;
-
-        const oldestCreatedAt =
-          oldestWorkspace.createdAt ?? oldestWorkspace._creationTime;
-        const workingSpaceCreatedAt =
-          workingSpace.createdAt ?? workingSpace._creationTime;
-
-        return workingSpaceCreatedAt < oldestCreatedAt
-          ? workingSpace
-          : oldestWorkspace;
-      },
-      undefined,
-    );
-  }, [getWorkingSpaces]);
-
-  const createNoteWorkspace = savedWorkspace ?? firstCreatedWorkspace;
-
-  useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      !savedWorkspaceId ||
-      getWorkingSpaces === undefined ||
-      savedWorkspace
-    ) {
-      return;
-    }
-
-    window.localStorage.removeItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY);
-    setSavedWorkspaceId(null);
-  }, [getWorkingSpaces, savedWorkspace, savedWorkspaceId]);
-
-  useEffect(() => {
-    if (
-      typeof window === "undefined" ||
-      savedWorkspaceId !== null ||
-      !firstCreatedWorkspace
-    ) {
-      return;
-    }
-
-    const workspaceId = String(firstCreatedWorkspace._id);
-    window.localStorage.setItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY, workspaceId);
-    setSavedWorkspaceId(workspaceId);
-  }, [firstCreatedWorkspace, savedWorkspaceId]);
-
-  const createNoteInWorkspace = useCallback(
-    async (workingSpace: Doc<"folders">) => {
-      const workspaceId = String(workingSpace._id);
-
-      setSavedWorkspaceId(workspaceId);
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(
-          CREATE_NOTE_WORKSPACE_STORAGE_KEY,
-          workspaceId,
-        );
-      }
-
-      await handleCreateNote(
-        workingSpace._id as any,
-        workingSpace.slug as string,
-      );
-    },
-    [handleCreateNote],
-  );
 
   return (
     <SidebarHeader className=" text-foreground">
@@ -364,87 +238,28 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
           </Button>
         </div>
       )}
-      {getWorkingSpaces?.length === 1 || getWorkingSpaces?.length === 0
-        ? getWorkingSpaces.map((workingSpace) => (
-            <div
-              key={workingSpace._id}
-              className="flex h-[36px] p-[2px] w-full items-center overflow-hidden "
-            >
-              <Button
-                className="font-medium w-full h-9 flex justify-start items-center gap-1.5 "
-                onMouseDown={() => void createNoteInWorkspace(workingSpace)}
-              >
-                <SquarePen size={16} className=" mt-px" /> New Document
-              </Button>
-            </div>
-          ))
-        : createNoteWorkspace && (
-            <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden ">
-              <Button
-                className="font-medium h-9 flex-1 justify-start gap-1.5  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
-                onClick={() => void createNoteInWorkspace(createNoteWorkspace)}
-              >
-                <SquarePen size={16} className=" mt-px" /> New Document
-              </Button>
-              <DropdownMenu onOpenChange={popupGuard}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className=" font-medium h-9 px-2 border-l border-border  disabled:before:opacity-40 !app-radius-none disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
-                    aria-label="select-create-note-workspace"
-                  >
-                    <ChevronDown size={16} className="font-bold" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="bottom"
-                  align="end"
-                  className="!app-radius-none p-1 bg-background w-52 max-h-36 relative overflow-hidden z-[90000]"
-                >
-                  <DropdownMenuGroup className="relative flex-col ">
-                    <DropdownMenuLabel className=" flex justify-start items-center gap-1 p-px pb-1 text-[11px] text-muted-foreground leading-2">
-                      <Folders size={14} className=" mb-0.5" />
-                      Folders
-                    </DropdownMenuLabel>
-                    <div
-                      className={`absolute top-[21px] left-0 right-0 h-4 bg-gradient-to-b from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
-                        canScrollTop ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    <div
-                      ref={setContainerRef}
-                      onScroll={(e) => handleSidebarScroll(e.currentTarget)}
-                      className={`overflow-y-auto max-h-[105px] transition-all duration-150 [&::-webkit-scrollbar]:w-[0.3rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border ${
-                        canScrollBottom || canScrollTop ? "pr-1 pb-0.5" : "p-0"
-                      }`}
-                    >
-                      {getWorkingSpaces?.map((workingSpace) => (
-                        <DropdownMenuItem
-                          key={workingSpace._id}
-                          className="relative *:text-foreground flex-1 ml-2.5 px-1 h-7 py-1.5 data-[highlighted]:bg-foreground !app-radius-none"
-                          onSelect={() =>
-                            void createNoteInWorkspace(workingSpace)
-                          }
-                        >
-                          <div className=" absolute top-0 -left-[6px] h-full w-px bg-muted-foreground/30" />
-                          <FolderClosed size="16" />
-                          <span>
-                            {formatWorkspaceNameForCreateSideBarBtn(
-                              workingSpace.name,
-                            )}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </div>
-                    <div
-                      className={`absolute bottom-0 left-0 right-0 h-5 bg-gradient-to-t from-background to-transparent pointer-events-none transition-opacity duration-200 z-10 ${
-                        canScrollBottom ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
+      {getWorkingSpaces && getWorkingSpaces.length > 0 && (
+        <div className="flex h-[36px] p-[2px] w-full items-center overflow-hidden">
+          <FolderNewDropdownBtn
+            variant={newButtonVariant}
+            showIcon
+            onOpenChange={popupGuard}
+            className="w-full h-9 flex items-center"
+            buttonClassName={cn(
+              "font-medium h-9 flex-1 justify-start gap-1.5 disabled:before:opacity-40 !app-radius-none",
+              newButtonVariant === "default"
+                ? "disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                : "",
+            )}
+            chevronClassName={cn(
+              "font-medium h-9 px-2 border-l border-border disabled:before:opacity-40 !app-radius-none",
+              newButtonVariant === "default"
+                ? "disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
+                : "",
+            )}
+          />
+        </div>
+      )}
     </SidebarHeader>
   );
 });
@@ -2422,7 +2237,13 @@ const UserAccountSection = memo(function UserAccountSection({
 
 // --- Main Component ---
 
-const AppSidebar = React.memo(function AppSidebar() {
+interface AppSidebarProps {
+  newButtonVariant?: "default" | "outline";
+}
+
+const AppSidebar = React.memo(function AppSidebar({
+  newButtonVariant = "default",
+}: AppSidebarProps = {}) {
   const { open, isMobile, sidebarWidth } = useSidebar();
   const pathname = usePathname();
   const router = useRouter();
@@ -2635,6 +2456,7 @@ const AppSidebar = React.memo(function AppSidebar() {
         getWorkingSpaces={getWorkingSpaces}
         handleCreateNote={handleCreateNote}
         handleCreateWorkingSpace={handleCreateWorkingSpace}
+        newButtonVariant={newButtonVariant}
       />
 
       <div className="relative flex min-h-0 flex-1 flex-col">

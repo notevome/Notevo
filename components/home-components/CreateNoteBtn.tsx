@@ -6,6 +6,7 @@ interface CreateNoteBtnProps {
   workingSpacesSlug: string | any;
   workingSpaceId: Id<"folders"> | any;
   className?: string;
+  variant?: "outline" | "default";
 }
 
 export default function CreateNoteBtn({
@@ -13,6 +14,7 @@ export default function CreateNoteBtn({
   workingSpacesSlug,
   workingSpaceId,
   className,
+  variant = "outline",
 }: CreateNoteBtnProps) {
   return (
     <FolderNewDropdownBtn
@@ -20,6 +22,7 @@ export default function CreateNoteBtn({
       workingSpacesSlug={workingSpacesSlug}
       workingSpaceId={workingSpaceId}
       className={className}
+      variant={variant}
     />
   );
 }

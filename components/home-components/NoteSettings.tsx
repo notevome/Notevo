@@ -55,6 +55,10 @@ import { useNoteDownload } from "@/hooks/useNoteDownload";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import MoveNoteDialog from "./MoveNoteDialog";
 import { formatNoteTimestamp } from "@/lib/utils";
+import {
+  SettingsMoveHint,
+  useSettingsMoveHint,
+} from "@/components/ui/settings-move-hint";
 
 interface NoteSettingsProps {
   noteId: Id<"documents">;
@@ -88,6 +92,7 @@ export default function NoteSettings({
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const tooltip = useHoverTooltip(100);
+  const { hasSeenHint, dismissHint } = useSettingsMoveHint();
 
   const { noteWidth, toggleWidth } = useNoteWidth();
 
@@ -222,43 +227,56 @@ export default function NoteSettings({
   };
   return (
     <>
-      <DropdownMenu
-        open={open}
-        onOpenChange={(next) => {
-          setOpen(next);
-          if (next) tooltip.hide();
-        }}
-      >
-        <Tooltip open={tooltip.open}>
-          <DropdownMenuTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                variant="Trigger"
-                className={cn("px-0.5 h-8", BtnClassName)}
-                {...tooltip.triggerProps}
-                aria-label="note-options"
-              >
-                {IconVariant === "vertical_icon" ? (
-                  <FaEllipsisVertical
-                    size={18}
-                    className="text-muted-foreground"
-                  />
-                ) : (
-                  <FaEllipsis size={22} className="text-muted-foreground" />
-                )}
-              </Button>
-            </TooltipTrigger>
-          </DropdownMenuTrigger>
-          <TooltipContent
-            side="bottom"
-            alignOffset={1}
-            align={TooltipContentAlign}
-          >
-            Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
-          </TooltipContent>
-        </Tooltip>
+      <div className="relative inline-flex items-center">
+        {ShowWidthOp && !hasSeenHint && (
+          <div
+            aria-hidden="true"
+            className="absolute -inset-1 pointer-events-none border-2 border-dashed border-muted-foreground bg-muted animate-pulse app-radius-sm z-10"
+          />
+        )}
+        <DropdownMenu
+          open={open}
+          onOpenChange={(next) => {
+            setOpen(next);
+            if (next) {
+              tooltip.hide();
+              dismissHint();
+            }
+          }}
+        >
+          <Tooltip open={tooltip.open}>
+            <DropdownMenuTrigger asChild>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="Trigger"
+                  className={cn("px-0.5 h-8", BtnClassName)}
+                  {...tooltip.triggerProps}
+                  aria-label="note-options"
+                  onClick={() => {
+                    dismissHint();
+                  }}
+                >
+                  {IconVariant === "vertical_icon" ? (
+                    <FaEllipsisVertical
+                      size={18}
+                      className="text-muted-foreground"
+                    />
+                  ) : (
+                    <FaEllipsis size={22} className="text-muted-foreground" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+            </DropdownMenuTrigger>
+            <TooltipContent
+              side="bottom"
+              alignOffset={1}
+              align={TooltipContentAlign}
+            >
+              Rename, Pin, Move, Download, Delete{ShowWidthOp && "..."}
+            </TooltipContent>
+          </Tooltip>
 
-        <DropdownMenuContent
+          <DropdownMenuContent
           side="bottom"
           align={DropdownMenuContentAlign}
           alignOffset={1}
@@ -384,6 +402,10 @@ export default function NoteSettings({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
+      {ShowWidthOp && (
+        <SettingsMoveHint hasSeenHint={hasSeenHint} dismissHint={dismissHint} />
+      )}
+    </div>
 
       <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
