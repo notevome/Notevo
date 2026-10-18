@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { extractIdFromSlug } from "@/lib/slug";
 import {
-  redirect,
   useRouter,
   usePathname,
   useSearchParams,
@@ -43,10 +42,15 @@ export default function WhiteboardSettingsSidebar({
   ContainerClassName,
 }: WhiteboardSettingsSidebarProps) {
   const pathname = usePathname();
-  const pathSegments = pathname.split("/").filter((segment) => segment);
   const searchParams = useSearchParams();
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const currentSlug = pathSegments.length >= 3 ? pathSegments[2] : null;
   const currentWhiteboardId =
-    searchParams.get("whiteboardId") || extractIdFromSlug(pathSegments[2]);
+    searchParams.get("whiteboardId") ||
+    (currentSlug ? extractIdFromSlug(currentSlug) : null);
+  const isViewingCurrentWhiteboard =
+    currentWhiteboardId === String(whiteboardId) ||
+    (currentSlug !== null && currentSlug === String(whiteboardId));
   const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const updateWhiteboard = useMutation(
@@ -96,13 +100,10 @@ export default function WhiteboardSettingsSidebar({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      if (currentWhiteboardId === String(whiteboardId)) {
-        router.push(`/home/${pathSegments[1]}`);
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        await deleteWhiteboard({ _id: whiteboardId });
-      } else {
-        await deleteWhiteboard({ _id: whiteboardId });
+      if (isViewingCurrentWhiteboard) {
+        router.back();
       }
+      await deleteWhiteboard({ _id: whiteboardId });
     } catch (error) {
       console.error("Failed to delete whiteboard:", error);
     } finally {

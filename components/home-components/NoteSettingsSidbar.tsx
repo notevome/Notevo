@@ -25,7 +25,6 @@ import { SquarePen, X, Pin, PinOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import {
-  redirect,
   useRouter,
   usePathname,
   useSearchParams,
@@ -43,10 +42,16 @@ export default function NoteSettingsSidbar({
   ContainerClassName,
 }: NoteSettingsSidbarProps) {
   const pathname = usePathname();
-  const pathSegments = pathname.split("/").filter((segment) => segment);
   const searchParams = useSearchParams();
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const currentSlug = pathSegments.length >= 3 ? pathSegments[2] : null;
   const currentNoteId =
-    searchParams.get("id") || extractIdFromSlug(pathSegments[2]);
+    searchParams.get("id") ||
+    searchParams.get("noteId") ||
+    (currentSlug ? extractIdFromSlug(currentSlug) : null);
+  const isViewingCurrentNote =
+    currentNoteId === String(noteId) ||
+    (currentSlug !== null && currentSlug === String(noteId));
   const router = useRouter();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
@@ -71,13 +76,8 @@ export default function NoteSettingsSidbar({
     (local, args) => {
       const { _id } = args;
 
-      // Get the note - for optimistic IDs, this will help identify it
       const note = local.getQuery(api.documents.getNoteById, { _id });
       if (!note) return;
-
-      // For optimistic IDs, the mutation will fail before running
-      // For real IDs, the server will handle deletion and sync queries
-      // Note: Paginated queries will sync automatically when the server confirms deletion
     },
   );
   const getNote = useQuery(api.documents.getNoteById, { _id: noteId });
@@ -94,13 +94,10 @@ export default function NoteSettingsSidbar({
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     try {
-      if (currentNoteId === String(noteId)) {
-        router.push(`/home/${pathSegments[1]}`);
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        await deleteNote({ _id: noteId });
-      } else {
-        await deleteNote({ _id: noteId });
+      if (isViewingCurrentNote) {
+        router.back();
       }
+      await deleteNote({ _id: noteId });
     } catch (error) {
       console.error("Failed to delete note:", error);
     } finally {

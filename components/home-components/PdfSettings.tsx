@@ -50,6 +50,7 @@ import MovePdfDialog from "./MovePdfDialog";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useToast } from "@/hooks/use-toast";
 import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
+import { useRouter } from "next/navigation";
 
 interface PdfSettingsProps {
   pdfId: Id<"pdfs">;
@@ -107,6 +108,7 @@ export default function PdfSettings({
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const tooltip = useHoverTooltip(100);
+  const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -183,6 +185,7 @@ export default function PdfSettings({
     if (onDelete) onDelete(pdfId);
     setIsAlertOpen(false);
     try {
+      router.back();
       await deletePdf({ _id: pdfId });
     } catch (error) {
       console.error("Failed to delete PDF:", error);

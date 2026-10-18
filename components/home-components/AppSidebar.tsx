@@ -324,27 +324,27 @@ const PinnedNoteItem = memo(
     const [isHovered, setIsHovered] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(note.title || "Untitled");
-    const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
-      (local, args) => {
-        const { _id, title, favorite } = args;
-        // Update single note query if it exists
-        const note = local.getQuery(api.documents.getNoteById, { _id });
-        if (note) {
-          local.setQuery(
-            api.documents.getNoteById,
-            { _id },
-            {
-              ...note,
-              title: title ?? note.title,
-              favorite: favorite ?? note.favorite,
-              updatedAt: Date.now(),
-            },
-          );
-        }
-        // Note: Paginated queries (getFavNotes) will be synced by the server
-        // Direct updates to paginated query results are complex and handled server-side
-      },
-    );
+    const updateNote = useMutation(
+      api.documents.updateNote,
+    ).withOptimisticUpdate((local, args) => {
+      const { _id, title, favorite } = args;
+      // Update single note query if it exists
+      const note = local.getQuery(api.documents.getNoteById, { _id });
+      if (note) {
+        local.setQuery(
+          api.documents.getNoteById,
+          { _id },
+          {
+            ...note,
+            title: title ?? note.title,
+            favorite: favorite ?? note.favorite,
+            updatedAt: Date.now(),
+          },
+        );
+      }
+      // Note: Paginated queries (getFavNotes) will be synced by the server
+      // Direct updates to paginated query results are complex and handled server-side
+    });
     const router = useRouter();
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -693,6 +693,7 @@ const PinnedUploadItem = memo(
     const updatePdf = useMutation(api.pdfs.updatePdf);
     const deletePdf = useMutation(api.pdfs.deletePdf);
     const inputRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
 
     const pdfPath = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`;
     const legacyPdfPath = `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}`;
@@ -801,7 +802,12 @@ const PinnedUploadItem = memo(
         onToggleFavorite={() =>
           updatePdf({ _id: pdf._id, favorite: !pdf.favorite })
         }
-        onDelete={() => deletePdf({ _id: pdf._id })}
+        onDelete={() => {
+          if (isActive) {
+            router.back();
+          }
+          deletePdf({ _id: pdf._id });
+        }}
       >
         <SidebarGroupContent
           className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -1035,6 +1041,7 @@ const PinnedWhiteboardItem = memo(
     const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
     const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
     const inputRef = useRef<HTMLInputElement>(null);
+    const router = useRouter();
 
     const whiteboardSlug = buildItemSlug(
       whiteboard.title || "untitled-whiteboard",
@@ -1159,7 +1166,12 @@ const PinnedWhiteboardItem = memo(
             favorite: !whiteboard.favorite,
           })
         }
-        onDelete={() => deleteWhiteboard({ _id: whiteboard._id })}
+        onDelete={() => {
+          if (isActive) {
+            router.back();
+          }
+          deleteWhiteboard({ _id: whiteboard._id });
+        }}
       >
         <SidebarGroupContent
           className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -1792,14 +1804,13 @@ const WorkspaceItem = memo(
     const [editedName, setEditedName] = useState(
       workingSpace.name || "Untitled",
     );
+    const router = useRouter();
     const updateWorkingSpace = useMutation(
       api.folders.updateFolder,
     ).withOptimisticUpdate((local, args) => {
       const { _id, name } = args;
       // Update in getRecentWorkingSpaces
-      const workspaces = local.getQuery(
-        api.folders.getRecentFolders,
-      );
+      const workspaces = local.getQuery(api.folders.getRecentFolders);
       if (workspaces && Array.isArray(workspaces)) {
         const updatedWorkspaces = workspaces.map((ws: any) =>
           ws._id === _id
@@ -1810,11 +1821,7 @@ const WorkspaceItem = memo(
               }
             : ws,
         );
-        local.setQuery(
-          api.folders.getRecentFolders,
-          {},
-          updatedWorkspaces,
-        );
+        local.setQuery(api.folders.getRecentFolders, {}, updatedWorkspaces);
       }
 
       // Update single workspace query if it exists
@@ -1833,9 +1840,7 @@ const WorkspaceItem = memo(
         );
       }
     });
-    const deleteWorkingSpace = useMutation(
-      api.folders.deleteFolder,
-    );
+    const deleteWorkingSpace = useMutation(api.folders.deleteFolder);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const workspaceHref = `/home/${workingSpace._id}`;
@@ -1922,7 +1927,12 @@ const WorkspaceItem = memo(
         itemName={workingSpace.name || "Untitled"}
         itemLabel="Folder"
         onRename={(name) => updateWorkingSpace({ _id: workingSpace._id, name })}
-        onDelete={() => deleteWorkingSpace({ _id: workingSpace._id })}
+        onDelete={() => {
+          if (isActive) {
+            router.back();
+          }
+          deleteWorkingSpace({ _id: workingSpace._id });
+        }}
       >
         <SidebarGroupContent
           className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -2257,9 +2267,7 @@ const AppSidebar = React.memo(function AppSidebar({
     const tempId = `${uuid}-${now}` as any as Id<"folders">;
 
     // Update the getRecentWorkingSpaces query
-    const currentWorkspaces = local.getQuery(
-      api.folders.getRecentFolders,
-    );
+    const currentWorkspaces = local.getQuery(api.folders.getRecentFolders);
     if (currentWorkspaces !== undefined) {
       local.setQuery(api.folders.getRecentFolders, {}, [
         {
@@ -2275,10 +2283,7 @@ const AppSidebar = React.memo(function AppSidebar({
       ] as any);
     }
   });
-  const getWorkingSpaces = useQuery(
-    api.folders.getRecentFolders,
-    {},
-  );
+  const getWorkingSpaces = useQuery(api.folders.getRecentFolders, {});
   const User = useQuery(api.users.viewer, {});
   const { results, status, loadMore } = usePaginatedQuery(
     api.documents.getFavNotes,
@@ -2304,9 +2309,7 @@ const AppSidebar = React.memo(function AppSidebar({
     {},
     { initialNumItems: 5 },
   );
-  const cleanupOrphanedItems = useMutation(
-    api.folders.cleanupOrphanedItems,
-  );
+  const cleanupOrphanedItems = useMutation(api.folders.cleanupOrphanedItems);
   useEffect(() => {
     cleanupOrphanedItems().catch(() => {});
   }, [cleanupOrphanedItems]);

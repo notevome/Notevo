@@ -63,66 +63,66 @@ export default function TableSettings({
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const table = useQuery(api.tables.getTableById, { _id: notesTableId });
-  const updateTable = useMutation(
-    api.tables.updateTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { _id, name } = args;
+  const updateTable = useMutation(api.tables.updateTable).withOptimisticUpdate(
+    (local, args) => {
+      const { _id, name } = args;
 
-    const workspaces = local.getQuery(api.folders.getRecentFolders);
-    if (workspaces && Array.isArray(workspaces)) {
-      for (const ws of workspaces) {
-        const tables = local.getQuery(api.tables.getTables, {
-          folderId: ws._id,
-        });
-        if (tables && Array.isArray(tables)) {
-          const tableIndex = tables.findIndex((t: any) => t._id === _id);
-          if (tableIndex !== -1) {
-            const updatedTables = tables.map((t: any) =>
-              t._id === _id
-                ? {
-                    ...t,
-                    name: name ?? t.name,
-                    updatedAt: Date.now(),
-                  }
-                : t,
-            );
-            local.setQuery(
-              api.tables.getTables,
-              { folderId: ws._id },
-              updatedTables,
-            );
-            break;
+      const workspaces = local.getQuery(api.folders.getRecentFolders);
+      if (workspaces && Array.isArray(workspaces)) {
+        for (const ws of workspaces) {
+          const tables = local.getQuery(api.tables.getTables, {
+            folderId: ws._id,
+          });
+          if (tables && Array.isArray(tables)) {
+            const tableIndex = tables.findIndex((t: any) => t._id === _id);
+            if (tableIndex !== -1) {
+              const updatedTables = tables.map((t: any) =>
+                t._id === _id
+                  ? {
+                      ...t,
+                      name: name ?? t.name,
+                      updatedAt: Date.now(),
+                    }
+                  : t,
+              );
+              local.setQuery(
+                api.tables.getTables,
+                { folderId: ws._id },
+                updatedTables,
+              );
+              break;
+            }
           }
         }
       }
-    }
-  });
-  const deleteTable = useMutation(
-    api.tables.deleteTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { _id } = args;
+    },
+  );
+  const deleteTable = useMutation(api.tables.deleteTable).withOptimisticUpdate(
+    (local, args) => {
+      const { _id } = args;
 
-    // Try to find and remove the table from cached queries
-    const workspaces = local.getQuery(api.folders.getRecentFolders);
-    if (workspaces && Array.isArray(workspaces)) {
-      for (const ws of workspaces) {
-        const tables = local.getQuery(api.tables.getTables, {
-          folderId: ws._id,
-        });
-        if (tables && Array.isArray(tables)) {
-          if (tables.some((t: any) => t._id === _id)) {
-            const filteredTables = tables.filter((t: any) => t._id !== _id);
-            local.setQuery(
-              api.tables.getTables,
-              { folderId: ws._id },
-              filteredTables,
-            );
-            break;
+      // Try to find and remove the table from cached queries
+      const workspaces = local.getQuery(api.folders.getRecentFolders);
+      if (workspaces && Array.isArray(workspaces)) {
+        for (const ws of workspaces) {
+          const tables = local.getQuery(api.tables.getTables, {
+            folderId: ws._id,
+          });
+          if (tables && Array.isArray(tables)) {
+            if (tables.some((t: any) => t._id === _id)) {
+              const filteredTables = tables.filter((t: any) => t._id !== _id);
+              local.setQuery(
+                api.tables.getTables,
+                { folderId: ws._id },
+                filteredTables,
+              );
+              break;
+            }
           }
         }
       }
-    }
-  });
+    },
+  );
 
   useEffect(() => {
     setInputValue(tableName);
@@ -303,7 +303,8 @@ export default function TableSettings({
           table={{
             _id: notesTableId,
             name: table.name,
-            workingSpaceId: (table.folderId ?? (table as any).workingSpaceId) as Id<"folders">,
+            workingSpaceId: (table.folderId ??
+              (table as any).workingSpaceId) as Id<"folders">,
           }}
         />
       )}
