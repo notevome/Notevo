@@ -28,7 +28,7 @@ export default function Error({
   return (
     <section className="relative flex min-h-svh flex-col items-center justify-center bg-background overflow-hidden">
       <MaxWContainer className="flex flex-col items-center justify-center gap-3 *:text-center relative px-4 sm:px-6 lg:px-8">
-        <div className=" px-2 w-full gap-2 flex justify-start items-center ">
+        <div className="w-full gap-2 flex justify-start items-center ">
           <Image
             src={imgsrc}
             alt="Notevo Logo"
