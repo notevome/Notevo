@@ -45,10 +45,10 @@ export default function Navbar() {
             <Image
               src={NotevoLogo}
               alt="Notevo Logo"
-              className="Desktop:hover:opacity-80 transition-opacity"
+              className="Desktop:hover:opacity-80 transition-opacity mb-px"
               priority
-              width={40}
-              height={40}
+              width={45}
+              height={45}
             />
           </motion.div>
           <nav className="hidden lg:flex justify-center items-center gap-3">
