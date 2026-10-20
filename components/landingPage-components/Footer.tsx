@@ -50,8 +50,8 @@ export default function Footer() {
                   src="/Notevo-logo.svg"
                   alt="Notevo logo"
                   className="pb-2 hover:opacity-50"
-                  width={50}
-                  height={50}
+                  width={60}
+                  height={60}
                 />
               </Link>
               <h2 className="text-2xl font-bold text-primary">Notevo</h2>

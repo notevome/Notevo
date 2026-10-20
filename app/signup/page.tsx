@@ -164,9 +164,9 @@ export default function SignInPage() {
                   <div className="flex flex-col items-center mb-2 text-center">
                     <Image
                       src={NotevoLogo}
-                      alt="log Image"
-                      width={45}
-                      height={45}
+                      alt="log on Image"
+                      width={50}
+                      height={50}
                       className="mb-3 hover:scale-110 transition-transform duration-200 sm:block md:hidden lg:hidden"
                     />
                     <h1 className="text-2xl font-bold text-foreground">
@@ -221,10 +221,10 @@ export default function SignInPage() {
                 />
                 <Image
                   src={NotevoLogo}
-                  alt="log Image"
-                  width={65}
-                  height={65}
-                  className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0 object-cover"
+                  alt="log on Image"
+                  width={100}
+                  height={100}
+                  className="absolute top-2/4 left-1/2 -translate-x-1/2 -translate-y-1/2 inset-0"
                 />
               </div>
             </CardContent>
