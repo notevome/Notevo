@@ -85,18 +85,44 @@ export const getFavWhiteboards = query({
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new ConvexError("Not authenticated");
-    return await ctx.db
+    const result = await ctx.db
       .query("whiteboards")
       .withIndex("by_userId", (q) => q.eq("userId", userId))
       .filter((q) => q.eq(q.field("favorite"), true))
       .order("desc")
       .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map((wb) => {
+        const folderId = wb.folderId ?? (wb as any).workingSpaceId;
+        const tableId = wb.tableId ?? (wb as any).notesTableId;
+        return {
+          ...wb,
+          folderId,
+          workingSpaceId: folderId,
+          tableId,
+          notesTableId: tableId,
+        };
+      }),
+    };
   },
 });
 
 export const getWhiteboardById = query({
   args: { _id: v.id("whiteboards") },
-  handler: async (ctx, args) => await requireOwner(ctx, args._id),
+  handler: async (ctx, args) => {
+    const wb = await requireOwner(ctx, args._id);
+    const folderId = wb.folderId ?? (wb as any).workingSpaceId;
+    const tableId = wb.tableId ?? (wb as any).notesTableId;
+    return {
+      ...wb,
+      folderId,
+      workingSpaceId: folderId,
+      tableId,
+      notesTableId: tableId,
+    };
+  },
 });
 
 export const updateWhiteboard = mutation({

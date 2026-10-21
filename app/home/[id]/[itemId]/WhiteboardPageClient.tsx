@@ -7,7 +7,6 @@ import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { buildItemSlug } from "@/lib/slug";
-import { recordLastVisitedLocation } from "@/lib/last-visited";
 import { useDebouncedCallback } from "use-debounce";
 import { useTheme } from "next-themes";
 import type {
@@ -59,15 +58,6 @@ export default function WhiteboardPageClient({
   const whiteboard = useQuery(api.whiteboards.getWhiteboardById, {
     _id: whiteboardId,
   });
-
-  useEffect(() => {
-    if (whiteboard) {
-      recordLastVisitedLocation(
-        (whiteboard as any).folderId || (whiteboard as any).workingSpaceId,
-        (whiteboard as any).tableId || (whiteboard as any).notesTableId,
-      );
-    }
-  }, [whiteboard]);
   const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const getFileUrl = useMutation(api.files.getUrl);

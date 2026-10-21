@@ -78,7 +78,9 @@ import PdfSettingsSidebar from "./PdfSettingsSidebar";
 import LinkSettingsSidebar from "./LinkSettingsSidebar";
 import WhiteboardSettingsSidebar from "./WhiteboardSettingsSidebar";
 import FolderSettingsSidebar from "./FolderSettingsSidebar";
-import FolderNewDropdownBtn from "./folder-new-dropdown-btn";
+import FolderNewDropdownBtn, {
+  GlobalCreateHandler,
+} from "./folder-new-dropdown-btn";
 import React from "react";
 import { ThemeToggle } from "../ThemeToggle";
 import { UserIcon } from "lucide-react";
@@ -349,7 +351,8 @@ const PinnedNoteItem = memo(
     const inputRef = useRef<HTMLInputElement>(null);
 
     const noteSlug = buildItemSlug(note.title || note.slug, note._id);
-    const notePath = `/home/${note.workingSpaceId}/${noteSlug}`;
+    const workspaceId = note.workingSpaceId ?? (note as any).folderId;
+    const notePath = `/home/${workspaceId}/${noteSlug}`;
     const noteHref = notePath;
     const pathSegments = pathname.split("/").filter(Boolean);
     const isActive =
@@ -695,8 +698,9 @@ const PinnedUploadItem = memo(
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
-    const pdfPath = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`;
-    const legacyPdfPath = `/home/${pdf.workingSpaceId}/${generateSlug(pdf.title || "untitled-pdf")}`;
+    const workspaceId = pdf.workingSpaceId ?? (pdf as any).folderId;
+    const pdfPath = `/home/${workspaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`;
+    const legacyPdfPath = `/home/${workspaceId}/${generateSlug(pdf.title || "untitled-pdf")}`;
     const pathSegments = pathname.split("/").filter(Boolean);
     const isActive =
       pathname === pdfPath ||
@@ -1047,8 +1051,9 @@ const PinnedWhiteboardItem = memo(
       whiteboard.title || "untitled-whiteboard",
       whiteboard._id,
     );
-    const whiteboardPath = `/home/${whiteboard.workingSpaceId}/${whiteboardSlug}`;
-    const legacyWhiteboardPath = `/home/${whiteboard.workingSpaceId}/${generateSlug(whiteboard.title || "untitled-whiteboard")}`;
+    const workspaceId = whiteboard.workingSpaceId ?? (whiteboard as any).folderId;
+    const whiteboardPath = `/home/${workspaceId}/${whiteboardSlug}`;
+    const legacyWhiteboardPath = `/home/${workspaceId}/${generateSlug(whiteboard.title || "untitled-whiteboard")}`;
     const whiteboardHref = whiteboardPath;
     const pathSegments = pathname.split("/").filter(Boolean);
     const isActive =
@@ -2444,11 +2449,18 @@ const AppSidebar = React.memo(function AppSidebar({
   }, [signOut]);
 
   if (isSidebarLoading) {
-    return <SkeletonSidebar sidebarWidth={sidebarWidth} open={open} />;
+    return (
+      <>
+        <GlobalCreateHandler />
+        <SkeletonSidebar sidebarWidth={sidebarWidth} open={open} />
+      </>
+    );
   }
 
   return (
-    <Sidebar
+    <>
+      <GlobalCreateHandler />
+      <Sidebar
       variant="inset"
       className="group bg-muted"
       style={{
@@ -2520,6 +2532,7 @@ const AppSidebar = React.memo(function AppSidebar({
         pathname={pathname}
       />
     </Sidebar>
+  </>
   );
 });
 

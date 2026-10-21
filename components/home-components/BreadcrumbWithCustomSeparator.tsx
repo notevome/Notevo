@@ -24,12 +24,23 @@ export default function BreadcrumbWithCustomSeparator() {
   const isTabletPro_horizontal = useMediaQuery({ maxWidth: 1366 });
 
   const homeIndex = pathSegments.findIndex((segment) => segment === "home");
-  const workingSpaceId: Id<"folders"> | null =
+  const rawWorkingSpaceId =
     homeIndex >= 0 && pathSegments.length > homeIndex + 1
-      ? (pathSegments[homeIndex + 1] as Id<"folders">)
+      ? pathSegments[homeIndex + 1]
       : null;
+  const isValidWorkspaceId =
+    rawWorkingSpaceId &&
+    rawWorkingSpaceId !== "undefined" &&
+    rawWorkingSpaceId !== "null";
+  const workingSpaceId: Id<"folders"> | null = isValidWorkspaceId
+    ? (rawWorkingSpaceId as Id<"folders">)
+    : null;
 
   const workspaceData = useQuery(api.folders.getRecentFolders);
+  const singleFolder = useQuery(
+    api.folders.getFolderById,
+    workingSpaceId ? { _id: workingSpaceId } : "skip",
+  );
   const workspaceDatafilter =
     workingSpaceId && workspaceData
       ? workspaceData.find(
@@ -37,6 +48,8 @@ export default function BreadcrumbWithCustomSeparator() {
             workspaceDatafiltered._id === workingSpaceId,
         )
       : null;
+  const workspaceName =
+    workspaceDatafilter?.name ?? (singleFolder as any)?.name;
 
   const getTruncatedName = (name: string) => {
     if (isMobile) {
@@ -59,14 +72,18 @@ export default function BreadcrumbWithCustomSeparator() {
 
           let displayName;
 
-          if (
-            index === homeIndex + 1 &&
-            workspaceDatafilter &&
-            workspaceDatafilter.name
-          ) {
-            displayName = workspaceDatafilter.name;
+          if (index === homeIndex + 1) {
+            if (workspaceName) {
+              displayName = workspaceName;
+            } else if (segment === "undefined" || segment === "null") {
+              displayName = "Workspace";
+            } else {
+              displayName = parseSlug(segment);
+            }
           } else if (segment.toLowerCase() === "pdf") {
             displayName = "PDF";
+          } else if (segment === "undefined" || segment === "null") {
+            displayName = "Document";
           } else {
             displayName = parseSlug(segment);
           }

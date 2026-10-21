@@ -119,8 +119,14 @@ export const getPdfById = query({
       throw new Error("PDF not found or not authorized");
     }
 
+    const folderId = pdf.folderId ?? (pdf as any).workingSpaceId;
+    const tableId = pdf.tableId ?? (pdf as any).notesTableId;
     return {
       ...pdf,
+      folderId,
+      workingSpaceId: folderId,
+      tableId,
+      notesTableId: tableId,
       fileUrl: await ctx.storage.getUrl(pdf.storageId),
     };
   },
@@ -152,7 +158,15 @@ export const getFavPdfs = query({
             const table = await ctx.db.get(pdf.tableId);
             if (!table) return null;
           }
-          return pdf;
+          const folderId = pdf.folderId ?? (pdf as any).workingSpaceId;
+          const tableId = pdf.tableId ?? (pdf as any).notesTableId;
+          return {
+            ...pdf,
+            folderId,
+            workingSpaceId: folderId,
+            tableId,
+            notesTableId: tableId,
+          };
         }),
       )
     ).filter((x): x is NonNullable<typeof x> => x !== null);
