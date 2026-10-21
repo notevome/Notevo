@@ -580,7 +580,8 @@ function NoteCard({ note }: { note: Note }) {
     : getContentPreviewFromBody(note.body);
 
   const isEmpty = !(note.preview || note.body);
-  const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
+  const workspaceId = note.workingSpaceId ?? (note as any).folderId;
+  const href = `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
 
   const noteCard = (
     <IntentPrefetchLink

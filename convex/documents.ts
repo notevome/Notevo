@@ -28,7 +28,16 @@ function computeDocumentPreview(body: string | undefined): string | undefined {
 function toDocumentListItem(doc: any) {
   const preview = doc.preview ?? computeDocumentPreview(doc.body);
   const { body, ...rest } = doc;
-  return { ...rest, preview };
+  const folderId = doc.folderId ?? doc.workingSpaceId;
+  const tableId = doc.tableId ?? doc.notesTableId;
+  return {
+    ...rest,
+    preview,
+    folderId,
+    workingSpaceId: folderId,
+    tableId,
+    notesTableId: tableId,
+  };
 }
 
 export const createDocument = mutation({
@@ -403,7 +412,15 @@ export const getDocumentById = query({
     if (doc.userId !== userId && doc.published === false) {
       throw new ConvexError("You are not authorized to access this document");
     }
-    return doc;
+    const folderId = doc.folderId ?? (doc as any).workingSpaceId;
+    const tableId = doc.tableId ?? (doc as any).notesTableId;
+    return {
+      ...doc,
+      folderId,
+      workingSpaceId: folderId,
+      tableId,
+      notesTableId: tableId,
+    };
   },
 });
 export const getNoteById = getDocumentById;

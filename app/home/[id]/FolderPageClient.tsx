@@ -22,7 +22,7 @@ import {
   FileOutput,
 } from "lucide-react";
 import { FaRegTrashCan } from "react-icons/fa6";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
 import {
   useState,
@@ -57,7 +57,10 @@ import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
-import { recordLastVisitedLocation } from "@/lib/last-visited";
+import {
+  recordLastVisitedLocation,
+  getLastVisitedTableForWorkspace,
+} from "@/lib/last-visited";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -1519,11 +1522,21 @@ export default function FolderPageClient({
     return "grid";
   });
 
+  const searchParams = useSearchParams();
+  const tableParam = searchParams.get("table") || searchParams.get("tableId");
+
   const [activeTableId, setActiveTableId] = useState<string>(() => {
     if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const urlTable = params.get("table") || params.get("tableId");
+      if (urlTable) return urlTable;
+
+      const workspaceSavedTable = getLastVisitedTableForWorkspace(workingSpaceId);
+      if (workspaceSavedTable) return workspaceSavedTable;
+
       return (
+        sessionStorage.getItem(`notevo_active_table_${workingSpaceId}`) ||
         sessionStorage.getItem(STORAGE_KEYS.ACTIVE_TABLE) ||
-        localStorage.getItem("notevo_last_visited_table_id") ||
         ""
       );
     }
@@ -1536,27 +1549,43 @@ export default function FolderPageClient({
     }
   }, [viewMode]);
 
+  // Record that the user visited this workspace (folder only — table is saved by handleTabChange on explicit navigation).
+  useEffect(() => {
+    if (workingSpaceId && typeof window !== "undefined") {
+      // Only write the folder key so the app knows to redirect here next time,
+      // but do NOT overwrite the per-workspace saved table.
+      recordLastVisitedLocation(workingSpaceId, null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workingSpaceId]);
+
   const defaultTableId = useMemo(() => {
     if (!tables || tables.length === 0) return undefined;
     const storedTableExists =
       activeTableId && tables.some((t: any) => t._id === activeTableId);
     if (storedTableExists) return activeTableId;
-    return tables[0]._id;
-  }, [tables, activeTableId]);
 
-  useEffect(() => {
-    if (workingSpaceId) {
-      recordLastVisitedLocation(workingSpaceId, defaultTableId);
+    const savedTableId = getLastVisitedTableForWorkspace(workingSpaceId);
+    if (savedTableId && tables.some((t: any) => t._id === savedTableId)) {
+      return savedTableId;
     }
-  }, [workingSpaceId, defaultTableId]);
 
-  const handleTabChange = (tableId: string) => {
+    return tables[0]._id;
+  }, [tables, activeTableId, workingSpaceId]);
+
+  const newlyCreatedTableIdRef = useRef<string | null>(null);
+
+  const handleTabChange = useCallback((tableId: string) => {
+    if (newlyCreatedTableIdRef.current === tableId) {
+      newlyCreatedTableIdRef.current = null;
+    }
     setActiveTableId(tableId);
     if (typeof window !== "undefined") {
+      sessionStorage.setItem(`notevo_active_table_${workingSpaceId}`, tableId);
       sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
     }
     recordLastVisitedLocation(workingSpaceId, tableId);
-  };
+  }, [workingSpaceId]);
 
   const prevTableIdsRef = useRef<Set<string> | null>(null);
   useEffect(() => {
@@ -1567,9 +1596,20 @@ export default function FolderPageClient({
     if (prevIds === null) return;
     const newTable = tables.find((t: any) => !prevIds.has(String(t._id)));
     if (newTable) {
-      handleTabChange(String(newTable._id));
+      newlyCreatedTableIdRef.current = String(newTable._id);
+      setActiveTableId(String(newTable._id));
     }
   }, [tables]);
+
+  useEffect(() => {
+    if (
+      tableParam &&
+      tables &&
+      tables.some((t: any) => String(t._id) === tableParam)
+    ) {
+      handleTabChange(tableParam);
+    }
+  }, [tableParam, tables, handleTabChange]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1581,20 +1621,10 @@ export default function FolderPageClient({
     };
     window.addEventListener("notevo:switch-table", handleSwitchTable);
 
-    const params = new URLSearchParams(window.location.search);
-    const tableParam = params.get("table") || params.get("tableId");
-    if (
-      tableParam &&
-      tables &&
-      tables.some((t: any) => String(t._id) === tableParam)
-    ) {
-      handleTabChange(tableParam);
-    }
-
     return () => {
       window.removeEventListener("notevo:switch-table", handleSwitchTable);
     };
-  }, [tables]);
+  }, [handleTabChange]);
 
   const [searchQuery, setSearchQuery] = useState<string>("");
 
@@ -3315,13 +3345,19 @@ function TimelineMiniCard({
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
+  const whiteboardWorkspaceId =
+    (item as WhiteboardItem).workingSpaceId ??
+    (item as any).folderId ??
+    workspaceId;
+  const pdfWorkspaceId =
+    (item as PdfItem).workingSpaceId ?? (item as any).folderId ?? workspaceId;
   const href = isWhiteboard
-    ? `/home/${(item as WhiteboardItem).workingSpaceId}/${buildItemSlug(
+    ? `/home/${whiteboardWorkspaceId}/${buildItemSlug(
         (item as WhiteboardItem).title || "untitled-whiteboard",
         item._id,
       )}`
     : isPdf
-      ? `/home/${(item as PdfItem).workingSpaceId}/${buildItemSlug(
+      ? `/home/${pdfWorkspaceId}/${buildItemSlug(
           (item as PdfItem).title || "untitled-pdf",
           item._id,
         )}`
@@ -3483,7 +3519,7 @@ function getWorkspaceItemDetails(
     return {
       title: board.title || "Untitled whiteboard",
       subtitle: isWhiteboardEmpty(board) ? EMPTY_CONTENT_MESSAGE : "",
-      href: `/home/${board.workingSpaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
+      href: `/home/${board.workingSpaceId ?? (board as any).folderId ?? workspaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
   if (item.kind === "pdf") {
@@ -3491,7 +3527,7 @@ function getWorkspaceItemDetails(
     return {
       title: pdf.title || "Untitled PDF",
       subtitle: "PDF upload",
-      href: `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
+      href: `/home/${pdf.workingSpaceId ?? (pdf as any).folderId ?? workspaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
     };
   }
   if (item.kind === "link") {

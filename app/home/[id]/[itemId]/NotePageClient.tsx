@@ -21,7 +21,6 @@ import {
   cachePrefetchedNote,
   getPrefetchedNote,
 } from "@/lib/notePrefetchCache";
-import { recordLastVisitedLocation } from "@/lib/last-visited";
 const noteMemoryCache = new Map<string, unknown>();
 
 const noteTitleSchema = z
@@ -66,15 +65,6 @@ export default function NotePageClient({
   }, [note, noteId]);
 
   const stableNote = note ?? lastNote;
-
-  useEffect(() => {
-    if (stableNote?.workingSpaceId) {
-      recordLastVisitedLocation(
-        stableNote.workingSpaceId,
-        stableNote.notesTableId || (stableNote as any).tableId,
-      );
-    }
-  }, [stableNote?.workingSpaceId, stableNote?.notesTableId]);
 
   const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {

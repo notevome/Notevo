@@ -8,7 +8,7 @@ import {
   useState,
   type ChangeEvent,
 } from "react";
-import { insertAtTop, useAction, useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,7 +19,6 @@ import {
   FileText,
   Link2,
   PanelTop,
-  Plus,
   SquarePen,
 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -44,10 +43,8 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
 import { buildItemSlug } from "@/lib/slug";
-import {
-  recordLastVisitedLocation,
-  getLastVisitedLocation,
-} from "@/lib/last-visited";
+import { getLastVisitedLocation } from "@/lib/last-visited";
+import { useSidebar } from "@/components/ui/sidebar";
 import {
   FaYoutube,
   FaXTwitter,
@@ -135,20 +132,9 @@ export default function FolderNewDropdownBtn({
   const [preferredAction, setPreferredAction] =
     useState<PreferredAction>("note");
   const [isUploading, setIsUploading] = useState(false);
-  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
-  const [linkUrl, setLinkUrl] = useState("");
-  const [linkTitle, setLinkTitle] = useState("");
-  const [isInsertingLink, setIsInsertingLink] = useState(false);
-  const linkInputRef = useRef<HTMLInputElement>(null);
 
   const getWorkingSpaces = useQuery(api.folders.getRecentFolders);
   const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
-
-  const [lastLoc, setLastLoc] = useState(() => getLastVisitedLocation());
-
-  useEffect(() => {
-    setLastLoc(getLastVisitedLocation());
-  }, [pathname, workingSpaceId, notesTableId]);
 
   const activeWorkingSpace = useMemo(() => {
     if (workingSpaceId && getWorkingSpaces) {
@@ -179,7 +165,7 @@ export default function FolderNewDropdownBtn({
   > => {
     if (notesTableId) return notesTableId;
 
-    const freshLoc = getLastVisitedLocation();
+    const freshLoc = getLastVisitedLocation(resolvedWorkingSpaceId);
     if (freshLoc.tableId && tables && Array.isArray(tables)) {
       const match = tables.find((t: any) => String(t._id) === freshLoc.tableId);
       if (match) return match._id;
@@ -198,16 +184,7 @@ export default function FolderNewDropdownBtn({
     }
 
     return undefined;
-  }, [notesTableId, tables, resolvedWorkingSpaceId, getOrCreateTable]);
-
-  const detectedPlatform = useMemo(() => {
-    if (!linkUrl.trim()) return null;
-    // Only detect if it looks like a URL
-    if (!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
-      return null;
-    }
-    return detectLinkPlatform(linkUrl);
-  }, [linkUrl]);
+  }, [notesTableId, resolvedWorkingSpaceId, tables, getOrCreateTable]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -231,37 +208,17 @@ export default function FolderNewDropdownBtn({
 
   const generateUploadUrl = useMutation(api.pdfs.generateUploadUrl);
   const sendPdf = useMutation(api.pdfs.sendPdf);
-  const createLink = useMutation(api.links.createLink);
   const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
-  const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
   const isDisabled = useMemo(
     () => !resolvedWorkingSpaceId || isUploading,
     [isUploading, resolvedWorkingSpaceId],
   );
 
-  const navigateToSavedTable = useCallback(
-    (folderId: Id<"folders">, tableId: Id<"tables">) => {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("active_table", String(tableId));
-        window.dispatchEvent(
-          new CustomEvent("notevo:switch-table", {
-            detail: { tableId: String(tableId) },
-          }),
-        );
-      }
-      recordLastVisitedLocation(folderId, tableId);
-      router.push(`/home/${folderId}?table=${tableId}`);
-    },
-    [router],
-  );
-
   const handleCreateNote = useCallback(async () => {
     if (!resolvedWorkingSpaceId) return;
     const targetTableId = await resolveTargetTableId();
     if (!targetTableId) return;
-
-    recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
 
     const { token } = beginNoteDraft({
       notesTableId: targetTableId,
@@ -285,8 +242,6 @@ export default function FolderNewDropdownBtn({
     try {
       const targetTableId = await resolveTargetTableId();
       if (!targetTableId) return;
-
-      recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
 
       const whiteboardId = await createWhiteboard({
         title: "Untitled whiteboard",
@@ -330,8 +285,6 @@ export default function FolderNewDropdownBtn({
         const targetTableId = await resolveTargetTableId();
         if (!targetTableId) return;
 
-        recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
-
         const uploadUrl = await generateUploadUrl({});
         const response = await fetch(uploadUrl, {
           method: "POST",
@@ -356,12 +309,6 @@ export default function FolderNewDropdownBtn({
           notesTableId: targetTableId,
         });
 
-        const targetTable = tables?.find(
-          (t: any) => String(t._id) === String(targetTableId),
-        );
-        const targetTableName = targetTable?.name || "Table";
-        const targetFolderName = activeWorkingSpace?.name || "Folder";
-
         toast({
           variant: "default",
           title: "PDF uploaded successfully",
@@ -370,23 +317,6 @@ export default function FolderNewDropdownBtn({
             <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
               <Link
                 href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    sessionStorage.setItem(
-                      "active_table",
-                      String(targetTableId),
-                    );
-                    window.dispatchEvent(
-                      new CustomEvent("notevo:switch-table", {
-                        detail: { tableId: String(targetTableId) },
-                      }),
-                    );
-                  }
-                  recordLastVisitedLocation(
-                    resolvedWorkingSpaceId,
-                    targetTableId,
-                  );
-                }}
                 className="flex justify-center items-center gap-2 text-xs"
               >
                 <FileSymlink size={16} />
@@ -407,139 +337,19 @@ export default function FolderNewDropdownBtn({
       }
     },
     [
-      activeWorkingSpace?.name,
       generateUploadUrl,
-      navigateToSavedTable,
       resolveTargetTableId,
       resolvedWorkingSpaceId,
       sendPdf,
-      tables,
       toast,
     ],
   );
 
-  const handleInsertLink = useCallback(async () => {
-    if (!resolvedWorkingSpaceId) return;
-
-    const trimmedUrl = linkUrl.trim();
-    if (!trimmedUrl) {
-      toast({
-        title: "URL required",
-        description: "Please enter a valid URL.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Basic URL validation
-    const finalUrl = normalizeLinkUrl(trimmedUrl);
-
-    try {
-      new URL(finalUrl);
-    } catch {
-      toast({
-        title: "Invalid URL",
-        description: "Please enter a valid URL.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const platform = detectLinkPlatform(finalUrl);
-    const userTitle = linkTitle.trim() || undefined;
-
-    setIsInsertingLink(true);
-    try {
-      const targetTableId = await resolveTargetTableId();
-      if (!targetTableId) return;
-
-      recordLastVisitedLocation(resolvedWorkingSpaceId, targetTableId);
-
-      let fetchedTitle: string | undefined;
-      let metadata:
-        | Awaited<ReturnType<typeof fetchLinkMetadata>>["metadata"]
-        | any = undefined;
-      try {
-        const preview = await fetchLinkMetadata({ url: finalUrl, platform });
-        fetchedTitle = preview.title;
-        metadata = preview.metadata;
-      } catch (metadataError) {
-        console.error("Failed to fetch link preview:", metadataError);
-      }
-
-      await createLink({
-        url: finalUrl,
-        platform,
-        metadata,
-        title: userTitle ?? fetchedTitle,
-        workingSpaceId: resolvedWorkingSpaceId,
-        notesTableId: targetTableId,
-      });
-      setLinkUrl("");
-      setLinkTitle("");
-      setIsLinkDialogOpen(false);
-
-      toast({
-        variant: "default",
-        title: "Link added successfully",
-        description: "hey go and take a look at your stuff !!",
-        action: (
-          <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
-            <Link
-              href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  sessionStorage.setItem("active_table", String(targetTableId));
-                  window.dispatchEvent(
-                    new CustomEvent("notevo:switch-table", {
-                      detail: { tableId: String(targetTableId) },
-                    }),
-                  );
-                }
-                recordLastVisitedLocation(
-                  resolvedWorkingSpaceId,
-                  targetTableId,
-                );
-              }}
-              className="flex justify-center items-center gap-2 text-xs"
-            >
-              <FileSymlink size={16} />
-              Checkout
-            </Link>
-          </Button>
-        ),
-      });
-    } catch (error) {
-      console.error("Failed to insert link:", error);
-      toast({
-        title: "Could not insert link",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsInsertingLink(false);
-    }
-  }, [
-    activeWorkingSpace?.name,
-    createLink,
-    fetchLinkMetadata,
-    linkTitle,
-    linkUrl,
-    navigateToSavedTable,
-    resolveTargetTableId,
-    resolvedWorkingSpaceId,
-    tables,
-    toast,
-  ]);
-
   const handleSelectInsertLink = useCallback(() => {
     persistPreferredAction("link");
-    setLinkUrl("");
-    setLinkTitle("");
-    setIsLinkDialogOpen(true);
-    setTimeout(() => {
-      linkInputRef.current?.focus();
-    }, 100);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("notevo:open-insert-link"));
+    }
   }, [persistPreferredAction]);
 
   const handlePrimaryAction = useCallback(async () => {
@@ -559,7 +369,12 @@ export default function FolderNewDropdownBtn({
     }
 
     await handleCreateNote();
-  }, [handleCreateNote, handleSelectInsertLink, preferredAction]);
+  }, [
+    handleCreateNote,
+    handleCreateWhiteboard,
+    handleSelectInsertLink,
+    preferredAction,
+  ]);
 
   const handleFileChange = useCallback(
     async (event: ChangeEvent<HTMLInputElement>) => {
@@ -585,48 +400,6 @@ export default function FolderNewDropdownBtn({
     persistPreferredAction("whiteboard");
     await handleCreateWhiteboard();
   }, [handleCreateWhiteboard, persistPreferredAction]);
-
-  useEffect(() => {
-    const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        e.shiftKey &&
-        e.key.toLowerCase() === "o"
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        handleCreateNote();
-      }
-    };
-    window.addEventListener("keydown", handlerCreateNoteShortcut);
-    return () =>
-      window.removeEventListener("keydown", handlerCreateNoteShortcut);
-  }, [handleCreateNote]);
-
-  useEffect(() => {
-    const handlerInsertLinkShortcut = (e: KeyboardEvent) => {
-      if (
-        e.shiftKey &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        e.key.toLowerCase() === "l"
-      ) {
-        const target = e.target as HTMLElement | null;
-        const tag = target?.tagName;
-        const isEditableTarget =
-          tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
-        if (isEditableTarget) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-        handleSelectInsertLink();
-      }
-    };
-    window.addEventListener("keydown", handlerInsertLinkShortcut);
-    return () =>
-      window.removeEventListener("keydown", handlerInsertLinkShortcut);
-  }, [handleSelectInsertLink]);
 
   return (
     <>
@@ -731,65 +504,321 @@ export default function FolderNewDropdownBtn({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
-      <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border px-4 pt-4 pb-2.5">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Link2 className="h-5 w-5 text-primary" />
-              Insert Link
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Paste a link from YouTube, X, LinkedIn, Instagram, or any website.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
-              URL <span className="text-destructive">*</span>
-            </label>
-            <Input
-              ref={linkInputRef}
-              value={linkUrl}
-              onChange={(e) => setLinkUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isInsertingLink) {
-                  e.preventDefault();
-                  void handleInsertLink();
-                }
-              }}
-              placeholder="https://youtube.com/watch?v=..."
-              className="border-border h-8"
-            />
-            {detectedPlatform && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 px-1">
-                <PlatformIcon platform={detectedPlatform} className="h-4 w-4" />
-                <span>
-                  Detected:{" "}
-                  <span className="text-foreground font-medium">
-                    {PLATFORM_LABELS[detectedPlatform]}
-                  </span>
-                </span>
-              </div>
-            )}
-          </div>
-          <DialogFooter className=" flex-row-reverse w-full gap-2 pt-2.5">
-            <Button
-              onClick={() => void handleInsertLink()}
-              disabled={isInsertingLink || !linkUrl.trim()}
-              className=" h-8 !app-radius-none"
-            >
-              {isInsertingLink ? "Inserting..." : "Insert Link"}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setIsLinkDialogOpen(false)}
-              className="border-border h-8"
-            >
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
+  );
+}
+
+export function GlobalCreateHandler() {
+  const { toast } = useToast();
+  const pathname = usePathname();
+  const router = useRouter();
+  const { setOpenMobile } = useSidebar();
+  const { beginNoteDraft } = usePendingNoteDraftContext();
+
+  const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [linkTitle, setLinkTitle] = useState("");
+  const [isInsertingLink, setIsInsertingLink] = useState(false);
+  const linkInputRef = useRef<HTMLInputElement>(null);
+
+  const getWorkingSpaces = useQuery(api.folders.getRecentFolders);
+  const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
+  const createLink = useMutation(api.links.createLink);
+  const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
+
+  const activeWorkingSpace = useMemo(() => {
+    const freshLoc = getLastVisitedLocation();
+    const list = getWorkingSpaces;
+    if (freshLoc.folderId && list) {
+      const match = list.find((w: any) => String(w._id) === freshLoc.folderId);
+      if (match) return match;
+    }
+    return list?.[0];
+  }, [getWorkingSpaces]);
+
+  const resolvedWorkingSpaceId = activeWorkingSpace?._id;
+  const resolvedWorkingSpacesSlug = activeWorkingSpace?.slug ?? "";
+
+  const tables = useQuery(
+    api.tables.getTables,
+    resolvedWorkingSpaceId ? { folderId: resolvedWorkingSpaceId } : "skip",
+  );
+
+  const resolveTargetTableId = useCallback(async (): Promise<
+    Id<"tables"> | undefined
+  > => {
+    const freshLoc = getLastVisitedLocation(resolvedWorkingSpaceId);
+    if (freshLoc.tableId && tables && Array.isArray(tables)) {
+      const match = tables.find((t: any) => String(t._id) === freshLoc.tableId);
+      if (match) return match._id;
+    }
+
+    if (tables && tables.length > 0) {
+      return tables[0]._id;
+    }
+
+    if (resolvedWorkingSpaceId) {
+      const created = await getOrCreateTable({
+        name: "Documents",
+        folderId: resolvedWorkingSpaceId,
+      });
+      return created;
+    }
+
+    return undefined;
+  }, [tables, resolvedWorkingSpaceId, getOrCreateTable]);
+
+  const handleCreateNote = useCallback(async () => {
+    if (!resolvedWorkingSpaceId) return;
+    const targetTableId = await resolveTargetTableId();
+    if (!targetTableId) return;
+
+    const { token } = beginNoteDraft({
+      notesTableId: targetTableId,
+      title: "Untitled",
+      workingSpaceId: resolvedWorkingSpaceId,
+      workingSpacesSlug: resolvedWorkingSpacesSlug,
+      originPath: pathname,
+    });
+    setOpenMobile(false);
+    router.push(`/home/${resolvedWorkingSpaceId}/draft-${token}`);
+  }, [
+    beginNoteDraft,
+    pathname,
+    resolveTargetTableId,
+    resolvedWorkingSpaceId,
+    resolvedWorkingSpacesSlug,
+    router,
+    setOpenMobile,
+  ]);
+
+  const handleOpenInsertLink = useCallback(() => {
+    setLinkUrl("");
+    setLinkTitle("");
+    setIsLinkDialogOpen(true);
+    setTimeout(() => {
+      linkInputRef.current?.focus();
+    }, 100);
+  }, []);
+
+  useEffect(() => {
+    const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "o"
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        void handleCreateNote();
+      }
+    };
+    window.addEventListener("keydown", handlerCreateNoteShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerCreateNoteShortcut);
+  }, [handleCreateNote]);
+
+  useEffect(() => {
+    const handlerInsertLinkShortcut = (e: KeyboardEvent) => {
+      if (
+        e.shiftKey &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "l"
+      ) {
+        const target = e.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const isEditableTarget =
+          tag === "INPUT" || tag === "TEXTAREA" || target?.isContentEditable;
+        if (isEditableTarget) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        handleOpenInsertLink();
+      }
+    };
+    window.addEventListener("keydown", handlerInsertLinkShortcut);
+    return () =>
+      window.removeEventListener("keydown", handlerInsertLinkShortcut);
+  }, [handleOpenInsertLink]);
+
+  useEffect(() => {
+    const handleOpenLinkEvent = () => {
+      handleOpenInsertLink();
+    };
+    window.addEventListener("notevo:open-insert-link", handleOpenLinkEvent);
+    return () =>
+      window.removeEventListener("notevo:open-insert-link", handleOpenLinkEvent);
+  }, [handleOpenInsertLink]);
+
+  useEffect(() => {
+    const handleCreateNoteEvent = () => {
+      void handleCreateNote();
+    };
+    window.addEventListener("notevo:create-note", handleCreateNoteEvent);
+    return () =>
+      window.removeEventListener("notevo:create-note", handleCreateNoteEvent);
+  }, [handleCreateNote]);
+
+  const detectedPlatform = useMemo(() => {
+    if (!linkUrl.trim()) return null;
+    if (!linkUrl.startsWith("http://") && !linkUrl.startsWith("https://")) {
+      return null;
+    }
+    return detectLinkPlatform(linkUrl);
+  }, [linkUrl]);
+
+  const handleInsertLink = useCallback(async () => {
+    if (!resolvedWorkingSpaceId) return;
+
+    const trimmedUrl = linkUrl.trim();
+    if (!trimmedUrl) {
+      toast({
+        title: "URL required",
+        description: "Please enter a valid URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const finalUrl = normalizeLinkUrl(trimmedUrl);
+
+    try {
+      new URL(finalUrl);
+    } catch {
+      toast({
+        title: "Invalid URL",
+        description: "Please enter a valid URL.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const platform = detectLinkPlatform(finalUrl);
+    const userTitle = linkTitle.trim() || undefined;
+
+    setIsInsertingLink(true);
+    try {
+      const targetTableId = await resolveTargetTableId();
+      if (!targetTableId) return;
+
+      let fetchedTitle: string | undefined;
+      let metadata: any = undefined;
+      try {
+        const preview = await fetchLinkMetadata({ url: finalUrl, platform });
+        fetchedTitle = preview.title;
+        metadata = preview.metadata;
+      } catch (metadataError) {
+        console.error("Failed to fetch link preview:", metadataError);
+      }
+
+      await createLink({
+        url: finalUrl,
+        platform,
+        metadata,
+        title: userTitle ?? fetchedTitle,
+        workingSpaceId: resolvedWorkingSpaceId,
+        notesTableId: targetTableId,
+      });
+      setLinkUrl("");
+      setLinkTitle("");
+      setIsLinkDialogOpen(false);
+
+      toast({
+        variant: "default",
+        title: "Link added successfully",
+        description: "hey go and take a look at your stuff !!",
+        action: (
+          <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
+            <Link
+              href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
+              className="flex justify-center items-center gap-2 text-xs"
+            >
+              <FileSymlink size={16} />
+              Checkout
+            </Link>
+          </Button>
+        ),
+      });
+    } catch (error) {
+      console.error("Failed to insert link:", error);
+      toast({
+        title: "Could not insert link",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsInsertingLink(false);
+    }
+  }, [
+    createLink,
+    fetchLinkMetadata,
+    linkTitle,
+    linkUrl,
+    resolveTargetTableId,
+    resolvedWorkingSpaceId,
+    toast,
+  ]);
+
+  return (
+    <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+      <DialogContent className="sm:max-w-md bg-card border-border px-4 pt-4 pb-2.5">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Link2 className="h-5 w-5 text-primary" />
+            Insert Link
+          </DialogTitle>
+          <DialogDescription className="text-muted-foreground">
+            Paste a link from YouTube, X, LinkedIn, Instagram, or any website.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            URL <span className="text-destructive">*</span>
+          </label>
+          <Input
+            ref={linkInputRef}
+            value={linkUrl}
+            onChange={(e) => setLinkUrl(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isInsertingLink) {
+                e.preventDefault();
+                void handleInsertLink();
+              }
+            }}
+            placeholder="https://youtube.com/watch?v=..."
+            className="border-border h-8"
+          />
+          {detectedPlatform && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1 px-1">
+              <PlatformIcon platform={detectedPlatform} className="h-4 w-4" />
+              <span>
+                Detected:{" "}
+                <span className="text-foreground font-medium">
+                  {PLATFORM_LABELS[detectedPlatform]}
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+        <DialogFooter className=" flex-row-reverse w-full gap-2 pt-2.5">
+          <Button
+            onClick={() => void handleInsertLink()}
+            disabled={isInsertingLink || !linkUrl.trim()}
+            className=" h-8 !app-radius-none"
+          >
+            {isInsertingLink ? "Inserting..." : "Insert Link"}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setIsLinkDialogOpen(false)}
+            className="border-border h-8"
+          >
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

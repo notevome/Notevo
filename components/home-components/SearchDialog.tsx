@@ -141,7 +141,8 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
 }
 
 function NoteItem({ note, onClick, isSelected, query, indented = false }: any) {
-  const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
+  const workspaceId = note.workingSpaceId ?? note.folderId;
+  const href = `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -186,7 +187,8 @@ function PdfItem({ pdf, onClick, isSelected, query, indented = false }: any) {
       ? pdf.slug
       : `/${pdf.slug}`
     : "";
-  const href = `/home/${pdf.workingSpaceId}/${buildItemSlug(pdf.title || pdf.slug, pdf._id)}`;
+  const workspaceId = pdf.workingSpaceId ?? pdf.folderId;
+  const href = `/home/${workspaceId}/${buildItemSlug(pdf.title || pdf.slug, pdf._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -236,7 +238,8 @@ function WhiteboardItem({
       ? whiteboard.slug
       : `/${whiteboard.slug}`
     : "";
-  const href = `/home/${whiteboard.workingSpaceId}/${buildItemSlug(whiteboard.title || whiteboard.slug, whiteboard._id)}`;
+  const workspaceId = whiteboard.workingSpaceId ?? whiteboard.folderId;
+  const href = `/home/${workspaceId}/${buildItemSlug(whiteboard.title || whiteboard.slug, whiteboard._id)}`;
   return (
     <IntentPrefetchLink
       href={href}
@@ -883,7 +886,8 @@ export default function SearchDialog({
     if (!open) return;
     const note = allNotes[selectedIndex];
     if (!note || note.kind === "link") return;
-    const href = `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
+    const workspaceId = note.workingSpaceId ?? note.folderId;
+    const href = `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
     prefetchOnce(href, note.kind === "note" ? note._id : undefined);
   }, [open, allNotes, selectedIndex, prefetchOnce]);
 
@@ -934,8 +938,9 @@ export default function SearchDialog({
           title: "Cannot open in side pane",
           description: "Whiteboards cannot be opened in a side pane FOR NOW.",
         });
+        const workspaceId = note.workingSpaceId ?? note.folderId;
         router.push(
-          `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+          `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
         );
       } else if (note.kind === "note") {
         openPane({
@@ -953,17 +958,18 @@ export default function SearchDialog({
     }
     event.preventDefault();
     setOpen(false);
+    const workspaceId = note.workingSpaceId ?? note.folderId;
     if (note.kind === "pdf") {
       router.push(
-        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+        `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
       );
     } else if (note.kind === "whiteboard") {
       router.push(
-        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+        `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
       );
     } else {
       router.push(
-        `/home/${note.workingSpaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+        `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
       );
     }
   };
