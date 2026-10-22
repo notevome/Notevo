@@ -837,57 +837,57 @@ function TableTab({ table }: { table: any }) {
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const updateTable = useMutation(
-    api.tables.updateTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { _id, name } = args;
-    const workspaces = local.getQuery(api.folders.getRecentFolders);
-    if (workspaces && Array.isArray(workspaces)) {
-      for (const ws of workspaces) {
-        const tables = local.getQuery(api.tables.getTables, {
-          folderId: ws._id,
-        });
-        if (tables && Array.isArray(tables)) {
-          const found = tables.some((t: any) => t._id === _id);
-          if (found) {
-            local.setQuery(
-              api.tables.getTables,
-              { folderId: ws._id },
-              tables.map((t: any) =>
-                t._id === _id
-                  ? { ...t, name: name ?? t.name, updatedAt: Date.now() }
-                  : t,
-              ),
-            );
-            break;
+  const updateTable = useMutation(api.tables.updateTable).withOptimisticUpdate(
+    (local, args) => {
+      const { _id, name } = args;
+      const workspaces = local.getQuery(api.folders.getRecentFolders);
+      if (workspaces && Array.isArray(workspaces)) {
+        for (const ws of workspaces) {
+          const tables = local.getQuery(api.tables.getTables, {
+            folderId: ws._id,
+          });
+          if (tables && Array.isArray(tables)) {
+            const found = tables.some((t: any) => t._id === _id);
+            if (found) {
+              local.setQuery(
+                api.tables.getTables,
+                { folderId: ws._id },
+                tables.map((t: any) =>
+                  t._id === _id
+                    ? { ...t, name: name ?? t.name, updatedAt: Date.now() }
+                    : t,
+                ),
+              );
+              break;
+            }
           }
         }
       }
-    }
-  });
-  const deleteTable = useMutation(
-    api.tables.deleteTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { _id } = args;
-    const workspaces = local.getQuery(api.folders.getRecentFolders);
-    if (workspaces && Array.isArray(workspaces)) {
-      for (const ws of workspaces) {
-        const tables = local.getQuery(api.tables.getTables, {
-          folderId: ws._id,
-        });
-        if (tables && Array.isArray(tables)) {
-          if (tables.some((t: any) => t._id === _id)) {
-            local.setQuery(
-              api.tables.getTables,
-              { folderId: ws._id },
-              tables.filter((t: any) => t._id !== _id),
-            );
-            break;
+    },
+  );
+  const deleteTable = useMutation(api.tables.deleteTable).withOptimisticUpdate(
+    (local, args) => {
+      const { _id } = args;
+      const workspaces = local.getQuery(api.folders.getRecentFolders);
+      if (workspaces && Array.isArray(workspaces)) {
+        for (const ws of workspaces) {
+          const tables = local.getQuery(api.tables.getTables, {
+            folderId: ws._id,
+          });
+          if (tables && Array.isArray(tables)) {
+            if (tables.some((t: any) => t._id === _id)) {
+              local.setQuery(
+                api.tables.getTables,
+                { folderId: ws._id },
+                tables.filter((t: any) => t._id !== _id),
+              );
+              break;
+            }
           }
         }
       }
-    }
-  });
+    },
+  );
 
   const handleDoubleClick = useCallback(
     (e: React.MouseEvent) => {
@@ -1531,7 +1531,8 @@ export default function FolderPageClient({
       const urlTable = params.get("table") || params.get("tableId");
       if (urlTable) return urlTable;
 
-      const workspaceSavedTable = getLastVisitedTableForWorkspace(workingSpaceId);
+      const workspaceSavedTable =
+        getLastVisitedTableForWorkspace(workingSpaceId);
       if (workspaceSavedTable) return workspaceSavedTable;
 
       return (
@@ -1549,11 +1550,9 @@ export default function FolderPageClient({
     }
   }, [viewMode]);
 
-  // Record that the user visited this workspace (folder only — table is saved by handleTabChange on explicit navigation).
   useEffect(() => {
     if (workingSpaceId && typeof window !== "undefined") {
       // Only write the folder key so the app knows to redirect here next time,
-      // but do NOT overwrite the per-workspace saved table.
       recordLastVisitedLocation(workingSpaceId, null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1573,19 +1572,38 @@ export default function FolderPageClient({
     return tables[0]._id;
   }, [tables, activeTableId, workingSpaceId]);
 
-  const newlyCreatedTableIdRef = useRef<string | null>(null);
-
-  const handleTabChange = useCallback((tableId: string) => {
-    if (newlyCreatedTableIdRef.current === tableId) {
-      newlyCreatedTableIdRef.current = null;
+  useEffect(() => {
+    if (!defaultTableId) return;
+    const tableId = String(defaultTableId);
+    if (activeTableId !== tableId) {
+      setActiveTableId(tableId);
     }
-    setActiveTableId(tableId);
     if (typeof window !== "undefined") {
       sessionStorage.setItem(`notevo_active_table_${workingSpaceId}`, tableId);
       sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
     }
     recordLastVisitedLocation(workingSpaceId, tableId);
-  }, [workingSpaceId]);
+  }, [activeTableId, defaultTableId, workingSpaceId]);
+
+  const newlyCreatedTableIdRef = useRef<string | null>(null);
+
+  const handleTabChange = useCallback(
+    (tableId: string) => {
+      if (newlyCreatedTableIdRef.current === tableId) {
+        newlyCreatedTableIdRef.current = null;
+      }
+      setActiveTableId(tableId);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(
+          `notevo_active_table_${workingSpaceId}`,
+          tableId,
+        );
+        sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
+      }
+      recordLastVisitedLocation(workingSpaceId, tableId);
+    },
+    [workingSpaceId],
+  );
 
   const prevTableIdsRef = useRef<Set<string> | null>(null);
   useEffect(() => {

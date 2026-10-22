@@ -30,6 +30,7 @@ import {
 import { useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import { api } from "@/convex/_generated/api";
+import { recordLastVisitedLocation } from "@/lib/last-visited";
 import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -1011,6 +1012,12 @@ export default function PdfViewerPageClient({
   renderedInPane?: boolean;
 }) {
   const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
+
+  useEffect(() => {
+    if (pdf?.workingSpaceId && pdf.notesTableId) {
+      recordLastVisitedLocation(pdf.workingSpaceId, pdf.notesTableId);
+    }
+  }, [pdf?.workingSpaceId, pdf?.notesTableId]);
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [hasMeasuredViewport, setHasMeasuredViewport] = useState(false);
   const viewerHostRef = useRef<HTMLDivElement | null>(null);
