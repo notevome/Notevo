@@ -61,13 +61,13 @@ export default function WhiteboardPageClient({
   });
 
   useEffect(() => {
-    if (whiteboard?.workingSpaceId && whiteboard.notesTableId) {
+    if (whiteboard?.folderId && whiteboard.tableId) {
       recordLastVisitedLocation(
-        whiteboard.workingSpaceId,
-        whiteboard.notesTableId,
+        whiteboard.folderId,
+        whiteboard.tableId,
       );
     }
-  }, [whiteboard?.workingSpaceId, whiteboard?.notesTableId]);
+  }, [whiteboard?.folderId, whiteboard?.tableId]);
   const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
   const generateUploadUrl = useMutation(api.files.generateUploadUrl);
   const getFileUrl = useMutation(api.files.getUrl);
