@@ -1231,10 +1231,6 @@ function SliderTabsList({
     tables,
   );
 
-  // The picked-up tab is pulled out of the strip while it is being dragged, so
-  // only the drag ghost + the dashed drop slot are visible. Hiding is deferred
-  // one tick because changing the layout inside `dragstart` makes browsers
-  // cancel the drag. The element stays mounted so `dragend` still fires.
   const [hiddenTabId, setHiddenTabId] = useState<string | null>(null);
   useEffect(() => {
     if (!draggingId) setHiddenTabId(null);
@@ -1243,73 +1239,82 @@ function SliderTabsList({
   return (
     <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => scroll("left")}
-          aria-label="scroll-tabs-left"
-          className={cn(
-            "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
-            canScrollLeft
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => scroll("right")}
-          aria-label="scroll-tabs-right"
-          className={cn(
-            "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 app-radius-md w-7 shadow-sm transition-all duration-200 !app-radius-none",
-            canScrollRight
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none",
-          )}
-        >
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Button>
-
-        <div
-          className="absolute left-0 top-0 bottom-0 w-32 z-[5] pointer-events-none transition-opacity duration-200"
-          style={{
-            opacity: canScrollLeft ? 1 : 0,
-            background:
-              "linear-gradient(to right, hsl(var(--muted)) 20%, transparent)",
-          }}
-        />
-        <div
-          className="absolute right-0 top-0 bottom-0 w-32 z-[5] pointer-events-none transition-opacity duration-200"
-          style={{
-            opacity: canScrollRight ? 1 : 0,
-            background:
-              "linear-gradient(to left, hsl(var(--muted)) 20%, transparent)",
-          }}
-        />
-
         <TabsList
           className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !app-radius-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
-          <div
-            ref={scrollRef}
-            className="flex items-center gap-2 flex-nowrap"
-            style={
-              {
-                overflowX: "auto",
-                scrollbarWidth: "none",
-                msOverflowStyle: "none",
-              } as React.CSSProperties
-            }
-          >
-            {orderedTables.map((table) => (
-              <Fragment key={table._id}>
-                {dropTarget?.id === table._id &&
-                  dropTarget?.position === "before" && (
+          <div className="relative min-w-0 flex-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scroll("left")}
+              aria-label="scroll-tabs-left"
+              className={cn(
+                "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                canScrollLeft
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none",
+              )}
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => scroll("right")}
+              aria-label="scroll-tabs-right"
+              className={cn(
+                "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                canScrollRight
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none",
+              )}
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </Button>
+            <div
+              className="absolute -left-1 -top-8 -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
+              style={{
+                opacity: canScrollLeft ? 1 : 0,
+                background:
+                  "linear-gradient(to right, hsl(var(--muted)) 20%, transparent)",
+              }}
+            />
+            <div
+              className="absolute right-0 -top-8 -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
+              style={{
+                opacity: canScrollRight ? 1 : 0,
+                background:
+                  "linear-gradient(to left, hsl(var(--muted)) 20%, transparent)",
+              }}
+            />
+            <div
+              ref={scrollRef}
+              className="flex w-full min-w-0 items-center gap-2 flex-nowrap"
+              style={
+                {
+                  overflowX: "auto",
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                } as React.CSSProperties
+              }
+            >
+              {orderedTables.map((table) => (
+                <Fragment key={table._id}>
+                  {dropTarget?.id === table._id &&
+                    dropTarget?.position === "before" && (
+                      <div
+                        className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                        style={{ width: draggedSize?.width ?? 128 }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleDrop();
+                        }}
+                      />
+                    )}
+                  {hiddenTabId === table._id && !dropTarget && (
                     <div
                       className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                       style={{ width: draggedSize?.width ?? 128 }}
@@ -1320,57 +1325,53 @@ function SliderTabsList({
                       }}
                     />
                   )}
-                {hiddenTabId === table._id && !dropTarget && (
                   <div
-                    className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
-                    style={{ width: draggedSize?.width ?? 128 }}
-                    onDragOver={(e) => e.preventDefault()}
+                    draggable
+                    onDragStart={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setCardDragImage(e, table._id);
+                      handleDragStart(table._id, {
+                        width: rect.width,
+                        height: rect.height,
+                      });
+                      const id = table._id;
+                      setTimeout(() => setHiddenTabId(id), 0);
+                    }}
+                    onDragOver={(e) => handleDragOverItem(e, table._id)}
                     onDrop={(e) => {
                       e.preventDefault();
                       handleDrop();
                     }}
-                  />
-                )}
-                <div
-                  draggable
-                  onDragStart={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setCardDragImage(e, table._id);
-                    handleDragStart(table._id, {
-                      width: rect.width,
-                      height: rect.height,
-                    });
-                    const id = table._id;
-                    setTimeout(() => setHiddenTabId(id), 0);
-                  }}
-                  onDragOver={(e) => handleDragOverItem(e, table._id)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    handleDrop();
-                  }}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    "cursor-grab active:cursor-grabbing",
-                    hiddenTabId === table._id && "hidden",
-                  )}
-                >
-                  <TableTab data-table-id={table._id} table={table} />
-                </div>
-                {dropTarget?.id === table._id &&
-                  dropTarget?.position === "after" && (
-                    <div
-                      className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
-                      style={{ width: draggedSize?.width ?? 128 }}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        handleDrop();
-                      }}
-                    />
-                  )}
-              </Fragment>
-            ))}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      "cursor-grab active:cursor-grabbing",
+                      hiddenTabId === table._id && "hidden",
+                    )}
+                  >
+                    <TableTab data-table-id={table._id} table={table} />
+                  </div>
+                  {dropTarget?.id === table._id &&
+                    dropTarget?.position === "after" && (
+                      <div
+                        className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                        style={{ width: draggedSize?.width ?? 128 }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          handleDrop();
+                        }}
+                      />
+                    )}
+                </Fragment>
+              ))}
+            </div>
           </div>
+          <CreateTableBtn
+            label="New Table"
+            workingSpaceId={workingSpaceId as Id<"folders">}
+            compactOnHover
+            className="relative z-20 mb-2.5 ml-2 h-9 shrink-0 !bg-primary !shadow-none !text-primary-foreground  app-radius-lg"
+          />
         </TabsList>
       </div>
     </div>
@@ -1718,14 +1719,6 @@ export default function FolderPageClient({
               )}
             </h1>
           </div>
-          {workspace && tables?.length !== 0 && (
-            <CreateTableBtn
-              label="New Table"
-              workingSpaceId={workingSpaceId}
-              className=" h-9 app-radius-none "
-              aria-label="create-table"
-            />
-          )}
         </div>
       </header>
 
@@ -4188,6 +4181,14 @@ function getLinkFaviconUrl(url: string): string | null {
   }
 }
 
+function getLinkDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Website";
+  }
+}
+
 function LinkFavicon({
   url,
   className,
@@ -4252,19 +4253,31 @@ function LinkThumbnail({
   showFaviconBadge?: boolean;
 }) {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const thumbnailUrl = link.metadata?.thumbnailUrl;
+  const [imageFailed, setImageFailed] = useState(false);
+  const rawThumbnailUrl = link.metadata?.thumbnailUrl;
+  const thumbnailUrl =
+    rawThumbnailUrl &&
+    !isAvatarFallbackThumbnail(rawThumbnailUrl, link.metadata?.authorAvatarUrl)
+      ? rawThumbnailUrl
+      : undefined;
   const isPending = link.metadata === undefined;
-  const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+  const hasThumbnail = Boolean(thumbnailUrl) && !imageFailed;
+  const showSkeleton = isPending || (hasThumbnail && !imgLoaded);
+
+  useEffect(() => {
+    setImgLoaded(false);
+    setImageFailed(false);
+  }, [thumbnailUrl]);
 
   return (
     <div className="relative w-full aspect-video app-radius-md overflow-hidden bg-muted">
-      {thumbnailUrl && (
+      {hasThumbnail && thumbnailUrl && (
         <img
           src={thumbnailUrl}
           alt="thumbnail url"
           draggable={false}
           onLoad={() => setImgLoaded(true)}
-          onError={() => setImgLoaded(false)}
+          onError={() => setImageFailed(true)}
           className={cn(
             "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300 ",
             imgLoaded ? "opacity-100" : "opacity-0",
@@ -4276,14 +4289,18 @@ function LinkThumbnail({
         <div className="absolute inset-0 bg-border/60 animate-pulse" />
       )}
 
-      {!isPending && !thumbnailUrl && (
-        <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
-          <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
-          <span>{platformLabel(link.platform) || "Site"}</span>
+      {!isPending && !hasThumbnail && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center text-sm text-muted-foreground">
+          <LinkFaviconBadge
+            url={link.url}
+            className="h-11 w-11 shrink-0"
+            grayscale={false}
+          />
+          <span className="max-w-full truncate">{getLinkDomain(link.url)}</span>
         </div>
       )}
 
-      {showFaviconBadge && thumbnailUrl && imgLoaded && (
+      {showFaviconBadge && hasThumbnail && imgLoaded && (
         <LinkFaviconBadge
           url={link.url}
           className="absolute bottom-2 right-2 h-8 w-8"

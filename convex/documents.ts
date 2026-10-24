@@ -439,6 +439,31 @@ export const getItemType = query({
   },
 });
 
+// Resolves the owning folder/table for any item route. The global create
+// shortcut uses this rather than an unrelated previously visited table.
+export const getItemLocation = query({
+  args: { id: v.string() },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId || !args.id) return null;
+
+    const itemTables = ["documents", "whiteboards", "pdfs", "links"] as const;
+    for (const tableName of itemTables) {
+      const itemId = ctx.db.normalizeId(tableName, args.id);
+      if (!itemId) continue;
+
+      const item = (await ctx.db.get(itemId)) as any;
+      if (!item || item.userId !== userId) return null;
+
+      const folderId = item.folderId ?? item.workingSpaceId;
+      const tableId = item.tableId ?? item.notesTableId;
+      return folderId && tableId ? { folderId, tableId } : null;
+    }
+
+    return null;
+  },
+});
+
 export const getFavDocuments = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, { paginationOpts }) => {
