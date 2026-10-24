@@ -160,14 +160,15 @@ export const deleteFolder = mutation({
         tables.map((table) =>
           ctx.db
             .query("documents")
-            .withIndex("by_tableId", (q) =>
-              q.eq("tableId", table._id),
-            )
+            .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
             .collect(),
         ),
       )
     ).flat();
-    const documentsToDelete = [...documentsByFolder, ...documentsByTable].filter(
+    const documentsToDelete = [
+      ...documentsByFolder,
+      ...documentsByTable,
+    ].filter(
       (doc, index, arr) =>
         arr.findIndex((candidate) => candidate._id === doc._id) === index,
     );
@@ -181,9 +182,7 @@ export const deleteFolder = mutation({
         tables.map((table) =>
           ctx.db
             .query("pdfs")
-            .withIndex("by_tableId", (q) =>
-              q.eq("tableId", table._id),
-            )
+            .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
             .collect(),
         ),
       )
@@ -202,9 +201,7 @@ export const deleteFolder = mutation({
         tables.map((table) =>
           ctx.db
             .query("whiteboards")
-            .withIndex("by_tableId", (q) =>
-              q.eq("tableId", table._id),
-            )
+            .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
             .collect(),
         ),
       )
@@ -226,9 +223,7 @@ export const deleteFolder = mutation({
         tables.map((table) =>
           ctx.db
             .query("links")
-            .withIndex("by_tableId", (q) =>
-              q.eq("tableId", table._id),
-            )
+            .withIndex("by_tableId", (q) => q.eq("tableId", table._id))
             .collect(),
         ),
       )
@@ -311,9 +306,7 @@ export const deleteFolderIfEmpty = mutation({
         tables.map((table) =>
           ctx.db
             .query(tableName)
-            .withIndex("by_tableId", (q: any) =>
-              q.eq("tableId", table._id),
-            )
+            .withIndex("by_tableId", (q: any) => q.eq("tableId", table._id))
             .first(),
         ),
       );
@@ -484,9 +477,7 @@ export const getFolderById = query({
     const { _id } = args;
     const folder = await ctx.db.get(_id);
 
-    if (!folder) {
-      throw new ConvexError("Folder not found");
-    }
+    if (!folder) return null;
 
     if (folder.userId !== userId) {
       throw new ConvexError("Not authorized to access this folder");

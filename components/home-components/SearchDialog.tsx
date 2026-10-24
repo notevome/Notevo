@@ -699,7 +699,7 @@ export default function SearchDialog({
         const draft = beginNoteDraft({
           workingSpaceId: workspaceId,
           workingSpacesSlug:
-            workspace.slug ?? generateSlug(workspace.name || title),
+            workspace?.slug ?? generateSlug(workspace?.name || title),
           notesTableId,
           title,
           originPath: pathname,

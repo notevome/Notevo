@@ -248,8 +248,8 @@ export default function FolderNewDropdownBtn({
 
       const whiteboardId = await createWhiteboard({
         title: "Untitled whiteboard",
-        notesTableId: targetTableId,
-        workingSpaceId: resolvedWorkingSpaceId,
+        tableId: targetTableId,
+        folderId: resolvedWorkingSpaceId,
       });
       router.push(
         `/home/${resolvedWorkingSpaceId}/${buildItemSlug("Untitled whiteboard", whiteboardId)}`,
@@ -524,6 +524,7 @@ export function GlobalCreateHandler() {
   const [linkTitle, setLinkTitle] = useState("");
   const [isInsertingLink, setIsInsertingLink] = useState(false);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const pendingCreateNoteRef = useRef(false);
 
   const getWorkingSpaces = useQuery(api.folders.getRecentFolders);
   const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
@@ -535,6 +536,7 @@ export function GlobalCreateHandler() {
     pathSegments.length >= 3 && pathSegments[0] === "home"
       ? extractIdFromSlug(pathSegments[2])
       : null;
+  const isItemRoute = Boolean(currentItemId);
   const currentItemLocation = useQuery(
     api.documents.getItemLocation,
     currentItemId ? { id: currentItemId } : "skip",
@@ -578,6 +580,9 @@ export function GlobalCreateHandler() {
   const resolveTargetTableId = useCallback(async (): Promise<
     Id<"tables"> | undefined
   > => {
+    // Never create in an unrelated table when the current route is an item.
+    if (isItemRoute && !currentItemLocation) return undefined;
+
     if (currentItemLocation?.tableId) {
       recordLastVisitedLocation(
         currentItemLocation.folderId,
@@ -618,6 +623,7 @@ export function GlobalCreateHandler() {
   }, [
     currentItemLocation,
     currentTableParam,
+    isItemRoute,
     tables,
     resolvedWorkingSpaceId,
     getOrCreateTable,
@@ -647,6 +653,14 @@ export function GlobalCreateHandler() {
     setOpenMobile,
   ]);
 
+  useEffect(() => {
+    if (!pendingCreateNoteRef.current || currentItemLocation === undefined) {
+      return;
+    }
+    pendingCreateNoteRef.current = false;
+    void handleCreateNote();
+  }, [currentItemLocation, handleCreateNote]);
+
   const handleOpenInsertLink = useCallback(() => {
     setLinkUrl("");
     setLinkTitle("");
@@ -665,13 +679,17 @@ export function GlobalCreateHandler() {
       ) {
         e.preventDefault();
         e.stopPropagation();
+        if (isItemRoute && currentItemLocation === undefined) {
+          pendingCreateNoteRef.current = true;
+          return;
+        }
         void handleCreateNote();
       }
     };
     window.addEventListener("keydown", handlerCreateNoteShortcut);
     return () =>
       window.removeEventListener("keydown", handlerCreateNoteShortcut);
-  }, [handleCreateNote]);
+  }, [currentItemLocation, handleCreateNote, isItemRoute]);
 
   useEffect(() => {
     const handlerInsertLinkShortcut = (e: KeyboardEvent) => {
