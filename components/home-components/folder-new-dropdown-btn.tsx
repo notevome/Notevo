@@ -11,7 +11,7 @@ import {
 import { useAction, useMutation } from "convex/react";
 import { useQuery } from "@/cache/useQuery";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   FileSymlink,
@@ -42,8 +42,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { usePendingNoteDraftContext } from "@/components/home-components/PendingNoteDraftProvider";
-import { buildItemSlug } from "@/lib/slug";
-import { getLastVisitedLocation } from "@/lib/last-visited";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
+import {
+  getLastVisitedLocation,
+  recordLastVisitedLocation,
+} from "@/lib/last-visited";
 import { useSidebar } from "@/components/ui/sidebar";
 import {
   FaYoutube,
@@ -511,6 +514,7 @@ export default function FolderNewDropdownBtn({
 export function GlobalCreateHandler() {
   const { toast } = useToast();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
   const { beginNoteDraft } = usePendingNoteDraftContext();
@@ -526,15 +530,33 @@ export function GlobalCreateHandler() {
   const createLink = useMutation(api.links.createLink);
   const fetchLinkMetadata = useAction(api.Linkmetadata.fetchLinkMetadata);
 
+  const pathSegments = pathname.split("/").filter(Boolean);
+  const currentItemId =
+    pathSegments.length >= 3 && pathSegments[0] === "home"
+      ? extractIdFromSlug(pathSegments[2])
+      : null;
+  const currentItemLocation = useQuery(
+    api.documents.getItemLocation,
+    currentItemId ? { id: currentItemId } : "skip",
+  );
+  const currentTableParam =
+    searchParams.get("table") || searchParams.get("tableId");
+
   const activeWorkingSpace = useMemo(() => {
-    const freshLoc = getLastVisitedLocation();
     const list = getWorkingSpaces;
+    if (currentItemLocation?.folderId && list) {
+      const match = list.find(
+        (w: any) => String(w._id) === String(currentItemLocation.folderId),
+      );
+      if (match) return match;
+    }
+    const freshLoc = getLastVisitedLocation();
     if (freshLoc.folderId && list) {
       const match = list.find((w: any) => String(w._id) === freshLoc.folderId);
       if (match) return match;
     }
     return list?.[0];
-  }, [getWorkingSpaces]);
+  }, [currentItemLocation?.folderId, getWorkingSpaces]);
 
   const resolvedWorkingSpaceId = activeWorkingSpace?._id;
   const resolvedWorkingSpacesSlug = activeWorkingSpace?.slug ?? "";
@@ -544,9 +566,36 @@ export function GlobalCreateHandler() {
     resolvedWorkingSpaceId ? { folderId: resolvedWorkingSpaceId } : "skip",
   );
 
+  useEffect(() => {
+    if (currentItemLocation?.folderId && currentItemLocation.tableId) {
+      recordLastVisitedLocation(
+        currentItemLocation.folderId,
+        currentItemLocation.tableId,
+      );
+    }
+  }, [currentItemLocation?.folderId, currentItemLocation?.tableId]);
+
   const resolveTargetTableId = useCallback(async (): Promise<
     Id<"tables"> | undefined
   > => {
+    if (currentItemLocation?.tableId) {
+      recordLastVisitedLocation(
+        currentItemLocation.folderId,
+        currentItemLocation.tableId,
+      );
+      return currentItemLocation.tableId as Id<"tables">;
+    }
+
+    if (currentTableParam && tables && Array.isArray(tables)) {
+      const match = tables.find(
+        (table: any) => String(table._id) === currentTableParam,
+      );
+      if (match) {
+        recordLastVisitedLocation(resolvedWorkingSpaceId, match._id);
+        return match._id;
+      }
+    }
+
     const freshLoc = getLastVisitedLocation(resolvedWorkingSpaceId);
     if (freshLoc.tableId && tables && Array.isArray(tables)) {
       const match = tables.find((t: any) => String(t._id) === freshLoc.tableId);
@@ -566,7 +615,13 @@ export function GlobalCreateHandler() {
     }
 
     return undefined;
-  }, [tables, resolvedWorkingSpaceId, getOrCreateTable]);
+  }, [
+    currentItemLocation,
+    currentTableParam,
+    tables,
+    resolvedWorkingSpaceId,
+    getOrCreateTable,
+  ]);
 
   const handleCreateNote = useCallback(async () => {
     if (!resolvedWorkingSpaceId) return;

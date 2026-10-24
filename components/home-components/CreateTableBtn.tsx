@@ -15,6 +15,8 @@ interface CreateTableBtnProps {
   onCreated?: (tableId: Id<"tables">) => void | Promise<void>;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
+  /** Starts as an icon button and reveals its label on hover. */
+  compactOnHover?: boolean;
 }
 
 export default function CreateTableBtn({
@@ -24,6 +26,7 @@ export default function CreateTableBtn({
   onCreated,
   variant = "default",
   size = "default",
+  compactOnHover = false,
 }: CreateTableBtnProps) {
   const [isCreating, setIsCreating] = useState(false);
   const createTable = useMutation(
@@ -71,7 +74,12 @@ export default function CreateTableBtn({
 
   return (
     <Button
-      className={cn("flex items-center justify-between gap-1 ", className)}
+      className={cn(
+        "flex items-center justify-between gap-1",
+        compactOnHover &&
+          "group w-8 overflow-hidden px-0 justify-center transition-[width] duration-200 ease-out hover:w-[6.75rem] focus-visible:w-[6.75rem]",
+        className,
+      )}
       variant={variant}
       size={size}
       onClick={handleCreateTable}
@@ -82,7 +90,15 @@ export default function CreateTableBtn({
       ) : (
         <Plus className=" mb-[0.065rem] text-mutede" size={14} />
       )}
-      <p className=" hidden sm:block mb-0.5 text-base sm:text-sm">{label}</p>
+      <p
+        className={cn(
+          "hidden sm:block mb-0.5 text-base sm:text-sm",
+          compactOnHover &&
+            "block max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity] duration-200 group-hover:max-w-20 group-hover:opacity-100 group-focus-visible:max-w-20 group-focus-visible:opacity-100",
+        )}
+      >
+        {label}
+      </p>
     </Button>
   );
 }
