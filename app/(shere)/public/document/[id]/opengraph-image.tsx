@@ -20,7 +20,7 @@ export const size = {
 export const contentType = "image/png";
 
 type Props = {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default async function Image({ params }: Props) {

@@ -470,18 +470,14 @@ export const getFolderById = query({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new ConvexError("Not authenticated");
-    }
+    if (!userId) return null;
 
     const { _id } = args;
     const folder = await ctx.db.get(_id);
 
     if (!folder) return null;
 
-    if (folder.userId !== userId) {
-      throw new ConvexError("Not authorized to access this folder");
-    }
+    if (folder.userId !== userId) return null;
 
     return folder;
   },

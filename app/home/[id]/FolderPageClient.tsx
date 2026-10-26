@@ -1251,7 +1251,7 @@ function SliderTabsList({
               onClick={() => scroll("left")}
               aria-label="scroll-tabs-left"
               className={cn(
-                "absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                "absolute left-0 -top-0.5 z-10 h-9 w-7 shadow-sm transition-all duration-200 !app-radius-none",
                 canScrollLeft
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none",
@@ -1265,7 +1265,7 @@ function SliderTabsList({
               onClick={() => scroll("right")}
               aria-label="scroll-tabs-right"
               className={cn(
-                "absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                "absolute right-0 -top-0.5 z-10 h-9 w-7 shadow-sm transition-all duration-200 !app-radius-none",
                 canScrollRight
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none",
@@ -1281,14 +1281,7 @@ function SliderTabsList({
                   "linear-gradient(to right, hsl(var(--muted)) 20%, transparent)",
               }}
             />
-            <div
-              className="absolute right-0 -top-8 -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
-              style={{
-                opacity: canScrollRight ? 1 : 0,
-                background:
-                  "linear-gradient(to left, hsl(var(--muted)) 20%, transparent)",
-              }}
-            />
+
             <div
               ref={scrollRef}
               className="flex w-full min-w-0 items-center gap-2 flex-nowrap"
@@ -1371,6 +1364,14 @@ function SliderTabsList({
             workingSpaceId={workingSpaceId as Id<"folders">}
             compactOnHover
             className="relative z-20 mb-2.5 ml-2 h-9 shrink-0 !bg-primary !shadow-none !text-primary-foreground  app-radius-lg"
+          />
+          <div
+            className="absolute right-0 top-0 h-[3.3rem] -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
+            style={{
+              opacity: canScrollRight ? 1 : 0,
+              background:
+                "linear-gradient(to left, hsl(var(--muted)) 50%, transparent)",
+            }}
           />
         </TabsList>
       </div>
