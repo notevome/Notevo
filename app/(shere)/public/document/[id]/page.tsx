@@ -9,7 +9,7 @@ import {
 import PublicDocumentView from "./PublicDocumentView";
 
 type Props = {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

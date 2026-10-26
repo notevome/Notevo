@@ -15,7 +15,6 @@ interface CreateTableBtnProps {
   onCreated?: (tableId: Id<"tables">) => void | Promise<void>;
   variant?: ComponentProps<typeof Button>["variant"];
   size?: ComponentProps<typeof Button>["size"];
-  /** Starts as an icon button and reveals its label on hover. */
   compactOnHover?: boolean;
 }
 
@@ -29,35 +28,35 @@ export default function CreateTableBtn({
   compactOnHover = false,
 }: CreateTableBtnProps) {
   const [isCreating, setIsCreating] = useState(false);
-  const createTable = useMutation(
-    api.tables.createTable,
-  ).withOptimisticUpdate((local, args) => {
-    const { folderId: fId, name } = args;
-    if (fId && fId !== workingSpaceId) return;
+  const createTable = useMutation(api.tables.createTable).withOptimisticUpdate(
+    (local, args) => {
+      const { folderId: fId, name } = args;
+      if (fId && fId !== workingSpaceId) return;
 
-    const now = Date.now();
-    const uuid = crypto.randomUUID();
-    const tempId = `${uuid}-${now}` as Id<"tables">;
+      const now = Date.now();
+      const uuid = crypto.randomUUID();
+      const tempId = `${uuid}-${now}` as Id<"tables">;
 
-    // Update the getTables query
-    const currentTables = local.getQuery(api.tables.getTables, {
-      folderId: workingSpaceId,
-    });
-    if (currentTables !== undefined) {
-      local.setQuery(api.tables.getTables, { folderId: workingSpaceId }, [
-        {
-          _id: tempId,
-          _creationTime: now,
-          name: name || "Untitled",
-          folderId: workingSpaceId,
-          slug: "untitled",
-          createdAt: now,
-          updatedAt: now,
-        },
-        ...currentTables,
-      ]);
-    }
-  });
+      // Update the getTables query
+      const currentTables = local.getQuery(api.tables.getTables, {
+        folderId: workingSpaceId,
+      });
+      if (currentTables !== undefined) {
+        local.setQuery(api.tables.getTables, { folderId: workingSpaceId }, [
+          {
+            _id: tempId,
+            _creationTime: now,
+            name: name || "Untitled",
+            folderId: workingSpaceId,
+            slug: "untitled",
+            createdAt: now,
+            updatedAt: now,
+          },
+          ...currentTables,
+        ]);
+      }
+    },
+  );
 
   const handleCreateTable = async () => {
     try {
@@ -77,7 +76,7 @@ export default function CreateTableBtn({
       className={cn(
         "flex items-center justify-between gap-1",
         compactOnHover &&
-          "group w-8 overflow-hidden px-0 justify-center transition-[width] duration-200 ease-out hover:w-[6.75rem] focus-visible:w-[6.75rem]",
+          "group w-8 overflow-hidden pl-1 pr-0 hover:px-0 justify-center transition-[width] duration-200 ease-out hover:w-[6.75rem] focus-visible:w-[6.75rem]",
         className,
       )}
       variant={variant}
