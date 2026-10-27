@@ -266,12 +266,14 @@ export default function WhiteboardSettings({
   };
 
   const remove = async () => {
-    router.back();
     if (onDelete) {
       onDelete(whiteboard._id);
     }
     await deleteWhiteboard({ _id: whiteboard._id });
     setDeleteOpen(false);
+    if (isOnThisWhiteboardRoute()) {
+      router.back();
+    }
   };
 
   const toggleWorkspace = (workspaceId: string) => {

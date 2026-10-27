@@ -51,6 +51,10 @@ import NoteSettings from "@/components/home-components/NoteSettings";
 import LinkSettings from "@/components/home-components/LinkSettings";
 import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
 import NoteContextMenu from "@/components/home-components/NoteContextMenu";
+import {
+  FolderItemGridCardContent,
+  folderItemGridCardClassName,
+} from "@/components/home-components/FolderItemGridCard";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import MoveTableDialog from "@/components/home-components/MoveTableDialog";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
@@ -158,6 +162,7 @@ function useContainerColumnCount(enabled: boolean) {
 }
 
 const EMPTY_CONTENT_MESSAGE = "No content yet. Click to start writing...";
+const EMPTY_WHITEBOARD_MESSAGE = "No content yet. Click to start drawing...";
 
 const getContentPreviewFromBody = (body: any) => {
   if (!body) return EMPTY_CONTENT_MESSAGE;
@@ -3530,7 +3535,7 @@ function getWorkspaceItemDetails(
     const board = item as WhiteboardItem;
     return {
       title: board.title || "Untitled whiteboard",
-      subtitle: isWhiteboardEmpty(board) ? EMPTY_CONTENT_MESSAGE : "",
+      subtitle: isWhiteboardEmpty(board) ? EMPTY_WHITEBOARD_MESSAGE : "",
       href: `/home/${board.workingSpaceId ?? (board as any).folderId ?? workspaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
@@ -3765,119 +3770,30 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
   }, []);
 
-  const link = item.kind === "link" ? (item as LinkItem) : null;
-  const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
-  const authorName = link?.metadata?.authorName?.trim();
-  const authorHandle = formatHandle(link?.metadata?.authorHandle);
-  const postDate = link?.metadata?.publishedAt ?? link?.createdAt;
-
-  const hasRealThumbnail = Boolean(
-    link?.metadata?.thumbnailUrl &&
-      !isAvatarFallbackThumbnail(
-        link.metadata.thumbnailUrl,
-        link.metadata?.authorAvatarUrl,
-      ),
-  );
-
-  const cardStyles =
-    "group relative flex min-h-[230px] w-full cursor-pointer select-none flex-col overflow-hidden border border-border bg-card transition-colors hover:border-muted-foreground/50 app-radius-lg border bg-card text-card-foreground";
+  const cardStyles = `${folderItemGridCardClassName} min-h-[230px] w-full`;
 
   const cardInnerContent = (
-    <>
-      {isSocialLink && !hasRealThumbnail && link && (
-        <LinkFaviconBadge
-          url={link.url}
-          className="absolute bottom-2 right-2 z-10 h-7 w-7"
-        />
-      )}
-      <CardHeader className="pb-3">
-        <div className="flex min-w-0 items-start justify-between gap-2">
-          {isSocialLink ? (
-            <div className="flex min-w-0 items-start gap-2.5">
-              <LinkAuthorAvatar
-                avatarUrl={link?.metadata?.authorAvatarUrl}
-                authorName={authorName || details.title}
-                className="mt-0.5 h-9 w-9"
-              />
-              <div className="min-w-0">
-                <CardTitle className="line-clamp-1 max-w-full break-words text-base font-semibold text-foreground [overflow-wrap:anywhere]">
-                  <HighlightText
-                    text={authorName || details.title}
-                    query={searchQuery}
-                  />
-                </CardTitle>
-                <span className="text-xs text-muted-foreground">
-                  {authorHandle}
-                  {authorHandle && postDate ? " · " : ""}
-                  {postDate ? formatLongDateTime(postDate) : null}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="flex min-w-0 items-start gap-3">
-              <ItemKindIcon
-                item={item}
-                empty={details.subtitle === EMPTY_CONTENT_MESSAGE}
-                className="mt-3 h-6 w-6"
-              />
-              <CardTitle className="max-w-full break-words text-lg font-semibold leading-[1.4rem] text-foreground [overflow-wrap:anywhere]">
-                <HighlightText text={details.title} query={searchQuery} />
-                {item.kind !== "link" && (
-                  <span className=" block text-xs text-muted-foreground mt-1.5">
-                    Created {formatLongDate(item.createdAt)} · Last updated{" "}
-                    {formatLongDate(item.updatedAt)}
-                  </span>
-                )}
-              </CardTitle>
-            </div>
-          )}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            onDoubleClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <WorkspaceItemSettings
-              item={item}
-              onDelete={onDelete}
-              contextMenuPosition={contextMenuPosition}
-              onContextMenuClose={() => setContextMenuPosition(null)}
-            />
-          </div>
+    <FolderItemGridCardContent
+      item={item}
+      title={details.title}
+      subtitle={details.subtitle}
+      renderText={(text) => <HighlightText text={text} query={searchQuery} />}
+      action={
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onDoubleClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <WorkspaceItemSettings
+            item={item}
+            onDelete={onDelete}
+            contextMenuPosition={contextMenuPosition}
+            onContextMenuClose={() => setContextMenuPosition(null)}
+          />
         </div>
-      </CardHeader>
-      <CardContent
-        className={`flex flex-1 flex-col ${isSocialLink && "gap-2"} `}
-      >
-        {isSocialLink ? (
-          <>
-            <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-foreground/90">
-              <HighlightText
-                text={link?.metadata?.description || ""}
-                query={searchQuery}
-              />
-            </p>
-            {link?.metadata?.thumbnailUrl &&
-              !isAvatarFallbackThumbnail(
-                link.metadata.thumbnailUrl,
-                link.metadata?.authorAvatarUrl,
-              ) && <LinkThumbnail link={link} showFaviconBadge />}
-          </>
-        ) : (
-          <>
-            <WorkspaceItemThumbnail item={item} />
-            <p
-              className={`line-clamp-2 text-sm text-muted-foreground ${details.subtitle && "mt-2"}`}
-            >
-              <HighlightText
-                text={details.subtitle || ""}
-                query={searchQuery}
-              />
-            </p>
-          </>
-        )}
-      </CardContent>
-    </>
+      }
+    />
   );
 
   if (item.kind === "link") {

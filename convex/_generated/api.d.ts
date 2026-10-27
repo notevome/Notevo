@@ -14,6 +14,7 @@ import type * as auth from "../auth.js";
 import type * as documents from "../documents.js";
 import type * as files from "../files.js";
 import type * as folders from "../folders.js";
+import type * as home from "../home.js";
 import type * as http from "../http.js";
 import type * as linkValidators from "../linkValidators.js";
 import type * as links from "../links.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   documents: typeof documents;
   files: typeof files;
   folders: typeof folders;
+  home: typeof home;
   http: typeof http;
   linkValidators: typeof linkValidators;
   links: typeof links;

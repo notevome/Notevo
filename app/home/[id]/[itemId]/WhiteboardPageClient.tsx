@@ -30,6 +30,7 @@ type WhiteboardSnapshot = Pick<
 
 function getPreview(elements: readonly ExcalidrawElement[]) {
   const shapeCount = elements.filter((element) => !element.isDeleted).length;
+  if (shapeCount === 0) return "";
   return shapeCount === 1 ? "1 shape" : `${shapeCount} shapes`;
 }
 
@@ -62,10 +63,7 @@ export default function WhiteboardPageClient({
 
   useEffect(() => {
     if (whiteboard?.folderId && whiteboard.tableId) {
-      recordLastVisitedLocation(
-        whiteboard.folderId,
-        whiteboard.tableId,
-      );
+      recordLastVisitedLocation(whiteboard.folderId, whiteboard.tableId);
     }
   }, [whiteboard?.folderId, whiteboard?.tableId]);
   const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
