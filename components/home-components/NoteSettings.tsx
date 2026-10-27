@@ -202,11 +202,9 @@ export default function NoteSettings({
     if (onDelete) onDelete(noteId);
     setIsAlertOpen(false);
     try {
+      await deleteNote({ _id: noteId });
       if (isViewingThisNote) {
         router.back();
-        await deleteNote({ _id: noteId });
-      } else {
-        await deleteNote({ _id: noteId });
       }
     } catch (error) {
       console.error("Failed to delete note:", error);

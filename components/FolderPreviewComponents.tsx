@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link2, PanelTop } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
+import { type LinkPlatform } from "@/lib/link-platform";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
@@ -89,6 +89,14 @@ export function getLinkFaviconUrl(url: string): string | null {
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
   } catch {
     return null;
+  }
+}
+
+function getLinkDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "Website";
   }
 }
 
@@ -229,9 +237,13 @@ export function LinkThumbnail({
       )}
 
       {!isPending && !thumbnailUrl && (
-        <div className="absolute inset-0 flex items-center gap-3 px-3 text-sm text-muted-foreground">
-          <LinkFaviconBadge url={link.url} className="h-10 w-10 shrink-0" />
-          <span>{platformLabel(link.platform as any) || "Link"}</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center text-sm text-muted-foreground">
+          <LinkFaviconBadge
+            url={link.url}
+            className="h-11 w-11 shrink-0"
+            grayscale={false}
+          />
+          <span className="max-w-full truncate">{getLinkDomain(link.url)}</span>
         </div>
       )}
 
@@ -301,7 +313,7 @@ export function WhiteboardPreview({
     <div
       className={cn(
         "relative flex items-center justify-center overflow-hidden",
-        fill ? "h-full w-full" : "h-fit w-full",
+        fill ? "h-full w-full" : "h-full w-full",
       )}
     >
       {thumbnailUrl ? (
@@ -310,14 +322,12 @@ export function WhiteboardPreview({
           alt="Whiteboard thumbnail"
           draggable={false}
           className={cn(
-            "pointer-events-none h-full w-full select-none bg-white [-webkit-user-drag:none]",
-            fill ? "object-cover" : "object-contain border border-border",
+            "pointer-events-none h-full w-full select-none [-webkit-user-drag:none]",
+            fill ? "object-contain" : "object-contain border border-border",
           )}
         />
       ) : (
-        <div className="min-h-32 w-full flex justify-center items-center">
-          <PanelTop className="h-8 w-8 text-primary/70" />
-        </div>
+        <div className="min-h-32 w-full flex justify-center items-center"></div>
       )}
     </div>
   );

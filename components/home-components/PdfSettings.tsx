@@ -184,9 +184,20 @@ export default function PdfSettings({
   const handleDelete = useCallback(async () => {
     if (onDelete) onDelete(pdfId);
     setIsAlertOpen(false);
+    const isViewingThisPdf = (() => {
+      if (typeof window === "undefined") return false;
+      const currentUrl = new URL(window.location.href);
+      const lastSegment = currentUrl.pathname.split("/").filter(Boolean).pop();
+      return (
+        currentUrl.searchParams.get("pdfId") === String(pdfId) ||
+        extractIdFromSlug(lastSegment) === String(pdfId)
+      );
+    })();
     try {
-      router.back();
       await deletePdf({ _id: pdfId });
+      if (isViewingThisPdf) {
+        router.back();
+      }
     } catch (error) {
       console.error("Failed to delete PDF:", error);
     }

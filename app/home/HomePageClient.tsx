@@ -14,7 +14,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useMutation } from "convex/react";
-import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import MaxWContainer from "@/components/ui/MaxWContainer";
@@ -43,11 +42,18 @@ import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 import NoteContextMenu from "@/components/home-components/NoteContextMenu";
+import LinkSettings from "@/components/home-components/LinkSettings";
+import PdfSettings from "@/components/home-components/PdfSettings";
+import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
+import {
+  FolderItemGridCardContent,
+  folderItemGridCardClassName,
+  type FolderItemCardItem,
+} from "@/components/home-components/FolderItemGridCard";
 const homeMemoryCache: {
   viewer?: any;
   recentWorkspaces?: any;
-  recentNotes?: any[];
-  pinnedNotes?: any[];
+  recentItems?: any[];
 } = {};
 
 const workspaceNameSchema = z
@@ -57,14 +63,8 @@ const workspaceNameSchema = z
 
 export default function HomePageClient() {
   const viewerQuery = useQuery(api.users.viewer, {});
-  const recentWorkspacesQuery = useQuery(
-    api.folders.getRecentFolders,
-    {},
-  );
-  const { results: recentNotesResults, status: recentNotesStatus } =
-    usePaginatedQuery(api.documents.getNoteByUserId, {}, { initialNumItems: 5 });
-  const { results: pinnedNotesResults, status: pinnedNotesStatus } =
-    usePaginatedQuery(api.documents.getFavNotes, {}, { initialNumItems: 5 });
+  const recentWorkspacesQuery = useQuery(api.folders.getRecentFolders, {});
+  const recentItemsQuery = useQuery(api.home.getRecentItems, {});
 
   useEffect(() => {
     if (viewerQuery !== undefined) homeMemoryCache.viewer = viewerQuery;
@@ -74,25 +74,14 @@ export default function HomePageClient() {
       homeMemoryCache.recentWorkspaces = recentWorkspacesQuery;
   }, [recentWorkspacesQuery]);
   useEffect(() => {
-    if (recentNotesStatus !== "LoadingFirstPage")
-      homeMemoryCache.recentNotes = recentNotesResults;
-  }, [recentNotesResults, recentNotesStatus]);
-  useEffect(() => {
-    if (pinnedNotesStatus !== "LoadingFirstPage")
-      homeMemoryCache.pinnedNotes = pinnedNotesResults;
-  }, [pinnedNotesResults, pinnedNotesStatus]);
+    if (recentItemsQuery !== undefined)
+      homeMemoryCache.recentItems = recentItemsQuery;
+  }, [recentItemsQuery]);
 
   const viewer = viewerQuery ?? homeMemoryCache.viewer;
   const recentWorkspaces =
     recentWorkspacesQuery ?? homeMemoryCache.recentWorkspaces;
-  const recentNotes =
-    recentNotesStatus === "LoadingFirstPage" && homeMemoryCache.recentNotes
-      ? homeMemoryCache.recentNotes
-      : recentNotesResults;
-  const pinnedNotes =
-    pinnedNotesStatus === "LoadingFirstPage" && homeMemoryCache.pinnedNotes
-      ? homeMemoryCache.pinnedNotes
-      : pinnedNotesResults;
+  const recentItems = recentItemsQuery ?? homeMemoryCache.recentItems;
 
   const createFolder = useMutation(
     api.folders.createFolder,
@@ -102,9 +91,7 @@ export default function HomePageClient() {
     const uuid = crypto.randomUUID();
     const tempId = `${uuid}-${now}` as any as Id<"folders">;
 
-    const currentWorkspaces = local.getQuery(
-      api.folders.getRecentFolders,
-    );
+    const currentWorkspaces = local.getQuery(api.folders.getRecentFolders);
     if (currentWorkspaces !== undefined) {
       local.setQuery(api.folders.getRecentFolders, {}, [
         {
@@ -213,17 +200,15 @@ export default function HomePageClient() {
         )}
       </div>
 
-      {recentNotes.length !== 0 && (
+      {recentItems && recentItems.length !== 0 && (
         <div className="mb-8">
           <div className="mb-4">
-            <h2 className="text-foreground text-xl font-semibold">
-              Recent Documents
-            </h2>
+            <h2 className="text-foreground text-xl font-semibold">Recent</h2>
           </div>
 
           <Slider child_type="noteCard ">
-            {recentNotes.map((note) => (
-              <NoteCard key={note._id} note={note} />
+            {recentItems.map((item) => (
+              <RecentItemCard key={`${item.kind}-${item._id}`} item={item} />
             ))}
           </Slider>
         </div>
@@ -340,7 +325,7 @@ function Slider({
   };
 
   return (
-    <div ref={wrapperRef} className="relative w-full h-[250px] group">
+    <div ref={wrapperRef} className="relative w-full h-[270px] group">
       {canScrollLeft && (
         <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[11] pointer-events-none" />
       )}
@@ -356,7 +341,7 @@ function Slider({
       )}
       {(canScrollRight || canScrollLeft) && (
         <div
-          className={`z-[12] absolute ${child_type === "workSpaceCard" ? "-bottom-5" : "-bottom-0.5"}  right-0 flex justify-center items-center gap-2`}
+          className={`z-[12] absolute ${child_type === "workSpaceCard" ? "-bottom-[0.4rem]" : "-bottom-14"}  right-0 flex justify-center items-center gap-2`}
         >
           <Button
             size="icon"
@@ -561,86 +546,191 @@ interface Note {
   order?: number;
 }
 
-function NoteCard({ note }: { note: Note }) {
-  const { openPane } = useHomePane();
-  const getContentPreviewFromBody = (body: any) => {
-    if (!body) return "No content yet. Click to start writing...";
-    try {
-      const plainText = parseTiptapContentExtractText(body);
-      return plainText
-        ? parseTiptapContentTruncateText(plainText, 80)
-        : "No content yet. Click to start writing...";
-    } catch (error) {
-      return "Unable to display content preview";
+type RecentItem =
+  | (Note & { kind: "document" })
+  | {
+      _id: Id<"links">;
+      kind: "link";
+      title?: string;
+      url: string;
+      metadata?: {
+        description?: string;
+        siteName?: string;
+        authorName?: string;
+      };
+      platform?: string;
+      favorite?: boolean;
+      createdAt: number;
+      updatedAt: number;
     }
+  | {
+      _id: Id<"pdfs">;
+      kind: "pdf";
+      title?: string;
+      folderId?: Id<"folders">;
+      workingSpaceId?: Id<"folders">;
+      favorite?: boolean;
+      createdAt: number;
+      updatedAt: number;
+    }
+  | {
+      _id: Id<"whiteboards">;
+      kind: "whiteboard";
+      title?: string;
+      snapshot?: string;
+      preview?: string;
+      folderId?: Id<"folders">;
+      workingSpaceId?: Id<"folders">;
+      favorite?: boolean;
+      createdAt: number;
+      updatedAt: number;
+    };
+
+function isEmptyWhiteboard(snapshot?: string) {
+  if (!snapshot) return true;
+  try {
+    const scene = JSON.parse(snapshot);
+    return (
+      !Array.isArray(scene.elements) ||
+      !scene.elements.some(
+        (element: { isDeleted?: boolean }) => !element.isDeleted,
+      )
+    );
+  } catch {
+    return true;
+  }
+}
+
+function RecentItemCard({ item }: { item: RecentItem }) {
+  const [contextMenuPosition, setContextMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const isLink = item.kind === "link";
+  const workspaceId = isLink
+    ? undefined
+    : (item.workingSpaceId ?? (item as any).folderId);
+  const title = isLink
+    ? item.title ||
+      item.metadata?.authorName ||
+      item.metadata?.siteName ||
+      item.url
+    : item.title ||
+      (item.kind === "pdf"
+        ? "Untitled PDF"
+        : item.kind === "whiteboard"
+          ? "Untitled whiteboard"
+          : "Untitled");
+  const preview = isLink
+    ? item.metadata?.description || item.url
+    : item.kind === "pdf"
+      ? "PDF upload"
+      : item.kind === "whiteboard"
+        ? isEmptyWhiteboard(item.snapshot)
+          ? "No content yet. Click to start drawing..."
+          : ""
+        : item.preview
+          ? parseTiptapContentTruncateText(item.preview, 80)
+          : (() => {
+              try {
+                const text = parseTiptapContentExtractText(item.body);
+                return text
+                  ? parseTiptapContentTruncateText(text, 80)
+                  : "No content yet. Click to start writing...";
+              } catch {
+                return "No content yet. Click to start writing...";
+              }
+            })();
+  const href = isLink
+    ? item.url
+    : `/home/${workspaceId}/${buildItemSlug(title, item._id)}`;
+  const cardClassName = `${folderItemGridCardClassName} h-[270px] w-[370px] shrink-0`;
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
   };
+  const settings =
+    item.kind === "link" ? (
+      <LinkSettings
+        linkId={item._id}
+        linkUrl={item.url}
+        linkTitle={item.title}
+        favorite={item.favorite}
+        createdAt={item.createdAt}
+        updatedAt={item.updatedAt}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        contextMenuPosition={contextMenuPosition}
+        onContextMenuClose={() => setContextMenuPosition(null)}
+      />
+    ) : item.kind === "pdf" ? (
+      <PdfSettings
+        pdfId={item._id}
+        pdfTitle={item.title}
+        iconVariant="vertical_icon"
+        dropdownMenuContentAlign="start"
+        tooltipContentAlign="start"
+        contextMenuPosition={contextMenuPosition}
+        onContextMenuClose={() => setContextMenuPosition(null)}
+      />
+    ) : item.kind === "whiteboard" ? (
+      <WhiteboardSettings
+        whiteboardId={item._id}
+        contextMenuPosition={contextMenuPosition}
+        onContextMenuClose={() => setContextMenuPosition(null)}
+      />
+    ) : null;
+  const content = (
+    <FolderItemGridCardContent
+      item={item as FolderItemCardItem}
+      title={title}
+      subtitle={preview}
+      action={
+        <div
+          className="flex items-center gap-1"
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={(event) => event.stopPropagation()}
+          onPointerDown={(event) => event.stopPropagation()}
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          {item.favorite && (
+            <Pin className="h-4 w-4 shrink-0 fill-primary text-primary" />
+          )}
+          {settings}
+        </div>
+      }
+    />
+  );
 
-  const previewText = note.preview
-    ? parseTiptapContentTruncateText(note.preview, 80)
-    : getContentPreviewFromBody(note.body);
-
-  const isEmpty = !(note.preview || note.body);
-  const workspaceId = note.workingSpaceId ?? (note as any).folderId;
-  const href = `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`;
-
-  const noteCard = (
+  const card = isLink ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={cardClassName}
+      onContextMenu={handleContextMenu}
+    >
+      {content}
+    </a>
+  ) : (
     <IntentPrefetchLink
       draggable={false}
       href={href}
-      prefetchNoteId={note._id}
-      onClick={(e) => {
-        if (e.button === 0 && e.altKey) {
-          e.preventDefault();
-          openPane({ type: "note", id: note._id, title: note.title });
-        }
-      }}
-      className={cn(
-        "group relative overflow-hidden bg-card border transition-colors flex-shrink-0 w-[330px] h-[200px] flex flex-col cursor-pointer select-none app-radius-lg text-card-foreground shadow",
-        isEmpty
-          ? "border-dashed border-border hover:border-muted-foreground/50"
-          : "border-border hover:border-muted-foreground/50",
-      )}
+      prefetchNoteId={item.kind === "document" ? item._id : undefined}
+      className={cardClassName}
+      onContextMenu={item.kind === "document" ? undefined : handleContextMenu}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-base font-semibold text-foreground truncate">
-              {note.title || "Untitled"}
-            </CardTitle>
-          </div>
-          {note.favorite && (
-            <Pin className="h-4 w-4 text-primary fill-primary flex-shrink-0" />
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="flex-grow flex-1">
-        <p
-          className={cn(
-            "text-sm line-clamp-3",
-            isEmpty ? "text-muted-foreground italic" : "text-muted-foreground",
-          )}
-        >
-          {previewText}
-        </p>
-      </CardContent>
-
-      <CardFooter className="py-2 px-2.5 flex items-center justify-between border-t border-border">
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          {typeof window !== "undefined" ? (
-            <span>{new Date(note.updatedAt).toLocaleDateString()}</span>
-          ) : (
-            <SkeletonTextAnimation className="w-20" />
-          )}
-        </div>
-      </CardFooter>
+      {content}
     </IntentPrefetchLink>
   );
 
-  return (
-    <NoteContextMenu noteId={note._id} noteTitle={note.title}>
-      {noteCard}
+  return item.kind === "document" ? (
+    <NoteContextMenu noteId={item._id} noteTitle={item.title}>
+      {card}
     </NoteContextMenu>
+  ) : (
+    card
   );
 }
