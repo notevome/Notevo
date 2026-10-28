@@ -51,12 +51,15 @@ const TailwindAdvancedEditor = ({
   editorBubblePlacement,
   renderedInPane,
   workingSpaceId,
+  disableWikiLinks = false,
 }: {
   initialContent: any;
   onUpdate: (editor: EditorInstance) => void;
   editorBubblePlacement: Boolean;
   renderedInPane?: boolean;
   workingSpaceId?: Id<"folders">;
+  /** Public documents cannot resolve workspace-only wiki links. */
+  disableWikiLinks?: boolean;
 }) => {
   const [openNode, setOpenNode] = useState(false);
   const [openColor, setOpenColor] = useState(false);
@@ -145,7 +148,12 @@ const TailwindAdvancedEditor = ({
     let insertAt: number | null = null;
     if (posAtCoords) {
       const $pos = editor.state.doc.resolve(posAtCoords.pos);
-      const depth = $pos.depth >= 1 ? 1 : $pos.depth;
+      // A coordinate in the editor gutter can resolve to the document root.
+      // The root has no position "before" it, so there is nowhere valid to
+      // insert a sibling block from that coordinate.
+      if ($pos.depth < 1) return;
+
+      const depth = 1;
       const nodeStart = $pos.before(depth);
       const node = editor.state.doc.nodeAt(nodeStart);
       if (node) {
@@ -207,8 +215,9 @@ const TailwindAdvancedEditor = ({
 
     if (!posAtCoords) return;
     const $pos = editor.state.doc.resolve(posAtCoords.pos);
-    const depth = $pos.depth > 0 ? $pos.depth : 1;
-    if (depth === 0 || $pos.node(depth) === editor.state.doc) return;
+    if ($pos.depth < 1 || $pos.node($pos.depth) === editor.state.doc) return;
+
+    const depth = $pos.depth;
 
     const nodeStart = $pos.before(depth);
     const node = editor.state.doc.nodeAt(nodeStart);
@@ -231,11 +240,15 @@ const TailwindAdvancedEditor = ({
         <div className="relative">
           {editorInstance && (
             <>
-              <LinkHoverCard editor={editorInstance} disabled={openLink} />
-              <MentionPopup
-                editor={editorInstance}
-                workingSpaceId={workingSpaceId}
-              />
+              {!disableWikiLinks && (
+                <>
+                  <LinkHoverCard editor={editorInstance} disabled={openLink} />
+                  <MentionPopup
+                    editor={editorInstance}
+                    workingSpaceId={workingSpaceId}
+                  />
+                </>
+              )}
               <TableControls editor={editorInstance} />
               <DragHandle editor={editorInstance}>
                 <div
@@ -362,6 +375,18 @@ const TailwindAdvancedEditor = ({
                   return false;
                 }
                 setImagePreviewSrc(node.attrs.src);
+                return true;
+              },
+              handleClick: (_view, _pos, event) => {
+                if (!disableWikiLinks) return false;
+
+                const target = event.target;
+                if (!(target instanceof Element)) return false;
+
+                const wikiLink = target.closest<HTMLElement>("[data-item-id]");
+                if (!wikiLink) return false;
+
+                event.preventDefault();
                 return true;
               },
               handlePaste: (view, event) =>
