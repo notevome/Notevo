@@ -216,6 +216,7 @@ export default function PublicDocumentView() {
         <TailwindAdvancedEditor
           editorBubblePlacement={true}
           initialContent={parsedContent}
+          disableWikiLinks
           onUpdate={(editor) => {
             setContent(editor.getJSON());
           }}
