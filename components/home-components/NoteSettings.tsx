@@ -59,6 +59,7 @@ import {
   SettingsMoveHint,
   useSettingsMoveHint,
 } from "@/components/ui/settings-move-hint";
+import { ItemPropertiesMenu } from "./ItemProperties";
 
 interface NoteSettingsProps {
   noteId: Id<"documents">;
@@ -304,6 +305,15 @@ export default function NoteSettings({
                 <Pin size={14} className="text-muted-foreground" />
                 {getNote?.favorite ? "Unpin Document" : "Pin Document"}
               </Button>
+
+              <ItemPropertiesMenu
+                status={getNote.status}
+                priority={getNote.priority}
+                deadline={getNote.deadline}
+                onChange={(changes) =>
+                  void updateNote({ _id: noteId, ...changes })
+                }
+              />
 
               <Button
                 variant="SidebarMenuButton"

@@ -54,6 +54,8 @@ export const sendPdf = mutation({
       tableId,
       title: args.title,
       favorite: false,
+      status: "backlog",
+      priority: "no_priority",
       createdAt: Date.now(),
       updatedAt: Date.now(),
     });
@@ -81,7 +83,9 @@ export const getPdfsByTableId = query({
     }
 
     if (table.folderId) {
-      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      const folder = (await ctx.db.get(
+        table.folderId,
+      )) as Doc<"folders"> | null;
       if (!folder || folder.userId !== userId) {
         throw new Error("Folder not found or not authorized");
       }
@@ -183,6 +187,9 @@ export const updatePdf = mutation({
     _id: v.id("pdfs"),
     title: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    priority: v.optional(v.string()),
+    deadline: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -198,6 +205,11 @@ export const updatePdf = mutation({
     await ctx.db.patch(args._id, {
       title: args.title ?? pdf.title,
       favorite: args.favorite ?? pdf.favorite,
+      status: args.status ?? (pdf as any).status ?? "backlog",
+      priority: args.priority ?? (pdf as any).priority ?? "no_priority",
+      ...(args.deadline !== undefined
+        ? { deadline: args.deadline ?? undefined }
+        : {}),
       updatedAt: Date.now(),
     });
   },
@@ -217,20 +229,26 @@ export const movePdf = mutation({
       throw new Error("Unauthenticated");
     }
 
-    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
-    const targetTableId = (args.targetTableId ?? args.targetNotesTableId) as any;
+    const targetFolderId = (args.targetFolderId ??
+      args.targetWorkingSpaceId) as any;
+    const targetTableId = (args.targetTableId ??
+      args.targetNotesTableId) as any;
 
     const pdf = await ctx.db.get(args._id);
     if (!pdf || pdf.userId !== userId) {
       throw new Error("PDF not found or not authorized");
     }
 
-    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    const targetFolder = (await ctx.db.get(
+      targetFolderId,
+    )) as Doc<"folders"> | null;
     if (!targetFolder || targetFolder.userId !== userId) {
       throw new Error("Target folder not found or not authorized");
     }
 
-    const targetTable = (await ctx.db.get(targetTableId)) as Doc<"tables"> | null;
+    const targetTable = (await ctx.db.get(
+      targetTableId,
+    )) as Doc<"tables"> | null;
     if (!targetTable) {
       throw new Error("Target table not found");
     }

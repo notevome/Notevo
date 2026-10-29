@@ -44,6 +44,7 @@ import {
 import { FaRegTrashCan } from "react-icons/fa6";
 import MoveNoteDialog from "./MoveNoteDialog";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
+import { ItemPropertiesMenu } from "./ItemProperties";
 
 interface NoteContextMenuProps {
   noteId: Id<"documents">;
@@ -225,7 +226,7 @@ export default function NoteContextMenu({
             )}
 
           <DropdownMenuContent
-            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-[10000]"
+            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-10"
             onCloseAutoFocus={(e) => e.preventDefault()}
             // Align from the top-left corner of the (zero-size) trigger
             align="start"
@@ -251,6 +252,15 @@ export default function NoteContextMenu({
                 <Pin size={14} className="mr-2 text-muted-foreground" />
                 {getNote.favorite ? "Unpin Document" : "Pin Document"}
               </DropdownMenuItem>
+
+              <ItemPropertiesMenu
+                status={getNote.status}
+                priority={getNote.priority}
+                deadline={getNote.deadline}
+                onChange={(changes) =>
+                  void updateNote({ _id: noteId, ...changes })
+                }
+              />
 
               <DropdownMenuItem
                 onClick={() => {

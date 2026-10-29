@@ -13,6 +13,7 @@ import {
   isAvatarFallbackThumbnail,
   isSocialLinkPlatform,
 } from "@/components/FolderPreviewComponents";
+import { ItemPropertiesBadges } from "@/components/home-components/ItemProperties";
 
 export type FolderItemCardItem = {
   _id: string;
@@ -23,6 +24,9 @@ export type FolderItemCardItem = {
   snapshot?: string;
   url?: string;
   platform?: string;
+  status?: string;
+  priority?: string;
+  deadline?: number;
   createdAt: number;
   updatedAt: number;
   metadata?: {
@@ -173,6 +177,15 @@ export function FolderItemGridCardContent({
             >
               {renderText(subtitle || "")}
             </p>
+            {item.kind !== "link" && (item.status || item.priority || item.deadline) && (
+              <div className="mt-2">
+                <ItemPropertiesBadges
+                  status={item.status}
+                  priority={item.priority}
+                  deadline={item.deadline}
+                />
+              </div>
+            )}
           </>
         )}
       </CardContent>

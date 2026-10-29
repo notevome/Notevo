@@ -74,7 +74,9 @@ export const createDocument = mutation({
         throw new ConvexError("Folder not found");
       }
       if (folder.userId !== userId) {
-        throw new ConvexError("Not authorized to create documents in this folder");
+        throw new ConvexError(
+          "Not authorized to create documents in this folder",
+        );
       }
     }
 
@@ -102,6 +104,8 @@ export const createDocument = mutation({
       slug,
       folderId,
       favorite: false,
+      status: "backlog",
+      priority: "no_priority",
       published: false,
       preview: undefined,
       createdAt: Date.now(),
@@ -121,6 +125,9 @@ export const updateDocument = mutation({
     order: v.optional(v.number()),
     favorite: v.optional(v.boolean()),
     published: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    priority: v.optional(v.string()),
+    deadline: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -128,7 +135,17 @@ export const updateDocument = mutation({
       throw new ConvexError("Not authenticated");
     }
 
-    const { _id, title, body, order, favorite, published } = args;
+    const {
+      _id,
+      title,
+      body,
+      order,
+      favorite,
+      published,
+      status,
+      priority,
+      deadline,
+    } = args;
     const doc = await ctx.db.get(_id);
     if (!doc) {
       throw new ConvexError("Document not found");
@@ -159,12 +176,17 @@ export const updateDocument = mutation({
       title: title ?? doc.title,
       body: body ?? doc.body,
       preview:
-        body !== undefined ? computeDocumentPreview(body) : (doc as any).preview,
+        body !== undefined
+          ? computeDocumentPreview(body)
+          : (doc as any).preview,
       slug,
       updatedAt: Date.now(),
       order: order ?? doc.order,
       favorite: favorite ?? doc.favorite,
       published: published ?? doc.published,
+      status: status ?? (doc as any).status ?? "backlog",
+      priority: priority ?? (doc as any).priority ?? "no_priority",
+      ...(deadline !== undefined ? { deadline: deadline ?? undefined } : {}),
     };
 
     return await ctx.db.replace(_id, update);
@@ -193,7 +215,9 @@ export const updateDocumentOrder = mutation({
     }
 
     if (table.folderId) {
-      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      const folder = (await ctx.db.get(
+        table.folderId,
+      )) as Doc<"folders"> | null;
       if (folder && folder.userId !== userId) {
         throw new ConvexError("Not authorized to update order in this table");
       }
@@ -310,7 +334,9 @@ export const moveDocument = mutation({
       throw new ConvexError("Not authorized to move this document");
     }
 
-    const targetFolder = (await ctx.db.get(targetFolderId)) as Doc<"folders"> | null;
+    const targetFolder = (await ctx.db.get(
+      targetFolderId,
+    )) as Doc<"folders"> | null;
     if (!targetFolder) {
       throw new ConvexError("Target folder not found");
     }
@@ -319,7 +345,9 @@ export const moveDocument = mutation({
       throw new ConvexError("Not authorized to use this folder");
     }
 
-    const targetTable = (await ctx.db.get(targetTableId)) as Doc<"tables"> | null;
+    const targetTable = (await ctx.db.get(
+      targetTableId,
+    )) as Doc<"tables"> | null;
     if (!targetTable) {
       throw new ConvexError("Target table not found");
     }
@@ -788,9 +816,7 @@ export const getMentionItems = query({
       const folder = doc.folderId
         ? folderMap.get(String(doc.folderId))
         : undefined;
-      const table = doc.tableId
-        ? tableMap.get(String(doc.tableId))
-        : undefined;
+      const table = doc.tableId ? tableMap.get(String(doc.tableId)) : undefined;
       const preview = doc.preview ?? computeDocumentPreview(doc.body);
       return {
         _id: String(doc._id),
@@ -842,9 +868,7 @@ export const getMentionItems = query({
       const folder = pdf.folderId
         ? folderMap.get(String(pdf.folderId))
         : undefined;
-      const table = pdf.tableId
-        ? tableMap.get(String(pdf.tableId))
-        : undefined;
+      const table = pdf.tableId ? tableMap.get(String(pdf.tableId)) : undefined;
       return {
         _id: String(pdf._id),
         kind: "pdf" as const,
@@ -997,7 +1021,8 @@ export const resolveHoverItem = query({
             const documentItem = doc as any;
             const preview =
               documentItem.preview ?? computeDocumentPreview(documentItem.body);
-            const folderId = documentItem.folderId ?? documentItem.workingSpaceId;
+            const folderId =
+              documentItem.folderId ?? documentItem.workingSpaceId;
             return {
               kind: "note" as const,
               _id: String(documentItem._id),
