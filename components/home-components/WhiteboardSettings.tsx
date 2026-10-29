@@ -63,6 +63,7 @@ import {
   SettingsMoveHint,
   useSettingsMoveHint,
 } from "@/components/ui/settings-move-hint";
+import { ItemPropertiesMenu } from "./ItemProperties";
 
 interface WhiteboardSettingsProps {
   whiteboardId?: Id<"whiteboards">;
@@ -434,6 +435,14 @@ export default function WhiteboardSettings({
                 <Pin size={14} className="text-muted-foreground" />
                 {whiteboard.favorite ? "Unpin Whiteboard" : "Pin Whiteboard"}
               </Button>
+              <ItemPropertiesMenu
+                status={whiteboard.status}
+                priority={whiteboard.priority}
+                deadline={whiteboard.deadline}
+                onChange={(changes) =>
+                  void updateWhiteboard({ _id: whiteboard._id, ...changes })
+                }
+              />
               <Button
                 variant="SidebarMenuButton"
                 className="h-8 w-full px-2 text-sm"

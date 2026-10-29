@@ -51,6 +51,7 @@ import { useHoverTooltip } from "@/hooks/useHoverTooltip";
 import { useToast } from "@/hooks/use-toast";
 import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { useRouter } from "next/navigation";
+import { ItemPropertiesMenu } from "./ItemProperties";
 
 interface PdfSettingsProps {
   pdfId: Id<"pdfs">;
@@ -341,6 +342,13 @@ export default function PdfSettings({
               <Pin size={14} className="text-muted-foreground" />
               {pdf.favorite ? "Unpin Upload" : "Pin Upload"}
             </Button>
+
+            <ItemPropertiesMenu
+              status={pdf.status}
+              priority={pdf.priority}
+              deadline={pdf.deadline}
+              onChange={(changes) => void updatePdf({ _id: pdfId, ...changes })}
+            />
 
             <Button
               variant="SidebarMenuButton"

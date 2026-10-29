@@ -499,6 +499,7 @@ function PdfViewerContent({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const updatePdf = useMutation(api.pdfs.updatePdf);
+  const pdf = useQuery(api.pdfs.getPdfById, { _id: pdfId });
 
   const toolbarRef = useRef<HTMLDivElement>(null);
   const dragInfoRef = useRef<{
@@ -799,7 +800,7 @@ function PdfViewerContent({
             )}
             {!renderedInPane && (
               <div
-                className={`flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
+                className={`group flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
               >
                 <h1
                   onDoubleClick={handleNameDoubleClick}
@@ -827,6 +828,7 @@ function PdfViewerContent({
                     </span>
                   )}
                 </h1>
+
               </div>
             )}
 

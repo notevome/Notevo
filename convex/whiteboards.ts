@@ -47,6 +47,8 @@ export const createWhiteboard = mutation({
       folderId,
       tableId,
       title: args.title.trim() || "Untitled whiteboard",
+      status: "backlog",
+      priority: "no_priority",
       createdAt: now,
       updatedAt: now,
     });
@@ -65,7 +67,9 @@ export const getWhiteboardsByTableId = query({
     const tableId = (args.tableId ?? args.notesTableId) as any;
     const table = (await ctx.db.get(tableId)) as Doc<"tables"> | null;
     if (table?.folderId) {
-      const folder = (await ctx.db.get(table.folderId)) as Doc<"folders"> | null;
+      const folder = (await ctx.db.get(
+        table.folderId,
+      )) as Doc<"folders"> | null;
       if (!folder || folder.userId !== userId) {
         throw new ConvexError("Table not found or not authorized");
       }
@@ -132,6 +136,9 @@ export const updateWhiteboard = mutation({
     snapshot: v.optional(v.string()),
     preview: v.optional(v.string()),
     favorite: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    priority: v.optional(v.string()),
+    deadline: v.optional(v.union(v.number(), v.null())),
   },
   handler: async (ctx, args) => {
     const whiteboard = await requireOwner(ctx, args._id);
@@ -145,6 +152,11 @@ export const updateWhiteboard = mutation({
       preview: args.preview === undefined ? whiteboard.preview : args.preview,
       favorite:
         args.favorite === undefined ? whiteboard.favorite : args.favorite,
+      status: args.status ?? (whiteboard as any).status ?? "backlog",
+      priority: args.priority ?? (whiteboard as any).priority ?? "no_priority",
+      ...(args.deadline !== undefined
+        ? { deadline: args.deadline ?? undefined }
+        : {}),
       updatedAt: Date.now(),
     });
   },
@@ -161,8 +173,10 @@ export const moveWhiteboard = mutation({
   handler: async (ctx, args) => {
     await requireOwner(ctx, args._id);
     const userId = await getAuthUserId(ctx);
-    const targetFolderId = (args.targetFolderId ?? args.targetWorkingSpaceId) as any;
-    const targetTableId = (args.targetTableId ?? args.targetNotesTableId) as any;
+    const targetFolderId = (args.targetFolderId ??
+      args.targetWorkingSpaceId) as any;
+    const targetTableId = (args.targetTableId ??
+      args.targetNotesTableId) as any;
 
     const [folder, table] = (await Promise.all([
       ctx.db.get(targetFolderId),

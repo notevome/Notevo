@@ -209,7 +209,8 @@ export default function WhiteboardPageClient({
   }
 
   return (
-    <div className="whiteboard-canvas relative h-full min-h-[calc(100vh-5rem)] min-w-full overflow-hidden bg-background">
+    <div className="whiteboard-canvas group relative h-full min-h-[calc(100vh-5rem)] min-w-full overflow-hidden bg-background">
+
       <Excalidraw
         key={whiteboardId}
         initialData={parseSnapshot(whiteboard?.snapshot)}

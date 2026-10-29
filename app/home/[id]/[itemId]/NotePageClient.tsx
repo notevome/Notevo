@@ -22,6 +22,7 @@ import {
   getPrefetchedNote,
 } from "@/lib/notePrefetchCache";
 import { recordLastVisitedLocation } from "@/lib/last-visited";
+import { ItemPropertiesHoverControls } from "@/components/home-components/ItemProperties";
 const noteMemoryCache = new Map<string, unknown>();
 
 const noteTitleSchema = z
@@ -243,7 +244,7 @@ export default function NotePageClient({
         "pb-28 mx-auto",
       )}
     >
-      <div className="advanced-editor-shell relative w-full bg-transparent text-foreground placeholder overflow-hidden">
+      <div className="advanced-editor-shell group relative w-full bg-transparent text-foreground placeholder overflow-hidden">
         <div className="tiptap ProseMirror text-foreground pt-6 prose-stone prose-lg dark:prose-invert prose-headings:font-title font-default focus:outline-none w-full">
           <Textarea
             ref={setTitleRef}
@@ -266,6 +267,12 @@ export default function NotePageClient({
             rows={1}
             style={{ resize: "none", overflow: "hidden", width: "100%" }}
             className="px-0 py-2 my-0 mx-0 field-sizing-content !min-h-0 min-w-0 w-full max-w-full [white-space:pre-wrap] [overflow-wrap:break-word] [word-break:break-word] !text-4xl md:!text-5xl !leading-tight font-bold placeholder:text-muted-foreground/50 !app-radius-none focus:shadow-none shadow-none focus-visible:outline-none border-0 border-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          <ItemPropertiesHoverControls
+            status={stableNote?.status}
+            priority={stableNote?.priority}
+            deadline={stableNote?.deadline}
+            onChange={(changes) => void updateNote({ _id: noteId, ...changes })}
           />
         </div>
       </div>

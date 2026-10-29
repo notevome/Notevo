@@ -55,6 +55,7 @@ import {
   FolderItemGridCardContent,
   folderItemGridCardClassName,
 } from "@/components/home-components/FolderItemGridCard";
+import { ItemPropertiesBadges } from "@/components/home-components/ItemProperties";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
 import MoveTableDialog from "@/components/home-components/MoveTableDialog";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
@@ -460,6 +461,9 @@ interface Note {
   body?: string;
   preview?: string;
   favorite?: boolean;
+  status?: string;
+  priority?: string;
+  deadline?: number;
   createdAt: number;
   updatedAt: number;
   tags?: Id<"tags">[];
@@ -472,6 +476,9 @@ interface PdfItem {
   storageId: Id<"_storage">;
   title?: string;
   favorite?: boolean;
+  status?: string;
+  priority?: string;
+  deadline?: number;
   userId?: Id<"users">;
   workingSpaceId?: Id<"folders">;
   notesTableId?: Id<"tables">;
@@ -514,6 +521,9 @@ interface WhiteboardItem {
   _id: Id<"whiteboards">;
   title: string;
   favorite?: boolean;
+  status?: string;
+  priority?: string;
+  deadline?: number;
   snapshot?: string;
   preview?: string;
   userId: Id<"users">;
@@ -529,6 +539,10 @@ type WorkspaceEntry =
   | PdfItem
   | LinkItem
   | WhiteboardItem;
+
+function getTimelineDate(item: WorkspaceEntry) {
+  return item.kind !== "link" && item.deadline ? item.deadline : item.createdAt;
+}
 
 interface NotesDroppableContainerProps {
   tableId: Id<"tables">;
@@ -2609,7 +2623,7 @@ function CalendarTimelineView({
     let earliest = today;
     let latest = today;
     for (const item of items) {
-      const d = startOfDay(item.createdAt);
+      const d = startOfDay(getTimelineDate(item));
       if (d.getTime() < earliest.getTime()) earliest = d;
       if (d.getTime() > latest.getTime()) latest = d;
     }
@@ -2631,7 +2645,7 @@ function CalendarTimelineView({
       new Set(
         [
           ...items.map((item) =>
-            daysBetween(startDate, startOfDay(item.createdAt)),
+            daysBetween(startDate, startOfDay(getTimelineDate(item))),
           ),
           todayDayOffset,
         ].filter((offset) => offset >= 0 && offset <= totalDays),
@@ -2749,7 +2763,9 @@ function CalendarTimelineView({
   }, [startDate, endDate, timelineScale]);
 
   const clusters = useMemo(() => {
-    const sorted = [...items].sort((a, b) => a.createdAt - b.createdAt);
+    const sorted = [...items].sort(
+      (a, b) => getTimelineDate(a) - getTimelineDate(b),
+    );
     const minClusterSpacing = CALENDAR_CARD_WIDTH + CALENDAR_CLUSTER_GAP;
     const result: {
       id: string;
@@ -2758,7 +2774,10 @@ function CalendarTimelineView({
       entries: WorkspaceEntry[];
     }[] = [];
     for (const item of sorted) {
-      const dayOffset = daysBetween(startDate, startOfDay(item.createdAt));
+      const dayOffset = daysBetween(
+        startDate,
+        startOfDay(getTimelineDate(item)),
+      );
       const x = timelineScale.xForDay(dayOffset) ?? 0;
       const last = result[result.length - 1];
       if (last && x - last.x <= minClusterSpacing) {
@@ -3397,6 +3416,10 @@ function TimelineMiniCard({
 
   const createdDate = new Date(item.createdAt);
   const updatedDate = new Date(item.updatedAt);
+  const deadlineDate =
+    item.kind === "link" || !item.deadline
+      ? undefined
+      : new Date(item.deadline);
   const isDifferentYear =
     createdDate.getFullYear() !== new Date().getFullYear();
   const hasUpdate =
@@ -3463,11 +3486,22 @@ function TimelineMiniCard({
                 </>
               ) : (
                 <>
-                  Created {formatShort(createdDate)}
+                  {deadlineDate
+                    ? `Due ${formatShort(deadlineDate)}`
+                    : `Created ${formatShort(createdDate)}`}
                   {hasUpdate ? ` · Updated ${formatShort(updatedDate)}` : ""}
                 </>
               )}
             </p>
+            {!isLink && (
+              <div className="mt-1">
+                <ItemPropertiesBadges
+                  status={(item as Note | PdfItem | WhiteboardItem).status}
+                  priority={(item as Note | PdfItem | WhiteboardItem).priority}
+                  deadline={(item as Note | PdfItem | WhiteboardItem).deadline}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -3931,6 +3965,13 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
         <p className="line-clamp-1 text-sm text-muted-foreground">
           <HighlightText text={details.subtitle || ""} query={searchQuery} />
         </p>
+        {item.kind !== "link" && (
+          <ItemPropertiesBadges
+            status={(item as Note | PdfItem | WhiteboardItem).status}
+            priority={(item as Note | PdfItem | WhiteboardItem).priority}
+            deadline={(item as Note | PdfItem | WhiteboardItem).deadline}
+          />
+        )}
       </div>
 
       <div
