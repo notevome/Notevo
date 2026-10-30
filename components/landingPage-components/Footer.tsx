@@ -152,7 +152,7 @@ export default function Footer() {
             <p className="text-start text-muted-foreground text-sm">
               Designed and built with love by{" "}
               <Link
-                href="https://www.mohammedh.dev/"
+                href="https://www.moeh.dev/"
                 className="hover:underline"
                 target="_blank"
               >

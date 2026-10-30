@@ -1051,7 +1051,8 @@ const PinnedWhiteboardItem = memo(
       whiteboard.title || "untitled-whiteboard",
       whiteboard._id,
     );
-    const workspaceId = whiteboard.workingSpaceId ?? (whiteboard as any).folderId;
+    const workspaceId =
+      whiteboard.workingSpaceId ?? (whiteboard as any).folderId;
     const whiteboardPath = `/home/${workspaceId}/${whiteboardSlug}`;
     const legacyWhiteboardPath = `/home/${workspaceId}/${generateSlug(whiteboard.title || "untitled-whiteboard")}`;
     const whiteboardHref = whiteboardPath;
@@ -2217,7 +2218,7 @@ const UserAccountSection = memo(function UserAccountSection({
                     {process.env.NEXT_PUBLIC_APP_VERSION}
                   </Link>
                   <Link
-                    href="https://www.mohammedh.dev/"
+                    href="https://www.moeh.dev/"
                     target="_blank"
                     className="hover:underline"
                   >
@@ -2461,78 +2462,78 @@ const AppSidebar = React.memo(function AppSidebar({
     <>
       <GlobalCreateHandler />
       <Sidebar
-      variant="inset"
-      className="group bg-muted"
-      style={{
-        width: `${sidebarWidth}px`,
-      }}
-    >
-      <SidebarHeaderSection
-        getWorkingSpaces={getWorkingSpaces}
-        handleCreateNote={handleCreateNote}
-        handleCreateWorkingSpace={handleCreateWorkingSpace}
-        newButtonVariant={newButtonVariant}
-      />
+        variant="inset"
+        className="group bg-muted"
+        style={{
+          width: `${sidebarWidth}px`,
+        }}
+      >
+        <SidebarHeaderSection
+          getWorkingSpaces={getWorkingSpaces}
+          handleCreateNote={handleCreateNote}
+          handleCreateWorkingSpace={handleCreateWorkingSpace}
+          newButtonVariant={newButtonVariant}
+        />
 
-      <div className="relative flex min-h-0 flex-1 flex-col">
-        {canScroll && scrollTop > 8 && (
-          <div
-            className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-32 bg-gradient-to-b from-muted from-5% to-100% to-transparent"
-            aria-hidden
-          />
-        )}
-        {canScroll && hasMoreBelow && (
-          <div
-            className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-32 bg-gradient-to-t from-muted from-5% to-100% to-transparent"
-            aria-hidden
-          />
-        )}
-        <SidebarContent
-          ref={setSidebarContentRef}
-          onScroll={handleSidebarScroll}
-          className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border"
-        >
-          <div ref={setSidebarInnerRef}>
-            <SidebarNavigation
-              pathname={pathname}
-              ishome={ishome}
-              isMobile={isMobile}
-              open={open}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          {canScroll && scrollTop > 8 && (
+            <div
+              className="pointer-events-none absolute left-0 right-0 -top-1 z-10 h-32 bg-gradient-to-b from-muted from-5% to-100% to-transparent"
+              aria-hidden
             />
+          )}
+          {canScroll && hasMoreBelow && (
+            <div
+              className="pointer-events-none absolute left-0 right-0 -bottom-1 z-10 h-32 bg-gradient-to-t from-muted from-5% to-100% to-transparent"
+              aria-hidden
+            />
+          )}
+          <SidebarContent
+            ref={setSidebarContentRef}
+            onScroll={handleSidebarScroll}
+            className="scrollbar-gutter-stable pb-16 relative text-foreground transition-all duration-200 ease-in-out [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-track]:bg-transparent group-hover:[&::-webkit-scrollbar-thumb]:bg-border"
+          >
+            <div ref={setSidebarInnerRef}>
+              <SidebarNavigation
+                pathname={pathname}
+                ishome={ishome}
+                isMobile={isMobile}
+                open={open}
+              />
 
-            <PinnedItemsSection
-              favoriteNotes={results}
-              favoritePdfs={favoritePdfs}
-              favoriteWhiteboards={favoriteWhiteboards}
-              favoriteLinks={favoriteLinks}
-              pathname={pathname}
-              open={open}
-              notesStatus={status}
-              pdfsStatus={favoritePdfsStatus}
-              whiteboardsStatus={favoriteWhiteboardsStatus}
-              linksStatus={favoriteLinksStatus}
-              loadMoreNotes={loadMore}
-              loadMorePdfs={loadMorePdfs}
-              loadMoreWhiteboards={loadMoreWhiteboards}
-              loadMoreLinks={loadMoreLinks}
-            />
-            <WorkspacesList
-              getWorkingSpaces={getWorkingSpaces}
-              handleCreateWorkingSpace={handleCreateWorkingSpace}
-              pathname={pathname}
-              open={open}
-            />
-          </div>
-        </SidebarContent>
-      </div>
-      <UserAccountSection
-        User={User}
-        handleSignOut={handleSignOut}
-        isSigningOut={isSigningOut}
-        pathname={pathname}
-      />
-    </Sidebar>
-  </>
+              <PinnedItemsSection
+                favoriteNotes={results}
+                favoritePdfs={favoritePdfs}
+                favoriteWhiteboards={favoriteWhiteboards}
+                favoriteLinks={favoriteLinks}
+                pathname={pathname}
+                open={open}
+                notesStatus={status}
+                pdfsStatus={favoritePdfsStatus}
+                whiteboardsStatus={favoriteWhiteboardsStatus}
+                linksStatus={favoriteLinksStatus}
+                loadMoreNotes={loadMore}
+                loadMorePdfs={loadMorePdfs}
+                loadMoreWhiteboards={loadMoreWhiteboards}
+                loadMoreLinks={loadMoreLinks}
+              />
+              <WorkspacesList
+                getWorkingSpaces={getWorkingSpaces}
+                handleCreateWorkingSpace={handleCreateWorkingSpace}
+                pathname={pathname}
+                open={open}
+              />
+            </div>
+          </SidebarContent>
+        </div>
+        <UserAccountSection
+          User={User}
+          handleSignOut={handleSignOut}
+          isSigningOut={isSigningOut}
+          pathname={pathname}
+        />
+      </Sidebar>
+    </>
   );
 });
 
