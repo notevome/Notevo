@@ -133,7 +133,22 @@ export default function WhiteboardSettings({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const tooltip = useHoverTooltip(100);
   const { toast } = useToast();
-  const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
+  const updateWhiteboard = useMutation(
+    api.whiteboards.updateWhiteboard,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id, title, favorite, status, priority, deadline } = args;
+    const current = local.getQuery(api.whiteboards.getWhiteboardById, { _id });
+    if (!current) return;
+    local.setQuery(api.whiteboards.getWhiteboardById, { _id }, {
+      ...current,
+      title: title ?? current.title,
+      favorite: favorite !== undefined ? favorite : current.favorite,
+      status: status ?? current.status,
+      priority: priority ?? current.priority,
+      ...(deadline !== undefined ? { deadline: deadline ?? undefined } : {}),
+      updatedAt: Date.now(),
+    });
+  });
   const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
   const moveWhiteboard = useMutation(api.whiteboards.moveWhiteboard);
   const createWorkingSpace = useMutation(api.folders.createFolder);
