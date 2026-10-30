@@ -12,7 +12,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { format } from "date-fns";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenuItem,
@@ -38,16 +38,60 @@ export type ItemStatus =
   | "canceled";
 export type ItemPriority = "no_priority" | "urgent" | "high" | "medium" | "low";
 
+type PropertyChanges = {
+  status?: ItemStatus;
+  priority?: ItemPriority;
+  deadline?: number | null;
+};
+
 type Properties = {
   status?: string;
   priority?: string;
   deadline?: number;
-  onChange: (changes: {
-    status?: ItemStatus;
-    priority?: ItemPriority;
-    deadline?: number | null;
-  }) => void;
+  onChange: (changes: PropertyChanges) => void;
 };
+
+function useOptimisticProperties({
+  status,
+  priority,
+  deadline,
+  onChange,
+}: Properties) {
+  const [pending, setPending] = useState<PropertyChanges>({});
+
+  useEffect(() => {
+    setPending((current) => {
+      let next = current;
+      const drop = (key: keyof PropertyChanges) => {
+        if (!(key in next)) return;
+        if (next === current) next = { ...current };
+        delete next[key];
+      };
+      if (current.status !== undefined && current.status === status) {
+        drop("status");
+      }
+      if (current.priority !== undefined && current.priority === priority) {
+        drop("priority");
+      }
+      if (current.deadline !== undefined) {
+        const pendingDeadline = current.deadline ?? undefined;
+        if (pendingDeadline === deadline) drop("deadline");
+      }
+      return next;
+    });
+  }, [status, priority, deadline]);
+
+  return {
+    status: pending.status ?? status,
+    priority: pending.priority ?? priority,
+    deadline:
+      pending.deadline !== undefined ? (pending.deadline ?? undefined) : deadline,
+    onChange: (changes: PropertyChanges) => {
+      setPending((current) => ({ ...current, ...changes }));
+      onChange(changes);
+    },
+  };
+}
 
 const statuses: Array<{ value: ItemStatus; label: string; Icon: any }> = [
   { value: "backlog", label: "Backlog", Icon: CircleOff },
@@ -161,8 +205,14 @@ export function ItemPropertiesMenu({
   deadline,
   onChange,
 }: Properties) {
-  const currentStatus = statusFor(status);
-  const currentPriority = priorityFor(priority);
+  const optimistic = useOptimisticProperties({
+    status,
+    priority,
+    deadline,
+    onChange,
+  });
+  const currentStatus = statusFor(optimistic.status);
+  const currentPriority = priorityFor(optimistic.priority);
   return (
     <div className="space-y-1">
       <DropdownMenuSub>
@@ -177,12 +227,12 @@ export function ItemPropertiesMenu({
           {statuses.map(({ value, label, Icon }) => (
             <DropdownMenuItem
               key={value}
-              onClick={() => onChange({ status: value })}
+              onClick={() => optimistic.onChange({ status: value })}
               className="gap-2"
             >
               <Icon size={14} />
               {label}
-              {statusFor(status).value === value ? (
+              {currentStatus.value === value ? (
                 <Check className="ml-auto h-3.5 w-3.5" />
               ) : null}
             </DropdownMenuItem>
@@ -201,12 +251,12 @@ export function ItemPropertiesMenu({
           {priorities.map(({ value, label, Icon }) => (
             <DropdownMenuItem
               key={value}
-              onClick={() => onChange({ priority: value })}
+              onClick={() => optimistic.onChange({ priority: value })}
               className="gap-2"
             >
               <Icon size={14} />
               {label}
-              {priorityFor(priority).value === value ? (
+              {currentPriority.value === value ? (
                 <Check className="ml-auto h-3.5 w-3.5" />
               ) : null}
             </DropdownMenuItem>
@@ -214,7 +264,10 @@ export function ItemPropertiesMenu({
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <div className="px-1">
-        <DeadlinePicker deadline={deadline} onChange={onChange} />
+        <DeadlinePicker
+          deadline={optimistic.deadline}
+          onChange={optimistic.onChange}
+        />
       </div>
     </div>
   );
@@ -286,8 +339,14 @@ export function ItemPropertiesHoverControls({
   deadline,
   onChange,
 }: Properties) {
-  const currentStatus = statusFor(status);
-  const currentPriority = priorityFor(priority);
+  const optimistic = useOptimisticProperties({
+    status,
+    priority,
+    deadline,
+    onChange,
+  });
+  const currentStatus = statusFor(optimistic.status);
+  const currentPriority = priorityFor(optimistic.priority);
   const [stateOpen, setStateOpen] = useState(false);
   const [priorityOpen, setPriorityOpen] = useState(false);
   const [deadlineOpen, setDeadlineOpen] = useState(false);
@@ -314,7 +373,10 @@ export function ItemPropertiesHoverControls({
               key={value}
               variant="ghost"
               className="h-8 w-full justify-start gap-2 px-2 text-sm"
-              onClick={() => onChange({ status: value })}
+              onClick={() => {
+                optimistic.onChange({ status: value });
+                setStateOpen(false);
+              }}
             >
               <Icon size={14} />
               {label}
@@ -338,7 +400,10 @@ export function ItemPropertiesHoverControls({
               key={value}
               variant="ghost"
               className="h-8 w-full justify-start gap-2 px-2 text-sm"
-              onClick={() => onChange({ priority: value })}
+              onClick={() => {
+                optimistic.onChange({ priority: value });
+                setPriorityOpen(false);
+              }}
             >
               <Icon size={14} />
               {label}
@@ -347,8 +412,8 @@ export function ItemPropertiesHoverControls({
         </PopoverContent>
       </Popover>
       <DeadlinePicker
-        deadline={deadline}
-        onChange={onChange}
+        deadline={optimistic.deadline}
+        onChange={optimistic.onChange}
         compact
         onOpenChange={setDeadlineOpen}
       />

@@ -79,7 +79,7 @@ export default function NotePageClient({
 
   const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
-      const { _id, body } = args;
+      const { _id, body, title, status, priority, deadline } = args;
       const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note) {
         local.setQuery(
@@ -87,7 +87,13 @@ export default function NotePageClient({
           { _id },
           {
             ...note,
+            title: title ?? note.title,
             body: body ?? note.body,
+            status: status ?? note.status,
+            priority: priority ?? note.priority,
+            ...(deadline !== undefined
+              ? { deadline: deadline ?? undefined }
+              : {}),
             updatedAt: Date.now(),
           },
         );

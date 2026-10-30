@@ -99,7 +99,7 @@ export default function NoteSettings({
 
   const updateNote = useMutation(api.documents.updateNote).withOptimisticUpdate(
     (local, args) => {
-      const { _id, title, body, favorite } = args;
+      const { _id, title, body, favorite, status, priority, deadline } = args;
       const note = local.getQuery(api.documents.getNoteById, { _id });
       if (note) {
         local.setQuery(
@@ -110,6 +110,11 @@ export default function NoteSettings({
             title: title ?? note.title,
             body: body ?? note.body,
             favorite: favorite !== undefined ? favorite : note.favorite,
+            status: status ?? note.status,
+            priority: priority ?? note.priority,
+            ...(deadline !== undefined
+              ? { deadline: deadline ?? undefined }
+              : {}),
             updatedAt: Date.now(),
           },
         );
