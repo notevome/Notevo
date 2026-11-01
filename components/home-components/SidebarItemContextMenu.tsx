@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useSidebarPopupGuard } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -44,12 +45,32 @@ export default function SidebarItemContextMenu({
   onDelete,
 }: SidebarItemContextMenuProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const popupOpenRef = useRef(false);
+  const popupGuard = useSidebarPopupGuard();
   const [open, setOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [name, setName] = useState(itemName);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => setName(itemName), [itemName]);
+
+  const setMenuOpen = useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      if (popupOpenRef.current === nextOpen) return;
+      popupOpenRef.current = nextOpen;
+      popupGuard(nextOpen);
+    },
+    [popupGuard],
+  );
+
+  useEffect(
+    () => () => {
+      if (popupOpenRef.current) popupGuard(false);
+    },
+    [popupGuard],
+  );
+
   useEffect(() => {
     if (!open || !onRename) return;
     const timer = window.setTimeout(() => {
@@ -75,12 +96,12 @@ export default function SidebarItemContextMenu({
           event.preventDefault();
           event.stopPropagation();
           setPosition({ x: event.clientX, y: event.clientY });
-          setOpen(false);
-          requestAnimationFrame(() => setOpen(true));
+          setMenuOpen(false);
+          requestAnimationFrame(() => setMenuOpen(true));
         }}
       >
         {children}
-        <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenu open={open} onOpenChange={setMenuOpen}>
           <DropdownMenuTrigger asChild>
             <span
               aria-hidden
@@ -112,7 +133,7 @@ export default function SidebarItemContextMenu({
                     if (event.key === "Enter") {
                       event.preventDefault();
                       void saveName();
-                      setOpen(false);
+                      setMenuOpen(false);
                     }
                   }}
                   onPointerDown={(event) => event.stopPropagation()}
@@ -136,7 +157,7 @@ export default function SidebarItemContextMenu({
               <DropdownMenuItem
                 className="hover:text-destructive"
                 onClick={() => {
-                  setOpen(false);
+                  setMenuOpen(false);
                   setDeleteOpen(true);
                 }}
               >
