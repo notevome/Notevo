@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
@@ -45,6 +45,7 @@ import { FaRegTrashCan } from "react-icons/fa6";
 import MoveNoteDialog from "./MoveNoteDialog";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
 import { ItemPropertiesMenu } from "./ItemProperties";
+import { useSidebarPopupGuard } from "@/components/ui/sidebar";
 
 interface NoteContextMenuProps {
   noteId: Id<"documents">;
@@ -76,6 +77,8 @@ export default function NoteContextMenu({
   const inputRef = useRef<HTMLInputElement>(null);
   // This ref points to the invisible zero-size trigger span
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const popupOpenRef = useRef(false);
+  const popupGuard = useSidebarPopupGuard();
 
   const [inputValue, setInputValue] = useState(noteTitle);
   const [open, setOpen] = useState(false);
@@ -126,6 +129,23 @@ export default function NoteContextMenu({
     setInputValue(noteTitle);
   }, [noteTitle]);
 
+  const setMenuOpen = useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      if (popupOpenRef.current === nextOpen) return;
+      popupOpenRef.current = nextOpen;
+      popupGuard(nextOpen);
+    },
+    [popupGuard],
+  );
+
+  useEffect(
+    () => () => {
+      if (popupOpenRef.current) popupGuard(false);
+    },
+    [popupGuard],
+  );
+
   // Focus & select the rename input whenever the menu opens
   useEffect(() => {
     if (!open) return;
@@ -146,8 +166,8 @@ export default function NoteContextMenu({
     e.stopPropagation();
     setTriggerPos({ x: e.clientX, y: e.clientY });
     // Let the span reposition before Radix measures it
-    setOpen(false);
-    requestAnimationFrame(() => setOpen(true));
+    setMenuOpen(false);
+    requestAnimationFrame(() => setMenuOpen(true));
   };
 
   const handleBlur = async () => {
@@ -181,13 +201,13 @@ export default function NoteContextMenu({
     if (event.key === "Enter") {
       event.preventDefault();
       void handleBlur();
-      setOpen(false);
+      setMenuOpen(false);
     }
   };
 
   const handleFavoritePin = async () => {
     await updateNote({ _id: noteId, favorite: !getNote.favorite });
-    setOpen(false);
+    setMenuOpen(false);
   };
 
   const handleDelete = async (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -211,7 +231,7 @@ export default function NoteContextMenu({
       <div onContextMenu={handleContextMenu}>
         {children}
 
-        <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenu open={open} onOpenChange={setMenuOpen}>
           {typeof document !== "undefined" &&
             createPortal(
               <DropdownMenuTrigger asChild>
@@ -269,7 +289,7 @@ export default function NoteContextMenu({
 
               <DropdownMenuItem
                 onClick={() => {
-                  setOpen(false);
+                  setMenuOpen(false);
                   setIsMoveDialogOpen(true);
                 }}
               >
@@ -286,7 +306,7 @@ export default function NoteContextMenu({
                   <DropdownMenuItem
                     onClick={() => {
                       handleDownload("markdown");
-                      setOpen(false);
+                      setMenuOpen(false);
                     }}
                   >
                     <FileText
@@ -298,7 +318,7 @@ export default function NoteContextMenu({
                   <DropdownMenuItem
                     onClick={() => {
                       handleDownload("json");
-                      setOpen(false);
+                      setMenuOpen(false);
                     }}
                   >
                     <FileJson
@@ -310,7 +330,7 @@ export default function NoteContextMenu({
                   <DropdownMenuItem
                     onClick={() => {
                       handleDownload("docx");
-                      setOpen(false);
+                      setMenuOpen(false);
                     }}
                   >
                     <FileType
@@ -322,7 +342,7 @@ export default function NoteContextMenu({
                   <DropdownMenuItem
                     onClick={() => {
                       handleDownload("pdf");
-                      setOpen(false);
+                      setMenuOpen(false);
                     }}
                   >
                     <FileDown
@@ -339,7 +359,7 @@ export default function NoteContextMenu({
               <DropdownMenuItem
                 className="w-full h-8 px-2 text-sm hover:text-destructive"
                 onClick={() => {
-                  setOpen(false);
+                  setMenuOpen(false);
                   setIsAlertOpen(true);
                 }}
               >

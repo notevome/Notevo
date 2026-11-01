@@ -2222,7 +2222,7 @@ const UserAccountSection = memo(function UserAccountSection({
                     target="_blank"
                     className="hover:underline"
                   >
-                    @Mohammed H.
+                    @Moe H.
                   </Link>
                 </span>
 

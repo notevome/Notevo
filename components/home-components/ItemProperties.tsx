@@ -152,8 +152,8 @@ function DeadlinePicker({
         <Button
           variant={compact ? "outline" : "SidebarMenuButton"}
           className={cn(
-            "h-7 justify-start gap-2 px-2 text-sm",
-            compact && "border-border bg-background",
+            "h-8 w-full justify-start gap-2 px-2 text-sm font-normal",
+            compact && "h-7 border-border bg-background font-medium",
           )}
         >
           <CalendarDays size={14} className="text-muted-foreground" />
@@ -214,14 +214,11 @@ export function ItemPropertiesMenu({
   const currentStatus = statusFor(optimistic.status);
   const currentPriority = priorityFor(optimistic.priority);
   return (
-    <div className="space-y-1">
+    <>
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className="h-8 gap-2 px-2 text-sm">
-          <currentStatus.Icon
-            size={14}
-            className="shrink-0 text-muted-foreground"
-          />
-          <span className="truncate">State: {currentStatus.label}</span>
+        <DropdownMenuSubTrigger className="flex h-8 w-full items-center gap-2 px-2 text-sm text-foreground">
+          <currentStatus.Icon size={14} className="text-muted-foreground" />
+          State: {currentStatus.label}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-44">
           {statuses.map(({ value, label, Icon }) => (
@@ -230,7 +227,7 @@ export function ItemPropertiesMenu({
               onClick={() => optimistic.onChange({ status: value })}
               className="gap-2"
             >
-              <Icon size={14} />
+              <Icon size={14} className="text-muted-foreground" />
               {label}
               {currentStatus.value === value ? (
                 <Check className="ml-auto h-3.5 w-3.5" />
@@ -240,12 +237,9 @@ export function ItemPropertiesMenu({
         </DropdownMenuSubContent>
       </DropdownMenuSub>
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className="h-8 gap-2 px-2 text-sm">
-          <currentPriority.Icon
-            size={14}
-            className="shrink-0 text-muted-foreground"
-          />
-          <span className="truncate">Priority: {currentPriority.label}</span>
+        <DropdownMenuSubTrigger className="flex h-8 w-full items-center gap-2 px-2 text-sm text-foreground">
+          <currentPriority.Icon size={14} className="text-muted-foreground" />
+          Priority: {currentPriority.label}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-44">
           {priorities.map(({ value, label, Icon }) => (
@@ -254,7 +248,7 @@ export function ItemPropertiesMenu({
               onClick={() => optimistic.onChange({ priority: value })}
               className="gap-2"
             >
-              <Icon size={14} />
+              <Icon size={14} className="text-muted-foreground" />
               {label}
               {currentPriority.value === value ? (
                 <Check className="ml-auto h-3.5 w-3.5" />
@@ -263,13 +257,11 @@ export function ItemPropertiesMenu({
           ))}
         </DropdownMenuSubContent>
       </DropdownMenuSub>
-      <div className="px-1">
-        <DeadlinePicker
-          deadline={optimistic.deadline}
-          onChange={optimistic.onChange}
-        />
-      </div>
-    </div>
+      <DeadlinePicker
+        deadline={optimistic.deadline}
+        onChange={optimistic.onChange}
+      />
+    </>
   );
 }
 

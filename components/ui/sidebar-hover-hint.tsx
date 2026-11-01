@@ -9,11 +9,13 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 interface SidebarHoverHintProps {
   revealSidebar: () => void;
+  cancelReveal: () => void;
   openSidebarFromEdge: () => void;
 }
 
 export function SidebarHoverHint({
   revealSidebar,
+  cancelReveal,
   openSidebarFromEdge,
 }: SidebarHoverHintProps) {
   const [hasSeenHint, setHasSeenHint] = React.useState<boolean>(true);
@@ -55,6 +57,7 @@ export function SidebarHoverHint({
         aria-label="Open sidebar"
         className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-3 cursor-default bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
         onMouseEnter={revealSidebar}
+        onMouseLeave={cancelReveal}
         onFocus={openSidebarFromEdge}
         onClick={openSidebarFromEdge}
       />
@@ -73,6 +76,7 @@ export function SidebarHoverHint({
         aria-label="Hover or click to open sidebar"
         className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-9 md:w-10 cursor-pointer bg-transparent transition-colors hover:bg-sidebar-border/30 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
         onMouseEnter={handleTriggerHover}
+        onMouseLeave={cancelReveal}
         onFocus={handleTriggerClick}
         onClick={handleTriggerClick}
       />

@@ -29,6 +29,7 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b";
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 400;
 const SIDEBAR_WIDTH_COOKIE_NAME = "sidebar:width";
+const SIDEBAR_HOVER_OPEN_DELAY = 150;
 
 type SidebarContext = {
   state: "expanded" | "collapsed";
@@ -292,6 +293,7 @@ const Sidebar = React.memo(
       const startXRef = React.useRef(0);
       const startWidthRef = React.useRef(0);
       const rafRef = React.useRef<number>(0);
+      const hoverOpenTimerRef = React.useRef<number | null>(null);
       const sidebarRef = React.useRef<HTMLDivElement>(null);
       // We'll directly mutate the CSS var on this wrapper element
       const wrapperRef = React.useRef<HTMLElement | null>(null);
@@ -379,6 +381,15 @@ const Sidebar = React.memo(
         };
       }, [setSidebarWidth]);
 
+      React.useEffect(
+        () => () => {
+          if (hoverOpenTimerRef.current !== null) {
+            window.clearTimeout(hoverOpenTimerRef.current);
+          }
+        },
+        [],
+      );
+
       const sidebarClasses = React.useMemo(
         () =>
           cn(
@@ -417,15 +428,26 @@ const Sidebar = React.memo(
         ) : null;
 
       const revealSidebar = React.useCallback(() => {
-        if (state === "collapsed") {
+        if (state !== "collapsed" || hoverOpenTimerRef.current !== null) return;
+
+        hoverOpenTimerRef.current = window.setTimeout(() => {
+          hoverOpenTimerRef.current = null;
           setHoverOpen(true);
-        }
+        }, SIDEBAR_HOVER_OPEN_DELAY);
       }, [setHoverOpen, state]);
 
+      const cancelSidebarReveal = React.useCallback(() => {
+        if (hoverOpenTimerRef.current !== null) {
+          window.clearTimeout(hoverOpenTimerRef.current);
+          hoverOpenTimerRef.current = null;
+        }
+      }, []);
+
       const openSidebarFromEdge = React.useCallback(() => {
+        cancelSidebarReveal();
         setHoverOpen(false);
         setOpen(true);
-      }, [setHoverOpen, setOpen]);
+      }, [cancelSidebarReveal, setHoverOpen, setOpen]);
 
       const closeMobileAfterNavigation = React.useCallback(
         (event: React.MouseEvent<HTMLDivElement>) => {
@@ -498,6 +520,7 @@ const Sidebar = React.memo(
             ref={sidebarRef}
             className={sidebarClasses}
             onMouseLeave={() => {
+              cancelSidebarReveal();
               if (hoverOpen && popupOpenCountRef.current === 0) {
                 setHoverOpen(false);
               }
@@ -525,6 +548,7 @@ const Sidebar = React.memo(
           {state === "collapsed" && side === "left" && (
             <SidebarHoverHint
               revealSidebar={revealSidebar}
+              cancelReveal={cancelSidebarReveal}
               openSidebarFromEdge={openSidebarFromEdge}
             />
           )}
