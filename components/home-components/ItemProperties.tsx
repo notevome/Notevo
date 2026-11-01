@@ -153,7 +153,8 @@ function DeadlinePicker({
           variant={compact ? "outline" : "SidebarMenuButton"}
           className={cn(
             "h-8 w-full justify-start gap-2 px-2 text-sm font-normal",
-            compact && "h-7 border-border bg-background font-medium",
+            compact &&
+              "h-7 w-auto shrink-0 whitespace-nowrap border-border bg-background font-medium",
           )}
         >
           <CalendarDays size={14} className="text-muted-foreground" />
@@ -217,8 +218,13 @@ export function ItemPropertiesMenu({
     <>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger className="flex h-8 w-full items-center gap-2 px-2 text-sm text-foreground">
-          <currentStatus.Icon size={14} className="text-muted-foreground" />
-          State: {currentStatus.label}
+          <currentStatus.Icon
+            size={14}
+            className="shrink-0 text-muted-foreground"
+          />
+          <span className="min-w-0 truncate">
+            State: {currentStatus.label}
+          </span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-44">
           {statuses.map(({ value, label, Icon }) => (
@@ -238,8 +244,13 @@ export function ItemPropertiesMenu({
       </DropdownMenuSub>
       <DropdownMenuSub>
         <DropdownMenuSubTrigger className="flex h-8 w-full items-center gap-2 px-2 text-sm text-foreground">
-          <currentPriority.Icon size={14} className="text-muted-foreground" />
-          Priority: {currentPriority.label}
+          <currentPriority.Icon
+            size={14}
+            className="shrink-0 text-muted-foreground"
+          />
+          <span className="min-w-0 truncate">
+            Priority: {currentPriority.label}
+          </span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-44">
           {priorities.map(({ value, label, Icon }) => (
@@ -345,7 +356,7 @@ export function ItemPropertiesHoverControls({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
+        "flex flex-nowrap items-center gap-1 overflow-x-auto opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100",
         (stateOpen || priorityOpen || deadlineOpen) && "opacity-100",
       )}
     >
@@ -353,7 +364,7 @@ export function ItemPropertiesHoverControls({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-7 gap-1 border-border bg-background px-2 text-xs"
+            className="h-7 shrink-0 gap-1 whitespace-nowrap border-border bg-background px-2 text-xs"
           >
             <currentStatus.Icon size={13} />
             {currentStatus.label}
@@ -380,7 +391,7 @@ export function ItemPropertiesHoverControls({
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="h-7 gap-1 border-border bg-background px-2 text-xs"
+            className="h-7 shrink-0 gap-1 whitespace-nowrap border-border bg-background px-2 text-xs"
           >
             <currentPriority.Icon size={13} />
             {currentPriority.label}
