@@ -48,6 +48,10 @@ const fadeTransition = {
 const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const { open, isMobile } = useSidebar();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const activeCachedNoteRouteRef = useRef<{
+    noteId: Id<"documents">;
+    note: NonNullable<ReturnType<typeof getPrefetchedNote>>;
+  } | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [isDark, setIsDark] = useState(false);
   const { resolvedTheme } = useTheme();
@@ -98,9 +102,20 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
   const cachedRouteNoteId = routeDraftToken
     ? null
     : (rawNoteId ?? (!rawPdfId && !rawWhiteboardId ? slugId : null));
-  const cachedRouteNote = cachedRouteNoteId
+  const freshCachedRouteNote = cachedRouteNoteId
     ? getPrefetchedNote(String(cachedRouteNoteId))
     : undefined;
+  if (freshCachedRouteNote && cachedRouteNoteId) {
+    activeCachedNoteRouteRef.current = {
+      noteId: freshCachedRouteNote._id,
+      note: freshCachedRouteNote,
+    };
+  }
+  const cachedRouteNote =
+    freshCachedRouteNote ??
+    (activeCachedNoteRouteRef.current?.noteId === cachedRouteNoteId
+      ? activeCachedNoteRouteRef.current.note
+      : undefined);
   const promotedNote = useQuery(
     api.documents.getNoteById,
     activeDraftNoteId ? { _id: activeDraftNoteId } : "skip",
