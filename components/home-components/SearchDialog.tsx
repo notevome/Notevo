@@ -58,6 +58,19 @@ interface SearchDialogProps {
   enableShortcut?: boolean;
 }
 
+type SearchFilterCategory = "all" | "note" | "whiteboard" | "pdf" | "link";
+
+const SEARCH_FILTER_TABS: {
+  key: SearchFilterCategory;
+  label: string;
+}[] = [
+  { key: "all", label: "All" },
+  { key: "note", label: "Documents" },
+  { key: "whiteboard", label: "Whiteboards" },
+  { key: "pdf", label: "PDFs" },
+  { key: "link", label: "Links" },
+];
+
 const SETTINGS_KEYWORDS = ["settings"];
 
 const matchesSettings = (query: string) => {
@@ -371,6 +384,24 @@ function getTableItems(table: any, workspaceName?: string) {
   );
 }
 
+function filterWorkspaceTreeByCategory(
+  workspaces: any[] | undefined,
+  category: SearchFilterCategory,
+) {
+  if (!workspaces || category === "all") return workspaces;
+
+  return workspaces
+    .map((workspace) => ({
+      ...workspace,
+      tables: (workspace.tables ?? []).filter((table: any) =>
+        getTableItems(table, workspace.name).some(
+          (item) => item.kind === category,
+        ),
+      ),
+    }))
+    .filter((workspace) => workspace.tables.length > 0);
+}
+
 // Tables are now collapsible — each manages its own open/close state
 function TableSection({
   table,
@@ -378,11 +409,15 @@ function TableSection({
   selectedNoteId,
   query,
   onNoteClick,
+  category,
 }: any) {
   const [isExpanded, setIsExpanded] = useState(true);
   const items = useMemo(
-    () => getTableItems(table, workspace?.name),
-    [table, workspace?.name],
+    () =>
+      getTableItems(table, workspace?.name).filter(
+        (item) => category === "all" || item.kind === category,
+      ),
+    [category, table, workspace?.name],
   );
 
   return (
@@ -463,6 +498,7 @@ function WorkspaceTree({
   onNoteClick,
   selectedNoteId,
   query,
+  category,
 }: {
   searchTargets: any[];
   expandedWorkspaceIds: string[];
@@ -470,6 +506,7 @@ function WorkspaceTree({
   onNoteClick: (note: any, e: any) => void;
   selectedNoteId?: string;
   query: string;
+  category: SearchFilterCategory;
 }) {
   return (
     <div className="space-y-1">
@@ -516,6 +553,7 @@ function WorkspaceTree({
                     selectedNoteId={selectedNoteId}
                     query={query}
                     onNoteClick={onNoteClick}
+                    category={category}
                   />
                 ))}
               </div>
@@ -539,6 +577,7 @@ export default function SearchDialog({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [category, setCategory] = useState<SearchFilterCategory>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>(
     [],
@@ -562,9 +601,7 @@ export default function SearchDialog({
   const { beginNoteDraft } = usePendingNoteDraftContext();
   const { toast } = useToast();
   const createWorkspace = useMutation(api.folders.createFolder);
-  const deleteWorkspaceIfEmpty = useMutation(
-    api.folders.deleteFolderIfEmpty,
-  );
+  const deleteWorkspaceIfEmpty = useMutation(api.folders.deleteFolderIfEmpty);
   const getOrCreateNotesTable = useMutation(api.tables.getOrCreateTable);
   const createWhiteboard = useMutation(api.whiteboards.createWhiteboard);
   const prefetchedRef = useRef<Set<string>>(new Set());
@@ -625,14 +662,28 @@ export default function SearchDialog({
     [deleteWorkspaceIfEmpty],
   );
 
-  const allNotes = useMemo<any[]>(() => {
+  const filteredSearchTargets = useMemo(
+    () => filterWorkspaceTreeByCategory(searchTargets, category),
+    [category, searchTargets],
+  );
+
+  const allSearchItems = useMemo<any[]>(() => {
     if (!searchTargets) return [];
     return searchTargets.flatMap((ws) =>
       (ws.tables ?? []).flatMap((t: any) => getTableItems(t, ws.name)),
     );
   }, [searchTargets]);
 
+  const allNotes = useMemo(
+    () =>
+      category === "all"
+        ? allSearchItems
+        : allSearchItems.filter((item) => item.kind === category),
+    [allSearchItems, category],
+  );
+
   const hasResults = allNotes.length > 0;
+  const hasSearchResults = allSearchItems.length > 0;
 
   useEffect(() => {
     if (
@@ -836,6 +887,7 @@ export default function SearchDialog({
     if (!open) return;
     setQuery("");
     setDebouncedQuery("");
+    setCategory("all");
     setSelectedIndex(0);
     setCreationKind(null);
     setSelectedWorkspaceId("");
@@ -847,6 +899,10 @@ export default function SearchDialog({
   useEffect(() => {
     setSettingsFocused(true);
   }, [debouncedQuery]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [category]);
 
   useEffect(() => {
     if (!searchTargets) return;
@@ -1009,7 +1065,7 @@ export default function SearchDialog({
       if (
         e.key === "ArrowUp" &&
         !settingsFocused &&
-        (hasResults ? selectedIndex === 0 : creationSelectionIndex === 0)
+        (hasSearchResults ? selectedIndex === 0 : creationSelectionIndex === 0)
       ) {
         e.preventDefault();
         setSettingsFocused(true);
@@ -1018,7 +1074,7 @@ export default function SearchDialog({
     }
 
     const showCreationChoices =
-      !isLoading && !hasResults && Boolean(debouncedQuery.trim());
+      !isLoading && !hasSearchResults && Boolean(debouncedQuery.trim());
     if (showCreationChoices) {
       const options = !creationKind
         ? ["workspace", "note", "whiteboard"]
@@ -1090,7 +1146,7 @@ export default function SearchDialog({
   };
 
   const isCreationChooserOpen =
-    !isLoading && !hasResults && Boolean(debouncedQuery.trim());
+    !isLoading && !hasSearchResults && Boolean(debouncedQuery.trim());
 
   return (
     <>
@@ -1150,14 +1206,36 @@ export default function SearchDialog({
             />
           </div>
 
+          {!isCreationChooserOpen && (
+            <div className="px-3 z-20 absolute top-16 left-0">
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[11px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {SEARCH_FILTER_TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setCategory(tab.key)}
+                    className={cn(
+                      "shrink-0 border px-2 py-0.5 font-medium transition-colors",
+                      category === tab.key
+                        ? "border-border bg-muted text-foreground"
+                        : "border-dashed border-border bg-transparent text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground",
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div
             ref={resultsScrollRef}
             onScroll={handleResultsScroll}
-            className=" sm:min-h-[50vh] sm:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent p-3"
+            className=" sm:min-h-[50vh] sm:max-h-[50vh] min-h-[85dvh]  overflow-y-auto scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.4rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent pb-3 pt-8 px-1.5"
           >
             {canScroll && scrollTop > 8 && (
               <div
-                className="pointer-events-none absolute top-[49px] left-0 right-0 z-10 h-20 bg-gradient-to-b from-card/90 from-20% to-transparent"
+                className="pointer-events-none absolute top-[49px] left-0 right-0 z-10 h-[7rem] bg-gradient-to-b from-card from-20% to-transparent"
                 aria-hidden
               />
             )}
@@ -1193,7 +1271,20 @@ export default function SearchDialog({
             {isLoading ? (
               <SearchLoadingSkeleton />
             ) : !hasResults ? (
-              !debouncedQuery.trim() ? (
+              hasSearchResults ? (
+                <div className="py-16 text-center text-sm text-muted-foreground">
+                  <p className="font-medium">
+                    No{" "}
+                    {SEARCH_FILTER_TABS.find(
+                      (tab) => tab.key === category,
+                    )?.label.toLowerCase()}{" "}
+                    found
+                  </p>
+                  <p className="mt-1 text-xs">
+                    Try another filter or search term.
+                  </p>
+                </div>
+              ) : !debouncedQuery.trim() ? (
                 <div className="py-16 text-center text-sm text-muted-foreground">
                   <FileText className="mx-auto h-12 w-12 opacity-50 mb-3 text-primary" />
                   <p className="font-medium">No items found</p>
@@ -1223,29 +1314,33 @@ export default function SearchDialog({
                         role="listbox"
                         aria-label="Folders"
                       >
-                        {creationWorkspaces.map((workspace: any, index: number) => (
-                          <Button
-                            key={workspace._id}
-                            type="button"
-                            role="option"
-                            aria-selected={creationSelectionIndex === index}
-                            variant="ghost"
-                            className={cn(
-                              "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
-                              creationSelectionIndex === index && "bg-accent",
-                            )}
-                            onMouseMove={() => setCreationSelectionIndex(index)}
-                            onClick={() => {
-                              setSelectedWorkspaceId(workspace._id);
-                              setCreationSelectionIndex(0);
-                            }}
-                          >
-                            <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
-                            <span className="truncate">
-                              {workspace.name || "Untitled folder"}
-                            </span>
-                          </Button>
-                        ))}
+                        {creationWorkspaces.map(
+                          (workspace: any, index: number) => (
+                            <Button
+                              key={workspace._id}
+                              type="button"
+                              role="option"
+                              aria-selected={creationSelectionIndex === index}
+                              variant="ghost"
+                              className={cn(
+                                "h-auto w-full justify-start gap-3 px-3 py-3 text-left",
+                                creationSelectionIndex === index && "bg-accent",
+                              )}
+                              onMouseMove={() =>
+                                setCreationSelectionIndex(index)
+                              }
+                              onClick={() => {
+                                setSelectedWorkspaceId(workspace._id);
+                                setCreationSelectionIndex(0);
+                              }}
+                            >
+                              <FolderOpen className="h-4 w-4 shrink-0 text-muted-foreground" />
+                              <span className="truncate">
+                                {workspace.name || "Untitled folder"}
+                              </span>
+                            </Button>
+                          ),
+                        )}
                       </div>
                     ) : (
                       <Button
@@ -1261,7 +1356,9 @@ export default function SearchDialog({
                           <FolderPlus className="h-4 w-4 shrink-0 text-muted-foreground" />
                         )}
                         <span className="truncate">
-                          Create folder and {creationKind === "note" ? "document" : creationKind} &quot;
+                          Create folder and{" "}
+                          {creationKind === "note" ? "document" : creationKind}{" "}
+                          &quot;
                           {debouncedQuery.trim()}&quot;
                         </span>
                       </Button>
@@ -1304,8 +1401,8 @@ export default function SearchDialog({
                     </div>
                   ) : (
                     <p className="px-3 py-8 text-center text-sm text-muted-foreground">
-                      This folder has no tables. Choose another folder or
-                      create a table first.
+                      This folder has no tables. Choose another folder or create
+                      a table first.
                     </p>
                   )}
                 </div>
@@ -1386,7 +1483,7 @@ export default function SearchDialog({
               )
             ) : (
               <WorkspaceTree
-                searchTargets={searchTargets!}
+                searchTargets={filteredSearchTargets!}
                 expandedWorkspaceIds={expandedWorkspaceIds}
                 toggleWorkspace={toggleWorkspace}
                 onNoteClick={handleNoteClick}
@@ -1396,6 +1493,7 @@ export default function SearchDialog({
                     : undefined
                 }
                 query={debouncedQuery}
+                category={category}
               />
             )}
           </div>
