@@ -722,7 +722,10 @@ export function GlobalCreateHandler() {
     };
     window.addEventListener("notevo:open-insert-link", handleOpenLinkEvent);
     return () =>
-      window.removeEventListener("notevo:open-insert-link", handleOpenLinkEvent);
+      window.removeEventListener(
+        "notevo:open-insert-link",
+        handleOpenLinkEvent,
+      );
   }, [handleOpenInsertLink]);
 
   useEffect(() => {

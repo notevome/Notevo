@@ -2160,7 +2160,7 @@ const UserAccountSection = memo(function UserAccountSection({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               side="top"
-              className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width] z-[90000]"
+              className="app-radius-lg m-2 p-1.5 bg-background backdrop-blur w-[--radix-popper-anchor-width]"
             >
               <DropdownMenuItem
                 onSelect={(event) => {
