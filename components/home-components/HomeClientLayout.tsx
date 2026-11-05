@@ -228,7 +228,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
           backgroundSize: "128px 128px",
           opacity: isDark ? 0.03 : 0.02,
           mixBlendMode: "multiply",
-          zIndex: 900002,
+          zIndex: 11000002,
         }}
       />
       <main

@@ -273,7 +273,8 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
   const rect = pluginState.clientRect();
   if (!rect) return null;
 
-  const top = Math.min(rect.bottom + 6, window.innerHeight - 340);
+  const top = rect.bottom + 6;
+  const maxHeight = Math.max(0, window.innerHeight - top - 16);
   const left = Math.min(Math.max(rect.left, 16), window.innerWidth - 380);
 
   return createPortal(
@@ -283,12 +284,13 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
         position: "fixed",
         top,
         left,
-        zIndex: 700000,
+        maxHeight,
+        zIndex: 50000,
       }}
-      className="w-[360px] max-w-[92vw] overflow-hidden app-radius-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100"
+      className="flex w-[360px] max-w-[92vw] flex-col overflow-hidden app-radius-xl border border-border bg-popover text-popover-foreground shadow-2xl animate-in fade-in-0 zoom-in-95 duration-100"
       onMouseDown={(e) => e.preventDefault()} // Prevent editor blur
     >
-      <div className="p-2 border-b border-border bg-muted/30 space-y-1.5">
+      <div className="shrink-0 p-2 border-b border-border bg-muted/30 space-y-1.5">
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[11px] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {(
             [
@@ -318,7 +320,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
 
       <div
         ref={listRef}
-        className="max-h-60 overflow-y-auto p-1.5 space-y-0.5 scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-button]:hidden"
+        className="min-h-0 max-h-60 flex-1 overflow-y-auto p-1.5 space-y-0.5 scrollbar-gutter-stable [&::-webkit-scrollbar]:w-[0.35rem] [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-button]:hidden"
       >
         {items === undefined ? (
           <MentionSkeleton />
@@ -387,7 +389,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
         )}
       </div>
 
-      <div className="p-2 border-t border-border bg-muted/40 text-[11px] text-muted-foreground flex items-center justify-between px-3">
+      <div className="shrink-0 p-2 border-t border-border bg-muted/40 text-[11px] text-muted-foreground flex items-center justify-between px-3">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <kbd className="pointer-events-none border border-border inline-flex h-5 select-none items-center gap-1 app-radius-md bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">

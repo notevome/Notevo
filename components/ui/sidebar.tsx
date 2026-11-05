@@ -393,7 +393,7 @@ const Sidebar = React.memo(
       const sidebarClasses = React.useMemo(
         () =>
           cn(
-            "duration-150 fixed z-40 hidden w-[--sidebar-width] transition-[left,right,width,opacity,height,top] ease-linear md:flex motion-reduce:transition-none",
+            "duration-150 fixed z-[1000001] hidden w-[--sidebar-width] transition-[left,right,width,opacity,height,top] ease-linear md:flex motion-reduce:transition-none",
             hoverOpen || state === "collapsed"
               ? "top-12 h-[calc(100svh-6rem)]"
               : "inset-y-0 h-svh",
@@ -485,8 +485,8 @@ const Sidebar = React.memo(
               id="app-sidebar"
               data-sidebar="sidebar"
               data-mobile="true"
-              className="h-[100dvh] w-[85vw] max-w-[--sidebar-width] border-r border-sidebar-border p-0 text-sidebar-foreground shadow-none [&>button]:hidden data-[state=closed]:duration-200 data-[state=open]:duration-200"
-              overlayClassName="bg-black/30 data-[state=closed]:duration-200 data-[state=open]:duration-200"
+              className="z-[1000002] h-[100dvh] w-[85vw] max-w-[--sidebar-width] border-r border-sidebar-border p-0 text-sidebar-foreground shadow-none [&>button]:hidden data-[state=closed]:duration-200 data-[state=open]:duration-200"
+              overlayClassName="z-[1000002] bg-black/30 data-[state=closed]:duration-200 data-[state=open]:duration-200"
               style={
                 {
                   "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
