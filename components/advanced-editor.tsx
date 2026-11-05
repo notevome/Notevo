@@ -14,7 +14,7 @@ import {
 } from "novel";
 import { Color } from "@tiptap/extension-color";
 import TextStyle from "@tiptap/extension-text-style";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { defaultExtensions } from "./extensions";
 import { slashCommand, suggestionItems } from "./slash-command";
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
@@ -71,6 +71,7 @@ const TailwindAdvancedEditor = ({
   const [items, setItems] = useState<any[]>([]);
   const [dragHandleColor, setDragHandleColor] = useState<string>();
   const [imagePreviewSrc, setImagePreviewSrc] = useState<string | null>(null);
+  const hoveredBlockRef = useRef<{ pos: number; size: number } | null>(null);
   const plusMenuRef = useRef<HTMLDivElement>(null);
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [plusMenuPos, setPlusMenuPos] = useState<{ x: number; y: number }>({
@@ -136,32 +137,12 @@ const TailwindAdvancedEditor = ({
     setOpenLink(open);
   };
 
-  const openPlusMenu = (editor: EditorInstance, buttonEl: HTMLElement) => {
+  const openPlusMenu = (buttonEl: HTMLElement) => {
+    const hoveredBlock = hoveredBlockRef.current;
+    if (!hoveredBlock) return;
+
     const rect = buttonEl.getBoundingClientRect();
-    const editorView = (editor as any).view;
-
-    const posAtCoords = editorView.posAtCoords({
-      left: rect.right + 30,
-      top: rect.top + rect.height / 2,
-    });
-
-    let insertAt: number | null = null;
-    if (posAtCoords) {
-      const $pos = editor.state.doc.resolve(posAtCoords.pos);
-      // A coordinate in the editor gutter can resolve to the document root.
-      // The root has no position "before" it, so there is nowhere valid to
-      // insert a sibling block from that coordinate.
-      if ($pos.depth < 1) return;
-
-      const depth = 1;
-      const nodeStart = $pos.before(depth);
-      const node = editor.state.doc.nodeAt(nodeStart);
-      if (node) {
-        insertAt = nodeStart + node.nodeSize;
-      } else {
-        insertAt = $pos.after(depth);
-      }
-    }
+    const insertAt = hoveredBlock.pos + hoveredBlock.size;
 
     setPlusMenuInsertAt(insertAt);
     setPlusMenuPos({ x: rect.left, y: rect.bottom + 4 });
@@ -205,34 +186,27 @@ const TailwindAdvancedEditor = ({
     ...defaultExtensions,
     slashCommand,
   ];
-  const deleteTargetNode = (editor: EditorInstance, buttonEl: HTMLElement) => {
-    const editorView = (editor as any).view;
-    const rect = buttonEl.getBoundingClientRect();
-    const posAtCoords = editorView.posAtCoords({
-      left: rect.right + 40,
-      top: rect.top + rect.height / 2,
-    });
-
-    if (!posAtCoords) return;
-    const $pos = editor.state.doc.resolve(posAtCoords.pos);
-    if ($pos.depth < 1 || $pos.node($pos.depth) === editor.state.doc) return;
-
-    const depth = $pos.depth;
-
-    const nodeStart = $pos.before(depth);
-    const node = editor.state.doc.nodeAt(nodeStart);
-
-    if (!node) return;
+  const deleteTargetNode = (editor: EditorInstance) => {
+    const hoveredBlock = hoveredBlockRef.current;
+    if (!hoveredBlock) return;
 
     editor
       .chain()
       .focus()
       .deleteRange({
-        from: nodeStart,
-        to: nodeStart + node.nodeSize,
+        from: hoveredBlock.pos,
+        to: hoveredBlock.pos + hoveredBlock.size,
       })
       .run();
   };
+
+  const handleDragNodeChange = useCallback(
+    ({ node, pos }: { node: { nodeSize: number } | null; pos: number }) => {
+      hoveredBlockRef.current =
+        node && pos >= 0 ? { pos, size: node.nodeSize } : null;
+    },
+    [],
+  );
 
   return (
     <>
@@ -250,7 +224,10 @@ const TailwindAdvancedEditor = ({
                 </>
               )}
               <TableControls editor={editorInstance} />
-              <DragHandle editor={editorInstance}>
+              <DragHandle
+                editor={editorInstance}
+                onNodeChange={handleDragNodeChange}
+              >
                 <div
                   className={`lg:flex items-center justify-center hidden ${!renderedInPane && "mr-5"}`}
                 >
@@ -263,7 +240,7 @@ const TailwindAdvancedEditor = ({
                         onMouseDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          deleteTargetNode(editorInstance, event.currentTarget);
+                          deleteTargetNode(editorInstance);
                         }}
                       >
                         <X
@@ -292,10 +269,7 @@ const TailwindAdvancedEditor = ({
                           onMouseDown={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
-                            openPlusMenu(
-                              editorInstance,
-                              event.currentTarget as HTMLElement,
-                            );
+                            openPlusMenu(event.currentTarget);
                           }}
                         >
                           <Plus strokeWidth={3} className="h-4 w-4 " />
