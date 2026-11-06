@@ -350,10 +350,25 @@ export default function FolderNewDropdownBtn({
 
   const handleSelectInsertLink = useCallback(() => {
     persistPreferredAction("link");
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("notevo:open-insert-link"));
+    // Link creation is handled by the global dialog. Persist this button's
+    // explicit table first so that dialog uses the table the user is viewing.
+    if (resolvedWorkingSpaceId && notesTableId) {
+      recordLastVisitedLocation(resolvedWorkingSpaceId, notesTableId);
     }
-  }, [persistPreferredAction]);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("notevo:open-insert-link", {
+          detail:
+            resolvedWorkingSpaceId && notesTableId
+              ? {
+                  folderId: String(resolvedWorkingSpaceId),
+                  tableId: String(notesTableId),
+                }
+              : undefined,
+        }),
+      );
+    }
+  }, [notesTableId, persistPreferredAction, resolvedWorkingSpaceId]);
 
   const handlePrimaryAction = useCallback(async () => {
     if (preferredAction === "upload") {
@@ -523,8 +538,16 @@ export function GlobalCreateHandler() {
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
   const [isInsertingLink, setIsInsertingLink] = useState(false);
+  const [linkCreationTarget, setLinkCreationTarget] = useState<{
+    folderId: Id<"folders">;
+    tableId: Id<"tables">;
+  } | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
   const pendingCreateNoteRef = useRef(false);
+  const activeTableTargetRef = useRef<{
+    folderId: Id<"folders">;
+    tableId: Id<"tables">;
+  } | null>(null);
 
   const getWorkingSpaces = useQuery(api.folders.getRecentFolders);
   const getOrCreateTable = useMutation(api.tables.getOrCreateTable);
@@ -558,7 +581,7 @@ export function GlobalCreateHandler() {
       if (match) return match;
     }
     return list?.[0];
-  }, [currentItemLocation?.folderId, getWorkingSpaces]);
+  }, [currentItemLocation?.folderId, getWorkingSpaces, pathname]);
 
   const resolvedWorkingSpaceId = activeWorkingSpace?._id;
   const resolvedWorkingSpacesSlug = activeWorkingSpace?.slug ?? "";
@@ -580,6 +603,14 @@ export function GlobalCreateHandler() {
   const resolveTargetTableId = useCallback(async (): Promise<
     Id<"tables"> | undefined
   > => {
+    if (linkCreationTarget) {
+      recordLastVisitedLocation(
+        linkCreationTarget.folderId,
+        linkCreationTarget.tableId,
+      );
+      return linkCreationTarget.tableId;
+    }
+
     // Never create in an unrelated table when the current route is an item.
     if (isItemRoute && !currentItemLocation) return undefined;
 
@@ -604,11 +635,16 @@ export function GlobalCreateHandler() {
     const freshLoc = getLastVisitedLocation(resolvedWorkingSpaceId);
     if (freshLoc.tableId && tables && Array.isArray(tables)) {
       const match = tables.find((t: any) => String(t._id) === freshLoc.tableId);
-      if (match) return match._id;
+      if (match) {
+        recordLastVisitedLocation(resolvedWorkingSpaceId, match._id);
+        return match._id;
+      }
     }
 
     if (tables && tables.length > 0) {
-      return tables[0]._id;
+      const firstTableId = tables[0]._id;
+      recordLastVisitedLocation(resolvedWorkingSpaceId, firstTableId);
+      return firstTableId;
     }
 
     if (resolvedWorkingSpaceId) {
@@ -616,6 +652,7 @@ export function GlobalCreateHandler() {
         name: "Documents",
         folderId: resolvedWorkingSpaceId,
       });
+      recordLastVisitedLocation(resolvedWorkingSpaceId, created);
       return created;
     }
 
@@ -624,6 +661,7 @@ export function GlobalCreateHandler() {
     currentItemLocation,
     currentTableParam,
     isItemRoute,
+    linkCreationTarget,
     tables,
     resolvedWorkingSpaceId,
     getOrCreateTable,
@@ -661,14 +699,20 @@ export function GlobalCreateHandler() {
     void handleCreateNote();
   }, [currentItemLocation, handleCreateNote]);
 
-  const handleOpenInsertLink = useCallback(() => {
-    setLinkUrl("");
-    setLinkTitle("");
-    setIsLinkDialogOpen(true);
-    setTimeout(() => {
-      linkInputRef.current?.focus();
-    }, 100);
-  }, []);
+  const handleOpenInsertLink = useCallback(
+    (
+      target: { folderId: Id<"folders">; tableId: Id<"tables"> } | null = null,
+    ) => {
+      setLinkCreationTarget(target);
+      setLinkUrl("");
+      setLinkTitle("");
+      setIsLinkDialogOpen(true);
+      setTimeout(() => {
+        linkInputRef.current?.focus();
+      }, 100);
+    },
+    [],
+  );
 
   useEffect(() => {
     const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
@@ -717,8 +761,46 @@ export function GlobalCreateHandler() {
   }, [handleOpenInsertLink]);
 
   useEffect(() => {
-    const handleOpenLinkEvent = () => {
-      handleOpenInsertLink();
+    const handleActiveTableChange = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ folderId?: string; tableId?: string }>
+      ).detail;
+      if (!detail?.folderId || !detail.tableId) return;
+
+      const target = {
+        folderId: detail.folderId as Id<"folders">,
+        tableId: detail.tableId as Id<"tables">,
+      };
+      activeTableTargetRef.current = target;
+      recordLastVisitedLocation(target.folderId, target.tableId);
+    };
+    window.addEventListener(
+      "notevo:active-table-change",
+      handleActiveTableChange,
+    );
+    return () =>
+      window.removeEventListener(
+        "notevo:active-table-change",
+        handleActiveTableChange,
+      );
+  }, []);
+
+  useEffect(() => {
+    const handleOpenLinkEvent = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{ folderId?: string; tableId?: string }>
+      ).detail;
+      const target =
+        detail?.folderId && detail?.tableId
+          ? {
+              folderId: detail.folderId as Id<"folders">,
+              tableId: detail.tableId as Id<"tables">,
+            }
+          : activeTableTargetRef.current;
+      if (target) {
+        recordLastVisitedLocation(target.folderId, target.tableId);
+      }
+      handleOpenInsertLink(target);
     };
     window.addEventListener("notevo:open-insert-link", handleOpenLinkEvent);
     return () =>
@@ -746,7 +828,9 @@ export function GlobalCreateHandler() {
   }, [linkUrl]);
 
   const handleInsertLink = useCallback(async () => {
-    if (!resolvedWorkingSpaceId) return;
+    const targetWorkingSpaceId =
+      linkCreationTarget?.folderId ?? resolvedWorkingSpaceId;
+    if (!targetWorkingSpaceId) return;
 
     const trimmedUrl = linkUrl.trim();
     if (!trimmedUrl) {
@@ -794,11 +878,12 @@ export function GlobalCreateHandler() {
         platform,
         metadata,
         title: userTitle ?? fetchedTitle,
-        workingSpaceId: resolvedWorkingSpaceId,
+        workingSpaceId: targetWorkingSpaceId,
         notesTableId: targetTableId,
       });
       setLinkUrl("");
       setLinkTitle("");
+      setLinkCreationTarget(null);
       setIsLinkDialogOpen(false);
 
       toast({
@@ -808,7 +893,7 @@ export function GlobalCreateHandler() {
         action: (
           <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <Link
-              href={`/home/${resolvedWorkingSpaceId}?table=${targetTableId}`}
+              href={`/home/${targetWorkingSpaceId}?table=${targetTableId}`}
               className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />
@@ -832,13 +917,20 @@ export function GlobalCreateHandler() {
     fetchLinkMetadata,
     linkTitle,
     linkUrl,
+    linkCreationTarget,
     resolveTargetTableId,
     resolvedWorkingSpaceId,
     toast,
   ]);
 
   return (
-    <Dialog open={isLinkDialogOpen} onOpenChange={setIsLinkDialogOpen}>
+    <Dialog
+      open={isLinkDialogOpen}
+      onOpenChange={(open) => {
+        setIsLinkDialogOpen(open);
+        if (!open) setLinkCreationTarget(null);
+      }}
+    >
       <DialogContent className="sm:max-w-md bg-card border-border px-4 pt-4 pb-2.5">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

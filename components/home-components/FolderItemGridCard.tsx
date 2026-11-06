@@ -122,7 +122,9 @@ export function FolderItemGridCardContent({
             <div className="flex min-w-0 items-start gap-3">
               {item.kind === "whiteboard" ? (
                 <PenTool className="mt-3 h-6 w-6 shrink-0 text-muted-foreground" />
-              ) : item.kind !== "link" && item.kind !== "pdf" ? (
+              ) : item.kind === "pdf" ? (
+                <FileText className="mt-3 h-6 w-6 shrink-0 text-muted-foreground" />
+              ) : item.kind !== "link" ? (
                 isEmptyDocument ? (
                   <EmptyFileIcon className="mt-3 h-6 w-6 shrink-0 text-muted-foreground" />
                 ) : (

@@ -1602,6 +1602,11 @@ export default function FolderPageClient({
     if (typeof window !== "undefined") {
       sessionStorage.setItem(`notevo_active_table_${workingSpaceId}`, tableId);
       sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
+      window.dispatchEvent(
+        new CustomEvent("notevo:active-table-change", {
+          detail: { folderId: String(workingSpaceId), tableId },
+        }),
+      );
     }
     recordLastVisitedLocation(workingSpaceId, tableId);
   }, [activeTableId, defaultTableId, workingSpaceId]);
@@ -1620,6 +1625,11 @@ export default function FolderPageClient({
           tableId,
         );
         sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
+        window.dispatchEvent(
+          new CustomEvent("notevo:active-table-change", {
+            detail: { folderId: String(workingSpaceId), tableId },
+          }),
+        );
       }
       recordLastVisitedLocation(workingSpaceId, tableId);
     },
