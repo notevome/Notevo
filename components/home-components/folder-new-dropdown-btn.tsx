@@ -714,6 +714,30 @@ export function GlobalCreateHandler() {
     [],
   );
 
+  const getLinkCreationTarget = useCallback(() => {
+    // An open item always wins: links created from it belong beside that item.
+    if (currentItemLocation?.folderId && currentItemLocation.tableId) {
+      return {
+        folderId: currentItemLocation.folderId as Id<"folders">,
+        tableId: currentItemLocation.tableId as Id<"tables">,
+      };
+    }
+
+    if (isItemRoute) return null;
+
+    if (activeTableTargetRef.current) {
+      return activeTableTargetRef.current;
+    }
+
+    const lastVisited = getLastVisitedLocation();
+    return lastVisited.folderId && lastVisited.tableId
+      ? {
+          folderId: lastVisited.folderId as Id<"folders">,
+          tableId: lastVisited.tableId as Id<"tables">,
+        }
+      : null;
+  }, [currentItemLocation, isItemRoute]);
+
   useEffect(() => {
     const handlerCreateNoteShortcut = (e: KeyboardEvent) => {
       if (
@@ -752,13 +776,13 @@ export function GlobalCreateHandler() {
 
         e.preventDefault();
         e.stopPropagation();
-        handleOpenInsertLink();
+        handleOpenInsertLink(getLinkCreationTarget());
       }
     };
     window.addEventListener("keydown", handlerInsertLinkShortcut);
     return () =>
       window.removeEventListener("keydown", handlerInsertLinkShortcut);
-  }, [handleOpenInsertLink]);
+  }, [getLinkCreationTarget, handleOpenInsertLink]);
 
   useEffect(() => {
     const handleActiveTableChange = (event: Event) => {
@@ -796,7 +820,7 @@ export function GlobalCreateHandler() {
               folderId: detail.folderId as Id<"folders">,
               tableId: detail.tableId as Id<"tables">,
             }
-          : activeTableTargetRef.current;
+          : getLinkCreationTarget();
       if (target) {
         recordLastVisitedLocation(target.folderId, target.tableId);
       }
@@ -808,7 +832,7 @@ export function GlobalCreateHandler() {
         "notevo:open-insert-link",
         handleOpenLinkEvent,
       );
-  }, [handleOpenInsertLink]);
+  }, [getLinkCreationTarget, handleOpenInsertLink]);
 
   useEffect(() => {
     const handleCreateNoteEvent = () => {
