@@ -1,4 +1,4 @@
-# oraizive
+# Oraizive
 
 > Simple, Structured Space For Things.
 
