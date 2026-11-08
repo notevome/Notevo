@@ -126,7 +126,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="https://github.com/oraiziveme/oraizive"
+                    href="https://github.com/oraizivedotcom/Oraizive"
                     target="_blank"
                     className="hover:underline"
                   >

@@ -2210,7 +2210,7 @@ const UserAccountSection = memo(function UserAccountSection({
               <div className=" flex flex-col gap-px justify-center items-start px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap *:text-muted-foreground/80">
                 <span className=" w-full flex justify-between items-center">
                   <Link
-                    href="https://github.com/oraiziveme/oraizive"
+                    href="https://github.com/oraizivedotcom/Oraizive"
                     target="_blank"
                     className="hover:underline"
                   >
