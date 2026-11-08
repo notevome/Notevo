@@ -1,8 +1,8 @@
 # oraizive
 
-> A minimal, structured note-taking app: simpler than Notion, more organized than Google Keep.
+> Simple, Structured Space For Things.
 
-I built oraizive because I could not find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. oraizive gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
+Oraizive helps you capture your thoughts and organize them in one clean, modern interface. It gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
 
 ![Home Page](showCase_imgs/HomePage.png)
 
