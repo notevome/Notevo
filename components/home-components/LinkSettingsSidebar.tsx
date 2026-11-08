@@ -94,7 +94,7 @@ export default function LinkSettingsSidebar({
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+          <TooltipContent side="right" sideOffset={5}>
             {link?.favorite ? "Unpin link" : "Pin link"}
           </TooltipContent>
         </Tooltip>
@@ -103,7 +103,7 @@ export default function LinkSettingsSidebar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-link"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -111,7 +111,7 @@ export default function LinkSettingsSidebar({
               <X size={16} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={5} className="!app-radius-none">
+          <TooltipContent side="right" sideOffset={5}>
             Delete link
           </TooltipContent>
         </Tooltip>

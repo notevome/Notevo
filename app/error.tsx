@@ -1,7 +1,7 @@
 "use client";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import { useEffect } from "react";
-import imgsrc from "@/public/Notevo-logo.svg";
+import imgsrc from "@/public/oraizive-logo.png";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -31,12 +31,14 @@ export default function Error({
         <div className="w-full gap-2 flex justify-start items-center ">
           <Image
             src={imgsrc}
-            alt="Notevo Logo"
+            alt="oraizive Logo"
             priority
             width={20}
             height={20}
           />
-          <p className="text-base text-foreground font-semibold">Notevo.me</p>
+          <p className="text-base text-foreground font-semibold">
+            oraizive.com
+          </p>
         </div>
         <Card className="overflow-hidden bg-card border-border min-w-[300px] max-w-2xl w-full">
           <CardContent className="relative pt-4 pb-16 ">
@@ -57,14 +59,14 @@ export default function Error({
         </Card>
         <div className=" w-full flex justify-center items-center ">
           <p className="text-muted-foreground text-xs font-medium px-2 max-w-xl ">
-            ! Hi this is Notevo's team we're sorry ,our team is automatically
+            ! Hi this is oraizive's team we're sorry ,our team is automatically
             notified whenever a server error like this happens, so we're already
             on it. If the problem keeps happening, email us at{" "}
             <Link
-              href="mailto:support@notevo.me"
+              href="mailto:support@oraizive.com"
               className=" font-bold text-foreground hover:underline"
             >
-              support@notevo.me
+              support@oraizive.com
             </Link>{" "}
             and we'll help you out. hit the try again button for now
           </p>

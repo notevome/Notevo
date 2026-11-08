@@ -18,10 +18,10 @@ export const ResendOTP = Email({
   }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: process.env.AUTH_EMAIL ?? "Notevo <team@notevo.me>",
+      from: process.env.AUTH_EMAIL ?? "oraizive <team@oraizive.com>",
       to: [email],
-      replyTo: "support@notevo.me",
-      subject: `Sign in to Notevo`,
+      replyTo: "support@oraizive.com",
+      subject: `Sign in to oraizive`,
       react: VerificationCodeEmail({ code: token, expires }),
     });
 

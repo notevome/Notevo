@@ -75,18 +75,18 @@ export default function PrivacyPage() {
               </p>
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary leading-tight tracking-tight mb-3">
-              Notevo Privacy Policy
+              oraizive Privacy Policy
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
-              Notevo (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;)
+              oraizive (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;)
               provides this Privacy Policy to inform you of our policies
               regarding the collection, use, and disclosure of personal
               information. Questions? Contact us at{" "}
               <a
-                href="mailto:support@notevo.me"
+                href="mailto:support@oraizive.com"
                 className="text-primary underline underline-offset-2"
               >
-                support@notevo.me
+                support@oraizive.com
               </a>
               .
             </p>
@@ -98,9 +98,9 @@ export default function PrivacyPage() {
               By using our website, you hereby consent to our Privacy Policy and
               agree to its terms. This Privacy Policy applies only to our online
               activities and is valid for visitors to our website with regards
-              to the information that they share and/or collect in Notevo. This
-              policy is not applicable to any information collected offline or
-              via channels other than this website.
+              to the information that they share and/or collect in oraizive.
+              This policy is not applicable to any information collected offline
+              or via channels other than this website.
             </SubSection>
           </SectionBlock>
 

@@ -48,8 +48,8 @@
   --focus-highlight-color: hsl(var(--ring));
   --scrollbar-thumb: hsl(var(--border));
   --scrollbar-thumb-hover: hsl(var(--muted-foreground));
-  --border-radius-md: 0;
-  --border-radius-lg: 0;
+  --border-radius-md: calc(var(--radius) - 0.125rem);
+  --border-radius-lg: var(--radius);
   --shadow-island: none;
   --sidebar-shadow: none;
   --modal-shadow: 0 12px 32px hsl(var(--foreground) / 0.14);
@@ -148,7 +148,7 @@ div.Stack .Stack_vertical .zoom-actions>div.Stack .Stack_horizontal {
 
 .whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 
 .whiteboard-canvas .excalidraw .App-menu__left::-webkit-scrollbar-thumb:hover {
@@ -167,14 +167,13 @@ div.Stack .Stack_vertical .zoom-actions>div.Stack .Stack_horizontal {
 }
 
 .whiteboard-canvas div.color-picker-container>div.color-picker__top-picks>button.color-picker__button {
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 
 /* Color swatches (stroke, background, fill) and their selection ring */
 .whiteboard-canvas .excalidraw .color-picker__button,
 .whiteboard-canvas .excalidraw .color-picker__button-outline {
-  --radius: 0;
-  border-radius: 0 !important;
+  border-radius: var(--radius) !important;
 }
 
 .whiteboard-canvas .excalidraw .scroll-back-to-content {
@@ -192,17 +191,17 @@ div.Stack .Stack_vertical .zoom-actions>div.Stack .Stack_horizontal {
 .whiteboard-canvas .excalidraw .buttonList label,
 .whiteboard-canvas .excalidraw .ToolIcon,
 .whiteboard-canvas .excalidraw .zIndexButton {
-  border-radius: 0 !important;
+  border-radius: var(--radius) !important;
 }
 
 .whiteboard-canvas .excalidraw .color-picker__button:hover {
-  border-radius: 0 !important;
+  border-radius: var(--radius) !important;
 }
 
 .whiteboard-canvas .excalidraw .ToolIcon__icon,
 .whiteboard-canvas .excalidraw button.standalone,
 .whiteboard-canvas .excalidraw .dropdown-select {
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 
 .whiteboard-canvas .excalidraw .ToolIcon .ToolIcon_type_radio:checked+.ToolIcon__icon,
@@ -264,7 +263,7 @@ div.layer-ui__wrapper__top-right.zen-mode-transition {
 }
 
 /* Excalidraw defaults to a downward menu because its toolbar is normally at
-   the top. The Notevo dock lives at the bottom, so its menus open upward. */
+   the top. The oraizive dock lives at the bottom, so its menus open upward. */
 .whiteboard-canvas .excalidraw .App-menu_top .dropdown-menu {
   top: auto;
   bottom: 100%;
@@ -273,7 +272,7 @@ div.layer-ui__wrapper__top-right.zen-mode-transition {
 }
 
 /* Keep the layout column for centering, but do not expose Excalidraw's main
-   menu because Notevo owns persistence and canvas-level actions. */
+   menu because oraizive owns persistence and canvas-level actions. */
 .whiteboard-canvas .excalidraw .main-menu-trigger {
   display: none !important;
 }
@@ -335,7 +334,7 @@ div.layer-ui__wrapper__top-right.zen-mode-transition {
     --sidebar-accent-foreground: 0 0% 20.3922%;
     --sidebar-border: 0 0% 92.1569%;
     --sidebar-ring: 0 0% 70.9804%;
-    --radius: 0.5rem;
+    --radius: 1rem;
     --shadow-x: 0;
     --shadow-y: 1px;
     --shadow-blur: 3px;
@@ -425,7 +424,7 @@ div.layer-ui__wrapper__top-right.zen-mode-transition {
     --sidebar-accent-foreground: 240 4.7619% 95.8824%;
     --sidebar-border: 240 3.7037% 15.8824%;
     --sidebar-ring: 240 4.8780% 83.9216%;
-    --radius: 0.5rem;
+    --radius: 1rem;
     --shadow-x: 0;
     --shadow-y: 1px;
     --shadow-blur: 3px;
@@ -579,7 +578,7 @@ input::-webkit-inner-spin-button {
   width: 0;
   height: 100%;
   background-color: hsl(var(--secondary));
-  border-radius: 0;
+  border-radius: var(--radius);
   z-index: -1;
 
 }
@@ -714,11 +713,61 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   }
 
   .app-radius-none {
-    @apply rounded-none;
+    border-radius: 0 !important;
   }
 
   .app-radius-full {
     @apply rounded-full;
+  }
+
+  .app-radius-sm {
+    border-radius: calc(var(--radius) - 0.25rem);
+  }
+
+  .app-radius-md {
+    border-radius: calc(var(--radius) - 0.125rem);
+  }
+
+  .app-radius-lg,
+  .app-radius-xl,
+  .app-radius-2xl {
+    border-radius: var(--radius);
+  }
+
+  .app-radius-l-md {
+    border-radius: calc(var(--radius) - 0.125rem) 0 0 calc(var(--radius) - 0.125rem);
+  }
+
+  .app-radius-r-md {
+    border-radius: 0 calc(var(--radius) - 0.125rem) calc(var(--radius) - 0.125rem) 0;
+  }
+
+  .app-radius-tr-lg {
+    border-top-right-radius: var(--radius);
+  }
+
+  .app-radius-t-md {
+    border-radius: calc(var(--radius) - 0.125rem) calc(var(--radius) - 0.125rem) 0 0 !important;
+  }
+
+  .app-radius-b-none {
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
+  .app-radius-l-lg {
+    border-radius: var(--radius) 0 0 var(--radius) !important;
+  }
+
+  .app-radius-r-lg {
+    border-radius: 0 var(--radius) var(--radius) 0 !important;
+  }
+
+  .app-radius-r-xl {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: calc(var(--radius) + 4px) !important;
+    border-bottom-right-radius: calc(var(--radius) + 4px) !important;
   }
 }
 
@@ -1041,7 +1090,7 @@ hr {
   background: hsl(var(--background));
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  border-radius: 0.5rem 0 0 0.5rem;
+  border-radius: var(--radius) 0 0 var(--radius);
   z-index: -1;
 }
 
@@ -1060,7 +1109,7 @@ hr {
 .code-block-wrapper {
   position: relative;
   margin: 1.5rem 0;
-  border-radius: 0;
+  border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid hsl(var(--border));
   background-color: hsl(var(--card));
@@ -1085,7 +1134,7 @@ hr {
   font-size: 0.75rem;
   font-weight: 400;
   letter-spacing: 0.025em;
-  border-radius: 0;
+  border-radius: calc(var(--radius) - 0.125rem);
 }
 
 /* Language dropdown scrollbar */
@@ -1128,7 +1177,7 @@ hr {
 .code-block-content code {
   background: none !important;
   padding: 0 !important;
-  border-radius: 0 !important;
+  border-radius: var(--radius) !important;
   font-family: inherit;
   color: inherit;
 }
@@ -1237,7 +1286,7 @@ hr {
   width: 1.125rem;
   height: 1.125rem;
   border: 1.5px solid hsl(var(--border));
-  border-radius: 0;
+  border-radius: calc(var(--radius) - 0.125rem);
   background-color: hsl(var(--background));
   cursor: pointer;
   position: relative;
@@ -1294,7 +1343,7 @@ hr {
   overflow: hidden;
   position: relative;
   border: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
 }
 
 .ProseMirror th,
@@ -1358,7 +1407,7 @@ hr {
   width: 100% !important;
   height: auto !important;
   aspect-ratio: 16 / 9 !important;
-  border-radius: 12px !important;
+  border-radius: var(--radius) !important;
   border: 1px solid hsl(var(--muted)) !important;
   display: inline-block !important;
   max-width: 100% !important;
@@ -1366,7 +1415,7 @@ hr {
 
 @media (max-width: 640px) {
   [data-youtube-video] iframe {
-    border-radius: 8px !important;
+    border-radius: var(--radius) !important;
   }
 }
 
@@ -1400,7 +1449,7 @@ a.novel-link[data-item-kind] {
   align-items: center;
   gap: 0.25rem;
   padding: 0.05rem 0.4rem;
-  border-radius: 0;
+  border-radius: calc(var(--radius) - 0.125rem);
   background-color: hsl(var(--muted));
   color: hsl(var(--foreground));
   text-decoration: none !important;

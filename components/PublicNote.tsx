@@ -121,7 +121,7 @@ function TabSlider({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative w-full group flex items-center">
       {canScrollLeft && (
-        <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-card via-card/90 to-transparent z-[15] pointer-events-none app-radius-l-md" />
+        <div className="absolute -left-1 top-0 bottom-0 w-8 bg-gradient-to-r from-card via-card/90 to-transparent z-[15] pointer-events-none rounded-none " />
       )}
 
       {canScrollLeft && (
@@ -142,13 +142,13 @@ function TabSlider({ children }: { children: React.ReactNode }) {
 
       <div
         ref={scrollContainerRef}
-        className="w-full overflow-x-auto overflow-y-hidden scroll-smooth select-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="  w-full overflow-x-auto overflow-y-hidden scroll-smooth select-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {children}
       </div>
 
       {canScrollRight && (
-        <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-card via-card/90 to-transparent z-[15] pointer-events-none app-radius-r-md" />
+        <div className="absolute -right-1 top-0 bottom-0 w-8 bg-gradient-to-l from-card via-card/90 to-transparent z-[15] pointer-events-none rounded-none" />
       )}
 
       {canScrollRight && (
@@ -289,7 +289,7 @@ export default function PublicNote({
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(
-        `https://notevo.me/public/document/${noteId}`,
+        `https://oraizive.com/public/document/${noteId}`,
       );
       setIsCopied(true);
       copyTooltip.hide();
@@ -407,7 +407,6 @@ export default function PublicNote({
                     </TabsTrigger>
                   </TabsList>
                 </TabSlider>
-
                 <TabsContent value="default" className="mt-0">
                   <OgPreviewImage
                     src={`/api/og?id=${noteId}`}
@@ -430,15 +429,17 @@ export default function PublicNote({
                     />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
-                        NOTEVO.ME
+                        oraizive.com
                       </p>
                       <p className="text-xs font-bold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
-                        - Notevo
+                        {getNote?.title?.trim() ||
+                          noteTitle ||
+                          "Untitled document"}{" "}
+                        - oraizive
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
+                          "No description. This is a shared document on oraizive. View and read this document on oraizive"}
                       </p>
                     </div>
                   </div>
@@ -455,11 +456,13 @@ export default function PublicNote({
                     />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-xs font-semibold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
-                        - Notevo
+                        {getNote?.title?.trim() ||
+                          noteTitle ||
+                          "Untitled document"}{" "}
+                        - oraizive
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        notevo.me
+                        oraizive.com
                       </p>
                     </div>
                   </div>
@@ -476,15 +479,17 @@ export default function PublicNote({
                     />
                     <div className="p-2.5 bg-card space-y-0.5 border-t border-border">
                       <p className="text-[11px] text-muted-foreground">
-                        notevo.me
+                        oraizive.com
                       </p>
                       <p className="text-xs font-bold text-foreground line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
-                        - Notevo
+                        {getNote?.title?.trim() ||
+                          noteTitle ||
+                          "Untitled document"}{" "}
+                        - oraizive
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
+                          "No description. This is a shared document on oraizive. View and read this document on oraizive"}
                       </p>
                     </div>
                   </div>
@@ -494,15 +499,17 @@ export default function PublicNote({
                   <div className="w-full border border-border app-radius-md p-2.5 bg-card text-card-foreground shadow-sm space-y-1.5">
                     <div className="pl-2.5 border-l-4 border-muted-foreground/40 space-y-1">
                       <p className="text-[11px] font-bold text-muted-foreground">
-                        notevo.me
+                        oraizive.com
                       </p>
                       <p className="text-xs font-bold text-primary hover:underline cursor-pointer line-clamp-1">
-                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
-                        - Notevo
+                        {getNote?.title?.trim() ||
+                          noteTitle ||
+                          "Untitled document"}{" "}
+                        - oraizive
                       </p>
                       <p className="text-[11px] text-muted-foreground line-clamp-2 leading-tight">
                         {getNote?.preview?.trim() ||
-                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
+                          "No description. This is a shared document on oraizive. View and read this document on oraizive"}
                       </p>
                       <OgPreviewImage
                         src={`/api/og?id=${noteId}`}
@@ -544,8 +551,10 @@ export default function PublicNote({
                           isDark ? "text-emerald-50" : "text-[#084c44]",
                         )}
                       >
-                        {getNote?.title?.trim() || noteTitle || "Untitled document"}{" "}
-                        - Notevo
+                        {getNote?.title?.trim() ||
+                          noteTitle ||
+                          "Untitled document"}{" "}
+                        - oraizive
                       </p>
                       <p
                         className={cn(
@@ -554,7 +563,7 @@ export default function PublicNote({
                         )}
                       >
                         {getNote?.preview?.trim() ||
-                          "No description. This is a shared document on Notevo. View and read this document on Notevo"}
+                          "No description. This is a shared document on oraizive. View and read this document on oraizive"}
                       </p>
                       <p
                         className={cn(
@@ -562,7 +571,7 @@ export default function PublicNote({
                           isDark ? "text-[#25d366]/80" : "text-[#084c44]/75",
                         )}
                       >
-                        notevo.me
+                        oraizive.com
                       </p>
                     </div>
                   </div>
@@ -579,7 +588,7 @@ export default function PublicNote({
               <span className="w-full relative">
                 <Input
                   type="text"
-                  value={`https://notevo.me/public/document/${noteId}`}
+                  value={`https://oraizive.com/public/document/${noteId}`}
                   className="h-9 truncate flex-grow bg-gradient-to-r from-foreground from-70% via-transparent via-90% to-transparent to-95% text-transparent bg-clip-text"
                   disabled
                 />
@@ -601,7 +610,7 @@ export default function PublicNote({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent
-                    className=" app-radius-sm px-1.5"
+                    className="z-[60000] app-radius-sm px-1.5"
                     side="bottom"
                   >
                     Copy link
@@ -617,14 +626,11 @@ export default function PublicNote({
                   <EyeClosed size={14} />
                   Unpublish
                 </Button>
-                <Button
-                  className="w-full h-8 !app-radius-none "
-                  variant="secondary"
-                >
+                <Button className="w-full h-8" variant="secondary">
                   <Link
                     target="_blank"
                     className="flex justify-center items-center gap-2 "
-                    href={`https://notevo.me/public/document/${noteId}`}
+                    href={`https://oraizive.com/public/document/${noteId}`}
                   >
                     <ExternalLink size={14} />
                     View site

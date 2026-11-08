@@ -15,7 +15,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
 
 type DraftPhase = "creating" | "saving" | "ready" | "error";
-const PENDING_NOTE_DRAFTS_KEY = "notevo_pending_note_drafts";
+const PENDING_NOTE_DRAFTS_KEY = "oraizive_pending_note_drafts";
 const DEFAULT_DRAFT_TITLE = "New Quick Access Document";
 
 export interface PendingNoteDraft {
@@ -191,7 +191,8 @@ export function PendingNoteDraftProvider({
           }
 
           const noteId = draft.noteId;
-          if (!noteId) throw new Error("Document creation did not return an ID");
+          if (!noteId)
+            throw new Error("Document creation did not return an ID");
 
           while (true) {
             const currentDraft = draftsRef.current[token];

@@ -592,18 +592,14 @@ interface EmptyTableStateProps {
 }
 
 const STORAGE_KEYS = {
-  VIEW_MODE: "notevo_view_mode",
-  ACTIVE_TABLE: "notevo_active_table",
-  CALENDAR_ZOOM: "notevo_calendar_zoom",
-  CUSTOM_ORDER_PREFIX: "notevo_custom_order_",
+  VIEW_MODE: "oraizive_view_mode",
+  ACTIVE_TABLE: "oraizive_active_table",
+  CALENDAR_ZOOM: "oraizive_calendar_zoom",
+  CUSTOM_ORDER_PREFIX: "oraizive_custom_order_",
 };
 
 type DropTarget = { id: string; position: "before" | "after" };
 
-// Use the actual card as the drag ghost. Without this the browser drags the
-// <a> inside the card and shows its title + URL as a small text tooltip.
-// We snapshot a clone (taken before React applies the faded "dragging" style)
-// so the ghost looks exactly like the card the user picked up.
 function setCardDragImage(
   e: {
     clientX: number;
@@ -996,12 +992,12 @@ function TableTab({ table }: { table: any }) {
   return (
     <>
       <div
-        className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg min-w-44"
+        className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg app-radius-b-none min-w-44"
         onMouseEnter={handleContentMouseEnter}
         onMouseLeave={handleContentMouseLeave}
       >
         {isRenameOpen ? (
-          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg w-full border-2 border-border border-b-0 bg-card">
+          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg app-radius-b-none border-2 border-border border-b-0 bg-card">
             <Input
               ref={inputRef as any}
               value={editedName}
@@ -1010,14 +1006,14 @@ function TableTab({ table }: { table: any }) {
               onBlur={() => void handleRenameSave()}
               placeholder="Rename table"
               aria-label="rename-table-input"
-              className="h-6 flex-grow border-none bg-transparent px-1 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="h-6 !w-24 !leading-6 flex-grow border-none bg-transparent mx-0 px-2 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
             />
           </div>
         ) : (
           <TabsTrigger
             value={table._id}
             data-tab-id={table._id}
-            className=" px-4 py-2.5 app-radius-lg w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+            className=" px-4 py-2.5 app-radius-lg app-radius-b-none w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
             onDoubleClick={handleDoubleClick}
             onContextMenu={(event) => {
               event.preventDefault();
@@ -1061,11 +1057,7 @@ function TableTab({ table }: { table: any }) {
                 <X size={16} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent
-              className=" !app-radius-none"
-              side="right"
-              sideOffset={5}
-            >
+            <TooltipContent side="right" sideOffset={5}>
               Delete table
             </TooltipContent>
           </Tooltip>
@@ -1259,7 +1251,7 @@ function SliderTabsList({
     <div className=" relative py-2.5">
       <div className="absolute -top-6 left-0 w-full">
         <TabsList
-          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted !app-radius-none border border-border border-b-0 w-full"
+          className="flex justify-start items-center px-1 pt-8 pb-5 bg-muted app-radius-none border border-border border-b-0 w-full"
           style={{ overflow: "clip" } as React.CSSProperties}
         >
           <div className=" z-8000 absolute bottom-0 left-0 w-full h-[2px] bg-border" />
@@ -1270,7 +1262,7 @@ function SliderTabsList({
               onClick={() => scroll("left")}
               aria-label="scroll-tabs-left"
               className={cn(
-                "absolute left-0 -top-0.5 z-10 h-9 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                "absolute left-0 -top-0.5 z-10 h-9 w-8 shadow-sm transition-all duration-200 !app-radius-full",
                 canScrollLeft
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none",
@@ -1284,7 +1276,7 @@ function SliderTabsList({
               onClick={() => scroll("right")}
               aria-label="scroll-tabs-right"
               className={cn(
-                "absolute right-0 -top-0.5 z-10 h-9 w-7 shadow-sm transition-all duration-200 !app-radius-none",
+                "absolute right-0 -top-0.5 z-10 h-9 w-8 shadow-sm transition-all duration-200 !app-radius-full",
                 canScrollRight
                   ? "opacity-100 pointer-events-auto"
                   : "opacity-0 pointer-events-none",
@@ -1382,7 +1374,7 @@ function SliderTabsList({
             label="New Table"
             workingSpaceId={workingSpaceId as Id<"folders">}
             compactOnHover
-            className="relative z-20 mb-2.5 ml-2 h-9 shrink-0 !bg-primary !shadow-none !text-primary-foreground  app-radius-lg"
+            className="relative z-20 mb-2.5 ml-2 h-9 shrink-0 !bg-primary !shadow-none !text-primary-foreground app-radius-lg"
           />
           <div
             className="absolute right-0 top-0 h-[3.3rem] -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
@@ -1557,7 +1549,7 @@ export default function FolderPageClient({
       if (workspaceSavedTable) return workspaceSavedTable;
 
       return (
-        sessionStorage.getItem(`notevo_active_table_${workingSpaceId}`) ||
+        sessionStorage.getItem(`oraizive_active_table_${workingSpaceId}`) ||
         sessionStorage.getItem(STORAGE_KEYS.ACTIVE_TABLE) ||
         ""
       );
@@ -1600,10 +1592,13 @@ export default function FolderPageClient({
       setActiveTableId(tableId);
     }
     if (typeof window !== "undefined") {
-      sessionStorage.setItem(`notevo_active_table_${workingSpaceId}`, tableId);
+      sessionStorage.setItem(
+        `oraizive_active_table_${workingSpaceId}`,
+        tableId,
+      );
       sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
       window.dispatchEvent(
-        new CustomEvent("notevo:active-table-change", {
+        new CustomEvent("oraizive:active-table-change", {
           detail: { folderId: String(workingSpaceId), tableId },
         }),
       );
@@ -1621,12 +1616,12 @@ export default function FolderPageClient({
       setActiveTableId(tableId);
       if (typeof window !== "undefined") {
         sessionStorage.setItem(
-          `notevo_active_table_${workingSpaceId}`,
+          `oraizive_active_table_${workingSpaceId}`,
           tableId,
         );
         sessionStorage.setItem(STORAGE_KEYS.ACTIVE_TABLE, tableId);
         window.dispatchEvent(
-          new CustomEvent("notevo:active-table-change", {
+          new CustomEvent("oraizive:active-table-change", {
             detail: { folderId: String(workingSpaceId), tableId },
           }),
         );
@@ -1668,10 +1663,10 @@ export default function FolderPageClient({
         handleTabChange(customEvent.detail.tableId);
       }
     };
-    window.addEventListener("notevo:switch-table", handleSwitchTable);
+    window.addEventListener("oraizive:switch-table", handleSwitchTable);
 
     return () => {
-      window.removeEventListener("notevo:switch-table", handleSwitchTable);
+      window.removeEventListener("oraizive:switch-table", handleSwitchTable);
     };
   }, [handleTabChange]);
 
@@ -1683,7 +1678,7 @@ export default function FolderPageClient({
     const metaDescription = document.querySelector('meta[name="description"]');
     const originalContent = metaDescription?.getAttribute("content");
 
-    document.title = `${workspace.name} - Notevo Workspace`;
+    document.title = `${workspace.name} - oraizive Workspace`;
     const descriptionContent = `${workspace.name} workspace. `;
 
     if (metaDescription) {
@@ -1716,7 +1711,7 @@ export default function FolderPageClient({
   return (
     <MaxWContainer className="grid grid-cols-1 max-w-full">
       <header>
-        <div className="border border-border bg-muted app-radius-md flex justify-between items-end w-full">
+        <div className="border border-border bg-muted app-radius-t-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
             <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[4rem] ">
               {!workspace ? (
@@ -1735,12 +1730,12 @@ export default function FolderPageClient({
                     setIsEditingName(false);
                   }}
                   placeholder="Untitled Folder"
-                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent px-2 h-[2rem] md:h-[4rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 "
+                  className="min-w-fit max-w-3xl placeholder:text-muted-foreground/50 border-transparent bg-transparent mx-[7px] px-0 h-[2rem] md:h-[3.9rem] text-2xl md:text-5xl focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0  app-radius-none "
                 />
               ) : (
                 <span
                   onDoubleClick={handleNameDoubleClick}
-                  className="cursor-text app-radius-md border border-transparent px-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
+                  className="cursor-text border-b border-transparent mx-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
                 >
                   {workspace.name.length > 20 && isMobile
                     ? `${workspace.name.slice(0, 17)}...`
@@ -2183,7 +2178,7 @@ export function NotesDroppableContainer({
               onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
-              className="pl-10 pr-9 border-border h-[37px] my-0 !app-radius-none bg-background"
+              className="pl-10 pr-9 border-border h-[37px] my-0 bg-background"
               aria-label="search-notes"
             />
             {!isSearchFocused && !searchQuery && (
@@ -2195,13 +2190,13 @@ export function NotesDroppableContainer({
         </div>
 
         <div className="flex items-center gap-2 w-auto justify-end">
-          <div className="flex h-9 items-center border border-border app-radius-none overflow-hidden">
+          <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
             {!isMobile && (
               <Button
                 variant="SidebarMenuButton"
                 size="sm"
                 className={cn(
-                  "!app-radius-none bg-background hover:bg-muted",
+                  "app-radius-l-lg bg-background hover:bg-muted",
                   viewMode === "grid" && "bg-muted",
                 )}
                 onClick={() => setViewMode("grid")}
@@ -2215,7 +2210,8 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!app-radius-none bg-background hover:bg-muted",
+                "bg-background hover:bg-muted",
+                isMobile ? "app-radius-l-lg" : "app-radius-none",
                 !isMobile && "border border-l-border border-r-border",
                 viewMode === "list" && "bg-muted",
               )}
@@ -2229,7 +2225,7 @@ export function NotesDroppableContainer({
               variant="SidebarMenuButton"
               size="sm"
               className={cn(
-                "!app-radius-none bg-background hover:bg-muted",
+                "app-radius-r-lg bg-background hover:bg-muted",
                 viewMode === "calendar" && "bg-muted",
               )}
               onClick={() => setViewMode("calendar")}
@@ -2252,7 +2248,7 @@ export function NotesDroppableContainer({
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-9 shrink-0 border-border gap-1.5 !app-radius-none",
+                  "h-9 shrink-0 border-border gap-1.5",
                   contentFilter !== "all" && "bg-muted",
                 )}
                 aria-label="filter-content"
@@ -2924,7 +2920,7 @@ function CalendarTimelineView({
               <Button
                 variant="Trigger"
                 size="sm"
-                className="h-8 border-border text-xs px-1.5 gap-1 !app-radius-none"
+                className="h-8 border-border text-xs px-1.5 gap-1"
                 aria-label="calendar-zoom-level"
               >
                 {config.label}
@@ -4179,7 +4175,7 @@ function LinkFavicon({
       alt="favicon"
       draggable={false}
       className={cn(
-        "object-contain select-none [-webkit-user-drag:none]",
+        "app-radius-md object-contain select-none [-webkit-user-drag:none]",
         grayscale && "grayscale",
         className,
       )}
@@ -4200,7 +4196,7 @@ function LinkFaviconBadge({
   return (
     <div
       className={cn(
-        "flex items-center justify-center overflow-hidden",
+        "flex items-center justify-center app-radius-md overflow-hidden",
         className,
       )}
     >
@@ -4511,7 +4507,7 @@ function TablesSkeleton() {
           {Array.from({ length: 2 }).map((_, i) => (
             <div
               key={i}
-              className={`px-4 py-2.5 min-w-[110px] app-radius-lg border-2 border-b-0 ${
+              className={`px-4 py-2.5 min-w-[110px] app-radius-lg app-radius-b-none border-2 border-b-0 ${
                 i === 0 ? "border-border bg-card" : "border-transparent"
               }`}
             >

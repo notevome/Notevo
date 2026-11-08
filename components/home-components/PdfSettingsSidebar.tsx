@@ -99,7 +99,7 @@ export default function PdfSettingsSidebar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="pin-upload"
               {...pinTooltip.triggerProps}
             >
@@ -113,7 +113,7 @@ export default function PdfSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className=" !app-radius-none"
+            className=""
           >
             {pdf?.favorite ? "Unpin upload" : "Pin upload"}
           </TooltipContent>
@@ -123,7 +123,7 @@ export default function PdfSettingsSidebar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-upload"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -134,7 +134,7 @@ export default function PdfSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className="!app-radius-none"
+            className=""
           >
             Delete upload
           </TooltipContent>

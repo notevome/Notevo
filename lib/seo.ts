@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 
-const siteUrl = "https://notevo.me";
-const siteName = "Notevo";
-const defaultTitle = "Notevo - Simple, Structured Documents";
+const siteUrl = "https://oraizive.com";
+const siteName = "oraizive";
+const defaultTitle = "oraizive - Simple, Structured Documents";
 const defaultDescription =
-  "Notevo helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.";
+  "oraizive helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.";
 
 interface GenerateMetadataParams {
   title?: string;
@@ -72,7 +72,7 @@ export function generateMetadata({
       title: fullTitle,
       description: fullDescription,
       images: [imageUrl],
-      creator: "@notevo", // Update with your actual Twitter handle if available
+      creator: "@oraizive", // Update with your actual Twitter handle if available
     },
     robots: {
       index: !noindex,

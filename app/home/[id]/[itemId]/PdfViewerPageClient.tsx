@@ -352,7 +352,7 @@ function ZoomDropdown() {
         <Button
           type="button"
           variant="outline"
-          className="h-8 gap-2 border-border !border-l-0 !app-radius-none"
+          className="h-8 gap-2 border-border !border-l-0 app-radius-r-lg"
         >
           <span>{Math.round(zoom * 100)}%</span>
           <ChevronDown className="h-4 w-4 text-muted-foreground " />
@@ -401,7 +401,7 @@ function ZoomDropdown() {
   );
 }
 
-function PageNavigator() {
+function PageNavigator({ attachEnd = false }: { attachEnd?: boolean }) {
   const pages = usePdf((state) => state.pdfDocumentProxy?.numPages);
   const currentPage = usePdf((state) => state.currentPage);
   const [pageNumber, setPageNumber] = useState<string | number>(currentPage);
@@ -429,14 +429,14 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !app-radius-none"
+        className="h-8 w-8 border-border app-radius-l-lg"
         onClick={handlePreviousPage}
         disabled={currentPage <= 1}
         aria-label="previous-page"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <div className="flex justify-center items-center bg-background border-t border-b border-border h-8 ">
+      <div className="flex justify-center items-center bg-background border-t border-b border-border h-8 app-radius-none">
         <Input
           type="number"
           value={pageNumber}
@@ -465,7 +465,10 @@ function PageNavigator() {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8 border-border !app-radius-none"
+        className={cn(
+          "h-8 w-8 border-border",
+          attachEnd ? "app-radius-none" : "app-radius-r-lg",
+        )}
         onClick={handleNextPage}
         disabled={currentPage >= pages}
         aria-label="next-page"
@@ -779,9 +782,8 @@ function PdfViewerContent({
           <div
             ref={toolbarRef}
             className={cn(
-              "pointer-events-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 border border-border bg-card px-0.5 py-0.5",
+              "pointer-events-auto flex w-fit flex-wrap md:flex-nowrap items-center justify-start gap-1 overflow-hidden app-radius-lg border border-border bg-card px-0.5 py-0.5",
               !(canDragToolbar && toolbarPosition) && "mx-auto",
-              !renderedInPane || (isMobile && "app-radius-lg"),
               isDraggingToolbar && "select-none",
             )}
           >
@@ -789,10 +791,7 @@ function PdfViewerContent({
               <Button
                 variant="outline"
                 size="icon"
-                className={cn(
-                  "h-8 w-8 border border-border px-2",
-                  renderedInPane || (isMobile && "!app-radius-none"),
-                )}
+                className="h-8 w-8 border border-border px-2 app-radius-l-lg"
                 aria-label="show-search-panel"
               >
                 <SidebarTrigger className=" h-[22] w-[22]" />
@@ -800,7 +799,7 @@ function PdfViewerContent({
             )}
             {!renderedInPane && (
               <div
-                className={`group flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "!app-radius-none" : "app-radius-md"} `}
+                className={`group flex-1 px-1.5 h-8 py-0 border border-border bg-background hover:border-muted-foreground/50 ${!open || isMobile ? "app-radius-none" : "app-radius-md"} `}
               >
                 <h1
                   onDoubleClick={handleNameDoubleClick}
@@ -828,7 +827,6 @@ function PdfViewerContent({
                     </span>
                   )}
                 </h1>
-
               </div>
             )}
 
@@ -841,7 +839,12 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border border-border !app-radius-none"
+                        className={cn(
+                          "h-8 w-8 border border-border",
+                          isMobile && !renderedInPane
+                            ? "app-radius-none border-l-0"
+                            : "app-radius-l-lg",
+                        )}
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "search" ? null : "search",
@@ -871,7 +874,7 @@ function PdfViewerContent({
                         type="button"
                         variant="outline"
                         size="icon"
-                        className="h-8 w-8 border-y !border-l-0 border-border !app-radius-none"
+                        className="h-8 w-8 border-y border-r !border-l-0 border-border app-radius-none"
                         onClick={() =>
                           setPanelMode((current) =>
                             current === "thumbnails" ? null : "thumbnails",
@@ -901,7 +904,7 @@ function PdfViewerContent({
                 </div>
               </span>
               <span className="flex items-center gap-0">
-                <PageNavigator />
+                <PageNavigator attachEnd={!renderedInPane || canDragToolbar} />
                 {!renderedInPane && (
                   <PdfSettings
                     pdfId={pdfId}
@@ -910,7 +913,10 @@ function PdfViewerContent({
                     dropdownMenuContentAlign="end"
                     tooltipContentAlign="end"
                     btnVariant="outline"
-                    btnClassName="h-8 w-8 m-0 px-1 border-border !app-radius-none"
+                    btnClassName={cn(
+                      "h-8 w-8 m-0 px-1 border-border !border-l-0",
+                      canDragToolbar ? "app-radius-none" : "app-radius-r-lg",
+                    )}
                   />
                 )}
                 {canDragToolbar && (
@@ -918,7 +924,7 @@ function PdfViewerContent({
                     type="button"
                     variant="outline"
                     size="icon"
-                    className="h-8 w-8 border-y border-r !border-l-0 border-border !app-radius-none touch-none cursor-grab active:cursor-grabbing"
+                    className="h-8 w-8 border-y border-r !border-l-0 border-border app-radius-r-lg touch-none cursor-grab active:cursor-grabbing"
                     onPointerDown={handleToolbarDragPointerDown}
                     onDoubleClick={handleToolbarDragDoubleClick}
                     aria-label="drag-toolbar"
@@ -983,7 +989,7 @@ function PdfViewerShell({
       isZoomFitWidth
       className={cn(
         "pdf-viewer-shell relative h-full w-full overflow-hidden app-radius-none border-0 bg-background flex flex-col justify-stretch",
-        open && !isMobile && !renderedInPane && "app-radius-lg",
+        open && !isMobile && !renderedInPane && "app-radius-tl-lg",
       )}
       loader={
         <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -1032,7 +1038,7 @@ export default function PdfViewerPageClient({
     const originalContent = metaDescription?.getAttribute("content");
     const pdfTitle = pdf.title || "Untitled PDF";
 
-    document.title = `${pdfTitle} - Notevo PDF`;
+    document.title = `${pdfTitle} - oraizive PDF`;
     const descriptionContent = `${pdfTitle} PDF.`;
 
     if (metaDescription) {

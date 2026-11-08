@@ -5,7 +5,6 @@ import SignUpToday from "./SignUpToday";
 export default function Footer() {
   return (
     <div className="relative w-full overflow-hidden bg-transparent">
-      {/* Wave SVG — pinned to top, fixed height, overflow hidden keeps it in bounds */}
       <div className="absolute top-4 left-0 w-full h-16 md:h-24 overflow-hidden pointer-events-none select-none">
         <svg
           width="11 0%"
@@ -34,7 +33,7 @@ export default function Footer() {
           </defs>
         </svg>
       </div>
-      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[20rem] bg-[#EFEFEF]">
+      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[27rem] bg-[#EFEFEF]">
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -47,21 +46,23 @@ export default function Footer() {
                 }}
               >
                 <Image
-                  src="/Notevo-logo.svg"
-                  alt="Notevo logo"
-                  className="pb-2 hover:opacity-50"
+                  src="/oraizive-logo.png"
+                  alt="oraizive logo"
+                  className="pb-2 hover:opacity-90"
                   width={60}
                   height={60}
                 />
               </Link>
-              <h2 className="text-2xl font-bold text-primary">Notevo</h2>
-              <p className="mt-2 text-muted-foreground">
-                Notes without the hassle.
+              <h2 className="text-2xl font-bold text-primary">Oraizive</h2>
+              <p className="mt-1 text-[13px] max-w-44 text-muted-foreground">
+                Capture & Organize Without The Hassle.
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-foreground">Notevo</h3>
+              <h3 className="text-lg font-semibold text-foreground">
+                Oraizive
+              </h3>
               <ul className="mt-2 space-y-2 text-muted-foreground">
                 <li>
                   <Link href="/#about" className="hover:underline">
@@ -75,7 +76,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn"
+                    href="https://oraizive.com/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn"
                     target="_blank"
                     className="hover:underline"
                   >
@@ -116,7 +117,7 @@ export default function Footer() {
               <ul className="mt-2 space-y-2 text-muted-foreground">
                 <li>
                   <Link
-                    href="https://www.linkedin.com/company/notevo"
+                    href="https://www.linkedin.com/company/oraizive"
                     className="hover:underline"
                     target="_blank"
                   >
@@ -125,7 +126,7 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="https://github.com/notevome/Notevo"
+                    href="https://github.com/oraiziveme/oraizive"
                     target="_blank"
                     className="hover:underline"
                   >
@@ -134,10 +135,10 @@ export default function Footer() {
                 </li>
                 <li>
                   <Link
-                    href="mailto:support@notevo.me"
+                    href="mailto:support@oraizive.com"
                     className="hover:underline"
                   >
-                    support@notevo.me
+                    support@oraizive.com
                   </Link>
                 </li>
               </ul>
@@ -146,7 +147,7 @@ export default function Footer() {
 
           <div className="mt-5 border-t border-primary/20 pt-5 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="text-start text-muted-foreground text-sm">
-              Copyright © 2025-{new Date().getFullYear()} Notevo. All rights
+              Copyright © 2025-{new Date().getFullYear()} oraizive. All rights
               reserved.
             </div>
             <p className="text-start text-muted-foreground text-sm">
@@ -162,13 +163,14 @@ export default function Footer() {
           </div>
         </div>
       </footer>
+      {/*(Other close options if you want it a touch lighter or darker: #5a4239 or #4b3730) */}
       <h1
         style={{
-          textShadow: "2vh 2vh 0 #644A40",
+          textShadow: "2vh 2vh 0 #5a4239",
         }}
-        className="z-50 text-primary/30 inline-block text-nowrap text-[63vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-extrabold tracking-tighter leading-[25vh] -indent-[7vh]"
+        className="bg-[url('https://texturelabs.org/wp-content/uploads/Texturelabs_Fabric_141S.jpg')] bg-cover bg-center bg-clip-text text-transparent z-50 inline-block text-nowrap text-[63vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-extrabold tracking-tighter leading-[45vh] -indent-[25vh]"
       >
-        Notevo
+        Oraizive
       </h1>
     </div>
   );

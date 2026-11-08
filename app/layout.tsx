@@ -23,15 +23,15 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   ...generateSEOMetadata({
-    title: "Notevo - Simple, Structured Documents",
+    title: "oraizive - Simple, Structured Documents",
     description:
-      "Notevo helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.",
+      "oraizive helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.",
     path: "/",
   }),
   icons: {
-    icon: "/google-notevo-logo.png",
-    shortcut: "/google-notevo-logo.png",
-    apple: "/google-notevo-logo.png",
+    icon: "/google-oraizive-logo.png",
+    shortcut: "/google-oraizive-logo.png",
+    apple: "/google-oraizive-logo.png",
   },
 };
 
@@ -46,6 +46,14 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          href="https://texturelabs.org/wp-content/uploads/Texturelabs_Fabric_141S.jpg"
+          fetchPriority="high"
+        />
+      </head>
       <body
         className={cn(
           "bg-background text-foreground flex flex-col min-h-screen",

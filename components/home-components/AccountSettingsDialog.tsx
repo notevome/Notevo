@@ -522,7 +522,7 @@ export default function AccountSettingsDialog({
               <div>
                 <h2 className="text-base font-semibold">My Profile</h2>
                 <p className="text-sm text-muted-foreground">
-                  Update the name and avatar shown across Notevo.
+                  Update the name and avatar shown across oraizive.
                 </p>
               </div>
               <Button
@@ -630,8 +630,8 @@ export default function AccountSettingsDialog({
             <div className="border border-border bg-muted/20 p-4 app-radius-lg">
               <p className="font-medium">Billing options are coming soon</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Subscription plans and invoices will live here when Notevo adds
-                paid plans.
+                Subscription plans and invoices will live here when oraizive
+                adds paid plans.
               </p>
             </div>
           </section>
@@ -866,7 +866,7 @@ export default function AccountSettingsDialog({
                     <Button
                       type="button"
                       variant="outline"
-                      className=" h-8 !app-radius-none"
+                      className="h-8"
                       onClick={() => {
                         closePhotoEditor();
                         if (hasAvatarImage) void handleDeleteAvatar();
@@ -879,7 +879,7 @@ export default function AccountSettingsDialog({
                     type="button"
                     onClick={() => void handleConfirmPhotoEdit()}
                     disabled={isUploadingAvatar}
-                    className=" !app-radius-none h-8"
+                    className="h-8"
                   >
                     {isUploadingAvatar ? "Uploading..." : "Confirm"}
                   </Button>

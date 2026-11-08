@@ -15,12 +15,15 @@ import {
 } from "@/components/ui/tooltip";
 import { useNoteDownload, type DownloadFormat } from "@/hooks/useNoteDownload";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
+import { cn } from "@/lib/utils";
 
 interface NoteDownloadDropdownProps {
   noteBody: string | undefined | null;
   noteTitle: string;
   align?: "end" | "start" | "center";
   className?: string;
+  variant?: "outline" | "SidebarMenuButton" | "default" | "secondary" | "ghost";
+  size?: "default" | "sm" | "lg" | "icon";
 }
 
 export default function NoteDownloadDropdown({
@@ -28,6 +31,8 @@ export default function NoteDownloadDropdown({
   noteTitle,
   align = "end",
   className,
+  variant = "outline",
+  size = "icon",
 }: NoteDownloadDropdownProps) {
   const { handleDownload } = useNoteDownload({ noteBody, noteTitle });
   const tooltip = useHoverTooltip(100);
@@ -65,12 +70,15 @@ export default function NoteDownloadDropdown({
         <DropdownMenuTrigger asChild>
           <TooltipTrigger asChild>
             <Button
-              variant="outline"
-              size="icon"
-              className={`w-8 h-8 pt-0.5 ${className ?? ""}`}
+              variant={variant}
+              size={size}
+              className={cn(
+                size === "icon" ? "w-8 h-8 pt-0.5" : "",
+                className,
+              )}
               {...tooltip.triggerProps}
             >
-              <Download className="h-[1.2rem] w-[1.2rem]" />
+              <Download className="h-4 w-4" />
               <span className="sr-only">Download document</span>
             </Button>
           </TooltipTrigger>

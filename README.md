@@ -1,8 +1,8 @@
-# Notevo
+# oraizive
 
 > A minimal, structured note-taking app: simpler than Notion, more organized than Google Keep.
 
-I built Notevo because I could not find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. Notevo gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
+I built oraizive because I could not find a note-taking app that hit the sweet spot: clean and focused, but still powerful enough to organize real work. oraizive gives you a rich Notion-style editor, workspaces, tables, whiteboards, PDF storage, link saving, and AI without the bloat.
 
 ![Home Page](showCase_imgs/HomePage.png)
 
@@ -141,8 +141,8 @@ Export notes into standard file formats:
 ### Installation
 
 ```bash
-git clone https://github.com/notevome/Notevo.git
-cd Notevo
+git clone https://github.com/oraiziveme/oraizive.git
+cd oraizive
 pnpm install
 ```
 
@@ -168,7 +168,7 @@ AUTH_RESEND_KEY=re_your_resend_api_key
 AUTH_EMAIL=hello@yourdomain.com
 
 # Site URL
-SITE_URL=https://notevo.me
+SITE_URL=https://oraizive.com
 ```
 
 ### Running Locally
@@ -199,7 +199,7 @@ pnpm test:ui        # Vitest UI
 ## Project Structure
 
 ```
-Notevo/
+oraizive/
 ├── app/                        # Next.js App Router
 │   ├── (shere)/public/         # Public shared note view
 │   ├── api/og/                 # Dynamic Open Graph banner generator

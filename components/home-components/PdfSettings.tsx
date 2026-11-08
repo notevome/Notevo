@@ -119,15 +119,21 @@ export default function PdfSettings({
       const { _id, title, favorite, status, priority, deadline } = args;
       const current = local.getQuery(api.pdfs.getPdfById, { _id });
       if (!current) return;
-      local.setQuery(api.pdfs.getPdfById, { _id }, {
-        ...current,
-        title: title ?? current.title,
-        favorite: favorite !== undefined ? favorite : current.favorite,
-        status: status ?? current.status,
-        priority: priority ?? current.priority,
-        ...(deadline !== undefined ? { deadline: deadline ?? undefined } : {}),
-        updatedAt: Date.now(),
-      });
+      local.setQuery(
+        api.pdfs.getPdfById,
+        { _id },
+        {
+          ...current,
+          title: title ?? current.title,
+          favorite: favorite !== undefined ? favorite : current.favorite,
+          status: status ?? current.status,
+          priority: priority ?? current.priority,
+          ...(deadline !== undefined
+            ? { deadline: deadline ?? undefined }
+            : {}),
+          updatedAt: Date.now(),
+        },
+      );
     },
   );
   const deletePdf = useMutation(api.pdfs.deletePdf);
@@ -188,7 +194,7 @@ export default function PdfSettings({
           currentUrl.pathname = segments.join("/");
           currentUrl.searchParams.delete("pdfId");
           window.history.replaceState({}, "", currentUrl.href);
-          document.title = `${nextTitle} - Notevo`;
+          document.title = `${nextTitle} - oraizive`;
         })
         .catch((error) => {
           console.error("Error updating PDF title:", error);

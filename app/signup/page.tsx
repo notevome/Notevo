@@ -25,7 +25,7 @@ import { useTheme } from "next-themes";
 import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 import { PAPER_PNG } from "@/lib/data";
-import NotevoLogo from "@/public/Notevo-logo.svg";
+import oraiziveLogo from "@/public/oraizive-logo.png";
 import NoteImage from "@/public/LightModeImage.svg";
 function SignInWithMagicLink({
   handleLinkSent,
@@ -163,7 +163,7 @@ export default function SignInPage() {
                 <div className="flex flex-col gap-6">
                   <div className="flex flex-col items-center mb-2 text-center">
                     <Image
-                      src={NotevoLogo}
+                      src={oraiziveLogo}
                       alt="log on Image"
                       width={50}
                       height={50}
@@ -220,7 +220,7 @@ export default function SignInPage() {
                   className="absolute blur-sm opacity-60 inset-0 h-full w-full object-cover"
                 />
                 <Image
-                  src={NotevoLogo}
+                  src={oraiziveLogo}
                   alt="log on Image"
                   width={100}
                   height={100}
@@ -280,7 +280,7 @@ function SignInWithGoogle() {
   const [loading, setLoading] = useState(false);
   return (
     <Button
-      className="w-full flex-1 !app-radius-none"
+      className="w-full flex-1"
       variant="outline"
       type="button"
       onClick={() => {

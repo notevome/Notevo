@@ -236,7 +236,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
   const pill = (
     <div
       ref={pillRef}
-      className="fixed flex items-center gap-0.5 bg-muted border border-border app-radius-lg shadow-md px-0.5 py-0.5 z-[9998]"
+      className="fixed flex items-center gap-0 bg-muted border border-border app-radius-lg shadow-md overflow-hidden z-[9998]"
       style={{ left: pillX, top: pillY }}
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -246,7 +246,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
             variant="ghost"
             aria-label="Add row below"
             onClick={quickAdd}
-            className=" w-6 h-6 "
+            className=" w-6 h-6 app-radius-l-lg"
             size="icon"
           >
             <Plus className="w-3.5 h-3.5 " />
@@ -267,7 +267,7 @@ export const TableControls = ({ editor }: TableControlsProps) => {
             variant="ghost"
             aria-label="Cell options"
             onClick={openMenu}
-            className=" w-6 h-6 !app-radius-none"
+            className=" w-6 h-6 app-radius-r-lg border-l border-border"
             size="icon"
           >
             <ChevronDown className="w-3.5 h-3.5" />

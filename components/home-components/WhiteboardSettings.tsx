@@ -139,15 +139,19 @@ export default function WhiteboardSettings({
     const { _id, title, favorite, status, priority, deadline } = args;
     const current = local.getQuery(api.whiteboards.getWhiteboardById, { _id });
     if (!current) return;
-    local.setQuery(api.whiteboards.getWhiteboardById, { _id }, {
-      ...current,
-      title: title ?? current.title,
-      favorite: favorite !== undefined ? favorite : current.favorite,
-      status: status ?? current.status,
-      priority: priority ?? current.priority,
-      ...(deadline !== undefined ? { deadline: deadline ?? undefined } : {}),
-      updatedAt: Date.now(),
-    });
+    local.setQuery(
+      api.whiteboards.getWhiteboardById,
+      { _id },
+      {
+        ...current,
+        title: title ?? current.title,
+        favorite: favorite !== undefined ? favorite : current.favorite,
+        status: status ?? current.status,
+        priority: priority ?? current.priority,
+        ...(deadline !== undefined ? { deadline: deadline ?? undefined } : {}),
+        updatedAt: Date.now(),
+      },
+    );
   });
   const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
   const moveWhiteboard = useMutation(api.whiteboards.moveWhiteboard);
@@ -173,7 +177,7 @@ export default function WhiteboardSettings({
     if (!isOnThisWhiteboardRoute()) return;
 
     const originalTitle = document.title;
-    document.title = `${whiteboard.title} - Notevo`;
+    document.title = `${whiteboard.title} - oraizive`;
 
     return () => {
       document.title = originalTitle;
@@ -243,7 +247,7 @@ export default function WhiteboardSettings({
       }
 
       if (syncBrowserChrome && isOnThisWhiteboardRoute()) {
-        document.title = `${nextTitle} - Notevo`;
+        document.title = `${nextTitle} - oraizive`;
         const currentUrl = new URL(window.location.href);
         const segments = currentUrl.pathname.split("/");
         segments[segments.length - 1] = buildItemSlug(

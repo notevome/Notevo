@@ -207,7 +207,7 @@ export default function TableSettings({
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                className="h-9 px-0.5  !app-radius-none bg-background"
+                className="h-9 px-0.5 bg-background"
                 {...tooltip.triggerProps}
                 aria-label="table-options"
               >

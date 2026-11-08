@@ -306,7 +306,7 @@ export function MentionPopup({ editor, workingSpaceId }: MentionPopupProps) {
               type="button"
               onClick={() => setCategory(tab.key)}
               className={cn(
-                "px-2 py-0.5 font-medium transition-colors shrink-0",
+                "px-2 py-0.5 font-medium transition-colors shrink-0 app-radius-md",
                 category === tab.key
                   ? "bg-muted text-foreground border border-border"
                   : "bg-transparent border border-dashed border-border text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground",

@@ -76,12 +76,12 @@ export default function TermsPage() {
               </p>
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary leading-tight tracking-tight mb-3">
-              Notevo Terms of Service
+              oraizive Terms of Service
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
-              These terms govern your use of Notevo. By using our platform, you
-              agree to the following conditions , please take a moment to read
-              through them carefully.
+              These terms govern your use of oraizive. By using our platform,
+              you agree to the following conditions , please take a moment to
+              read through them carefully.
             </p>
           </div>
 
@@ -96,7 +96,7 @@ export default function TermsPage() {
               found or offered on this platform.
             </SubSection>
             <SubSection title="Exclusion of Liability">
-              In no event shall Notevo be liable for any direct, indirect,
+              In no event shall oraizive be liable for any direct, indirect,
               incidental, consequential, special, or exemplary damages including
               but not limited to damages for loss of profits, goodwill, use,
               data, or other intangible losses resulting from the use or
@@ -110,7 +110,7 @@ export default function TermsPage() {
               obtained through our platform meet your specific requirements.
             </SubSection>
             <SubSection title="Indemnification">
-              By using our service, you agree to indemnify and hold Notevo
+              By using our service, you agree to indemnify and hold oraizive
               harmless from any claims, actions, damages, liabilities, costs,
               and expenses including reasonable attorneys&apos; fees arising out
               of or in connection with your use of the service or any violation
@@ -131,7 +131,7 @@ export default function TermsPage() {
               We may terminate or suspend your account for any reason, including
               breach of these terms. In the event of termination, you will no
               longer have access to your account and any data associated with
-              it. Notevo is not liable for any loss or damage that may result
+              it. oraizive is not liable for any loss or damage that may result
               from the termination of your account.
             </SubSection>
             <SubSection title="Account Security">
@@ -185,12 +185,13 @@ export default function TermsPage() {
             title="Copyright & Content Ownership"
           >
             <SubSection title="Ownership of Generated Content">
-              We do not claim any rights to the content generated within Notevo.
-              The content you create remains your intellectual property.
+              We do not claim any rights to the content generated within
+              oraizive. The content you create remains your intellectual
+              property.
             </SubSection>
             <SubSection title="Developer Protection">
               By using our service, you acknowledge that developers working on
-              Notevo may explore and improve features conceptually similar to
+              oraizive may explore and improve features conceptually similar to
               content generated within the platform. However, we respect user
               privacy and ownership rights.
             </SubSection>
@@ -241,7 +242,7 @@ export default function TermsPage() {
             </SubSection>
             <SubSection title="Continuous Improvement">
               AI systems are continually evolving. We appreciate your feedback
-              in enhancing the quality of AI-powered features on Notevo.
+              in enhancing the quality of AI-powered features on oraizive.
             </SubSection>
           </SectionBlock>
 
@@ -263,7 +264,7 @@ export default function TermsPage() {
             </SubSection>
             <SubSection title="Review of Terms">
               It&apos;s advisable to review these terms regularly to ensure that
-              you are aware of any changes that may affect your use of Notevo.
+              you are aware of any changes that may affect your use of oraizive.
               Your continued use of the service after updates indicates your
               agreement to be bound by the modified terms.
             </SubSection>

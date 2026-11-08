@@ -4,9 +4,11 @@ import { generateMetadata, generateStructuredData } from "./seo";
 describe("generateMetadata", () => {
   it("generates defaults when no params are provided", () => {
     const meta = generateMetadata();
-    expect(meta.title).toBe("Notevo - Simple, Structured Note Taking");
-    expect(meta.description).toContain("Notevo helps you capture your thoughts");
-    expect(meta.openGraph?.siteName).toBe("Notevo");
+    expect(meta.title).toBe("oraizive - Simple, Structured Note Taking");
+    expect(meta.description).toContain(
+      "oraizive helps you capture your thoughts",
+    );
+    expect(meta.openGraph?.siteName).toBe("oraizive");
     const robots = meta.robots as any;
     expect(robots?.index).toBe(true);
   });
@@ -23,8 +25,10 @@ describe("generateMetadata", () => {
 
     expect(meta.title).toBe("Custom");
     expect(meta.description).toBe("Desc");
-    expect(meta.alternates?.canonical).toBe("https://notevo.me/x");
-    expect((meta.openGraph as any)?.images?.[0]?.url).toBe("https://notevo.me/img.png");
+    expect(meta.alternates?.canonical).toBe("https://oraizive.com/x");
+    expect((meta.openGraph as any)?.images?.[0]?.url).toBe(
+      "https://oraizive.com/img.png",
+    );
     const robots = meta.robots as any;
     expect(robots?.index).toBe(false);
     expect(meta.keywords).toContain("k1");
@@ -33,7 +37,10 @@ describe("generateMetadata", () => {
 
 describe("generateStructuredData", () => {
   it("creates WebSite structured data with SearchAction", () => {
-    const sd = generateStructuredData({ type: "WebSite", url: "https://example.com" });
+    const sd = generateStructuredData({
+      type: "WebSite",
+      url: "https://example.com",
+    });
     expect(sd["@type"]).toBe("WebSite");
     expect("potentialAction" in sd).toBe(true);
     if ("potentialAction" in sd) {

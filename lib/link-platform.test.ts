@@ -24,10 +24,10 @@ describe("detectLinkPlatform", () => {
   it.each([
     ["https://youtu.be/abc123", "youtube"],
     ["youtube.com/watch?v=abc123", "youtube"],
-    ["https://x.com/notevo", "x"],
-    ["https://twitter.com/notevo", "x"],
-    ["https://www.linkedin.com/company/notevo", "linkedin"],
-    ["https://instagram.com/notevo", "instagram"],
+    ["https://x.com/oraizive", "x"],
+    ["https://twitter.com/oraizive", "x"],
+    ["https://www.linkedin.com/company/oraizive", "linkedin"],
+    ["https://instagram.com/oraizive", "instagram"],
     ["https://example.com/article", "generic"],
     ["not a url", "generic"],
   ] as const)("detects %s as %s", (url, platform) => {
@@ -54,10 +54,12 @@ describe("youtube helpers", () => {
   });
 
   it("adds YouTube embed metadata without overwriting an existing thumbnail", () => {
-    expect(enrichMetadataForPlatform("youtu.be/abc123", "youtube", {})).toEqual({
-      embedVideoId: "abc123",
-      thumbnailUrl: "https://img.youtube.com/vi/abc123/hqdefault.jpg",
-    });
+    expect(enrichMetadataForPlatform("youtu.be/abc123", "youtube", {})).toEqual(
+      {
+        embedVideoId: "abc123",
+        thumbnailUrl: "https://img.youtube.com/vi/abc123/hqdefault.jpg",
+      },
+    );
 
     expect(
       enrichMetadataForPlatform("youtu.be/abc123", "youtube", {
@@ -71,9 +73,9 @@ describe("youtube helpers", () => {
 
   it("leaves non-YouTube metadata unchanged", () => {
     const metadata = { siteName: "Example" };
-    expect(enrichMetadataForPlatform("https://example.com", "generic", metadata)).toBe(
-      metadata,
-    );
+    expect(
+      enrichMetadataForPlatform("https://example.com", "generic", metadata),
+    ).toBe(metadata);
   });
 });
 
@@ -96,15 +98,15 @@ describe("link display labels", () => {
     ).toBe("Example News");
     expect(
       buildDefaultLinkTitle("https://youtube.com/watch?v=abc", "youtube", {
-        authorName: "Notevo",
+        authorName: "oraizive",
       }),
-    ).toBe("Notevo");
+    ).toBe("oraizive");
   });
 
   it("falls back to a hostname or generic title", () => {
-    expect(buildDefaultLinkTitle("https://www.example.com/post", "generic")).toBe(
-      "example.com",
-    );
+    expect(
+      buildDefaultLinkTitle("https://www.example.com/post", "generic"),
+    ).toBe("example.com");
     expect(buildDefaultLinkTitle("not a url", "generic")).toBe("Saved link");
   });
 });

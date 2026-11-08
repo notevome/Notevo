@@ -122,36 +122,37 @@ export default function HeroSection() {
       <MaxWContainer className="z-[6] w-full relative flex flex-col items-start justify-center">
         <div className="relative space-y-4 text-start">
           <div>
+            {/*(Other close options if you want it a touch lighter or darker: #5a4239 or #4b3730)*/}
             <h1
               style={{
-                textShadow: "-0.5vh -0.5vh 0 #644A40",
+                textShadow: "-0.6vh -0.6vh 0 #5a4239",
               }}
-              className="text-primary/30 leading-[70px] md:leading-[110px] md:text-[130px] text-[75px] font-bold tracking-tight"
+              className="bg-[url('https://texturelabs.org/wp-content/uploads/Texturelabs_Fabric_141S.jpg')] bg-cover bg-center bg-clip-text text-transparent leading-[70px] md:leading-[110px] md:text-[140px] text-[75px] font-bold tracking-tight"
             >
               <span>Simple, Structured</span>
               <br />
               <span className="relative inline-block">
-                <span className="text-start ">Document Creation</span>
+                <span className="text-start ">Space For Things</span>
                 <svg
                   viewBox="0 0 300 40"
                   preserveAspectRatio="none"
-                  className="absolute left-0 -bottom-4 w-full h-8"
+                  className="absolute left-0 -bottom-4 w-full h-8 -z-50"
                 >
                   <path
                     d="M 5 25 Q 40 22, 80 26 T 150 24 T 220 26 T 295 24"
                     fill="none"
-                    stroke="currentColor"
+                    stroke="#5a4239"
                     strokeWidth="10"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="text-primary/70"
+                    className="text-primary/90"
                   />
                 </svg>
               </span>
             </h1>
           </div>
-          <p className="text-start max-w-2xl text-xl md:text-3xl md:leading-12 leading-6 text-muted-foreground font-bold md:py-0 py-3">
-            Notevo helps you capture your thoughts{" "}
+          <p className="text-start max-w-2xl text-xl md:text-3xl md:leading-12 leading-6 text-muted-foreground font-bold  py-3">
+            Oraizive helps you capture your thoughts{" "}
             <br className="hidden Desktop:block tabletAir:block tabletPro:block" />{" "}
             and organize them in one clean, modern interface.
           </p>

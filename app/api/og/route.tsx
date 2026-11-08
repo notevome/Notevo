@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     let title = searchParams.get("title") || "Untitled document.";
     let preview =
       searchParams.get("description") ||
-      "No description. This is a shared document on Notevo. View and read this document on Notevo";
+      "No description. This is a shared document on oraizive. View and read this document on oraizive";
 
     // Fetch live note from Convex database
     if (id) {

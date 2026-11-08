@@ -120,11 +120,14 @@ export default function HomePageClient() {
         'meta[name="description"]',
       );
       if (metaDescription) {
-        metaDescription.setAttribute("content", `${viewer.name}'s Notevo home`);
+        metaDescription.setAttribute(
+          "content",
+          `${viewer.name}'s oraizive home`,
+        );
       } else {
         const newMeta = document.createElement("meta");
         newMeta.name = "description";
-        newMeta.content = `${viewer.name}'s Notevo Home`;
+        newMeta.content = `${viewer.name}'s oraizive Home`;
         document.head.appendChild(newMeta);
       }
     }
@@ -152,7 +155,7 @@ export default function HomePageClient() {
               <span className="flex justify-center items-center gap-0.5">
                 <SkeletonTextAnimation className=" mx-0 min-w-20 h-10" />
                 ,
-                <SkeletonTextAnimation className="!app-radius-none mx-2 min-w-60 h-10" />
+                <SkeletonTextAnimation className=" mx-2 min-w-60 h-10" />
               </span>
             )}
           </h1>
@@ -219,7 +222,7 @@ export default function HomePageClient() {
 
 function FolderTab({ interactive = false }: { interactive?: boolean }) {
   const outline =
-    "M0.5 24 V9.5 Q0.5 0.5 9.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
+    "M0.5 24 V16.5 Q0.5 0.5 16.5 0.5 H90 Q95 0.5 98.5 4.5 L112 19 Q115.5 23.5 121 23.5 H130";
   return (
     <svg
       aria-hidden
@@ -327,7 +330,7 @@ function Slider({
   return (
     <div ref={wrapperRef} className="relative w-full h-[270px] group">
       {canScrollLeft && (
-        <div className="absolute -left-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-r from-background via-background/80 to-transparent z-[11] pointer-events-none" />
+        <div className="absolute -left-1 top-0 bottom-0 w-16 md:w-20 bg-gradient-to-r from-background via-background/90 from-5% via-25% to-100% to-transparent z-[11] pointer-events-none" />
       )}
       <div
         ref={scrollContainerRef}
@@ -337,7 +340,7 @@ function Slider({
         {children}
       </div>
       {canScrollRight && (
-        <div className="absolute -right-1 top-0 bottom-0 w-16 sm:w-20 bg-gradient-to-l from-background via-background/80 to-transparent z-[11] pointer-events-none" />
+        <div className="absolute -right-1 top-0 bottom-0 w-16 md:w-20 bg-gradient-to-l from-background via-background/90 from-5% via-25% to-100% to-transparent z-[11] pointer-events-none" />
       )}
       {(canScrollRight || canScrollLeft) && (
         <div
@@ -354,7 +357,7 @@ function Slider({
           <Button
             size="icon"
             variant={canScrollRight ? "default" : "outline"}
-            className="h-9 w-8 !app-radius-none"
+            className="h-9 w-8"
             onClick={() => scroll("right")}
           >
             <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -489,12 +492,12 @@ function WorkspaceCard({
                 onChange={(e) => setEditedName(e.target.value)}
                 onBlur={handleNameBlur}
                 onKeyDown={handleNameKeyDown}
-                className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-md border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-none border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </div>
           ) : (
             <CardTitle
-              className="relative z-[2] text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text app-radius-md border border-transparent hover:border-muted-foreground/50"
+              className="relative z-[2] text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text border-b border-transparent hover:border-muted-foreground/50"
               onDoubleClick={handleNameDoubleClick}
             >
               {workspace.name || "Untitled"}

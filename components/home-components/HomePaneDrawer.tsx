@@ -70,7 +70,7 @@ type HomePaneContextValue = {
 
 const HomePaneContext = createContext<HomePaneContextValue | null>(null);
 
-const PANE_WIDTH_STORAGE_KEY = "notevo_home_pane_width";
+const PANE_WIDTH_STORAGE_KEY = "oraizive_home_pane_width";
 const MIN_PANE_WIDTH = 360;
 const MAX_PANE_WIDTH = 960;
 const DEFAULT_PANE_WIDTH = 560;
@@ -102,11 +102,7 @@ function HomePaneContent({ item }: { item: HomePaneItem }) {
   }
 
   return (
-    <FolderPageClient
-      key={item.id}
-      workingSpaceId={item.id}
-      renderedInPane
-    />
+    <FolderPageClient key={item.id} workingSpaceId={item.id} renderedInPane />
   );
 }
 

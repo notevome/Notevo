@@ -6,7 +6,7 @@ import Image from "next/image";
 import { motion, useMotionValueEvent, useScroll } from "framer-motion";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import NotevoLogo from "@/public/Notevo-logo.svg";
+import oraiziveLogo from "@/public/oraizive-logo.png";
 
 export default function Navbar() {
   const { scrollY } = useScroll();
@@ -43,8 +43,8 @@ export default function Navbar() {
             }}
           >
             <Image
-              src={NotevoLogo}
-              alt="Notevo Logo"
+              src={oraiziveLogo}
+              alt="oraizive Logo"
               className="Desktop:hover:opacity-80 transition-opacity mb-px"
               priority
               width={45}

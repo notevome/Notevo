@@ -126,7 +126,7 @@ export default function FolderSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className="!app-radius-none"
+            className=""
           >
             Delete folder
           </TooltipContent>
