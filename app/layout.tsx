@@ -23,7 +23,7 @@ const lato = Lato({
 
 export const metadata: Metadata = {
   ...generateSEOMetadata({
-    title: "oraizive - Simple, Structured Documents",
+    title: "Oraizive - Simple, Structured Space For Things",
     description:
       "oraizive helps you capture your thoughts, organize them effortlessly and interact with your documents in one clean, modern interface.",
     path: "/",
