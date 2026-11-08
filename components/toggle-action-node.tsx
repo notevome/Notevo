@@ -290,7 +290,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
             side="bottom"
             align="start"
             sideOffset={5}
-            className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
+            className="text-xs font-bold py-0.5 px-1.5"
           >
             <p>{isOpen ? "Collapse toggle action" : "Expand toggle action"}</p>
           </TooltipContent>
@@ -320,7 +320,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               titleTooltip.hide();
             }}
             style={contrastStyle}
-            className="min-w-0 h-6 !p-0 !m-0 !border-0 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !app-radius-none"
+            className="min-w-0 h-6 !p-0 !m-0 !border-0 !leading-6 focus-visible:ring-0 focus-visible:outline-none focus-visible:ring-offset-0 flex-1 bg-transparent text-sm font-medium text-foreground outline-none !app-radius-none"
           />
         ) : (
           <Tooltip open={titleTooltip.open} disableHoverableContent>
@@ -341,7 +341,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
               side="bottom"
               align="start"
               sideOffset={5}
-              className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
+              className="text-xs font-bold py-0.5 px-1.5"
             >
               <p>Double click to rename</p>
             </TooltipContent>
@@ -370,7 +370,7 @@ function ToggleActionComponent({ node, updateAttributes }: NodeViewProps) {
                 side="bottom"
                 align="center"
                 sideOffset={5}
-                className="text-xs font-bold py-0.5 px-1.5 !app-radius-none"
+                className="text-xs font-bold py-0.5 px-1.5"
               >
                 <p>Customize toggle appearance</p>
               </TooltipContent>
