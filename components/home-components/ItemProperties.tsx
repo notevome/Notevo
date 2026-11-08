@@ -171,30 +171,32 @@ function DeadlinePicker({
           </p>
         </div>
         <Calendar mode="single" selected={selectedDate} onSelect={setDate} />
-        <div className="flex items-center gap-2 border-t border-border p-3">
-          <Label
-            htmlFor={timeInputId}
-            className="text-xs text-muted-foreground"
-          >
-            Time
-          </Label>
-          <Input
-            id={timeInputId}
-            type="time"
-            value={selectedDate ? format(selectedDate, "HH:mm") : ""}
-            onChange={(event) => setTime(event.target.value)}
-            className="h-8 w-28"
-          />
+        <div className="flex items-center justify-between gap-2 border-t border-border p-3">
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor={timeInputId}
+              className="text-xs text-muted-foreground"
+            >
+              Time
+            </Label>
+            <Input
+              id={timeInputId}
+              type="time"
+              value={selectedDate ? format(selectedDate, "HH:mm") : ""}
+              onChange={(event) => setTime(event.target.value)}
+              className="h-8 w-28"
+            />
+          </div>
+          {deadline ? (
+            <Button
+              variant="ghost"
+              className="h-8 shrink-0 px-2 text-xs app-radius-md"
+              onClick={() => onChange({ deadline: null })}
+            >
+              Clear deadline
+            </Button>
+          ) : null}
         </div>
-        {deadline ? (
-          <Button
-            variant="ghost"
-            className="h-8 px-2 text-xs"
-            onClick={() => onChange({ deadline: null })}
-          >
-            Clear deadline
-          </Button>
-        ) : null}
       </PopoverContent>
     </Popover>
   );

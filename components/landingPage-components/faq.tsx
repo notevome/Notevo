@@ -17,7 +17,7 @@ export default function FAQ() {
         <div className="md:sticky top-16 md:max-w-lg">
           <SectionHeading
             SectionTitle="Frequently Asked Questions"
-            SectionSubTitle="if your interested in learning more about Notevo. "
+            SectionSubTitle="if your interested in learning more about oraizive. "
             classNameSubTitle=" mx-1"
             className=" text-start"
           />

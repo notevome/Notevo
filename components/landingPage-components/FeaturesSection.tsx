@@ -10,39 +10,39 @@ import { useEffect, useRef } from "react";
 const featureVideos: Record<string, { video: string; poster: string }> = {
   "Rich Text Editor": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/notevo-texteditor_wcwq0c.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/oraizive-texteditor_wcwq0c.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/notevo-texteditor_wcwq0c.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031746/oraizive-texteditor_wcwq0c.jpg",
   },
   "Simple Organization": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/notevo-workingspace_vq80uc.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/oraizive-workingspace_vq80uc.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/notevo-workingspace_vq80uc.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032089/oraizive-workingspace_vq80uc.jpg",
   },
   "Don't Loss Ur Stuff": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/notevo-search_dd7jou.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/oraizive-search_dd7jou.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/notevo-search_dd7jou.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1777131625/oraizive-search_dd7jou.jpg",
   },
   "Publish Your Documents": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/oraizive-Publish_xvq0mm.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/notevo-Publish_xvq0mm.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774029719/oraizive-Publish_xvq0mm.jpg",
   },
   "Download Your Stuff": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/notevo-Downloadyoursfuff_zhgjsp.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/oraizive-Downloadyoursfuff_zhgjsp.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/notevo-Downloadyoursfuff_zhgjsp.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774031511/oraizive-Downloadyoursfuff_zhgjsp.jpg",
   },
   "Move Your Documents": {
     video:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/notevo-moveyourstuff_xyxnhr.mp4",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/oraizive-moveyourstuff_xyxnhr.mp4",
     poster:
-      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/notevo-moveyourstuff_xyxnhr.jpg",
+      "https://res.cloudinary.com/dkbwj5yyg/video/upload/q_80,w_900/v1774032857/oraizive-moveyourstuff_xyxnhr.jpg",
   },
 };
 

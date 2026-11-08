@@ -55,7 +55,7 @@ export function SidebarHoverHint({
       <button
         type="button"
         aria-label="Open sidebar"
-        className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-3 cursor-default bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
+        className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-3 cursor-default bg-transparent transition-colors hover:bg-sidebar-border/50 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none rounded-r-xl"
         onMouseEnter={revealSidebar}
         onMouseLeave={cancelReveal}
         onFocus={openSidebarFromEdge}
@@ -68,13 +68,13 @@ export function SidebarHoverHint({
     <>
       <div
         aria-hidden="true"
-        className="fixed left-0 top-12 h-[calc(100svh-6rem)] w-3 z-30 pointer-events-none hidden md:flex items-center justify-center border-2 border-l-0 border-dashed border-muted-foreground bg-muted animate-pulse"
+        className="fixed left-0 top-12 h-[calc(100svh-6rem)] w-3 z-30 pointer-events-none hidden md:flex items-center justify-center border-2 border-l-0 border-dashed border-muted-foreground bg-muted animate-pulse rounded-r-xl"
       />
 
       <button
         type="button"
         aria-label="Hover or click to open sidebar"
-        className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-9 md:w-10 cursor-pointer bg-transparent transition-colors hover:bg-sidebar-border/30 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none"
+        className="fixed left-0 top-12 h-[calc(100svh-6rem)] z-30 hidden w-9 md:w-10 cursor-pointer bg-transparent transition-colors hover:bg-sidebar-border/30 focus-visible:bg-sidebar-border/50 focus-visible:outline-none md:block motion-reduce:transition-none rounded-r-xl"
         onMouseEnter={handleTriggerHover}
         onMouseLeave={cancelReveal}
         onFocus={handleTriggerClick}
@@ -100,7 +100,7 @@ export function SidebarHoverHint({
             }}
             className="fixed left-10 top-1/2 -translate-y-1/2 z-40 select-none hidden md:flex flex-col items-start pointer-events-auto"
           >
-            <div className="group flex items-center gap-2 border border-border bg-card p-1.5 text-foreground transition-all">
+            <div className="group flex items-center gap-2 border border-border bg-card p-1.5 text-foreground transition-all app-radius-lg shadow-md">
               <span className="text-sm font-semibold tracking-tight whitespace-nowrap">
                 hover to open the sidebar
               </span>

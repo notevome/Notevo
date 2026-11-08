@@ -61,7 +61,7 @@ export default function MoreAboutMe() {
                     }}
                   >
                     Something clean, structured, with a rich text editor. That's
-                    what Notevo's trying to be: a minimal, structured, Note
+                    what oraizive's trying to be: a minimal, structured, Note
                     Taking app.
                   </p>
                 </div>
@@ -75,7 +75,7 @@ export default function MoreAboutMe() {
                       className="text-xs text-muted-foreground"
                       style={{ fontStyle: "italic" }}
                     >
-                      Building Notevo
+                      Building oraizive
                     </p>
                   </div>
                 </div>

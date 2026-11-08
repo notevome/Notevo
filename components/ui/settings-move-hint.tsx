@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
 export const SETTINGS_MOVE_HINT_COOKIE = "settings:move-hint-seen";
-export const SETTINGS_MOVE_HINT_STORAGE = "notevo_settings_move_hint_seen";
+export const SETTINGS_MOVE_HINT_STORAGE = "oraizive_settings_move_hint_seen";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 export function useSettingsMoveHint() {
@@ -95,7 +95,7 @@ export function SettingsMoveHint({
               strokeLinejoin="round"
             />
           </svg>
-          <div className="group flex items-center gap-2 border border-border bg-card p-1.5 text-foreground transition-all shadow-md">
+          <div className="group flex items-center gap-2 border border-border bg-card p-1.5 text-foreground transition-all shadow-md app-radius-lg">
             <span className="text-sm font-semibold tracking-tight whitespace-nowrap">
               Move to another folder or table in settings
             </span>

@@ -124,17 +124,17 @@ const noteTitleSchema = z
   .min(1, "Title cannot be empty")
   .max(60, "Title must be 60 characters or less");
 
-const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "notevo_create_note_workspace_id";
+const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "oraizive_create_note_workspace_id";
 const PINNED_SECTION_EXPANDED_STORAGE_KEY =
-  "notevo_sidebar_pinned_section_expanded";
+  "oraizive_sidebar_pinned_section_expanded";
 const PINNED_NOTES_EXPANDED_STORAGE_KEY =
-  "notevo_sidebar_pinned_notes_expanded";
+  "oraizive_sidebar_pinned_notes_expanded";
 const PINNED_UPLOADS_EXPANDED_STORAGE_KEY =
-  "notevo_sidebar_pinned_uploads_expanded";
+  "oraizive_sidebar_pinned_uploads_expanded";
 const PINNED_LINKS_EXPANDED_STORAGE_KEY =
-  "notevo_sidebar_pinned_links_expanded";
+  "oraizive_sidebar_pinned_links_expanded";
 const PINNED_WHITEBOARDS_EXPANDED_STORAGE_KEY =
-  "notevo_sidebar_pinned_whiteboards_expanded";
+  "oraizive_sidebar_pinned_whiteboards_expanded";
 
 function OpenInPaneButton({
   label,
@@ -170,7 +170,7 @@ function OpenInPaneButton({
       <TooltipContent
         side="right"
         sideOffset={5}
-        className="flex justify-center items-center gap-2 !app-radius-none"
+        className="flex justify-center items-center gap-2"
       >
         Open in Pane
         <ShortcutBadge keys="Alt + Click" />
@@ -223,7 +223,7 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
     <SidebarHeader className=" text-foreground">
       <div className="flex items-center justify-between p-1">
         <div className="flex items-center gap-1">
-          <span className="font-semibold text-primary">Notevo</span>
+          <span className="font-semibold text-primary">Oraizive</span>
           <Badge variant="secondary" className="text-[0.5rem] px-1 py-px">
             BETA
           </Badge>
@@ -248,13 +248,13 @@ const SidebarHeaderSection = memo(function SidebarHeaderSection({
             onOpenChange={popupGuard}
             className="w-full h-9 flex items-center"
             buttonClassName={cn(
-              "font-medium h-9 flex-1 justify-start gap-1.5 disabled:before:opacity-40 !app-radius-none",
+              "font-medium h-9 flex-1 justify-start gap-1.5 disabled:before:opacity-40",
               newButtonVariant === "default"
                 ? "disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 : "",
             )}
             chevronClassName={cn(
-              "font-medium h-9 px-2 border-l border-border disabled:before:opacity-40 !app-radius-none",
+              "font-medium h-9 px-2 border-l border-border disabled:before:opacity-40",
               newButtonVariant === "default"
                 ? "disabled:opacity-100 disabled:bg-primary/65 disabled:text-primary-foreground/80"
                 : "",
@@ -524,7 +524,7 @@ const PinnedNoteItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className="!app-radius-none py-[5px]"
+                  className="py-[5px]"
                 >
                   {note.title || "Untitled"}
                 </TooltipContent>
@@ -770,7 +770,7 @@ const PinnedUploadItem = memo(
             currentUrl.pathname = segments.join("/");
             currentUrl.searchParams.delete("pdfId");
             window.history.replaceState({}, "", currentUrl.href);
-            document.title = `${trimmedTitle} - Notevo`;
+            document.title = `${trimmedTitle} - oraizive`;
           }
         } catch (error) {
           console.error("Error updating PDF title:", error);
@@ -877,7 +877,7 @@ const PinnedUploadItem = memo(
                   <TooltipContent
                     side="right"
                     sideOffset={5}
-                    className=" !app-radius-none py-[5px]"
+                    className="py-[5px]"
                   >
                     {pdf.title || "Untitled"}
                   </TooltipContent>
@@ -1126,7 +1126,7 @@ const PinnedWhiteboardItem = memo(
             currentUrl.pathname = segments.join("/");
             currentUrl.searchParams.delete("whiteboardId");
             window.history.replaceState({}, "", currentUrl.href);
-            document.title = `${trimmedTitle} - Notevo`;
+            document.title = `${trimmedTitle} - oraizive`;
           }
         } catch (error) {
           console.error("Error updating whiteboard title:", error);
@@ -1243,7 +1243,7 @@ const PinnedWhiteboardItem = memo(
                   <TooltipContent
                     side="right"
                     sideOffset={5}
-                    className=" !app-radius-none py-[5px]"
+                    className="py-[5px]"
                   >
                     {whiteboard.title || "Untitled"}
                   </TooltipContent>
@@ -1516,7 +1516,7 @@ const PinnedLinkItem = memo(
                 <TooltipContent
                   side="right"
                   sideOffset={5}
-                  className=" !app-radius-none py-[5px]"
+                  className="py-[5px]"
                 >
                   {displayTitle}
                 </TooltipContent>
@@ -2004,7 +2004,7 @@ const WorkspaceItem = memo(
                   <TooltipContent
                     side="right"
                     sideOffset={5}
-                    className="!app-radius-none py-[5px]"
+                    className="py-[5px]"
                   >
                     {workingSpace.name || "Untitled"}
                   </TooltipContent>
@@ -2061,7 +2061,6 @@ const WorkspacesList = memo(function WorkspacesList({
           <SidebarGroupAction
             onClick={handleCreateWorkingSpace}
             {...addWorkspaceTooltip.triggerProps}
-            className=" !app-radius-none"
           >
             <Plus size={16} className=" text-muted-foreground" />{" "}
             <span className="sr-only">New Folder</span>
@@ -2070,7 +2069,7 @@ const WorkspacesList = memo(function WorkspacesList({
         <TooltipContent
           side="right"
           sideOffset={5}
-          className=" text-xs py-0.5 px-1.5 !app-radius-none"
+          className=" text-xs py-0.5 px-1.5"
         >
           New Folder
         </TooltipContent>
@@ -2211,7 +2210,7 @@ const UserAccountSection = memo(function UserAccountSection({
               <div className=" flex flex-col gap-px justify-center items-start px-1.5 pt-0.5 *:text-[10px] leading-4 text-nowrap *:text-muted-foreground/80">
                 <span className=" w-full flex justify-between items-center">
                   <Link
-                    href="https://github.com/notevome/Notevo"
+                    href="https://github.com/oraiziveme/oraizive"
                     target="_blank"
                     className="hover:underline"
                   >
@@ -2235,7 +2234,7 @@ const UserAccountSection = memo(function UserAccountSection({
                     Terms of Service
                   </Link>
                   <Link
-                    href="mailto:support@notevo.me"
+                    href="mailto:support@oraizive.com"
                     target="_blank"
                     className=" hover:underline"
                   >

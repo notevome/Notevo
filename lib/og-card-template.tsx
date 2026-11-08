@@ -160,17 +160,6 @@ export function renderOGCard({ title, preview }: OGCardData) {
 
         <div
           style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: "30px",
-            width: "2px",
-            backgroundColor: "rgba(234, 50, 49, 0.65)",
-          }}
-        />
-
-        <div
-          style={{
             position: "relative",
             display: "flex",
             flexDirection: "column",
@@ -182,54 +171,15 @@ export function renderOGCard({ title, preview }: OGCardData) {
           <p
             style={{
               position: "relative",
-              fontSize: 44,
+              fontSize: 36,
               lineHeight: 0.3,
               fontWeight: 700,
               color: "#644A40",
               letterSpacing: "-0.5px",
-              marginLeft: "65px",
               marginBottom: "60px",
             }}
           >
-            <span
-              style={{
-                position: "absolute",
-                left: "-65px",
-                top: "-24px",
-              }}
-            >
-              <svg
-                width="100"
-                height="100"
-                viewBox="0 0 80 80"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M0.5 0.5H44.5V44.5H0.5V0.5Z"
-                  fill="#F9F9F9"
-                  stroke="#644A40"
-                />
-                <path
-                  d="M3.96191 40.8577L3.96191 44.8577L11.9619 44.8577L11.9619 40.8577L7.96191 40.8577L3.96191 40.8577ZM11.9619 9.07995C11.9619 6.87081 10.1711 5.07995 7.96191 5.07995C5.75277 5.07995 3.96191 6.87081 3.96191 9.07995L7.96191 9.07995L11.9619 9.07995ZM7.96191 40.8577L11.9619 40.8577L11.9619 9.07995L7.96191 9.07995L3.96191 9.07995L3.96191 40.8577L7.96191 40.8577Z"
-                  fill="#644A40"
-                />
-                <path
-                  d="M36.4619 22.9499V4.09275"
-                  stroke="#644A40"
-                  stroke-width="8"
-                  stroke-linecap="square"
-                />
-                <path
-                  d="M10.8945 6.69705C9.70014 5.22942 7.67079 5.1259 6.3331 6.46418C4.96712 7.83089 4.84763 10.1725 6.06727 11.6713L22.5842 31.9675C22.9655 32.436 23.1137 32.6135 23.2806 32.7491C23.4363 32.8755 23.6056 32.9773 23.7835 33.0515C23.9716 33.13 24.1798 33.1687 24.7454 33.2679L28.5881 33.9412L28.3732 29.5691C28.3424 28.9402 28.3289 28.6889 28.2736 28.4561C28.2224 28.2407 28.1447 28.0357 28.0446 27.846C27.9375 27.6431 27.7913 27.46 27.4115 26.9933L10.8945 6.69705Z"
-                  fill="#644A40"
-                  stroke="#644A40"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-            Notevo.me
+            Oraizive.com
           </p>
           <p
             style={{
@@ -241,7 +191,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
               bottom: "0px",
             }}
           >
-            Copyright © 2025-{new Date().getFullYear()} Notevo. All rights
+            Copyright © 2025-{new Date().getFullYear()} oraizive.com All rights
             reserved.
           </p>
 

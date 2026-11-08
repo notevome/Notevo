@@ -443,7 +443,7 @@ const BrowserMockup: React.FC = () => {
     {
       id: 1,
       title: "Try out our rich text editor !",
-      url: "https://notevo.me/",
+      url: "https://oraizive.com/",
       content: content,
     },
   ];

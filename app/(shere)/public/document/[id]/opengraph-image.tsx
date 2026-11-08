@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export const alt = "Notevo Document Preview";
+export const alt = "oraizive Document Preview";
 export const size = {
   width: 1200,
   height: 630,
@@ -29,7 +29,7 @@ export default async function Image({ params }: Props) {
 
   let title = "Untitled document.";
   let preview =
-    "No description. This is a shared document on Notevo. View and read this document on Notevo.";
+    "No description. This is a shared document on oraizive. View and read this document on oraizive.";
 
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;

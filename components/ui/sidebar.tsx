@@ -3,7 +3,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { ChevronsLeft, ChevronsRight } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -408,7 +408,7 @@ const Sidebar = React.memo(
               !hoverOpen &&
               "pointer-events-none opacity-0",
             hoverOpen
-              ? "p-0"
+              ? "p-0 group-data-[hover=true]:rounded-r-xl group-data-[hover=true]:rounded-l-none group-data-[hover=true]:overflow-hidden"
               : variant === "floating" || variant === "inset"
                 ? "py-2 px-0.5 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
                 : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] ",
@@ -529,7 +529,7 @@ const Sidebar = React.memo(
           >
             <div
               data-sidebar="sidebar"
-              className="flex h-full w-full flex-col group-data-[variant=floating]:app-radius-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow group-data-[hover=true]:app-radius-lg group-data-[hover=true]:border group-data-[hover=true]:border-sidebar-border group-data-[hover=true]:shadow"
+              className="flex h-full w-full flex-col group-data-[variant=floating]:app-radius-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow group-data-[hover=true]:rounded-r-xl group-data-[hover=true]:rounded-l-none group-data-[hover=true]:border group-data-[hover=true]:border-l-0 group-data-[hover=true]:border-sidebar-border group-data-[hover=true]:shadow group-data-[hover=true]:overflow-hidden"
             >
               {children}
               {resizeHandle}
@@ -596,7 +596,7 @@ const SidebarTrigger = React.forwardRef<
       data-sidebar="trigger"
       variant="Trigger"
       size="icon"
-      className={cn("h-[20px] w-[20px] text-primary", className)}
+      className={cn("h-[24px] w-[24px] text-primary", className)}
       aria-controls="app-sidebar"
       aria-expanded={isOpen}
       aria-label={
@@ -620,7 +620,11 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      {isFloatingPreview || !isOpen ? <PanelLeftOpen /> : <PanelLeftClose />}
+      {isFloatingPreview || !isOpen ? (
+        <ChevronsRight size={20} />
+      ) : (
+        <ChevronsLeft size={20} />
+      )}
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   );

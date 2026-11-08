@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 export function useNoteWidth() {
   const [noteWidth, setNoteWidth] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("notevo-note-width");
+      const stored = localStorage.getItem("oraizive-note-width");
       return stored === "true" || stored === "false" ? stored : "false";
     }
     return "false";
@@ -13,13 +13,13 @@ export function useNoteWidth() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("notevo-note-width", noteWidth);
+      localStorage.setItem("oraizive-note-width", noteWidth);
     }
   }, [noteWidth]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "notevo-note-width" && e.newValue) {
+      if (e.key === "oraizive-note-width" && e.newValue) {
         setNoteWidth(e.newValue);
       }
     };
@@ -50,7 +50,7 @@ export function useNoteWidth() {
     const newValue = noteWidth === "false" ? "true" : "false";
     setNoteWidth(newValue);
     if (typeof window !== "undefined") {
-      localStorage.setItem("notevo-note-width", newValue);
+      localStorage.setItem("oraizive-note-width", newValue);
       // Dispatch a custom event for same-tab updates
       window.dispatchEvent(
         new CustomEvent("noteWidthChanged", { detail: newValue }),

@@ -15,10 +15,10 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
   const id = resolvedParams?.id;
-  const siteUrl = process.env.SITE_URL || "https://notevo.me";
+  const siteUrl = process.env.SITE_URL || "https://oraizive.com";
 
-  let title = "Document - Notevo";
-  let description = "View and read this shared document on Notevo.";
+  let title = "Document - oraizive";
+  let description = "View and read this shared document on oraizive.";
 
   try {
     const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
       if (note) {
         if (note.title && note.title.trim()) {
-          title = `${note.title.trim()} - Notevo`;
+          title = `${note.title.trim()} - oraizive`;
         }
         if (note.preview && note.preview.trim()) {
           description = note.preview.slice(0, 70).trim() + "...";
@@ -56,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       url: documentUrl,
-      siteName: "Notevo",
+      siteName: "oraizive",
       type: "article",
       images: [
         {

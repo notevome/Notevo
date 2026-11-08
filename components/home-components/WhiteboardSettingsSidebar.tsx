@@ -134,7 +134,7 @@ export default function WhiteboardSettingsSidebar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="pin-whiteboard"
               {...pinTooltip.triggerProps}
             >
@@ -148,7 +148,7 @@ export default function WhiteboardSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className="!app-radius-none"
+            className=""
           >
             {getWhiteboard?.favorite ? "Unpin whiteboard" : "Pin whiteboard"}
           </TooltipContent>
@@ -158,7 +158,7 @@ export default function WhiteboardSettingsSidebar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-whiteboard"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -169,7 +169,7 @@ export default function WhiteboardSettingsSidebar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className=" !app-radius-none"
+            className=""
           >
             Delete whiteboard
           </TooltipContent>

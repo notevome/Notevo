@@ -128,7 +128,7 @@ export default function NoteSettingsSidbar({
             <Button
               onClick={handleFavoritePin}
               variant="SidebarMenuButton"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="pin-note"
               {...pinTooltip.triggerProps}
             >
@@ -142,7 +142,7 @@ export default function NoteSettingsSidbar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className="!app-radius-none"
+            className=""
           >
             {getNote?.favorite ? "Unpin document" : "Pin document"}
           </TooltipContent>
@@ -152,7 +152,7 @@ export default function NoteSettingsSidbar({
           <TooltipTrigger asChild>
             <Button
               variant="SidebarMenuButton_destructive"
-              className="px-1.5 h-7 hover:bg-card !app-radius-none"
+              className="px-1.5 h-7 hover:bg-card"
               aria-label="delete-note"
               {...deleteTooltip.triggerProps}
               onMouseDown={initiateDelete}
@@ -163,7 +163,7 @@ export default function NoteSettingsSidbar({
           <TooltipContent
             side="right"
             sideOffset={5}
-            className=" !app-radius-none"
+            className=""
           >
             Delete document
           </TooltipContent>

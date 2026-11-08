@@ -1,9 +1,10 @@
-export const LAST_VISITED_FOLDER_KEY = "notevo_last_visited_folder_id";
-export const LAST_VISITED_TABLE_KEY = "notevo_last_visited_table_id";
-export const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "notevo_create_note_workspace_id";
+export const LAST_VISITED_FOLDER_KEY = "oraizive_last_visited_folder_id";
+export const LAST_VISITED_TABLE_KEY = "oraizive_last_visited_table_id";
+export const CREATE_NOTE_WORKSPACE_STORAGE_KEY =
+  "oraizive_create_note_workspace_id";
 
 export function getWorkspaceLastVisitedTableKey(folderId: string): string {
-  return `notevo_last_visited_table_${folderId}`;
+  return `oraizive_last_visited_table_${folderId}`;
 }
 
 export function recordLastVisitedLocation(

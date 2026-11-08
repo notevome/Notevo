@@ -106,7 +106,7 @@ const AlertDialogAction = React.forwardRef<
     ref={ref}
     className={cn(
       buttonVariants({ variant: "destructive" }),
-      `h-8   !app-radius-none`,
+      `h-8`,
       className,
     )}
     {...props}

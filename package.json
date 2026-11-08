@@ -1,5 +1,5 @@
 {
-  "name": "notevo",
+  "name": "oraizive",
   "private": true,
   "scripts": {
     "dev": "npm-run-all --parallel dev:frontend dev:backend",

@@ -33,7 +33,7 @@ export const NavLinks = [
 
   {
     Name: "Give our text editor a try.",
-    path: "https://notevo.me/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn",
+    path: "https://oraizive.com/public/document/k57etpnqzy45zav3vf8v38mbcn8856qn",
     clicked: false,
     target: "_blank",
   },
@@ -47,8 +47,8 @@ export const NavLinks = [
 export const AccordionData = [
   {
     id: "1",
-    itmevalue: "notevosfee",
-    trigger: "is notevo free?",
+    itmevalue: "oraizivesfee",
+    trigger: "is oraizive free?",
     content:
       "Well, for now and as long as we're still in beta it's free. But as I add real-time collaboration and AI, there will be a fee for that, but it's going to be $8 a month.",
   },
@@ -129,13 +129,13 @@ export const Features = [
   {
     title: "Simple Organization",
     description:
-      "Organize your thoughts, manage your folders, and boost your productivity with Notevo's intuitive organization system.",
+      "Organize your thoughts, manage your folders, and boost your productivity with oraizive's intuitive organization system.",
     icon: LayoutGrid,
   },
   {
     title: "Don't Loss Ur Stuff",
     description:
-      "Sometimes you forget the name of your document but still remember the name of the folder or table. With Notevo, you can search the full hierarchy.",
+      "Sometimes you forget the name of your document but still remember the name of the folder or table. With oraizive, you can search the full hierarchy.",
     icon: FolderSearch,
   },
   {

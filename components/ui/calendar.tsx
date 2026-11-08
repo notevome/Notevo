@@ -25,20 +25,21 @@ export function Calendar({
         caption_label: "text-sm font-medium",
         nav: "flex items-center justify-between",
         button_previous:
-          "absolute left-3 top-3 inline-flex h-7 w-7 items-center justify-center border border-border bg-background hover:bg-accent",
+          "absolute left-3 top-3 inline-flex h-7 w-7 items-center justify-center app-radius-md border border-border bg-background hover:bg-accent",
         button_next:
-          "absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center border border-border bg-background hover:bg-accent",
-        month_grid: "w-full border-collapse space-y-1",
+          "absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center app-radius-md border border-border bg-background hover:bg-accent",
+        month_grid: "w-full border-separate border-spacing-0 space-y-1",
         weekdays: "flex",
         weekday:
           "w-9 text-center text-[0.8rem] font-normal text-muted-foreground",
         week: "mt-1 flex w-full",
-        day: "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20",
+        day: "relative h-9 w-9 p-0 text-center text-sm focus-within:relative focus-within:z-20 app-radius-md",
         day_button:
           "inline-flex h-9 w-9 items-center justify-center app-radius-md hover:bg-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         selected:
           "bg-primary text-primary-foreground app-radius-md hover:bg-primary hover:text-primary-foreground",
-        today: "bg-accent text-accent-foreground",
+        today:
+          "[&:not([data-selected])]:bg-accent [&:not([data-selected])]:text-accent-foreground app-radius-md",
         outside: "text-muted-foreground opacity-50",
         disabled: "text-muted-foreground opacity-50",
         hidden: "invisible",

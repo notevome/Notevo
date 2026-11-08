@@ -8,7 +8,9 @@ if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   console.error = (...args: unknown[]) => {
     if (
       typeof args[0] === "string" &&
-      args[0].includes("Encountered a script tag while rendering React component")
+      args[0].includes(
+        "Encountered a script tag while rendering React component",
+      )
     ) {
       return;
     }
@@ -23,7 +25,7 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
-      storageKey="notevo-theme"
+      storageKey="oraizive-theme"
       {...props}
     >
       {children}

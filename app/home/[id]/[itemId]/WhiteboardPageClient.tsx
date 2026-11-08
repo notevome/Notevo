@@ -166,7 +166,7 @@ export default function WhiteboardPageClient({
   useEffect(() => {
     if (!whiteboard?.title) return;
     const originalTitle = document.title;
-    document.title = `${whiteboard.title} - Notevo Whiteboard`;
+    document.title = `${whiteboard.title} - oraizive Whiteboard`;
 
     try {
       const currentUrl = new URL(window.location.href);
@@ -210,7 +210,6 @@ export default function WhiteboardPageClient({
 
   return (
     <div className="whiteboard-canvas group relative h-full min-h-[calc(100vh-5rem)] min-w-full overflow-hidden bg-background">
-
       <Excalidraw
         key={whiteboardId}
         initialData={parseSnapshot(whiteboard?.snapshot)}

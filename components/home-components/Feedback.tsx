@@ -91,7 +91,7 @@ export default function Feedback() {
       <DialogContent>
         <DialogTitle>Send Feedback</DialogTitle>
         <DialogDescription className="sr-only">
-          Share feedback, feature requests, or suggestions about Notevo.
+          Share feedback, feature requests, or suggestions about oraizive.
         </DialogDescription>
         {submitted ? (
           <div className="py-6 text-center text-green-600 font-medium">

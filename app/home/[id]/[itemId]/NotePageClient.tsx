@@ -207,14 +207,14 @@ export default function NotePageClient({
     if (!stableNote?.title) return;
 
     const originalTitle = document.title;
-    document.title = `${stableNote.title} - Notevo`;
+    document.title = `${stableNote.title} - oraizive`;
 
     let metaDescription = document.querySelector('meta[name="description"]');
     const originalContent = metaDescription?.getAttribute("content");
 
     const descriptionText = stableNote.body
       ? `${stableNote.title}: ${stableNote.body.substring(0, 150)}...`
-      : `View and edit "${stableNote.title}" on Notevo`;
+      : `View and edit "${stableNote.title}" on oraizive`;
 
     let createdMeta = false;
 

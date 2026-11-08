@@ -1215,7 +1215,7 @@ export default function SearchDialog({
                     type="button"
                     onClick={() => setCategory(tab.key)}
                     className={cn(
-                      "shrink-0 border px-2 py-0.5 font-medium transition-colors",
+                      "shrink-0 border px-2 py-0.5 font-medium transition-colors app-radius-md",
                       category === tab.key
                         ? "border-border bg-muted text-foreground"
                         : "border-dashed border-border bg-transparent text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground",

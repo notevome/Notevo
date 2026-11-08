@@ -1,19 +1,14 @@
 import { MetadataRoute } from "next";
 
-const siteUrl = "https://notevo.me/";
+const siteUrl = "https://oraizive.com/";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = [
-    "",
-    "/privacy-policy",
-    "/terms-of-service",
-  ];
+  const routes = ["", "/privacy-policy", "/terms-of-service"];
 
   return routes.map((route) => ({
     url: `${siteUrl}${route}`,
     lastModified: new Date(),
-    changeFrequency: route === "" ? "daily" : "monthly" as const,
+    changeFrequency: route === "" ? "daily" : ("monthly" as const),
     priority: route === "" ? 1 : 0.7,
   }));
 }
-

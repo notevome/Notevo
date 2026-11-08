@@ -64,7 +64,7 @@ import {
 
 type PreferredAction = "note" | "upload" | "link" | "whiteboard";
 
-const STORAGE_KEY = "notevo_workspace_primary_create_action";
+const STORAGE_KEY = "oraizive_workspace_primary_create_action";
 
 const PLATFORM_LABELS: Record<LinkPlatform, string> = {
   youtube: "YouTube",
@@ -357,7 +357,7 @@ export default function FolderNewDropdownBtn({
     }
     if (typeof window !== "undefined") {
       window.dispatchEvent(
-        new CustomEvent("notevo:open-insert-link", {
+        new CustomEvent("oraizive:open-insert-link", {
           detail:
             resolvedWorkingSpaceId && notesTableId
               ? {
@@ -429,18 +429,13 @@ export default function FolderNewDropdownBtn({
         onChange={(event) => void handleFileChange(event)}
       />
 
-      <div
-        className={cn(
-          "flex h-9 items-center overflow-hidden !app-radius-none",
-          className,
-        )}
-      >
+      <div className={cn("flex h-9 items-center overflow-hidden", className)}>
         <Button
           type="button"
           variant={variant}
           onClick={() => void handlePrimaryAction()}
           disabled={isDisabled}
-          className={cn("h-9 !app-radius-none", buttonClassName)}
+          className={cn("h-9 app-radius-l-lg", buttonClassName)}
         >
           {showIcon && (
             <SquarePen
@@ -459,7 +454,7 @@ export default function FolderNewDropdownBtn({
               variant={variant}
               disabled={isDisabled}
               className={cn(
-                "h-9 px-1 border-l-0 !app-radius-none",
+                "h-9 px-1 border-l-0 app-radius-r-lg",
                 chevronClassName,
               )}
               aria-label="open-create-menu"
@@ -467,7 +462,7 @@ export default function FolderNewDropdownBtn({
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72">
+          <DropdownMenuContent align="end" className="w-72 ml-2">
             <DropdownMenuItem
               className="justify-between cursor-pointer"
               onClick={() => void handleSelectNote()}
@@ -799,12 +794,12 @@ export function GlobalCreateHandler() {
       recordLastVisitedLocation(target.folderId, target.tableId);
     };
     window.addEventListener(
-      "notevo:active-table-change",
+      "oraizive:active-table-change",
       handleActiveTableChange,
     );
     return () =>
       window.removeEventListener(
-        "notevo:active-table-change",
+        "oraizive:active-table-change",
         handleActiveTableChange,
       );
   }, []);
@@ -826,10 +821,10 @@ export function GlobalCreateHandler() {
       }
       handleOpenInsertLink(target);
     };
-    window.addEventListener("notevo:open-insert-link", handleOpenLinkEvent);
+    window.addEventListener("oraizive:open-insert-link", handleOpenLinkEvent);
     return () =>
       window.removeEventListener(
-        "notevo:open-insert-link",
+        "oraizive:open-insert-link",
         handleOpenLinkEvent,
       );
   }, [getLinkCreationTarget, handleOpenInsertLink]);
@@ -838,9 +833,9 @@ export function GlobalCreateHandler() {
     const handleCreateNoteEvent = () => {
       void handleCreateNote();
     };
-    window.addEventListener("notevo:create-note", handleCreateNoteEvent);
+    window.addEventListener("oraizive:create-note", handleCreateNoteEvent);
     return () =>
-      window.removeEventListener("notevo:create-note", handleCreateNoteEvent);
+      window.removeEventListener("oraizive:create-note", handleCreateNoteEvent);
   }, [handleCreateNote]);
 
   const detectedPlatform = useMemo(() => {
@@ -998,7 +993,7 @@ export function GlobalCreateHandler() {
           <Button
             onClick={() => void handleInsertLink()}
             disabled={isInsertingLink || !linkUrl.trim()}
-            className=" h-8 !app-radius-none"
+            className="h-8"
           >
             {isInsertingLink ? "Inserting..." : "Insert Link"}
           </Button>

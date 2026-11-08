@@ -232,7 +232,7 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
         }}
       />
       <main
-        className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "app-radius-lg border-t border-l mt-3" : ""} app-radius-none`}
+        className={`relative flex min-h-0 flex-col flex-1 border-border bg-background transition-[margin,border-radius] duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "rounded-tl-lg overflow-hidden border-t border-l mt-3" : ""}`}
       >
         <div className="z-30 absolute top-0 left-0 w-full flex items-center justify-start gap-3 mx-auto bg-none app-radius-lg border-none">
           <div className="flex justify-between items-center w-full px-3.5 ">

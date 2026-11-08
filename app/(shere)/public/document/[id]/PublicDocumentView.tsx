@@ -46,8 +46,8 @@ export default function PublicDocumentView() {
 
   const getThemeIcon = () => {
     if (resolvedTheme === "light")
-      return <Sun className="h-[1.2rem] w-[1.2rem]" />;
-    return <Moon className="h-[1.2rem] w-[1.2rem]" />;
+      return <Sun className="h-4 w-4" />;
+    return <Moon className="h-4 w-4" />;
   };
 
   const params = useParams();
@@ -98,86 +98,92 @@ export default function PublicDocumentView() {
 
       <header className=" sticky top-0 left-0 w-full z-30">
         <div className=" px-2 py-2.5 flex justify-between items-center bg-gradient-to-b from-background from-20% to-transparent w-full">
-          <p className=" flex flex-col justify-center items-start text-md text-foreground w-full px-1.5 mt-1.5 h-8">
-            {PublicNoteTitle}
-            <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground ">
+          <p className=" flex flex-col justify-center items-start text-md text-foreground min-w-0 flex-1 px-1.5 mt-1.5 h-8">
+            <span className="truncate w-full">{PublicNoteTitle}</span>
+            <span className="px-0.5 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground truncate w-full">
               Created {formatNoteTimestamp(getNote.createdAt)} - Last updated{" "}
               {formatNoteTimestamp(getNote.updatedAt)}
             </span>
           </p>
-          <div className="flex justify-end items-center gap-0 w-full">
-            {!isMobile && (
-              <>
-                <Tooltip open={noteWidthTooltip.open}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-8 h-8 pt-0.5"
-                      size="icon"
-                      onClick={toggleWidth}
-                      aria-label="toggle-note-width"
-                      {...noteWidthTooltip.triggerProps}
+          <div className="flex items-center w-auto justify-end shrink-0">
+            <div className="flex h-9 items-center border border-border app-radius-lg overflow-hidden">
+              {!isMobile && (
+                <>
+                  <Tooltip open={noteWidthTooltip.open}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="SidebarMenuButton"
+                        size="sm"
+                        className="h-9 px-3 justify-center app-radius-l-lg bg-background hover:bg-muted"
+                        onClick={toggleWidth}
+                        aria-label="toggle-note-width"
+                        {...noteWidthTooltip.triggerProps}
+                      >
+                        {noteWidth === "false" ? (
+                          <ChevronsLeftRightEllipsis className="h-4 w-4" />
+                        ) : (
+                          <ChevronsRightLeft className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      align="end"
+                      side="bottom"
+                      className=" text-xs py-0.5 px-1.5"
                     >
-                      {noteWidth === "false" ? (
-                        <>
-                          <ChevronsLeftRightEllipsis className="h-[1.4rem] w-[1.4rem]" />
-                        </>
-                      ) : (
-                        <>
-                          <ChevronsRightLeft className="h-[1.4rem] w-[1.4rem]" />
-                        </>
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    align="end"
-                    side="bottom"
-                    className=" text-xs py-0.5 px-1.5"
-                  >
-                    {noteWidth === "false" ? <>Full width</> : <>Max width</>}
-                  </TooltipContent>
-                </Tooltip>
-                <NoteDownloadDropdown
-                  className=" !app-radius-none"
-                  noteBody={JSON.stringify(content)}
-                  noteTitle={getNote.title ?? "note"}
-                />
-              </>
-            )}
+                      {noteWidth === "false" ? <>Full width</> : <>Max width</>}
+                    </TooltipContent>
+                  </Tooltip>
+                  <NoteDownloadDropdown
+                    variant="SidebarMenuButton"
+                    size="sm"
+                    className="h-9 px-3 justify-center border-l border-border app-radius-none bg-background hover:bg-muted"
+                    noteBody={JSON.stringify(content)}
+                    noteTitle={getNote.title ?? "note"}
+                  />
+                </>
+              )}
 
-            <Tooltip open={themeTooltip.open}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={`w-8 h-8 pt-0.5 ${isMobile ? "" : "!app-radius-none"} `}
-                  size="icon"
-                  onClick={cycleTheme}
-                  {...themeTooltip.triggerProps}
+              <Tooltip open={themeTooltip.open}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="SidebarMenuButton"
+                    size="sm"
+                    className={cn(
+                      "h-9 px-3 justify-center bg-background hover:bg-muted app-radius-none",
+                      isMobile && "app-radius-l-lg",
+                      !isMobile && "border-l border-border",
+                    )}
+                    onClick={cycleTheme}
+                    {...themeTooltip.triggerProps}
+                  >
+                    {getThemeIcon()}
+                    <span className="sr-only">Toggle theme</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  align="end"
+                  side="bottom"
+                  className=" text-xs py-0.5 px-1.5"
                 >
-                  {getThemeIcon()}
-                  <span className="sr-only">Toggle theme</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                align="end"
-                side="bottom"
-                className=" text-xs py-0.5 px-1.5"
+                  Toggle theme
+                </TooltipContent>
+              </Tooltip>
+
+              <Button
+                variant="SidebarMenuButton"
+                size="sm"
+                className="h-9 px-2.5 justify-center app-radius-r-lg border-l border-border bg-secondary/70 hover:bg-secondary text-sm"
+                asChild
               >
-                Toggle theme
-              </TooltipContent>
-            </Tooltip>
-            <Button
-              variant="outline"
-              className="text-sm px-1.5 py-1.5 h-8 bg-secondary/70 hover:bg-secondary !app-radius-none"
-            >
-              <Link
-                href="https://notevo.me/"
-                target="_blank"
-                className="flex justify-between items-center gap-2 group"
-              >
-                Get Notevo
-              </Link>
-            </Button>
+                <Link
+                  href="https://oraizive.com/"
+                  target="_blank"
+                >
+                  Get oraizive
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
