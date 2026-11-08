@@ -19,7 +19,7 @@ export const ResendMagicLink = Resend({
         <td style="text-align:center; padding-bottom:12px;">
           <!-- Logo centered -->
           <img
-            src="https://oraizive.com/favicon.png"
+            src="https://www.oraizive.com/favicon.png"
             alt="oraizive Logo"
             width="50"
             style="display:inline-block;"
