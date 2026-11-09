@@ -755,6 +755,11 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
     border-bottom-right-radius: 0 !important;
   }
 
+  .app-radius-r-none {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+  }
+
   .app-radius-l-lg {
     border-radius: var(--radius) 0 0 var(--radius) !important;
   }
