@@ -75,7 +75,7 @@ export default function PrivacyPage() {
               </p>
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary leading-tight tracking-tight mb-3">
-              oraizive Privacy Policy
+              Oraizive Privacy Policy
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
               oraizive (&quot;we,&quot; &quot;us,&quot; or &quot;our&quot;)
