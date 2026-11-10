@@ -95,7 +95,7 @@ export function FolderItemGridCardContent({
       {isSocialLink && !hasRealThumbnail && link?.url && (
         <LinkFaviconBadge
           url={link.url}
-          className="absolute bottom-2 right-2 z-10 h-7 w-7"
+          className="absolute bottom-2 right-2 z-10 h-7 w-7 "
         />
       )}
       <CardHeader className="pb-3">
@@ -170,7 +170,7 @@ export function FolderItemGridCardContent({
                 </div>
               )}
             {item.kind === "link" && link?.url && (
-              <div className="w-full shrink-0 overflow-hidden">
+              <div className="w-full shrink-0 overflow-hidden ">
                 <LinkThumbnail link={link} showFaviconBadge />
               </div>
             )}
@@ -179,15 +179,16 @@ export function FolderItemGridCardContent({
             >
               {renderText(subtitle || "")}
             </p>
-            {item.kind !== "link" && (item.status || item.priority || item.deadline) && (
-              <div className="mt-2">
-                <ItemPropertiesBadges
-                  status={item.status}
-                  priority={item.priority}
-                  deadline={item.deadline}
-                />
-              </div>
-            )}
+            {item.kind !== "link" &&
+              (item.status || item.priority || item.deadline) && (
+                <div className="mt-2">
+                  <ItemPropertiesBadges
+                    status={item.status}
+                    priority={item.priority}
+                    deadline={item.deadline}
+                  />
+                </div>
+              )}
           </>
         )}
       </CardContent>
