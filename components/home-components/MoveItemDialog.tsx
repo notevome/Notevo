@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
   ChevronRight,
-  FileSymlink,
   Folder,
   FolderOpen,
   Plus,
   Search,
+  FileSymlink,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "@/cache/useQuery";
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
@@ -28,15 +30,21 @@ import {
 import CreateTableBtn from "./CreateTableBtn";
 import IntentPrefetchLink from "../IntentPrefetchLink";
 
-interface MoveLinkDialogProps {
+export type MoveItemKind = "note" | "document" | "pdf" | "link" | "whiteboard";
+
+export interface MoveItemData {
+  _id: Id<any>;
+  kind: MoveItemKind;
+  title?: string;
+  slug?: string;
+  workingSpaceId?: Id<"folders">;
+  notesTableId?: Id<"tables">;
+}
+
+interface MoveItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  link: {
-    _id: Id<"links">;
-    title?: string;
-    workingSpaceId?: Id<"folders">;
-    notesTableId?: Id<"tables">;
-  };
+  item: MoveItemData;
 }
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
@@ -56,52 +64,44 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
-export default function MoveLinkDialog({
+const kindLabels: Record<MoveItemKind, { singular: string; title: string }> = {
+  note: { singular: "document", title: "Move document" },
+  document: { singular: "document", title: "Move document" },
+  pdf: { singular: "upload", title: "Move PDF" },
+  link: { singular: "link", title: "Move link" },
+  whiteboard: { singular: "whiteboard", title: "Move whiteboard" },
+};
+
+export default function MoveItemDialog({
   open,
   onOpenChange,
-  link,
-}: MoveLinkDialogProps) {
-  const { toast } = useToast();
+  item,
+}: MoveItemDialogProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>(
-    [],
-  );
+  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const moveTargets = useQuery(api.documents.getWorkspaceTreeForMove, {
     searchQuery: debouncedQuery || undefined,
   }) as any[] | undefined;
 
-  const moveLink = useMutation(api.links.moveLink).withOptimisticUpdate(
-    (local, args) => {
-      const currentLink = local.getQuery(api.links.getLinkById, {
-        _id: args._id,
-      });
-
-      if (!currentLink) return;
-
-      local.setQuery(
-        api.links.getLinkById,
-        { _id: args._id },
-        {
-          ...currentLink,
-          workingSpaceId: args.targetWorkingSpaceId,
-          notesTableId: args.targetNotesTableId,
-          updatedAt: Date.now(),
-        },
-      );
-    },
-  );
+  const moveNote = useMutation(api.documents.moveNote);
+  const movePdf = useMutation(api.pdfs.movePdf);
+  const moveLink = useMutation(api.links.moveLink);
+  const moveWhiteboard = useMutation(api.whiteboards.moveWhiteboard);
   const createWorkingSpace = useMutation(api.folders.createFolder);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
     }, 250);
-
     return () => clearTimeout(timer);
   }, [query]);
 
@@ -111,7 +111,7 @@ export default function MoveLinkDialog({
     setQuery("");
     setDebouncedQuery("");
     setExpandedWorkspaceIds(
-      link.workingSpaceId ? [String(link.workingSpaceId)] : [],
+      item.workingSpaceId ? [String(item.workingSpaceId)] : [],
     );
     setIsCreatingWorkspace(false);
     setMovingTableId(null);
@@ -121,7 +121,7 @@ export default function MoveLinkDialog({
     }, 20);
 
     return () => clearTimeout(timer);
-  }, [open, link.workingSpaceId]);
+  }, [open, item.workingSpaceId]);
 
   useEffect(() => {
     if (!debouncedQuery || !moveTargets) return;
@@ -153,7 +153,7 @@ export default function MoveLinkDialog({
           : [...prev, String(workspaceId)],
       );
     } catch (error) {
-      console.error("Failed to create workspace:", error);
+      console.error("Failed to create folder:", error);
     } finally {
       setIsCreatingWorkspace(false);
     }
@@ -163,36 +163,95 @@ export default function MoveLinkDialog({
     targetWorkingSpaceId: Id<"folders">,
     targetNotesTableId: Id<"tables">,
   ) => {
+    const kindInfo = kindLabels[item.kind] || kindLabels.document;
     try {
       setMovingTableId(String(targetNotesTableId));
-      const result = await moveLink({
-        _id: link._id,
-        targetWorkingSpaceId,
-        targetNotesTableId,
-      });
+
+      let destinationHref: string | null = null;
+      let prefetchId: Id<"documents"> | undefined;
+
+      if (item.kind === "note" || item.kind === "document") {
+        const result = await moveNote({
+          _id: item._id as Id<"documents">,
+          targetWorkingSpaceId,
+          targetNotesTableId,
+        });
+        const noteSlug = buildItemSlug(item.title || result.slug, item._id);
+        destinationHref = `/home/${result.workingSpaceId}/${noteSlug}`;
+        prefetchId = item._id as Id<"documents">;
+
+        const currentItemId =
+          searchParams.get("id") ||
+          extractIdFromSlug(pathname.split("/").filter(Boolean).pop());
+        if (currentItemId === String(item._id)) {
+          router.replace(destinationHref);
+        }
+      } else if (item.kind === "pdf") {
+        const result = await movePdf({
+          _id: item._id as Id<"pdfs">,
+          targetWorkingSpaceId,
+          targetNotesTableId,
+        });
+        const pdfSlug = buildItemSlug(
+          result.title || item.title || "untitled-pdf",
+          item._id,
+        );
+        destinationHref = `/home/${result.workingSpaceId}/${pdfSlug}`;
+
+        const currentItemId =
+          searchParams.get("pdfId") ||
+          extractIdFromSlug(pathname.split("/").filter(Boolean).pop());
+        if (currentItemId === String(item._id)) {
+          router.replace(destinationHref);
+        }
+      } else if (item.kind === "link") {
+        const result = await moveLink({
+          _id: item._id as Id<"links">,
+          targetWorkingSpaceId,
+          targetNotesTableId,
+        });
+        destinationHref = `/home/${result.workingSpaceId}?linkId=${item._id}`;
+      } else if (item.kind === "whiteboard") {
+        await moveWhiteboard({
+          _id: item._id as Id<"whiteboards">,
+          targetWorkingSpaceId,
+          targetNotesTableId,
+        });
+        const wbSlug = buildItemSlug(item.title || "untitled-whiteboard", item._id);
+        destinationHref = `/home/${targetWorkingSpaceId}/${wbSlug}`;
+
+        const currentItemId =
+          searchParams.get("whiteboardId") ||
+          extractIdFromSlug(pathname.split("/").filter(Boolean).pop());
+        if (currentItemId === String(item._id)) {
+          router.replace(destinationHref);
+        }
+      }
+
       onOpenChange(false);
 
       toast({
         variant: "default",
-        title: "Link moved successfully",
-        description: "Jump straight to the link in its new location.",
-        action: (
+        title: `${kindInfo.singular.charAt(0).toUpperCase() + kindInfo.singular.slice(1)} moved successfully`,
+        description: `Your ${kindInfo.singular} is now in its new location.`,
+        action: destinationHref ? (
           <Button variant="secondary" className="px-3 h-8" size="sm" asChild>
             <IntentPrefetchLink
-              href={`/home/${result.workingSpaceId}?linkId=${link._id}`}
-              className="flex justify-center items-center gap-2"
+              href={destinationHref}
+              prefetchNoteId={prefetchId}
+              className="flex justify-center items-center gap-2 text-xs"
             >
               <FileSymlink size={16} />
               Checkout
             </IntentPrefetchLink>
           </Button>
-        ),
+        ) : undefined,
       });
     } catch (error) {
-      console.error("Failed to move link:", error);
+      console.error(`Failed to move ${kindInfo.singular}:`, error);
       toast({
         variant: "destructive",
-        title: "Failed to move link",
+        title: `Failed to move ${kindInfo.singular}`,
         description: "Try again later",
       });
     } finally {
@@ -200,27 +259,30 @@ export default function MoveLinkDialog({
     }
   };
 
+  const kindInfo = kindLabels[item.kind] || kindLabels.document;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 overflow-hidden bg-muted border-border md:min-w-[500px] gap-0 shadow-2xl">
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-border">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground mb-1">
-            Move link
+            {kindInfo.title}
           </p>
           <DialogTitle className="text-[15px] font-medium text-foreground leading-snug">
-            {link.title || "Untitled"}
+            {item.title || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
             Select a destination table in this folder or any other folder.
           </DialogDescription>
         </DialogHeader>
+
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-1 bg-muted">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
             <Input
               ref={searchInputRef}
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(e) => setQuery(e.target.value)}
               placeholder="Search folders and tables..."
               className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
@@ -238,7 +300,7 @@ export default function MoveLinkDialog({
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            Workspace
+            Folder
           </Button>
         </div>
 
@@ -248,7 +310,7 @@ export default function MoveLinkDialog({
               {Array.from({ length: 6 }).map((_, index) => (
                 <div
                   key={index}
-                  className="h-10 app-radius-lg bg-border animate-pulse"
+                  className="h-10 animate-pulse app-radius-lg bg-border"
                 />
               ))}
             </div>
@@ -261,7 +323,7 @@ export default function MoveLinkDialog({
                   : "No folders found"}
               </p>
               <p className="mt-1">
-                Create a workspace or table, then move this link there.
+                Create a folder or table, then move this {kindInfo.singular} there.
               </p>
             </div>
           ) : (
@@ -270,12 +332,13 @@ export default function MoveLinkDialog({
                 const workspaceId = String(workspace._id);
                 const isExpanded = expandedWorkspaceIds.includes(workspaceId);
                 const tables = workspace.tables ?? [];
+
                 return (
                   <div
                     key={workspace._id}
-                    className=" relative overflow-hidden app-radius-lg transition-colors"
+                    className="relative overflow-hidden app-radius-lg transition-colors"
                   >
-                    <div className=" absolute left-3.5 top-8 h-full w-px bg-border" />
+                    <div className="absolute left-3.5 top-8 h-full w-px bg-border" />
                     <Button
                       variant="ghost"
                       size="sm"
@@ -324,15 +387,15 @@ export default function MoveLinkDialog({
                         ) : (
                           tables.map((table: any) => {
                             const isCurrentTarget =
-                              link.workingSpaceId === workspace._id &&
-                              link.notesTableId === table._id;
+                              item.workingSpaceId === workspace._id &&
+                              item.notesTableId === table._id;
                             const isMoving =
                               movingTableId === String(table._id);
 
                             return (
                               <div
                                 key={table._id}
-                                className="flex w-full items-center justify-between mx-auto text-left "
+                                className="flex w-full items-center justify-between mx-auto text-left"
                               >
                                 <button
                                   key={table._id}
@@ -341,6 +404,7 @@ export default function MoveLinkDialog({
                                     handleMove(workspace._id, table._id)
                                   }
                                   disabled={isCurrentTarget || isMoving}
+                                  aria-label="handle-move-target"
                                   className={cn(
                                     "flex w-full items-center justify-between app-radius-lg mx-4 px-2 py-2 text-left transition-colors",
                                     isCurrentTarget

@@ -38,8 +38,7 @@ import { buildItemSlug } from "@/lib/slug";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import NoteSettings from "@/components/home-components/NoteSettings";
-import PdfSettings from "@/components/home-components/PdfSettings";
+import ItemSettingsMenu from "@/components/home-components/ItemSettingsMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export type HomePaneItem =
@@ -393,9 +392,10 @@ function HomePaneDrawer({
               </DrawerTitle>
             </div>
             {activeItem?.type === "note" && (
-              <NoteSettings
-                noteId={activeItem.id}
-                noteTitle={getPaneTitle(activeItem)}
+              <ItemSettingsMenu
+                itemId={activeItem.id}
+                itemKind="note"
+                itemTitle={getPaneTitle(activeItem)}
                 IconVariant="horizontal_icon"
                 ShowWidthOp={false}
                 DropdownMenuContentAlign="end"
@@ -403,9 +403,10 @@ function HomePaneDrawer({
               />
             )}
             {activeItem?.type === "pdf" && (
-              <PdfSettings
-                pdfId={activeItem.id}
-                pdfTitle={getPaneTitle(activeItem)}
+              <ItemSettingsMenu
+                itemId={activeItem.id}
+                itemKind="pdf"
+                itemTitle={getPaneTitle(activeItem)}
                 iconVariant="horizontal_icon"
                 dropdownMenuContentAlign="end"
                 tooltipContentAlign="end"

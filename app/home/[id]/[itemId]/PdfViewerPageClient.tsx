@@ -48,7 +48,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
-import PdfSettings from "@/components/home-components/PdfSettings";
+import ItemSettingsMenu from "@/components/home-components/ItemSettingsMenu";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { useDebouncedCallback } from "use-debounce";
 import { useToast } from "@/hooks/use-toast";
@@ -906,9 +906,10 @@ function PdfViewerContent({
               <span className="flex items-center gap-0">
                 <PageNavigator attachEnd={!renderedInPane || canDragToolbar} />
                 {!renderedInPane && (
-                  <PdfSettings
-                    pdfId={pdfId}
-                    pdfTitle={pdftitle}
+                  <ItemSettingsMenu
+                    itemId={pdfId}
+                    itemKind="pdf"
+                    itemTitle={pdftitle}
                     iconVariant="horizontal_icon"
                     dropdownMenuContentAlign="end"
                     tooltipContentAlign="end"

@@ -45,11 +45,8 @@ import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
-import PdfSettings from "@/components/home-components/PdfSettings";
 import TableSettings from "@/components/home-components/TableSettings";
-import NoteSettings from "@/components/home-components/NoteSettings";
-import LinkSettings from "@/components/home-components/LinkSettings";
-import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
+import ItemSettingsMenu, { ItemSettingsKind } from "@/components/home-components/ItemSettingsMenu";
 import NoteContextMenu from "@/components/home-components/NoteContextMenu";
 import {
   FolderItemGridCardContent,
@@ -3620,56 +3617,19 @@ function WorkspaceItemSettings({
   contextMenuPosition?: { x: number; y: number } | null;
   onContextMenuClose?: () => void;
 }) {
-  if (item.kind === "whiteboard")
-    return (
-      <WhiteboardSettings
-        whiteboard={item as WhiteboardItem}
-        onDelete={onDelete}
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={onContextMenuClose}
-      />
-    );
-  if (item.kind === "pdf")
-    return (
-      <PdfSettings
-        pdfId={item._id as Id<"pdfs">}
-        pdfTitle={(item as PdfItem).title}
-        iconVariant="vertical_icon"
-        dropdownMenuContentAlign="start"
-        tooltipContentAlign="start"
-        onDelete={onDelete}
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={onContextMenuClose}
-      />
-    );
-  if (item.kind === "link")
-    return (
-      <LinkSettings
-        linkId={item._id as Id<"links">}
-        linkUrl={(item as LinkItem).url}
-        linkTitle={(item as LinkItem).title}
-        favorite={(item as LinkItem).favorite}
-        createdAt={item.createdAt}
-        updatedAt={item.updatedAt}
-        iconVariant="vertical_icon"
-        dropdownMenuContentAlign="start"
-        tooltipContentAlign="start"
-        onDelete={onDelete}
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={onContextMenuClose}
-      />
-    );
-  const note = item as Note;
   return (
-    <NoteSettings
-      noteId={note._id}
-      noteTitle={note.title}
-      ShowWidthOp={false}
-      IconVariant="vertical_icon"
-      DropdownMenuContentAlign="start"
-      TooltipContentAlign="start"
+    <ItemSettingsMenu
+      itemId={item._id}
+      itemKind={item.kind as ItemSettingsKind}
+      itemTitle={item.title}
+      initialData={item}
+      iconVariant="vertical_icon"
+      dropdownMenuContentAlign="start"
+      tooltipContentAlign="start"
       onDelete={onDelete}
-      BtnClassName="pt-0"
+      contextMenuPosition={contextMenuPosition}
+      onContextMenuClose={onContextMenuClose}
+      btnClassName={item.kind === "note" ? "pt-0" : undefined}
     />
   );
 }

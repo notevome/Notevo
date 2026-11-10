@@ -17,9 +17,7 @@ import AppSidebar from "@/components/home-components/AppSidebar";
 import BreadcrumbWithCustomSeparator from "@/components/home-components/BreadcrumbWithCustomSeparator";
 import GlobalFolderDropUpload from "@/components/home-components/GlobalFolderDropUpload";
 import { MobileWarning } from "@/components/ui/mobile-warning";
-import NoteSettings from "@/components/home-components/NoteSettings";
-import PdfSettings from "@/components/home-components/PdfSettings";
-import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
+import ItemSettingsMenu from "@/components/home-components/ItemSettingsMenu";
 import SearchDialog from "@/components/home-components/SearchDialog";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -246,21 +244,24 @@ const HomeContent = memo(({ children }: { children: ReactNode }) => {
               {!isPdfRoute && !isWhiteboardRoute && noteid && noteTitle && (
                 <span className=" flex justify-between items-center gap-2">
                   <PublicNote noteId={noteid} noteTitle={noteTitle} />
-                  <NoteSettings
-                    noteId={noteid}
-                    noteTitle={noteTitle}
-                    ShowWidthOp={true}
-                    IconVariant="horizontal_icon"
-                    DropdownMenuContentAlign="end"
-                    TooltipContentAlign="end"
+                  <ItemSettingsMenu
+                    itemId={noteid}
+                    itemKind="note"
+                    itemTitle={noteTitle}
+                    showWidthOption={true}
+                    iconVariant="horizontal_icon"
+                    dropdownMenuContentAlign="end"
+                    tooltipContentAlign="end"
                   />
                 </span>
               )}
               {whiteboardId && (
-                <WhiteboardSettings
-                  whiteboardId={whiteboardId}
-                  IconVariant="horizontal_icon"
-                  className={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"} right-2`}
+                <ItemSettingsMenu
+                  itemId={whiteboardId}
+                  itemKind="whiteboard"
+                  iconVariant="horizontal_icon"
+                  btnClassName={`fixed transition-all duration-150 ease-linear motion-reduce:transition-none ${open && !isMobile ? "top-4" : "top-1"} right-2`}
+                  syncBrowserChrome={true}
                 />
               )}
             </div>

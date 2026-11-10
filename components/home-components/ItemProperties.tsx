@@ -85,7 +85,9 @@ function useOptimisticProperties({
     status: pending.status ?? status,
     priority: pending.priority ?? priority,
     deadline:
-      pending.deadline !== undefined ? (pending.deadline ?? undefined) : deadline,
+      pending.deadline !== undefined
+        ? (pending.deadline ?? undefined)
+        : deadline,
     onChange: (changes: PropertyChanges) => {
       setPending((current) => ({ ...current, ...changes }));
       onChange(changes);
@@ -152,7 +154,7 @@ function DeadlinePicker({
         <Button
           variant={compact ? "outline" : "SidebarMenuButton"}
           className={cn(
-            "h-8 w-full justify-start gap-2 px-2 text-sm font-normal",
+            "h-8 w-full justify-start gap-2 px-2 text-sm font-medium",
             compact &&
               "h-7 w-auto shrink-0 whitespace-nowrap border-border bg-background font-medium",
           )}
@@ -161,7 +163,7 @@ function DeadlinePicker({
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-auto p-0 z-20">
+      <PopoverContent align="start" className="w-auto p-0 z-[1000001]">
         <div className="space-y-3 p-3 pb-0">
           <Label>Deadline</Label>
           <p className="text-sm text-muted-foreground">
@@ -224,9 +226,7 @@ export function ItemPropertiesMenu({
             size={14}
             className="shrink-0 text-muted-foreground"
           />
-          <span className="min-w-0 truncate">
-            State: {currentStatus.label}
-          </span>
+          <span className="min-w-0 truncate">State: {currentStatus.label}</span>
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent className="w-44">
           {statuses.map(({ value, label, Icon }) => (

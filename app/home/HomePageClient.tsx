@@ -42,9 +42,7 @@ import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 import NoteContextMenu from "@/components/home-components/NoteContextMenu";
-import LinkSettings from "@/components/home-components/LinkSettings";
-import PdfSettings from "@/components/home-components/PdfSettings";
-import WhiteboardSettings from "@/components/home-components/WhiteboardSettings";
+import ItemSettingsMenu, { ItemSettingsKind } from "@/components/home-components/ItemSettingsMenu";
 import {
   FolderItemGridCardContent,
   folderItemGridCardClassName,
@@ -653,38 +651,19 @@ function RecentItemCard({ item }: { item: RecentItem }) {
     event.stopPropagation();
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
   };
-  const settings =
-    item.kind === "link" ? (
-      <LinkSettings
-        linkId={item._id}
-        linkUrl={item.url}
-        linkTitle={item.title}
-        favorite={item.favorite}
-        createdAt={item.createdAt}
-        updatedAt={item.updatedAt}
-        iconVariant="vertical_icon"
-        dropdownMenuContentAlign="start"
-        tooltipContentAlign="start"
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={() => setContextMenuPosition(null)}
-      />
-    ) : item.kind === "pdf" ? (
-      <PdfSettings
-        pdfId={item._id}
-        pdfTitle={item.title}
-        iconVariant="vertical_icon"
-        dropdownMenuContentAlign="start"
-        tooltipContentAlign="start"
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={() => setContextMenuPosition(null)}
-      />
-    ) : item.kind === "whiteboard" ? (
-      <WhiteboardSettings
-        whiteboardId={item._id}
-        contextMenuPosition={contextMenuPosition}
-        onContextMenuClose={() => setContextMenuPosition(null)}
-      />
-    ) : null;
+  const settings = (
+    <ItemSettingsMenu
+      itemId={item._id}
+      itemKind={item.kind as ItemSettingsKind}
+      itemTitle={item.title}
+      initialData={item}
+      iconVariant="vertical_icon"
+      dropdownMenuContentAlign="start"
+      tooltipContentAlign="start"
+      contextMenuPosition={contextMenuPosition}
+      onContextMenuClose={() => setContextMenuPosition(null)}
+    />
+  );
   const content = (
     <FolderItemGridCardContent
       item={item as FolderItemCardItem}
