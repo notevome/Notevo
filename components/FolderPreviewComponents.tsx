@@ -240,7 +240,7 @@ export function LinkThumbnail({
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center text-sm text-muted-foreground">
           <LinkFaviconBadge
             url={link.url}
-            className="h-11 w-11 shrink-0"
+            className="h-11 w-11 shrink-0 app-radius-full"
             grayscale={false}
           />
           <span className="max-w-full truncate">{getLinkDomain(link.url)}</span>
@@ -250,7 +250,7 @@ export function LinkThumbnail({
       {showFaviconBadge && thumbnailUrl && imgLoaded && (
         <LinkFaviconBadge
           url={link.url}
-          className="absolute bottom-2 right-2 h-8 w-8"
+          className="absolute bottom-2 right-2 h-8 w-8 app-radius-full"
         />
       )}
     </div>
@@ -322,7 +322,7 @@ export function WhiteboardPreview({
           alt="Whiteboard thumbnail"
           draggable={false}
           className={cn(
-            "pointer-events-none h-full w-full select-none [-webkit-user-drag:none]",
+            "pointer-events-none h-full w-full select-none [-webkit-user-drag:none] app-radius-lg",
             fill ? "object-contain" : "object-contain border border-border",
           )}
         />

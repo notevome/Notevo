@@ -4202,7 +4202,7 @@ function LinkFaviconBadge({
     >
       <LinkFavicon
         url={url}
-        className="h-[100%] w-[100%]"
+        className="h-[100%] w-[100%] app-radius-full"
         grayscale={grayscale}
       />
     </div>
@@ -4243,7 +4243,7 @@ function LinkThumbnail({
           onLoad={() => setImgLoaded(true)}
           onError={() => setImageFailed(true)}
           className={cn(
-            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300 ",
+            "w-full h-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
             imgLoaded ? "opacity-100" : "opacity-0",
           )}
         />
@@ -4254,10 +4254,10 @@ function LinkThumbnail({
       )}
 
       {!isPending && !hasThumbnail && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center text-sm text-muted-foreground">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-3 text-center text-sm text-muted-foreground ">
           <LinkFaviconBadge
             url={link.url}
-            className="h-11 w-11 shrink-0"
+            className="h-11 w-11 shrink-0 app-radius-full"
             grayscale={false}
           />
           <span className="max-w-full truncate">{getLinkDomain(link.url)}</span>
@@ -4267,7 +4267,7 @@ function LinkThumbnail({
       {showFaviconBadge && hasThumbnail && imgLoaded && (
         <LinkFaviconBadge
           url={link.url}
-          className="absolute bottom-2 right-2 h-8 w-8"
+          className="absolute bottom-2 right-2 h-8 w-8 app-radius-full"
         />
       )}
     </div>
