@@ -299,19 +299,19 @@ function HomePaneDrawer({
         <div
           ref={paneRef}
           className={cn(
-            "fixed inset-y-0 right-0 z-40 hidden min-h-0 flex-col border-l border-border bg-background text-foreground shadow-2xl md:flex",
+            "fixed inset-y-0 right-0 z-40 hidden min-h-0 flex-col border-l border-border bg-background text-foreground shadow-2xl app-radius-tl-lg md:flex",
             activeItem ? "translate-x-0" : "translate-x-full",
           )}
           style={{ width: paneWidth }}
         >
           <div
             aria-hidden
-            className="group/resize absolute inset-y-0 left-0 z-20 w-2 -translate-x-1 cursor-col-resize"
+            className="group/resize absolute inset-y-0 left-0 z-20 w-2 -translate-x-1 cursor-col-resize "
             onMouseDown={handleResizeStart}
           >
             <div className="mx-auto h-full w-px bg-gradient-to-b from-transparent from-5% via-border to-transparent to-95% group-hover/resize:via-primary" />
           </div>
-          <div className=" w-full flex h-9 shrink-0 items-center justify-between bg-card border-b border-border p-2">
+          <div className=" w-full flex h-9 shrink-0 items-center justify-between bg-card border-b border-border p-2 app-radius-tl-lg ">
             <div className="flex min-w-0 items-center gap-2 ">
               <div className="flex items-center gap-0.5">
                 <TooltipProvider>
@@ -414,7 +414,7 @@ function HomePaneDrawer({
           </div>
           <div
             className={cn(
-              "scrollbar-gutter-stable min-h-0 flex-1 bg-background [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem]",
+              "scrollbar-gutter-stable min-h-0 flex-1 bg-background  [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-[0.4rem] [&::-webkit-scrollbar]:w-[0.4rem]",
               activeItem?.type === "pdf"
                 ? "overflow-hidden"
                 : "overflow-y-auto py-4",
