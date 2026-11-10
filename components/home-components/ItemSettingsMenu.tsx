@@ -91,6 +91,7 @@ export interface ItemSettingsMenuProps {
   onContextMenuClose?: () => void;
   syncBrowserChrome?: boolean;
   initialData?: any;
+  hideTrigger?: boolean;
 }
 
 export default function ItemSettingsMenu({
@@ -113,6 +114,7 @@ export default function ItemSettingsMenu({
   onContextMenuClose,
   syncBrowserChrome = false,
   initialData,
+  hideTrigger = false,
 }: ItemSettingsMenuProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -128,6 +130,7 @@ export default function ItemSettingsMenu({
   // Normalized kind
   const normalizedKind: "note" | "pdf" | "link" | "whiteboard" =
     itemKind === "document" ? "note" : itemKind;
+  const hasRename = normalizedKind !== "link";
 
   // Fetch item data if not passed
   const fetchedNote = useQuery(
@@ -402,7 +405,7 @@ export default function ItemSettingsMenu({
             }
           }}
         >
-          {contextMenuPosition &&
+          {contextMenuPosition ? (
             typeof document !== "undefined" &&
             createPortal(
               <DropdownMenuTrigger asChild>
@@ -419,27 +422,13 @@ export default function ItemSettingsMenu({
                 />
               </DropdownMenuTrigger>,
               document.body,
-            )}
-
-          <Tooltip open={tooltip.open}>
-            {contextMenuPosition ? (
-              <TooltipTrigger asChild>
-                <Button
-                  variant={(btnVariant as any) || "Trigger"}
-                  size="icon"
-                  className={cn("h-8 w-8", resolvedBtnClassName)}
-                  {...tooltip.triggerProps}
-                  aria-label={`${kindLabel.toLowerCase()}-options`}
-                  onClick={dismissHint}
-                >
-                  {resolvedIconVariant === "vertical_icon" ? (
-                    <FaEllipsisVertical size={18} className="text-muted-foreground" />
-                  ) : (
-                    <FaEllipsis size={22} className="text-muted-foreground" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-            ) : (
+            )
+          ) : hideTrigger ? (
+            <DropdownMenuTrigger asChild>
+              <span className="hidden" aria-hidden />
+            </DropdownMenuTrigger>
+          ) : (
+            <Tooltip open={tooltip.open}>
               <DropdownMenuTrigger asChild>
                 <TooltipTrigger asChild>
                   <Button
@@ -458,17 +447,22 @@ export default function ItemSettingsMenu({
                   </Button>
                 </TooltipTrigger>
               </DropdownMenuTrigger>
-            )}
-            <TooltipContent side="bottom" align={resolvedTooltipAlign}>
-              Rename, Pin, Move, Download, Delete
-            </TooltipContent>
-          </Tooltip>
+              <TooltipContent side="bottom" align={resolvedTooltipAlign}>
+                {hasRename
+                  ? "Rename, Pin, Move, Download, Delete"
+                  : "Pin, Open, Move, Delete"}
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <DropdownMenuContent
             align={contextMenuPosition ? "start" : resolvedContentAlign}
-            className="z-[10000] w-48 space-y-4 px-1.5 pb-1.5 pt-0 text-foreground"
+            className={cn(
+              "z-[10000] w-48 px-1.5 pb-1.5 text-foreground",
+              hasRename ? "space-y-4 pt-0" : "space-y-1 pt-1.5",
+            )}
           >
-            {normalizedKind !== "link" && (
+            {hasRename && (
               <DropdownMenuGroup className="relative">
                 <Label>Rename :</Label>
                 <Input

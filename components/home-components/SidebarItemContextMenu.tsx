@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSidebarPopupGuard } from "@/components/ui/sidebar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -118,7 +119,10 @@ export default function SidebarItemContextMenu({
           <DropdownMenuContent
             align="start"
             side="bottom"
-            className="z-[10000] w-48 space-y-3 px-1.5 pb-1.5 pt-0 text-foreground"
+            className={cn(
+              "z-[10000] w-48 px-1.5 pb-1.5 text-foreground",
+              onRename ? "space-y-3 pt-0" : "space-y-1 pt-1.5",
+            )}
             onCloseAutoFocus={(event) => event.preventDefault()}
           >
             {onRename && (
