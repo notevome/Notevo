@@ -746,6 +746,14 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
     border-top-right-radius: var(--radius);
   }
 
+  .app-radius-tl-lg {
+    border-top-left-radius: var(--radius);
+  }
+
+  .app-radius-bl-lg {
+    border-bottom-left-radius: var(--radius);
+  }
+
   .app-radius-t-md {
     border-radius: calc(var(--radius) - 0.125rem) calc(var(--radius) - 0.125rem) 0 0 !important;
   }
