@@ -505,6 +505,7 @@ function WorkspaceCard({
             <FolderSettings
               workingSpaceId={workspace._id as any}
               workingspaceName={workspace.name}
+              hideTrigger
               contextMenuPosition={contextMenuPosition}
               onContextMenuClose={() => setContextMenuPosition(null)}
             />
@@ -660,6 +661,7 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       iconVariant="vertical_icon"
       dropdownMenuContentAlign="start"
       tooltipContentAlign="start"
+      hideTrigger
       contextMenuPosition={contextMenuPosition}
       onContextMenuClose={() => setContextMenuPosition(null)}
     />
@@ -670,18 +672,9 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       title={title}
       subtitle={preview}
       action={
-        <div
-          className="flex items-center gap-1"
-          onClick={(event) => event.stopPropagation()}
-          onDoubleClick={(event) => event.stopPropagation()}
-          onPointerDown={(event) => event.stopPropagation()}
-          onMouseDown={(event) => event.stopPropagation()}
-        >
-          {item.favorite && (
-            <Pin className="h-4 w-4 shrink-0 fill-primary text-primary" />
-          )}
-          {settings}
-        </div>
+        item.favorite ? (
+          <Pin className="h-4 w-4 shrink-0 fill-primary text-primary" />
+        ) : undefined
       }
     />
   );
@@ -695,6 +688,7 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       onContextMenu={handleContextMenu}
     >
       {content}
+      <span className="hidden">{settings}</span>
     </a>
   ) : (
     <IntentPrefetchLink
@@ -705,6 +699,7 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       onContextMenu={item.kind === "document" ? undefined : handleContextMenu}
     >
       {content}
+      <span className="hidden">{settings}</span>
     </IntentPrefetchLink>
   );
 

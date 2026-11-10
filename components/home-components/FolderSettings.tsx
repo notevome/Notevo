@@ -34,12 +34,13 @@ import {
 } from "@/components/ui/tooltip";
 import { Label } from "../ui/label";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
-interface FolderSettingsProps {
+export interface FolderSettingsProps {
   workingSpaceId: Id<"folders">;
   className?: string;
   workingspaceName: string | any;
   contextMenuPosition?: { x: number; y: number } | null;
   onContextMenuClose?: () => void;
+  hideTrigger?: boolean;
 }
 
 const WORKSPACE_NAME_MAX_LENGTH = 30;
@@ -62,6 +63,7 @@ export default function FolderSettings({
   workingspaceName,
   contextMenuPosition,
   onContextMenuClose,
+  hideTrigger = false,
 }: FolderSettingsProps) {
   const [inputValue, setInputValue] = useState(workingspaceName);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -232,25 +234,7 @@ export default function FolderSettings({
           if (next) tooltip.hide();
         }}
       >
-        <Tooltip open={tooltip.open}>
-          <DropdownMenuTrigger asChild>
-            <TooltipTrigger asChild>
-              <Button
-                variant="Trigger"
-                className={cn("px-1.5 h-8", className)}
-                {...tooltip.triggerProps}
-                aria-label="workspace-options"
-              >
-                <FaEllipsis size={22} />
-              </Button>
-            </TooltipTrigger>
-          </DropdownMenuTrigger>
-          <TooltipContent side="bottom" alignOffset={1} align="start">
-            Rename, Delete
-          </TooltipContent>
-        </Tooltip>
-        {open &&
-          contextMenuPosition &&
+        {contextMenuPosition ? (
           typeof document !== "undefined" &&
           createPortal(
             <DropdownMenuTrigger asChild>
@@ -267,7 +251,30 @@ export default function FolderSettings({
               />
             </DropdownMenuTrigger>,
             document.body,
-          )}
+          )
+        ) : hideTrigger ? (
+          <DropdownMenuTrigger asChild>
+            <span className="hidden" aria-hidden />
+          </DropdownMenuTrigger>
+        ) : (
+          <Tooltip open={tooltip.open}>
+            <DropdownMenuTrigger asChild>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="Trigger"
+                  className={cn("px-1.5 h-8", className)}
+                  {...tooltip.triggerProps}
+                  aria-label="workspace-options"
+                >
+                  <FaEllipsis size={22} />
+                </Button>
+              </TooltipTrigger>
+            </DropdownMenuTrigger>
+            <TooltipContent side="bottom" alignOffset={1} align="start">
+              Rename, Delete
+            </TooltipContent>
+          </Tooltip>
+        )}
         <DropdownMenuContent
           side="bottom"
           align="start"
