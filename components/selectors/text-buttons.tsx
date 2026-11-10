@@ -141,7 +141,7 @@ export const TextButtons = () => {
             label={item.label}
             shortcut={item.shortcut}
             size="sm"
-            className="border-none px-2 h-8 !app-radius-none"
+            className="border-none px-2 h-8 app-radius-md"
             variant="SidebarMenuButton"
             type="button"
           >
@@ -161,7 +161,7 @@ export const TextButtons = () => {
           label={item.label}
           shortcut={item.shortcut}
           size="sm"
-          className="border-none px-2 h-8 !app-radius-none"
+          className="border-none px-2 h-8 app-radius-md"
           variant="SidebarMenuButton"
           type="button"
           onMouseDown={(e) => {
