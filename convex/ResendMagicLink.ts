@@ -7,28 +7,28 @@ export const ResendMagicLink = Resend({
   async sendVerificationRequest({ identifier: email, provider, url }) {
     const resend = new ResendAPI(provider.apiKey);
     const { error } = await resend.emails.send({
-      from: process.env.AUTH_EMAIL ?? "oraizive <team@oraizive.com>",
+      from: process.env.AUTH_EMAIL ?? "Oraizive <team@oraizive.com>",
       to: [email],
       replyTo: "support@oraizive.com",
-      subject: "Sign in to oraizive",
+      subject: "Sign in to Oraizive",
       html: `
 <html>
   <body style="font-family: system-ui; background:#f9f9f9; padding:24px; margin: 24px;">
     <table width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; margin: 0 auto;">
       <tr>
-        <td style="text-align:center; padding-bottom:12px;">
+        <td style="text-align:center; padding-bottom:6px;">
           <!-- Logo centered -->
           <img
             src="https://www.oraizive.com/favicon.png"
-            alt="oraizive Logo"
-            width="50"
+            alt="Oraizive Logo"
+            width="80"
             style="display:inline-block;"
           />
         </td>
       </tr>
       <tr>
         <td style="text-align:center;">
-          <h1 style="margin-bottom:10px; color:#644a40;">Welcome to oraizive</h1>
+          <h1 style="margin-bottom:10px; color:#644a40;">Welcome to Oraizive</h1>
           <p style="color:#646464;">Click the button below to sign in and verify your email:</p>
           <p>
             <a href="${url}"
@@ -41,15 +41,15 @@ export const ResendMagicLink = Resend({
           <hr style="margin:24px 0; border:none; border-top:1px solid #d8d8d8;" />
           <p style="font-size:12px; color:#646464; line-height:1.5;">
             By continuing, you agree to our
-            <a href="https://oraizive.com/terms-of-service" style="color:#2563eb;">oraizive Terms of Service</a>
+            <a href="https://oraizive.com/terms-of-service" style="color:#2563eb;">Oraizive Terms of Service</a>
             and
-            <a href="https://oraizive.com/privacy-policy" style="color:#2563eb;">oraizive Privacy Policy</a>.
+            <a href="https://oraizive.com/privacy-policy" style="color:#2563eb;">Oraizive Privacy Policy</a>.
           </p>
           <p style="margin-top:8px; font-size:12px; color:#646464;">
             If you didn't request this, you can safely ignore this email.
           </p>
           <p style="margin-top:8px; font-size:10px; color:#646464;">
-            Copyright © 2025-${new Date().getFullYear()} oraizive. All rights reserved.
+            Copyright © 2025-${new Date().getFullYear()} Oraizive. All rights reserved.
           </p>
         </td>
       </tr>

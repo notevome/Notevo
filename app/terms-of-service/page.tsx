@@ -76,7 +76,7 @@ export default function TermsPage() {
               </p>
             </div>
             <h1 className="font-serif text-4xl md:text-5xl font-bold text-primary leading-tight tracking-tight mb-3">
-              oraizive Terms of Service
+              Oraizive Terms of Service
             </h1>
             <p className="text-muted-foreground text-sm leading-relaxed max-w-lg">
               These terms govern your use of oraizive. By using our platform,
