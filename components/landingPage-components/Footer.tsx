@@ -33,7 +33,7 @@ export default function Footer() {
           </defs>
         </svg>
       </div>
-      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[27rem] bg-[#EFEFEF]">
+      <footer className="relative w-full z-10 text-foreground mt-20 md:mt-28 min-h-[60vh] pb-[48vh] bg-[#EFEFEF]">
         <div className="max-w-6xl mx-auto py-5 px-6 md:px-12 lg:px-16">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
@@ -168,7 +168,7 @@ export default function Footer() {
         style={{
           textShadow: "2vh 2vh 0 #5a4239",
         }}
-        className="bg-[url('https://texturelabs.org/wp-content/uploads/Texturelabs_Fabric_141S.jpg')] bg-cover bg-center bg-clip-text text-transparent z-50 inline-block text-nowrap text-[63vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-extrabold tracking-tighter leading-[45vh] -indent-[25vh]"
+        className="bg-[url('https://texturelabs.org/wp-content/uploads/Texturelabs_Fabric_141S.jpg')] bg-cover bg-center bg-clip-text text-transparent z-50 inline-block text-nowrap text-[63vh] absolute -bottom-0 right-0 align-bottom text-center pointer-events-none select-none w-full font-extrabold tracking-tighter leading-[45vh] -indent-[27vh]"
       >
         Oraizive
       </h1>
