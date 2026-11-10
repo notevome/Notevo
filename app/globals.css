@@ -725,7 +725,7 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   }
 
   .app-radius-md {
-    border-radius: calc(var(--radius) - 0.125rem);
+    border-radius: calc(var(--radius) - 0.125rem) !important;
   }
 
   .app-radius-lg,
@@ -735,11 +735,11 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   }
 
   .app-radius-l-md {
-    border-radius: calc(var(--radius) - 0.125rem) 0 0 calc(var(--radius) - 0.125rem);
+    border-radius: calc(var(--radius) - 0.125rem) 0 0 calc(var(--radius) - 0.125rem) !important;
   }
 
   .app-radius-r-md {
-    border-radius: 0 calc(var(--radius) - 0.125rem) calc(var(--radius) - 0.125rem) 0;
+    border-radius: 0 calc(var(--radius) - 0.125rem) calc(var(--radius) - 0.125rem) 0 !important;
   }
 
   .app-radius-tr-lg {
@@ -766,6 +766,11 @@ div[role="dialog"][data-state="open"]:has([data-sidebar="header"]) {
   .app-radius-r-none {
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
+  }
+
+  .app-radius-l-none {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
   }
 
   .app-radius-l-lg {

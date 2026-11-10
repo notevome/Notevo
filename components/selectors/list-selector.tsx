@@ -45,7 +45,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
         <Button
           size="sm"
           variant="ghost"
-          className="gap-2 app-radius-none border-none"
+          className="gap-2 app-radius-md border-none"
         >
           <p className="text-base">↗</p>
           <p
