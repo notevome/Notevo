@@ -73,11 +73,7 @@ import {
 } from "@/lib/utils";
 import { Doc } from "@/convex/_generated/dataModel";
 import { Input } from "../ui/input";
-import NoteSettingsSidbar from "./NoteSettingsSidbar";
-import PdfSettingsSidebar from "./PdfSettingsSidebar";
-import LinkSettingsSidebar from "./LinkSettingsSidebar";
-import WhiteboardSettingsSidebar from "./WhiteboardSettingsSidebar";
-import FolderSettingsSidebar from "./FolderSettingsSidebar";
+import ItemSettingsSidebar from "./ItemSettingsSidebar";
 import FolderNewDropdownBtn, {
   GlobalCreateHandler,
 } from "./folder-new-dropdown-btn";
@@ -546,10 +542,10 @@ const PinnedNoteItem = memo(
               })
             }
           />
-          <NoteSettingsSidbar
-            noteId={note._id}
-            noteTitle={note.title}
-            ContainerClassName=""
+          <ItemSettingsSidebar
+            itemId={note._id}
+            itemKind="note"
+            itemTitle={note.title}
           />
         </div>
       </SidebarGroupContent>
@@ -899,7 +895,11 @@ const PinnedUploadItem = memo(
                 })
               }
             />
-            <PdfSettingsSidebar pdfId={pdf._id} />
+            <ItemSettingsSidebar
+              itemId={pdf._id}
+              itemKind="pdf"
+              itemTitle={pdf.title}
+            />
           </div>
         </SidebarGroupContent>
       </SidebarItemContextMenu>
@@ -1255,10 +1255,10 @@ const PinnedWhiteboardItem = memo(
             className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
             onMouseEnter={titleTooltip.hide}
           >
-            <WhiteboardSettingsSidebar
-              whiteboardId={whiteboard._id}
-              whiteboardTitle={whiteboard.title}
-              ContainerClassName=""
+            <ItemSettingsSidebar
+              itemId={whiteboard._id}
+              itemKind="whiteboard"
+              itemTitle={whiteboard.title}
             />
           </div>
         </SidebarGroupContent>
@@ -1527,7 +1527,11 @@ const PinnedLinkItem = memo(
             className={`absolute right-0 flex items-center ${isHovered ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2 pointer-events-none"}`}
             onMouseEnter={titleTooltip.hide}
           >
-            <LinkSettingsSidebar linkId={link._id} />
+            <ItemSettingsSidebar
+              itemId={link._id}
+              itemKind="link"
+              itemTitle={link.title}
+            />
           </div>
         </SidebarGroupContent>
       </SidebarItemContextMenu>
@@ -2016,10 +2020,10 @@ const WorkspaceItem = memo(
             className={`absolute right-0 flex items-center ${isHovered && !isEditing ? "opacity-100" : "opacity-0 pointer-events-none"}`}
             onMouseEnter={titleTooltip.hide}
           >
-            <FolderSettingsSidebar
-              workingSpaceId={workingSpace._id}
-              workingspaceName={workingSpace.name}
-              ContainerClassName=""
+            <ItemSettingsSidebar
+              itemId={workingSpace._id}
+              itemKind="folder"
+              itemTitle={workingSpace.name}
             />
           </div>
         </SidebarGroupContent>
@@ -2166,6 +2170,7 @@ const UserAccountSection = memo(function UserAccountSection({
                   event.preventDefault();
                   setIsAccountSettingsOpen(true);
                 }}
+                className="py-6"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage

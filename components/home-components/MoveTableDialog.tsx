@@ -200,7 +200,7 @@ export default function MoveTableDialog({
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            Workspace
+            Folder
           </Button>
         </div>
 

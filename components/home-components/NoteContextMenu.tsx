@@ -42,7 +42,7 @@ import {
   Download,
 } from "lucide-react";
 import { FaRegTrashCan } from "react-icons/fa6";
-import MoveNoteDialog from "./MoveNoteDialog";
+import MoveItemDialog from "./MoveItemDialog";
 import { useNoteDownload } from "@/hooks/useNoteDownload";
 import { ItemPropertiesMenu } from "./ItemProperties";
 import { useSidebarPopupGuard } from "@/components/ui/sidebar";
@@ -251,7 +251,7 @@ export default function NoteContextMenu({
             )}
 
           <DropdownMenuContent
-            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground z-10"
+            className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-foreground z-10"
             onCloseAutoFocus={(e) => e.preventDefault()}
             // Align from the top-left corner of the (zero-size) trigger
             align="start"
@@ -274,7 +274,7 @@ export default function NoteContextMenu({
 
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={() => void handleFavoritePin()}>
-                <Pin size={14} className="mr-2 text-muted-foreground" />
+                <Pin size={14} className="text-muted-foreground" />
                 {getNote.favorite ? "Unpin Document" : "Pin Document"}
               </DropdownMenuItem>
 
@@ -293,13 +293,13 @@ export default function NoteContextMenu({
                   setIsMoveDialogOpen(true);
                 }}
               >
-                <FileOutput size={14} className="mr-2 text-muted-foreground" />
+                <FileOutput size={14} className="text-muted-foreground" />
                 Move Note
               </DropdownMenuItem>
 
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
-                  <Download size={14} className="mr-2 text-muted-foreground" />
+                  <Download size={14} className="text-muted-foreground" />
                   Download
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent className="w-[200px]">
@@ -311,7 +311,7 @@ export default function NoteContextMenu({
                   >
                     <FileText
                       size={14}
-                      className="mr-2 text-muted-foreground"
+                      className="text-muted-foreground"
                     />
                     Markdown (.md)
                   </DropdownMenuItem>
@@ -323,7 +323,7 @@ export default function NoteContextMenu({
                   >
                     <FileJson
                       size={14}
-                      className="mr-2 text-muted-foreground"
+                      className="text-muted-foreground"
                     />
                     JSON
                   </DropdownMenuItem>
@@ -335,7 +335,7 @@ export default function NoteContextMenu({
                   >
                     <FileType
                       size={14}
-                      className="mr-2 text-muted-foreground"
+                      className="text-muted-foreground"
                     />
                     Word (.docx)
                   </DropdownMenuItem>
@@ -347,7 +347,7 @@ export default function NoteContextMenu({
                   >
                     <FileDown
                       size={14}
-                      className="mr-2 text-muted-foreground"
+                      className="text-muted-foreground"
                     />
                     PDF
                   </DropdownMenuItem>
@@ -365,7 +365,7 @@ export default function NoteContextMenu({
               >
                 <FaRegTrashCan
                   size={14}
-                  className="mr-2 text-muted-foreground"
+                  className="text-muted-foreground"
                 />
                 Delete
               </DropdownMenuItem>
@@ -404,11 +404,12 @@ export default function NoteContextMenu({
         </AlertDialogContent>
       </AlertDialog>
 
-      <MoveNoteDialog
+      <MoveItemDialog
         open={isMoveDialogOpen}
         onOpenChange={setIsMoveDialogOpen}
-        note={{
+        item={{
           _id: noteId,
+          kind: "note",
           title: getNote?.title,
           slug: getNote?.slug,
           workingSpaceId: getNote?.workingSpaceId,

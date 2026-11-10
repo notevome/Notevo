@@ -27,14 +27,14 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex cursor-pointer gap-2 select-none items-center app-radius-lg px-2 py-1.5 text-sm outline-none focus:bg-border data-[state=open]:bg-border [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "flex cursor-pointer gap-2 select-none items-center app-radius-lg px-2 h-8 py-0 text-sm font-medium outline-none focus:bg-border data-[state=open]:bg-border [&_svg]:pointer-events-none [&_svg]:shrink-0",
       inset && "pl-8",
       className,
     )}
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto" />
+    <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground shrink-0" />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName =
@@ -84,7 +84,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative p-1.5 flex cursor-pointer select-none items-center gap-2 app-radius-lg text-sm outline-none transition-colors hover:bg-border data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:size-4 [&>svg]:shrink-0",
+      "relative h-8 px-2 py-0 flex cursor-pointer select-none items-center gap-2 app-radius-lg text-sm font-medium outline-none transition-colors hover:bg-border data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&>svg]:shrink-0",
       inset && "pl-8",
       className,
     )}

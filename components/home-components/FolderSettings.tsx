@@ -271,7 +271,7 @@ export default function FolderSettings({
         <DropdownMenuContent
           side="bottom"
           align="start"
-          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-muted-foreground "
+          className="w-48 pb-1.5 px-1.5 pt-0 space-y-4 text-foreground "
         >
           <DropdownMenuGroup className="relative">
             <Label>Rename :</Label>
@@ -296,12 +296,12 @@ export default function FolderSettings({
             >
               {isDeleting ? (
                 <>
-                  <LoadingAnimation className="text-destructive/10 animate-spin fill-destructive h-3 w-3" />{" "}
+                  <LoadingAnimation className="text-destructive/10 animate-spin fill-destructive h-3 w-3" />
                   Deleting...
                 </>
               ) : (
                 <>
-                  <FaRegTrashCan size={14} className=" text-muted-foreground" />{" "}
+                  <FaRegTrashCan size={14} className="text-muted-foreground" />
                   Delete
                 </>
               )}

@@ -118,7 +118,7 @@ export default function SidebarItemContextMenu({
           <DropdownMenuContent
             align="start"
             side="bottom"
-            className="z-[10000] w-48 space-y-3 px-1.5 pb-1.5 pt-0 text-muted-foreground"
+            className="z-[10000] w-48 space-y-3 px-1.5 pb-1.5 pt-0 text-foreground"
             onCloseAutoFocus={(event) => event.preventDefault()}
           >
             {onRename && (
@@ -146,9 +146,9 @@ export default function SidebarItemContextMenu({
               {onToggleFavorite && (
                 <DropdownMenuItem onClick={() => void onToggleFavorite()}>
                   {favorite ? (
-                    <PinOff size={14} className="mr-2" />
+                    <PinOff size={14} className="text-muted-foreground" />
                   ) : (
-                    <Pin size={14} className="mr-2" />
+                    <Pin size={14} className="text-muted-foreground" />
                   )}
                   {favorite ? `Unpin ${itemLabel}` : `Pin ${itemLabel}`}
                 </DropdownMenuItem>
@@ -161,7 +161,7 @@ export default function SidebarItemContextMenu({
                   setDeleteOpen(true);
                 }}
               >
-                <FaRegTrashCan size={14} className="mr-2" />
+                <FaRegTrashCan size={14} className="text-muted-foreground" />
                 Delete
               </DropdownMenuItem>
             </DropdownMenuGroup>
