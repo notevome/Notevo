@@ -108,8 +108,8 @@ export default function SidebarItemContextMenu({
               aria-hidden
               style={{
                 position: "fixed",
-                left: position.x,
-                top: position.y,
+                left: position?.x ?? -9999,
+                top: position?.y ?? -9999,
                 width: 0,
                 height: 0,
                 pointerEvents: "none",

@@ -123,16 +123,15 @@ export default function ItemSettingsMenu({
 
   const resolvedIconVariant = iconVariantProp || iconVariant || "vertical_icon";
   const resolvedBtnClassName = btnClassNameProp || btnClassName;
-  const resolvedContentAlign = contentAlignProp || dropdownMenuContentAlign || "end";
+  const resolvedContentAlign =
+    contentAlignProp || dropdownMenuContentAlign || "end";
   const resolvedTooltipAlign = tooltipAlignProp || tooltipContentAlign || "end";
   const canShowWidth = showWidthProp ?? showWidthOption ?? false;
 
-  // Normalized kind
   const normalizedKind: "note" | "pdf" | "link" | "whiteboard" =
     itemKind === "document" ? "note" : itemKind;
   const hasRename = normalizedKind !== "link";
 
-  // Fetch item data if not passed
   const fetchedNote = useQuery(
     api.documents.getNoteById,
     normalizedKind === "note" && !initialData ? { _id: itemId } : "skip",
@@ -177,7 +176,6 @@ export default function ItemSettingsMenu({
   const { hasSeenHint, dismissHint } = useSettingsMoveHint();
   const { noteWidth, toggleWidth } = useNoteWidth();
 
-  // Mutations
   const updateNote = useMutation(api.documents.updateNote);
   const deleteNote = useMutation(api.documents.deleteNote);
   const updatePdf = useMutation(api.pdfs.updatePdf);
@@ -196,8 +194,16 @@ export default function ItemSettingsMenu({
     setInputValue(itemTitle);
   }, [itemTitle]);
 
+  const [contextTriggerPosition, setContextTriggerPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
   useEffect(() => {
-    if (contextMenuPosition) setOpen(true);
+    if (!contextMenuPosition) return;
+    setContextTriggerPosition(contextMenuPosition);
+    setOpen(false);
+    requestAnimationFrame(() => setOpen(true));
   }, [contextMenuPosition]);
 
   useEffect(() => {
@@ -269,7 +275,17 @@ export default function ItemSettingsMenu({
         setInputValue(itemTitle);
       }
     },
-    [normalizedKind, itemId, itemTitle, updateNote, updatePdf, updateLink, updateWhiteboard, syncBrowserChrome, isViewingCurrent],
+    [
+      normalizedKind,
+      itemId,
+      itemTitle,
+      updateNote,
+      updatePdf,
+      updateLink,
+      updateWhiteboard,
+      syncBrowserChrome,
+      isViewingCurrent,
+    ],
   );
 
   const handleFavoritePin = async () => {
@@ -384,6 +400,23 @@ export default function ItemSettingsMenu({
           ? "Link"
           : "Whiteboard";
 
+  const settingsButton = (
+    <Button
+      variant={(btnVariant as any) || "Trigger"}
+      size="icon"
+      className={cn("h-8 w-8", resolvedBtnClassName)}
+      {...tooltip.triggerProps}
+      aria-label={`${kindLabel.toLowerCase()}-options`}
+      onClick={dismissHint}
+    >
+      {resolvedIconVariant === "vertical_icon" ? (
+        <FaEllipsisVertical size={18} className="text-muted-foreground" />
+      ) : (
+        <FaEllipsis size={22} className="text-muted-foreground" />
+      )}
+    </Button>
+  );
+
   return (
     <>
       <div className="relative inline-flex items-center">
@@ -398,54 +431,25 @@ export default function ItemSettingsMenu({
           open={open}
           onOpenChange={(next) => {
             setOpen(next);
-            if (!next) onContextMenuClose?.();
+            if (!next) {
+              setContextTriggerPosition(null);
+              onContextMenuClose?.();
+            }
             if (next) {
               tooltip.hide();
               dismissHint();
             }
           }}
         >
-          {contextMenuPosition ? (
-            typeof document !== "undefined" &&
-            createPortal(
-              <DropdownMenuTrigger asChild>
-                <span
-                  aria-hidden
-                  style={{
-                    position: "fixed",
-                    left: contextMenuPosition.x,
-                    top: contextMenuPosition.y,
-                    width: 0,
-                    height: 0,
-                    pointerEvents: "none",
-                  }}
-                />
-              </DropdownMenuTrigger>,
-              document.body,
-            )
-          ) : hideTrigger ? (
+          {!contextTriggerPosition && hideTrigger && (
             <DropdownMenuTrigger asChild>
               <span className="hidden" aria-hidden />
             </DropdownMenuTrigger>
-          ) : (
+          )}
+          {!hideTrigger && (
             <Tooltip open={tooltip.open}>
               <DropdownMenuTrigger asChild>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={(btnVariant as any) || "Trigger"}
-                    size="icon"
-                    className={cn("h-8 w-8", resolvedBtnClassName)}
-                    {...tooltip.triggerProps}
-                    aria-label={`${kindLabel.toLowerCase()}-options`}
-                    onClick={dismissHint}
-                  >
-                    {resolvedIconVariant === "vertical_icon" ? (
-                      <FaEllipsisVertical size={18} className="text-muted-foreground" />
-                    ) : (
-                      <FaEllipsis size={22} className="text-muted-foreground" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
+                <TooltipTrigger asChild>{settingsButton}</TooltipTrigger>
               </DropdownMenuTrigger>
               <TooltipContent side="bottom" align={resolvedTooltipAlign}>
                 {hasRename
@@ -454,9 +458,27 @@ export default function ItemSettingsMenu({
               </TooltipContent>
             </Tooltip>
           )}
+          {contextTriggerPosition &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <DropdownMenuTrigger asChild>
+                <span
+                  aria-hidden
+                  style={{
+                    position: "fixed",
+                    left: contextTriggerPosition.x,
+                    top: contextTriggerPosition.y,
+                    width: 0,
+                    height: 0,
+                    pointerEvents: "none",
+                  }}
+                />
+              </DropdownMenuTrigger>,
+              document.body,
+            )}
 
           <DropdownMenuContent
-            align={contextMenuPosition ? "start" : resolvedContentAlign}
+            align={contextTriggerPosition ? "start" : resolvedContentAlign}
             className={cn(
               "z-[10000] w-48 px-1.5 pb-1.5 text-foreground",
               hasRename ? "space-y-4 pt-0" : "space-y-1 pt-1.5",
@@ -507,7 +529,10 @@ export default function ItemSettingsMenu({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      <ExternalLink size={14} className="text-muted-foreground" />
+                      <ExternalLink
+                        size={14}
+                        className="text-muted-foreground"
+                      />
                       Open Link
                     </a>
                   </Button>
@@ -623,7 +648,10 @@ export default function ItemSettingsMenu({
                           rel="noreferrer"
                           className="cursor-pointer"
                         >
-                          <ExternalLink size={14} className="text-muted-foreground" />
+                          <ExternalLink
+                            size={14}
+                            className="text-muted-foreground"
+                          />
                           Open original
                         </a>
                       </DropdownMenuItem>
@@ -641,12 +669,18 @@ export default function ItemSettingsMenu({
                 >
                   {noteWidth === "false" ? (
                     <>
-                      <ChevronsLeftRightEllipsis size={14} className="text-muted-foreground" />
+                      <ChevronsLeftRightEllipsis
+                        size={14}
+                        className="text-muted-foreground"
+                      />
                       Full width
                     </>
                   ) : (
                     <>
-                      <ChevronsRightLeft size={14} className="text-muted-foreground" />
+                      <ChevronsRightLeft
+                        size={14}
+                        className="text-muted-foreground"
+                      />
                       Default width
                     </>
                   )}
@@ -670,7 +704,9 @@ export default function ItemSettingsMenu({
                   <DropdownMenuSeparator />
                   <div className="px-2 pt-0.5 text-[10px] leading-4 text-nowrap text-muted-foreground/80">
                     {itemData.updatedAt ? (
-                      <p>Last updated {formatNoteTimestamp(itemData.updatedAt)}</p>
+                      <p>
+                        Last updated {formatNoteTimestamp(itemData.updatedAt)}
+                      </p>
                     ) : null}
                     {itemData.createdAt ? (
                       <p>Created {formatNoteTimestamp(itemData.createdAt)}</p>
@@ -695,7 +731,8 @@ export default function ItemSettingsMenu({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm {kindLabel} Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this {kindLabel.toLowerCase()}? This action cannot be undone.
+              Are you sure you want to delete this {kindLabel.toLowerCase()}?
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

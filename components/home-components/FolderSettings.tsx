@@ -72,6 +72,11 @@ export default function FolderSettings({
   const tooltip = useHoverTooltip(100);
   const inputRef = useRef<HTMLInputElement>(null); // Ref for the input
 
+  // Keep the last known context-menu position so the portal trigger
+  // stays in the DOM while the menu is open (prevents "jump to 0,0").
+  const lastContextPosRef = useRef<{ x: number; y: number } | null>(null);
+  if (contextMenuPosition) lastContextPosRef.current = contextMenuPosition;
+
   useEffect(() => {
     setInputValue(workingspaceName);
   }, [workingspaceName]);
@@ -86,7 +91,11 @@ export default function FolderSettings({
   }, [open]);
 
   useEffect(() => {
-    if (contextMenuPosition) setOpen(true);
+    if (!contextMenuPosition) return;
+    // Close first so Radix re-measures the trigger after the portal span
+    // has moved to the new coordinates, then reopen in the next frame.
+    setOpen(false);
+    requestAnimationFrame(() => setOpen(true));
   }, [contextMenuPosition]);
 
   const tables = useQuery(api.tables.getTables, {
@@ -234,7 +243,7 @@ export default function FolderSettings({
           if (next) tooltip.hide();
         }}
       >
-        {contextMenuPosition ? (
+        {lastContextPosRef.current ? (
           typeof document !== "undefined" &&
           createPortal(
             <DropdownMenuTrigger asChild>
@@ -242,8 +251,8 @@ export default function FolderSettings({
                 aria-hidden
                 style={{
                   position: "fixed",
-                  left: contextMenuPosition.x,
-                  top: contextMenuPosition.y,
+                  left: lastContextPosRef.current.x,
+                  top: lastContextPosRef.current.y,
                   width: 0,
                   height: 0,
                   pointerEvents: "none",
