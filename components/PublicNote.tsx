@@ -419,13 +419,13 @@ export default function PublicNote({
                 </TabsContent>
 
                 <TabsContent value="facebook" className="mt-0">
-                  <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
+                  <div className="w-full border border-border rounded-[12px] overflow-hidden bg-card text-card-foreground shadow-sm">
                     <OgPreviewImage
                       src={`/api/og?id=${noteId}`}
                       alt="Facebook OG Preview"
                       loaded={ogImageLoaded}
                       error={ogImageError}
-                      imageClassName="object-cover"
+                      imageClassName="object-fill"
                     />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">
@@ -446,13 +446,13 @@ export default function PublicNote({
                 </TabsContent>
 
                 <TabsContent value="linkedin" className="mt-0">
-                  <div className="w-full border border-border app-radius-md overflow-hidden bg-card text-card-foreground shadow-sm">
+                  <div className="w-full border border-border rounded-[8px] overflow-hidden bg-card text-card-foreground shadow-sm">
                     <OgPreviewImage
                       src={`/api/og?id=${noteId}`}
                       alt="LinkedIn OG Preview"
                       loaded={ogImageLoaded}
                       error={ogImageError}
-                      imageClassName="object-cover"
+                      imageClassName="object-fill"
                     />
                     <div className="p-2.5 bg-muted/40 border-t border-border space-y-0.5">
                       <p className="text-xs font-semibold text-foreground line-clamp-1">
@@ -469,13 +469,13 @@ export default function PublicNote({
                 </TabsContent>
 
                 <TabsContent value="twitter" className="mt-0">
-                  <div className="w-full border border-border rounded-xl overflow-hidden bg-card text-card-foreground shadow-sm">
+                  <div className="w-full border border-border rounded-[12px] overflow-hidden bg-card text-card-foreground shadow-sm">
                     <OgPreviewImage
                       src={`/api/og?id=${noteId}`}
                       alt="Twitter X OG Preview"
                       loaded={ogImageLoaded}
                       error={ogImageError}
-                      imageClassName="object-cover"
+                      imageClassName="object-fill"
                     />
                     <div className="p-2.5 bg-card space-y-0.5 border-t border-border">
                       <p className="text-[11px] text-muted-foreground">
@@ -496,7 +496,7 @@ export default function PublicNote({
                 </TabsContent>
 
                 <TabsContent value="slack" className="mt-0">
-                  <div className="w-full border border-border app-radius-md p-2.5 bg-card text-card-foreground shadow-sm space-y-1.5">
+                  <div className="w-full border border-border rounded-[4px] p-2.5 bg-card text-card-foreground shadow-sm space-y-1.5">
                     <div className="pl-2.5 border-l-4 border-muted-foreground/40 space-y-1">
                       <p className="text-[11px] font-bold text-muted-foreground">
                         oraizive.com
@@ -516,7 +516,7 @@ export default function PublicNote({
                         alt="Slack OG Preview"
                         loaded={ogImageLoaded}
                         error={ogImageError}
-                        wrapperClassName="mt-2 rounded-md border border-border"
+                        wrapperClassName="mt-2 rounded-[4px] border border-border"
                         imageClassName="object-fill"
                       />
                     </div>
@@ -526,7 +526,7 @@ export default function PublicNote({
                 <TabsContent value="whatsapp" className="mt-0">
                   <div
                     className={cn(
-                      "w-full border app-radius-md overflow-hidden shadow-sm transition-colors duration-200",
+                      "w-full border rounded-[10px] overflow-hidden shadow-sm transition-colors duration-200",
                       isDark
                         ? "bg-[#07332d] border-[#128c7e]/40"
                         : "bg-[#ebf7ee] border-[#128c7e]/20",
@@ -537,7 +537,7 @@ export default function PublicNote({
                       alt="WhatsApp OG Preview"
                       loaded={ogImageLoaded}
                       error={ogImageError}
-                      imageClassName="object-cover"
+                      imageClassName="object-fill"
                     />
                     <div
                       className={cn(

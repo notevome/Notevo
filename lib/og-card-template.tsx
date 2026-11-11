@@ -132,10 +132,10 @@ export function renderOGCard({ title, preview }: OGCardData) {
           display: "flex",
           flexDirection: "column",
           backgroundColor: "#e7e3d9",
-          borderRadius: "0",
+          borderRadius: "32px",
           transform: "rotate(-1deg)",
           overflow: "hidden",
-          zIndex: 3,
+          zIndex: 16,
           border: "1px solid #644A40",
           marginRight: "70px",
           marginBottom: "30px",
@@ -154,7 +154,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
             height: "100%",
             opacity: 0.07,
             mixBlendMode: "multiply",
-            zIndex: 5,
+            zIndex: 16,
           }}
         />
 
@@ -176,7 +176,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
               fontWeight: 700,
               color: "#644A40",
               letterSpacing: "-0.5px",
-              marginBottom: "60px",
+              marginBottom: "28px",
             }}
           >
             Oraizive.com
@@ -197,7 +197,7 @@ export function renderOGCard({ title, preview }: OGCardData) {
 
           <div
             style={{
-              fontSize: title.length > 40 ? 52 : 60,
+              fontSize: title.length > 40 ? 60 : 74,
               fontWeight: 700,
               lineHeight: 1,
               color: "#4a372f",
@@ -243,10 +243,10 @@ export function renderOGCard({ title, preview }: OGCardData) {
           alignItems: "center",
           justifyContent: "center",
           backgroundColor: "#b1cbc2",
-          borderRadius: "0",
+          borderRadius: "20px",
           transform: "rotate(-1deg)",
           overflow: "hidden",
-          zIndex: 3,
+          zIndex: -3,
         }}
       >
         <div
