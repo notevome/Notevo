@@ -305,7 +305,7 @@ function HomePaneDrawer({
         >
           <div
             aria-hidden
-            className="group/resize absolute inset-y-0 left-0 z-20 w-2 -translate-x-1 cursor-col-resize "
+            className="group/resize absolute inset-y-0 -left-px z-20 w-2 -translate-x-1 cursor-col-resize "
             onMouseDown={handleResizeStart}
           >
             <div className="mx-auto h-full w-px bg-gradient-to-b from-transparent from-5% via-border to-transparent to-95% group-hover/resize:via-primary" />
