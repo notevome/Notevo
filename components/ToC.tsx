@@ -49,7 +49,7 @@ export const ToCItem = ({ item, onItemClick, isExpanded }: ToCItemProps) => {
         href={`#${item.id}`}
         onClick={(e) => onItemClick(e, item)}
         className={`
-        flex items-center justify-end gap-2 py-1.5 px-2 app-radius-lg no-underline
+        flex items-center justify-end gap-2 py-1.5 px-2 app-radius-lg app-radius-r-none border-r-0 no-underline
         
           ${
             item.isActive && !item.isScrolledOver
@@ -441,7 +441,7 @@ export const CompactFloatingToC = ({
     <div className="fixed right-3 top-24">
       <div
         className={`
-          transition-all duration-150 ease-linear px-0.5 border border-solid app-radius-lg app-radius-r-none bg-background 
+          transition-all duration-150 ease-linear px-0.5 border border-r-0 border-solid app-radius-lg app-radius-r-none bg-background
           ${isExpanded ? "w-56 border-border " : "w-10 border-transparent"}
         `}
       >

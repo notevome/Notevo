@@ -1306,7 +1306,7 @@ function SliderTabsList({
                   {dropTarget?.id === table._id &&
                     dropTarget?.position === "before" && (
                       <div
-                        className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                        className="self-stretch app-radius-lg app-radius-b-none border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                         style={{ width: draggedSize?.width ?? 128 }}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
@@ -1317,7 +1317,7 @@ function SliderTabsList({
                     )}
                   {hiddenTabId === table._id && !dropTarget && (
                     <div
-                      className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                      className="self-stretch app-radius-lg app-radius-b-none border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                       style={{ width: draggedSize?.width ?? 128 }}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => {
@@ -1354,7 +1354,7 @@ function SliderTabsList({
                   {dropTarget?.id === table._id &&
                     dropTarget?.position === "after" && (
                       <div
-                        className="self-stretch app-radius-md border border-dashed border-muted-foreground/50 bg-muted shrink-0"
+                        className="self-stretch app-radius-lg app-radius-b-none border border-dashed border-muted-foreground/50 bg-muted shrink-0"
                         style={{ width: draggedSize?.width ?? 128 }}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={(e) => {
