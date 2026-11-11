@@ -441,25 +441,7 @@ export default function ItemSettingsMenu({
             }
           }}
         >
-          {!contextTriggerPosition && hideTrigger && (
-            <DropdownMenuTrigger asChild>
-              <span className="hidden" aria-hidden />
-            </DropdownMenuTrigger>
-          )}
-          {!hideTrigger && (
-            <Tooltip open={tooltip.open}>
-              <DropdownMenuTrigger asChild>
-                <TooltipTrigger asChild>{settingsButton}</TooltipTrigger>
-              </DropdownMenuTrigger>
-              <TooltipContent side="bottom" align={resolvedTooltipAlign}>
-                {hasRename
-                  ? "Rename, Pin, Move, Download, Delete"
-                  : "Pin, Open, Move, Delete"}
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {contextTriggerPosition &&
-            typeof document !== "undefined" &&
+          {contextTriggerPosition && typeof document !== "undefined" ? (
             createPortal(
               <DropdownMenuTrigger asChild>
                 <span
@@ -475,7 +457,23 @@ export default function ItemSettingsMenu({
                 />
               </DropdownMenuTrigger>,
               document.body,
-            )}
+            )
+          ) : hideTrigger ? (
+            <DropdownMenuTrigger asChild>
+              <span className="hidden" aria-hidden />
+            </DropdownMenuTrigger>
+          ) : (
+            <Tooltip open={tooltip.open}>
+              <DropdownMenuTrigger asChild>
+                <TooltipTrigger asChild>{settingsButton}</TooltipTrigger>
+              </DropdownMenuTrigger>
+              <TooltipContent side="bottom" align={resolvedTooltipAlign}>
+                {hasRename
+                  ? "Rename, Pin, Move, Download, Delete"
+                  : "Pin, Open, Move, Delete"}
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <DropdownMenuContent
             align={contextTriggerPosition ? "start" : resolvedContentAlign}
