@@ -661,7 +661,6 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       iconVariant="vertical_icon"
       dropdownMenuContentAlign="start"
       tooltipContentAlign="start"
-      hideTrigger
       contextMenuPosition={contextMenuPosition}
       onContextMenuClose={() => setContextMenuPosition(null)}
     />
@@ -672,9 +671,15 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       title={title}
       subtitle={preview}
       action={
-        item.favorite ? (
-          <Pin className="h-4 w-4 shrink-0 fill-primary text-primary" />
-        ) : undefined
+        <div
+          className="flex items-center gap-2"
+          onClick={(event) => event.preventDefault()}
+        >
+          {item.favorite && (
+            <Pin className="h-4 w-4 shrink-0 fill-primary text-primary" />
+          )}
+          {settings}
+        </div>
       }
     />
   );
@@ -688,7 +693,6 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       onContextMenu={handleContextMenu}
     >
       {content}
-      <span className="hidden">{settings}</span>
     </a>
   ) : (
     <IntentPrefetchLink
@@ -699,7 +703,6 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       onContextMenu={item.kind === "document" ? undefined : handleContextMenu}
     >
       {content}
-      <span className="hidden">{settings}</span>
     </IntentPrefetchLink>
   );
 
