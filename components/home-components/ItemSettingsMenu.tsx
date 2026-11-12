@@ -69,7 +69,9 @@ export type ItemSettingsKind =
   | "document"
   | "pdf"
   | "link"
-  | "whiteboard";
+  | "whiteboard"
+  | "table"
+  | "folder";
 
 export interface ItemSettingsMenuProps {
   itemId: Id<any>;
@@ -128,8 +130,13 @@ export default function ItemSettingsMenu({
   const resolvedTooltipAlign = tooltipAlignProp || tooltipContentAlign || "end";
   const canShowWidth = showWidthProp ?? showWidthOption ?? false;
 
-  const normalizedKind: "note" | "pdf" | "link" | "whiteboard" =
-    itemKind === "document" ? "note" : itemKind;
+  const normalizedKind:
+    | "note"
+    | "pdf"
+    | "link"
+    | "whiteboard"
+    | "table"
+    | "folder" = itemKind === "document" ? "note" : itemKind;
   const hasRename = normalizedKind !== "link";
 
   const fetchedNote = useQuery(
@@ -148,6 +155,18 @@ export default function ItemSettingsMenu({
     api.whiteboards.getWhiteboardById,
     normalizedKind === "whiteboard" && !initialData ? { _id: itemId } : "skip",
   );
+  const fetchedTable = useQuery(
+    api.tables.getTableById,
+    normalizedKind === "table" && !initialData ? { _id: itemId } : "skip",
+  );
+  const fetchedFolder = useQuery(
+    api.folders.getFolderById,
+    normalizedKind === "folder" && !initialData ? { _id: itemId } : "skip",
+  );
+  const folderTables = useQuery(
+    api.tables.getTables,
+    normalizedKind === "folder" ? { folderId: itemId } : "skip",
+  );
 
   const itemData =
     initialData ??
@@ -157,10 +176,15 @@ export default function ItemSettingsMenu({
         ? fetchedPdf
         : normalizedKind === "link"
           ? fetchedLink
-          : fetchedWhiteboard);
+          : normalizedKind === "whiteboard"
+            ? fetchedWhiteboard
+            : normalizedKind === "table"
+              ? fetchedTable
+              : fetchedFolder);
 
   const itemTitle =
     itemData?.title ??
+    itemData?.name ??
     initialTitleProp ??
     (normalizedKind === "link" ? (itemData as any)?.url : "") ??
     "Untitled";
@@ -184,6 +208,10 @@ export default function ItemSettingsMenu({
   const deleteLink = useMutation(api.links.deleteLink);
   const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
   const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
+  const updateTable = useMutation(api.tables.updateTable);
+  const deleteTable = useMutation(api.tables.deleteTable);
+  const updateFolder = useMutation(api.folders.updateFolder);
+  const deleteFolder = useMutation(api.folders.deleteFolder);
 
   const { handleDownload } = useNoteDownload({
     noteBody: itemData?.body,
@@ -237,14 +265,26 @@ export default function ItemSettingsMenu({
         (currentSlug ? extractIdFromSlug(currentSlug) : null);
       return currentWbId === String(itemId);
     }
+    if (normalizedKind === "folder") {
+      return pathname.split("/").includes(String(itemId));
+    }
     return false;
-  }, [normalizedKind, searchParams, currentSlug, itemId]);
+  }, [normalizedKind, searchParams, pathname, currentSlug, itemId]);
 
   // Rename commit
   const commitRename = useCallback(
     async (newTitle: string) => {
       const trimmed = newTitle.trim();
-      if (!trimmed || trimmed === itemTitle) return;
+      const hasNameLimit =
+        normalizedKind === "table" || normalizedKind === "folder";
+      if (
+        !trimmed ||
+        trimmed === itemTitle ||
+        (hasNameLimit && trimmed.length > 30)
+      ) {
+        if (hasNameLimit && trimmed.length > 30) setInputValue(itemTitle);
+        return;
+      }
 
       try {
         if (normalizedKind === "note") {
@@ -269,6 +309,10 @@ export default function ItemSettingsMenu({
             currentUrl.pathname = segments.join("/");
             window.history.replaceState({}, "", currentUrl.href);
           }
+        } else if (normalizedKind === "table") {
+          await updateTable({ _id: itemId, name: trimmed });
+        } else if (normalizedKind === "folder") {
+          await updateFolder({ _id: itemId, name: trimmed });
         }
       } catch (error) {
         console.error("Failed to rename item:", error);
@@ -281,8 +325,9 @@ export default function ItemSettingsMenu({
       itemTitle,
       updateNote,
       updatePdf,
-      updateLink,
       updateWhiteboard,
+      updateTable,
+      updateFolder,
       syncBrowserChrome,
       isViewingCurrent,
     ],
@@ -375,6 +420,10 @@ export default function ItemSettingsMenu({
         await deleteLink({ _id: itemId });
       } else if (normalizedKind === "whiteboard") {
         await deleteWhiteboard({ _id: itemId });
+      } else if (normalizedKind === "table") {
+        await deleteTable({ _id: itemId });
+      } else if (normalizedKind === "folder") {
+        await deleteFolder({ _id: itemId });
       }
       setIsAlertOpen(false);
     } catch (error) {
@@ -398,7 +447,11 @@ export default function ItemSettingsMenu({
         ? "Upload"
         : normalizedKind === "link"
           ? "Link"
-          : "Whiteboard";
+          : normalizedKind === "whiteboard"
+            ? "Whiteboard"
+            : normalizedKind === "table"
+              ? "Table"
+              : "Folder";
 
   const settingsButton = (
     <Button
@@ -432,7 +485,7 @@ export default function ItemSettingsMenu({
           onOpenChange={(next) => {
             setOpen(next);
             if (!next) {
-              setContextTriggerPosition(null);
+              // Keep the virtual trigger anchored during Radix's close animation.
               onContextMenuClose?.();
             }
             if (next) {
@@ -468,9 +521,13 @@ export default function ItemSettingsMenu({
                 <TooltipTrigger asChild>{settingsButton}</TooltipTrigger>
               </DropdownMenuTrigger>
               <TooltipContent side="bottom" align={resolvedTooltipAlign}>
-                {hasRename
-                  ? "Rename, Pin, Move, Download, Delete"
-                  : "Pin, Open, Move, Delete"}
+                {normalizedKind === "folder"
+                  ? "Rename, Delete"
+                  : normalizedKind === "table"
+                    ? "Rename, Move, Delete"
+                    : hasRename
+                      ? "Rename, Pin, Move, Download, Delete"
+                      : "Pin, Open, Move, Delete"}
               </TooltipContent>
             </Tooltip>
           )}
@@ -499,20 +556,29 @@ export default function ItemSettingsMenu({
                   }}
                   className="h-8 text-foreground"
                   placeholder={`Rename your ${kindLabel.toLowerCase()}`}
+                  maxLength={
+                    normalizedKind === "table" || normalizedKind === "folder"
+                      ? 30
+                      : undefined
+                  }
                 />
               </DropdownMenuGroup>
             )}
 
             <DropdownMenuGroup>
-              <Button
-                variant="SidebarMenuButton"
-                className="h-8 w-full px-2 text-sm"
-                onClick={() => void handleFavoritePin()}
-                aria-label={`pin-${kindLabel.toLowerCase()}`}
-              >
-                <Pin size={14} className="text-muted-foreground" />
-                {itemData?.favorite ? `Unpin ${kindLabel}` : `Pin ${kindLabel}`}
-              </Button>
+              {normalizedKind !== "table" && normalizedKind !== "folder" && (
+                <Button
+                  variant="SidebarMenuButton"
+                  className="h-8 w-full px-2 text-sm"
+                  onClick={() => void handleFavoritePin()}
+                  aria-label={`pin-${kindLabel.toLowerCase()}`}
+                >
+                  <Pin size={14} className="text-muted-foreground" />
+                  {itemData?.favorite
+                    ? `Unpin ${kindLabel}`
+                    : `Pin ${kindLabel}`}
+                </Button>
+              )}
 
               {normalizedKind === "link" && (itemData as any)?.url && (
                 <>
@@ -551,7 +617,9 @@ export default function ItemSettingsMenu({
                 </>
               )}
 
-              {normalizedKind !== "link" && (
+              {(normalizedKind === "note" ||
+                normalizedKind === "pdf" ||
+                normalizedKind === "whiteboard") && (
                 <ItemPropertiesMenu
                   status={itemData?.status}
                   priority={itemData?.priority}
@@ -560,18 +628,21 @@ export default function ItemSettingsMenu({
                 />
               )}
 
-              <Button
-                variant="SidebarMenuButton"
-                className="h-8 w-full px-2 text-sm"
-                onClick={() => {
-                  setOpen(false);
-                  setIsMoveDialogOpen(true);
-                }}
-                aria-label={`move-${kindLabel.toLowerCase()}`}
-              >
-                <FileOutput size={14} className="text-muted-foreground" />
-                Move {kindLabel}
-              </Button>
+              {normalizedKind !== "folder" && (
+                <Button
+                  variant="SidebarMenuButton"
+                  className="h-8 w-full px-2 text-sm"
+                  disabled={!itemData}
+                  onClick={() => {
+                    setOpen(false);
+                    setIsMoveDialogOpen(true);
+                  }}
+                  aria-label={`move-${kindLabel.toLowerCase()}`}
+                >
+                  <FileOutput size={14} className="text-muted-foreground" />
+                  Move {kindLabel}
+                </Button>
+              )}
 
               {/* Download options */}
               {normalizedKind === "note" && (
@@ -729,10 +800,16 @@ export default function ItemSettingsMenu({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm {kindLabel} Deletion</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Are you sure you want to delete this {kindLabel.toLowerCase()}?
-              This action cannot be undone.
+              {normalizedKind === "folder" && (folderTables?.length ?? 0) > 0
+                ? `This folder contains ${folderTables?.length} table(s). Deleting it will permanently remove all tables, documents, and uploads inside.`
+                : `Are you sure you want to delete this ${kindLabel.toLowerCase()}? This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {(normalizedKind === "table" || normalizedKind === "folder") && (
+            <p className="text-xs text-muted-foreground">
+              Hold Shift when clicking Delete to skip this confirmation.
+            </p>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
@@ -745,18 +822,21 @@ export default function ItemSettingsMenu({
         </AlertDialogContent>
       </AlertDialog>
 
-      <MoveItemDialog
-        open={isMoveDialogOpen}
-        onOpenChange={setIsMoveDialogOpen}
-        item={{
-          _id: itemId,
-          kind: normalizedKind,
-          title: itemTitle,
-          slug: (itemData as any)?.slug,
-          workingSpaceId: (itemData as any)?.workingSpaceId,
-          notesTableId: (itemData as any)?.notesTableId,
-        }}
-      />
+      {normalizedKind !== "folder" && isMoveDialogOpen && (
+        <MoveItemDialog
+          open={isMoveDialogOpen}
+          onOpenChange={setIsMoveDialogOpen}
+          item={{
+            _id: itemId,
+            kind: normalizedKind,
+            title: itemTitle,
+            slug: (itemData as any)?.slug,
+            workingSpaceId:
+              (itemData as any)?.workingSpaceId ?? (itemData as any)?.folderId,
+            notesTableId: (itemData as any)?.notesTableId,
+          }}
+        />
+      )}
     </>
   );
 }

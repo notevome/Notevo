@@ -30,7 +30,13 @@ import {
 import CreateTableBtn from "./CreateTableBtn";
 import IntentPrefetchLink from "../IntentPrefetchLink";
 
-export type MoveItemKind = "note" | "document" | "pdf" | "link" | "whiteboard";
+export type MoveItemKind =
+  | "note"
+  | "document"
+  | "pdf"
+  | "link"
+  | "whiteboard"
+  | "table";
 
 export interface MoveItemData {
   _id: Id<any>;
@@ -70,6 +76,7 @@ const kindLabels: Record<MoveItemKind, { singular: string; title: string }> = {
   pdf: { singular: "upload", title: "Move PDF" },
   link: { singular: "link", title: "Move link" },
   whiteboard: { singular: "whiteboard", title: "Move whiteboard" },
+  table: { singular: "table", title: "Move table" },
 };
 
 export default function MoveItemDialog({
@@ -83,19 +90,33 @@ export default function MoveItemDialog({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
-  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>([]);
+  const [expandedWorkspaceIds, setExpandedWorkspaceIds] = useState<string[]>(
+    [],
+  );
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [movingTableId, setMovingTableId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const moveTargets = useQuery(api.documents.getWorkspaceTreeForMove, {
-    searchQuery: debouncedQuery || undefined,
-  }) as any[] | undefined;
+  const itemMoveTargets = useQuery(
+    api.documents.getWorkspaceTreeForMove,
+    item.kind === "table"
+      ? "skip"
+      : { searchQuery: debouncedQuery || undefined },
+  ) as any[] | undefined;
+  const tableMoveTargets = useQuery(
+    api.tables.getWorkspacesForMove,
+    item.kind === "table"
+      ? { searchQuery: debouncedQuery || undefined }
+      : "skip",
+  ) as any[] | undefined;
+  const moveTargets =
+    item.kind === "table" ? tableMoveTargets : itemMoveTargets;
 
   const moveNote = useMutation(api.documents.moveNote);
   const movePdf = useMutation(api.pdfs.movePdf);
   const moveLink = useMutation(api.links.moveLink);
   const moveWhiteboard = useMutation(api.whiteboards.moveWhiteboard);
+  const moveTable = useMutation(api.tables.moveTable);
   const createWorkingSpace = useMutation(api.folders.createFolder);
 
   useEffect(() => {
@@ -161,16 +182,25 @@ export default function MoveItemDialog({
 
   const handleMove = async (
     targetWorkingSpaceId: Id<"folders">,
-    targetNotesTableId: Id<"tables">,
+    targetNotesTableId?: Id<"tables">,
   ) => {
     const kindInfo = kindLabels[item.kind] || kindLabels.document;
     try {
-      setMovingTableId(String(targetNotesTableId));
+      if (item.kind !== "table" && !targetNotesTableId) {
+        throw new Error("A destination table is required to move this item.");
+      }
+      setMovingTableId(String(targetNotesTableId ?? targetWorkingSpaceId));
 
       let destinationHref: string | null = null;
       let prefetchId: Id<"documents"> | undefined;
 
-      if (item.kind === "note" || item.kind === "document") {
+      if (item.kind === "table") {
+        const result = await moveTable({
+          _id: item._id as Id<"tables">,
+          targetWorkingSpaceId,
+        });
+        destinationHref = `/home/${result.folderId}?tableId=${item._id}`;
+      } else if (item.kind === "note" || item.kind === "document") {
         const result = await moveNote({
           _id: item._id as Id<"documents">,
           targetWorkingSpaceId,
@@ -217,7 +247,10 @@ export default function MoveItemDialog({
           targetWorkingSpaceId,
           targetNotesTableId,
         });
-        const wbSlug = buildItemSlug(item.title || "untitled-whiteboard", item._id);
+        const wbSlug = buildItemSlug(
+          item.title || "untitled-whiteboard",
+          item._id,
+        );
         destinationHref = `/home/${targetWorkingSpaceId}/${wbSlug}`;
 
         const currentItemId =
@@ -272,7 +305,9 @@ export default function MoveItemDialog({
             {item.title || "Untitled"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-            Select a destination table in this folder or any other folder.
+            {item.kind === "table"
+              ? "Select a destination folder. Everything in the table moves with it."
+              : "Select a destination table in this folder or any other folder."}
           </DialogDescription>
         </DialogHeader>
 
@@ -283,7 +318,11 @@ export default function MoveItemDialog({
               ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search folders and tables..."
+              placeholder={
+                item.kind === "table"
+                  ? "Search folders..."
+                  : "Search folders and tables..."
+              }
               className="border-none px-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 text-sm bg-transparent"
             />
           </div>
@@ -323,8 +362,56 @@ export default function MoveItemDialog({
                   : "No folders found"}
               </p>
               <p className="mt-1">
-                Create a folder or table, then move this {kindInfo.singular} there.
+                {item.kind === "table"
+                  ? "Create a folder to move this table there."
+                  : `Create a folder or table, then move this ${kindInfo.singular} there.`}
               </p>
+            </div>
+          ) : item.kind === "table" ? (
+            <div className="space-y-0.5">
+              {moveTargets.map((workspace) => {
+                const isCurrentTarget =
+                  String(item.workingSpaceId) === String(workspace._id);
+                const isMoving = movingTableId === String(workspace._id);
+
+                return (
+                  <button
+                    key={workspace._id}
+                    type="button"
+                    onClick={() => handleMove(workspace._id)}
+                    disabled={isCurrentTarget || isMoving}
+                    className={cn(
+                      "flex w-full items-center justify-between app-radius-lg px-2 py-2 text-left transition-colors",
+                      isCurrentTarget
+                        ? "cursor-not-allowed bg-muted"
+                        : "hover:bg-border",
+                    )}
+                  >
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate text-sm font-medium text-foreground">
+                        <HighlightedText
+                          text={workspace.name || "Untitled"}
+                          query={debouncedQuery}
+                        />
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-[11px] text-muted-foreground/60">
+                      {isMoving ? (
+                        <LoadingAnimation className="h-4 w-4 text-primary" />
+                      ) : isCurrentTarget ? (
+                        <span className="text-xs font-medium border border-secondary-foreground/20 bg-secondary text-secondary-foreground px-2 py-0.5 app-radius-md">
+                          current
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-muted-foreground/50">
+                          move
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           ) : (
             <div className="space-y-1">
