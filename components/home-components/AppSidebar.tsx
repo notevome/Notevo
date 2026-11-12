@@ -90,8 +90,7 @@ import { generateSlug } from "@/lib/generateSlug";
 import { buildItemSlug, extractIdFromSlug } from "@/lib/slug";
 import { useQuery } from "@/cache/useQuery";
 import SkeletonSidebar from "../ui/skeleton-sidebar";
-import NoteContextMenu from "./NoteContextMenu";
-import SidebarItemContextMenu from "./SidebarItemContextMenu";
+import ItemContextMenu from "./ItemContextMenu";
 import { FaGithub } from "react-icons/fa6";
 import { useHomePane } from "./HomePaneDrawer";
 import { ShortcutBadge } from "../ui/shortcut-badge";
@@ -553,9 +552,14 @@ const PinnedNoteItem = memo(
     if (isEditing) return content;
 
     return (
-      <NoteContextMenu noteId={note._id} noteTitle={note.title}>
+      <ItemContextMenu
+        itemId={note._id}
+        itemKind="note"
+        itemTitle={note.title}
+        initialData={note}
+      >
         {content}
-      </NoteContextMenu>
+      </ItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -689,7 +693,6 @@ const PinnedUploadItem = memo(
     const [isEditing, setIsEditing] = useState(false);
     const [editedTitle, setEditedTitle] = useState(pdf.title || "Untitled");
     const updatePdf = useMutation(api.pdfs.updatePdf);
-    const deletePdf = useMutation(api.pdfs.deletePdf);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -793,19 +796,13 @@ const PinnedUploadItem = memo(
       ? "truncate flex-grow bg-gradient-to-r from-foreground from-40% via-transparent via-60% to-transparent to-100% text-transparent bg-clip-text"
       : "truncate flex-grow";
     return (
-      <SidebarItemContextMenu
-        itemName={pdf.title || "Untitled"}
-        itemLabel="Upload"
-        favorite={pdf.favorite}
-        onRename={(title) => updatePdf({ _id: pdf._id, title })}
-        onToggleFavorite={() =>
-          updatePdf({ _id: pdf._id, favorite: !pdf.favorite })
-        }
+      <ItemContextMenu
+        itemId={pdf._id}
+        itemKind="pdf"
+        itemTitle={pdf.title}
+        initialData={pdf}
         onDelete={() => {
-          if (isActive) {
-            router.back();
-          }
-          deletePdf({ _id: pdf._id });
+          if (pathname === legacyPdfPath) router.back();
         }}
       >
         <SidebarGroupContent
@@ -901,7 +898,7 @@ const PinnedUploadItem = memo(
             />
           </div>
         </SidebarGroupContent>
-      </SidebarItemContextMenu>
+      </ItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1042,7 +1039,6 @@ const PinnedWhiteboardItem = memo(
       whiteboard.title || "Untitled",
     );
     const updateWhiteboard = useMutation(api.whiteboards.updateWhiteboard);
-    const deleteWhiteboard = useMutation(api.whiteboards.deleteWhiteboard);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
 
@@ -1160,22 +1156,13 @@ const PinnedWhiteboardItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarItemContextMenu
-        itemName={whiteboard.title || "Untitled"}
-        itemLabel="Whiteboard"
-        favorite={whiteboard.favorite}
-        onRename={(title) => updateWhiteboard({ _id: whiteboard._id, title })}
-        onToggleFavorite={() =>
-          updateWhiteboard({
-            _id: whiteboard._id,
-            favorite: !whiteboard.favorite,
-          })
-        }
+      <ItemContextMenu
+        itemId={whiteboard._id}
+        itemKind="whiteboard"
+        itemTitle={whiteboard.title}
+        initialData={whiteboard}
         onDelete={() => {
-          if (isActive) {
-            router.back();
-          }
-          deleteWhiteboard({ _id: whiteboard._id });
+          if (pathname === legacyWhiteboardPath) router.back();
         }}
       >
         <SidebarGroupContent
@@ -1261,7 +1248,7 @@ const PinnedWhiteboardItem = memo(
             />
           </div>
         </SidebarGroupContent>
-      </SidebarItemContextMenu>
+      </ItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1432,8 +1419,6 @@ const PinnedLinkItem = memo(
     const titleTooltip = useHoverTooltip(400);
     const { toast } = useToast();
     const [isHovered, setIsHovered] = useState(false);
-    const updateLink = useMutation(api.links.updateLink);
-    const deleteLink = useMutation(api.links.deleteLink);
 
     const displayTitle =
       link.title ||
@@ -1454,14 +1439,11 @@ const PinnedLinkItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarItemContextMenu
-        itemName={displayTitle}
-        itemLabel="Link"
-        favorite={link.favorite}
-        onToggleFavorite={() =>
-          updateLink({ _id: link._id, favorite: !link.favorite })
-        }
-        onDelete={() => deleteLink({ _id: link._id })}
+      <ItemContextMenu
+        itemId={link._id}
+        itemKind="link"
+        itemTitle={displayTitle}
+        initialData={link}
       >
         <SidebarGroupContent
           className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -1533,7 +1515,7 @@ const PinnedLinkItem = memo(
             />
           </div>
         </SidebarGroupContent>
-      </SidebarItemContextMenu>
+      </ItemContextMenu>
     );
   },
   (prevProps, nextProps) => {
@@ -1849,7 +1831,6 @@ const WorkspaceItem = memo(
         );
       }
     });
-    const deleteWorkingSpace = useMutation(api.folders.deleteFolder);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const workspaceHref = `/home/${workingSpace._id}`;
@@ -1932,16 +1913,11 @@ const WorkspaceItem = memo(
       : "truncate flex-grow";
 
     return (
-      <SidebarItemContextMenu
-        itemName={workingSpace.name || "Untitled"}
-        itemLabel="Folder"
-        onRename={(name) => updateWorkingSpace({ _id: workingSpace._id, name })}
-        onDelete={() => {
-          if (isActive) {
-            router.back();
-          }
-          deleteWorkingSpace({ _id: workingSpace._id });
-        }}
+      <ItemContextMenu
+        itemId={workingSpace._id}
+        itemKind="folder"
+        itemTitle={workingSpace.name}
+        initialData={workingSpace}
       >
         <SidebarGroupContent
           className="relative h-8 my-0.5 w-full flex justify-between items-center overflow-hidden group/item"
@@ -2026,7 +2002,7 @@ const WorkspaceItem = memo(
             />
           </div>
         </SidebarGroupContent>
-      </SidebarItemContextMenu>
+      </ItemContextMenu>
     );
   },
   (prevProps, nextProps) => {

@@ -17,7 +17,6 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import MaxWContainer from "@/components/ui/MaxWContainer";
-import FolderSettings from "@/components/home-components/FolderSettings";
 import FolderNotFound from "@/components/home-components/FolderNotFound";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
@@ -41,8 +40,10 @@ import { cn } from "@/lib/utils";
 import { z } from "zod";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
-import NoteContextMenu from "@/components/home-components/NoteContextMenu";
-import ItemSettingsMenu, { ItemSettingsKind } from "@/components/home-components/ItemSettingsMenu";
+import ItemContextMenu from "@/components/home-components/ItemContextMenu";
+import ItemSettingsMenu, {
+  ItemSettingsKind,
+} from "@/components/home-components/ItemSettingsMenu";
 import {
   FolderItemGridCardContent,
   folderItemGridCardClassName,
@@ -388,10 +389,6 @@ function WorkspaceCard({
 }: WorkspaceCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
-  const [contextMenuPosition, setContextMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   const updateWorkingSpace = useMutation(
@@ -461,74 +458,81 @@ function WorkspaceCard({
   );
 
   return (
-    <div
-      draggable={false}
-      className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]"
+    <ItemContextMenu
+      itemId={workspace._id}
+      itemKind="folder"
+      itemTitle={workspace.name}
+      initialData={workspace}
     >
-      <FolderTab interactive />
-      <Card
-        className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors group-hover/folder:border-muted-foreground/50"
-        style={{ borderTopLeftRadius: 0 }}
-        onContextMenu={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          setContextMenuPosition({ x: event.clientX, y: event.clientY });
-        }}
+      <div
+        draggable={false}
+        className="group/folder relative flex flex-col flex-shrink-0 w-[330px] min-h-[220px]"
       >
-        <IntentPrefetchLink
-          draggable={false}
-          href={`/home/${workspace._id}`}
-          aria-label={`Open ${workspace.name || "Untitled"}`}
-          className="absolute inset-0 z-[1]"
-        />
-        <CardHeader className="pb-3 relative">
-          {isEditingName ? (
-            <div className="relative z-[2] flex flex-col gap-1 pr-8 max-w-sm">
-              <Input
-                ref={nameInputRef}
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                onBlur={handleNameBlur}
-                onKeyDown={handleNameKeyDown}
-                className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-none border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+        <FolderTab interactive />
+        <Card
+          className="flex flex-1 flex-col justify-between items-stretch relative overflow-hidden bg-card border-border cursor-pointer transition-colors group-hover/folder:border-muted-foreground/50"
+          style={{ borderTopLeftRadius: 0 }}
+        >
+          <IntentPrefetchLink
+            draggable={false}
+            href={`/home/${workspace._id}`}
+            aria-label={`Open ${workspace.name || "Untitled"}`}
+            className="absolute inset-0 z-[1]"
+          />
+          <CardHeader className="pb-3 relative">
+            {isEditingName ? (
+              <div className="relative z-[2] flex flex-col gap-1 pr-8 max-w-sm">
+                <Input
+                  ref={nameInputRef}
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  onBlur={handleNameBlur}
+                  onKeyDown={handleNameKeyDown}
+                  className="min-w-fit max-w-md !text-lg font-semibold h-[1.9rem] py-0 px-0 my-0 app-radius-none border border-transparent bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+            ) : (
+              <CardTitle
+                className="relative z-[2] text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text border-b border-transparent hover:border-muted-foreground/50"
+                onDoubleClick={handleNameDoubleClick}
+              >
+                {workspace.name || "Untitled"}
+              </CardTitle>
+            )}
+            <div className="absolute top-1.5 right-2 z-[2]">
+              <ItemSettingsMenu
+                itemId={workspace._id}
+                itemKind="folder"
+                itemTitle={workspace.name}
+                initialData={workspace}
+                iconVariant="horizontal_icon"
+                btnClassName="h-8 w-8 px-1.5"
+                dropdownMenuContentAlign="end"
+                tooltipContentAlign="end"
               />
             </div>
-          ) : (
-            <CardTitle
-              className="relative z-[2] text-lg font-semibold text-foreground line-clamp-2 w-fit cursor-text border-b border-transparent hover:border-muted-foreground/50"
-              onDoubleClick={handleNameDoubleClick}
-            >
-              {workspace.name || "Untitled"}
-            </CardTitle>
-          )}
-          <div className="absolute top-1.5 right-2 z-[2]">
-            <FolderSettings
-              workingSpaceId={workspace._id as any}
-              workingspaceName={workspace.name}
-              hideTrigger
-              contextMenuPosition={contextMenuPosition}
-              onContextMenuClose={() => setContextMenuPosition(null)}
-            />
-          </div>
-        </CardHeader>
-        <CardContent className="flex-grow flex-1 ">
-          <span className=" w-full flex justify-center items-center h-full">
-            <FolderClosed className="h-10 w-full text-primary text-center group-hover/folder:hidden" />
-            <FolderOpen className="hidden h-10 w-full text-primary text-center group-hover/folder:block" />
-          </span>
-        </CardContent>
-        <CardFooter className="py-3 px-2.5 flex items-center justify-between border-t border-border">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            {typeof window !== "undefined" ? (
-              <span>{new Date(workspace.updatedAt).toLocaleDateString()}</span>
-            ) : (
-              <SkeletonTextAnimation className="w-20" />
-            )}
-          </div>
-        </CardFooter>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent className="flex-grow flex-1 ">
+            <span className=" w-full flex justify-center items-center h-full">
+              <FolderClosed className="h-10 w-full text-primary text-center group-hover/folder:hidden" />
+              <FolderOpen className="hidden h-10 w-full text-primary text-center group-hover/folder:block" />
+            </span>
+          </CardContent>
+          <CardFooter className="py-3 px-2.5 flex items-center justify-between border-t border-border">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3.5 w-3.5" />
+              {typeof window !== "undefined" ? (
+                <span>
+                  {new Date(workspace.updatedAt).toLocaleDateString()}
+                </span>
+              ) : (
+                <SkeletonTextAnimation className="w-20" />
+              )}
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
+    </ItemContextMenu>
   );
 }
 
@@ -604,10 +608,6 @@ function isEmptyWhiteboard(snapshot?: string) {
 }
 
 function RecentItemCard({ item }: { item: RecentItem }) {
-  const [contextMenuPosition, setContextMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
   const isLink = item.kind === "link";
   const workspaceId = isLink
     ? undefined
@@ -647,11 +647,6 @@ function RecentItemCard({ item }: { item: RecentItem }) {
     ? item.url
     : `/home/${workspaceId}/${buildItemSlug(title, item._id)}`;
   const cardClassName = `${folderItemGridCardClassName} h-[270px] w-[370px] shrink-0`;
-  const handleContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenuPosition({ x: event.clientX, y: event.clientY });
-  };
   const settings = (
     <ItemSettingsMenu
       itemId={item._id}
@@ -661,8 +656,6 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       iconVariant="vertical_icon"
       dropdownMenuContentAlign="start"
       tooltipContentAlign="start"
-      contextMenuPosition={contextMenuPosition}
-      onContextMenuClose={() => setContextMenuPosition(null)}
     />
   );
   const content = (
@@ -685,13 +678,7 @@ function RecentItemCard({ item }: { item: RecentItem }) {
   );
 
   const card = isLink ? (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={cardClassName}
-      onContextMenu={handleContextMenu}
-    >
+    <a href={href} target="_blank" rel="noreferrer" className={cardClassName}>
       {content}
     </a>
   ) : (
@@ -700,17 +687,19 @@ function RecentItemCard({ item }: { item: RecentItem }) {
       href={href}
       prefetchNoteId={item.kind === "document" ? item._id : undefined}
       className={cardClassName}
-      onContextMenu={item.kind === "document" ? undefined : handleContextMenu}
     >
       {content}
     </IntentPrefetchLink>
   );
 
-  return item.kind === "document" ? (
-    <NoteContextMenu noteId={item._id} noteTitle={item.title}>
+  return (
+    <ItemContextMenu
+      itemId={item._id}
+      itemKind={item.kind}
+      itemTitle={title}
+      initialData={item}
+    >
       {card}
-    </NoteContextMenu>
-  ) : (
-    card
+    </ItemContextMenu>
   );
 }

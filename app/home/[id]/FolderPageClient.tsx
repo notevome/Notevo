@@ -45,16 +45,16 @@ import { platformLabel, type LinkPlatform } from "@/lib/link-platform";
 import MaxWContainer from "@/components/ui/MaxWContainer";
 import CreateTableBtn from "@/components/home-components/CreateTableBtn";
 import CreateNoteBtn from "@/components/home-components/CreateNoteBtn";
-import TableSettings from "@/components/home-components/TableSettings";
-import ItemSettingsMenu, { ItemSettingsKind } from "@/components/home-components/ItemSettingsMenu";
-import NoteContextMenu from "@/components/home-components/NoteContextMenu";
+import ItemSettingsMenu, {
+  ItemSettingsKind,
+} from "@/components/home-components/ItemSettingsMenu";
+import ItemContextMenu from "@/components/home-components/ItemContextMenu";
 import {
   FolderItemGridCardContent,
   folderItemGridCardClassName,
 } from "@/components/home-components/FolderItemGridCard";
 import { ItemPropertiesBadges } from "@/components/home-components/ItemProperties";
 import TablesNotFound from "@/components/home-components/TablesNotFound";
-import MoveTableDialog from "@/components/home-components/MoveTableDialog";
 import SkeletonTextAnimation from "@/components/ui/SkeletonTextAnimation";
 import LoadingAnimation from "@/components/ui/LoadingAnimation";
 import IntentPrefetchLink from "@/components/IntentPrefetchLink";
@@ -841,12 +841,6 @@ function TableTab({ table }: { table: any }) {
   const [editedName, setEditedName] = useState(table.name || "Untitled");
   const [isHovered, setIsHovered] = useState(false);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const [contextMenuOpen, setContextMenuOpen] = useState(false);
-  const [contextMenuPosition, setContextMenuPosition] = useState({
-    x: 0,
-    y: 0,
-  });
   const inputRef = useRef<HTMLInputElement>(null);
 
   const updateTable = useMutation(api.tables.updateTable).withOptimisticUpdate(
@@ -988,130 +982,79 @@ function TableTab({ table }: { table: any }) {
 
   return (
     <>
-      <div
-        className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg app-radius-b-none min-w-44"
-        onMouseEnter={handleContentMouseEnter}
-        onMouseLeave={handleContentMouseLeave}
+      <ItemContextMenu
+        className="contents"
+        itemId={table._id}
+        itemKind="table"
+        itemTitle={table.name}
+        initialData={table}
       >
-        {isRenameOpen ? (
-          <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg app-radius-b-none border-2 border-border border-b-0 bg-card">
-            <Input
-              ref={inputRef as any}
-              value={editedName}
-              onChange={(e) => setEditedName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onBlur={() => void handleRenameSave()}
-              placeholder="Rename table"
-              aria-label="rename-table-input"
-              className="h-6 !w-24 !leading-6 flex-grow border-none bg-transparent mx-0 px-2 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
-            />
-          </div>
-        ) : (
-          <TabsTrigger
-            value={table._id}
-            data-tab-id={table._id}
-            className=" px-4 py-2.5 app-radius-lg app-radius-b-none w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
-            onDoubleClick={handleDoubleClick}
-            onContextMenu={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              setContextMenuPosition({ x: event.clientX, y: event.clientY });
-              setContextMenuOpen(false);
-              requestAnimationFrame(() => setContextMenuOpen(true));
-            }}
-            aria-label="rename-table"
-          >
-            <p className={cn(textClassName, "w-full")}>
-              {formatTableName(table.name)}
-            </p>
-          </TabsTrigger>
-        )}
         <div
-          className={cn(
-            "absolute inset-y-0 right-2 flex items-center",
-            isHovered && !isRenameOpen
-              ? "opacity-100 "
-              : "opacity-0 pointer-events-none",
-          )}
+          className=" relative flex-shrink-0 overflow-hidden group/tab hover:bg-card app-radius-lg app-radius-b-none min-w-44"
+          onMouseEnter={handleContentMouseEnter}
+          onMouseLeave={handleContentMouseLeave}
         >
-          <Tooltip open={deleteTooltip.open}>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={(e) => {
-                  if (e.button === 0 && e.shiftKey) {
-                    e.preventDefault();
-                    handleDelete();
-                  } else {
-                    setIsDeleteAlertOpen(true);
-                  }
-                }}
-                className=" px-1.5 h-7 text-foreground hover:text-destructive"
-                aria-label="delete-table"
-                {...deleteTooltip.triggerProps}
-              >
-                <X size={16} />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={5}>
-              Delete table
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-          <DropdownMenuTrigger asChild>
-            <span
-              aria-hidden
-              style={{
-                position: "fixed",
-                left: contextMenuPosition.x,
-                top: contextMenuPosition.y,
-                width: 0,
-                height: 0,
-                pointerEvents: "none",
-              }}
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            side="bottom"
-            className="z-[10000] w-44"
+          {isRenameOpen ? (
+            <div className=" relative flex items-center gap-1.5 px-2 py-2 app-radius-lg app-radius-b-none border-2 border-border border-b-0 bg-card">
+              <Input
+                ref={inputRef as any}
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={() => void handleRenameSave()}
+                placeholder="Rename table"
+                aria-label="rename-table-input"
+                className="h-6 !w-24 !leading-6 flex-grow border-none bg-transparent mx-0 px-2 py-0 shadow-none focus-visible:ring-1 focus-visible:ring-ring"
+              />
+            </div>
+          ) : (
+            <TabsTrigger
+              value={table._id}
+              data-tab-id={table._id}
+              className=" px-4 py-2.5 app-radius-lg app-radius-b-none w-full text-start whitespace-nowrap flex items-center gap-1.5 border-2 border-transparent border-b-0 data-[state=active]:border-border"
+              onDoubleClick={handleDoubleClick}
+              aria-label="rename-table"
+            >
+              <p className={cn(textClassName, "w-full")}>
+                {formatTableName(table.name)}
+              </p>
+            </TabsTrigger>
+          )}
+          <div
+            className={cn(
+              "absolute inset-y-0 right-2 flex items-center",
+              isHovered && !isRenameOpen
+                ? "opacity-100 "
+                : "opacity-0 pointer-events-none",
+            )}
           >
-            <DropdownMenuItem
-              onClick={() => {
-                setEditedName(table.name || "Untitled");
-                setIsRenameOpen(true);
-                setContextMenuOpen(false);
-              }}
-            >
-              <Pencil className="h-4 w-4 text-muted-foreground" />
-              Rename table
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setContextMenuOpen(false);
-                setIsMoveDialogOpen(true);
-              }}
-            >
-              <FileOutput className="h-4 w-4 text-muted-foreground" />
-              Move table
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="hover:text-destructive focus:text-destructive group/delete"
-              onClick={() => {
-                setContextMenuOpen(false);
-                setIsDeleteAlertOpen(true);
-              }}
-            >
-              <FaRegTrashCan className="h-4 w-4 text-muted-foreground group-hover/delete:text-destructive group-focus/delete:text-destructive" />
-              Delete table
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+            <Tooltip open={deleteTooltip.open}>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={(e) => {
+                    if (e.button === 0 && e.shiftKey) {
+                      e.preventDefault();
+                      handleDelete();
+                    } else {
+                      setIsDeleteAlertOpen(true);
+                    }
+                  }}
+                  className=" px-1.5 h-7 text-foreground hover:text-destructive"
+                  aria-label="delete-table"
+                  {...deleteTooltip.triggerProps}
+                >
+                  <X size={16} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={5}>
+                Delete table
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </ItemContextMenu>
 
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="bg-card border border-border text-card-foreground">
@@ -1142,16 +1085,6 @@ function TableTab({ table }: { table: any }) {
           </AlertDialogFooter>{" "}
         </AlertDialogContent>
       </AlertDialog>
-
-      <MoveTableDialog
-        open={isMoveDialogOpen}
-        onOpenChange={setIsMoveDialogOpen}
-        table={{
-          _id: table._id,
-          name: table.name,
-          workingSpaceId: table.workingSpaceId,
-        }}
-      />
     </>
   );
 }
@@ -1541,8 +1474,7 @@ export default function FolderPageClient({
       const urlTable = params.get("table") || params.get("tableId");
       if (urlTable) return urlTable;
 
-      const folderSavedTable =
-        getLastVisitedTableForFolder(workingSpaceId);
+      const folderSavedTable = getLastVisitedTableForFolder(workingSpaceId);
       if (folderSavedTable) return folderSavedTable;
 
       return (
@@ -2376,9 +2308,12 @@ export function NotesDroppableContainer({
               })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <TableSettings
-            notesTableId={tableId}
-            tableName={tables?.find((t) => t._id === tableId)?.name}
+          <ItemSettingsMenu
+            itemId={tableId}
+            itemKind="table"
+            itemTitle={tables?.find((t) => t._id === tableId)?.name}
+            btnVariant="outline"
+            btnClassName="h-9 px-0.5 bg-background"
           />
         </div>
       </div>
@@ -3372,15 +3307,6 @@ function TimelineMiniCard({
   item: WorkspaceEntry;
   workspaceId?: Id<"folders">;
 }) {
-  const [contextMenuPosition, setContextMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenuPosition({ x: event.clientX, y: event.clientY });
-  }, []);
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
@@ -3508,42 +3434,27 @@ function TimelineMiniCard({
           </div>
         </div>
       </div>
-      {item.kind !== "note" && (
-        <div className="hidden" onClick={(event) => event.stopPropagation()}>
-          <WorkspaceItemSettings
-            item={item}
-            contextMenuPosition={contextMenuPosition}
-            onContextMenuClose={() => setContextMenuPosition(null)}
-          />
-        </div>
-      )}
     </>
   );
 
   const { openPane } = useHomePane();
   const { toast } = useToast();
 
-  if (isLink) {
-    return (
-      <div
-        onClick={(e) => {
-          if (handleWorkspaceItemAltClick(e, item, openPane, toast)) return;
-          openLink();
-        }}
-        className={cn(cardClassName, "cursor-pointer")}
-        onContextMenu={handleContextMenu}
-      >
-        {cardContent}
-      </div>
-    );
-  }
-
-  const itemCard = (
+  const itemCard = isLink ? (
+    <div
+      onClick={(e) => {
+        if (handleWorkspaceItemAltClick(e, item, openPane, toast)) return;
+        openLink();
+      }}
+      className={cn(cardClassName, "cursor-pointer")}
+    >
+      {cardContent}
+    </div>
+  ) : (
     <IntentPrefetchLink
       href={href}
       prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
       className={cardClassName}
-      onContextMenu={item.kind === "note" ? undefined : handleContextMenu}
       onClick={(e) => {
         handleWorkspaceItemAltClick(e, item, openPane, toast);
       }}
@@ -3552,15 +3463,15 @@ function TimelineMiniCard({
     </IntentPrefetchLink>
   );
 
-  return item.kind === "note" ? (
-    <NoteContextMenu
-      noteId={(item as Note)._id}
-      noteTitle={(item as Note).title}
+  return (
+    <ItemContextMenu
+      itemId={item._id}
+      itemKind={item.kind as ItemSettingsKind}
+      itemTitle={title}
+      initialData={item}
     >
       {itemCard}
-    </NoteContextMenu>
-  ) : (
-    itemCard
+    </ItemContextMenu>
   );
 }
 
@@ -3609,13 +3520,9 @@ function getWorkspaceItemDetails(
 function WorkspaceItemSettings({
   item,
   onDelete,
-  contextMenuPosition,
-  onContextMenuClose,
 }: {
   item: WorkspaceEntry;
   onDelete?: (id: any) => void;
-  contextMenuPosition?: { x: number; y: number } | null;
-  onContextMenuClose?: () => void;
 }) {
   return (
     <ItemSettingsMenu
@@ -3627,8 +3534,6 @@ function WorkspaceItemSettings({
       dropdownMenuContentAlign="start"
       tooltipContentAlign="start"
       onDelete={onDelete}
-      contextMenuPosition={contextMenuPosition}
-      onContextMenuClose={onContextMenuClose}
       btnClassName={item.kind === "note" ? "pt-0" : undefined}
     />
   );
@@ -3760,15 +3665,6 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   const details = getWorkspaceItemDetails(item, workspaceId);
   const { openPane } = useHomePane();
   const { toast } = useToast();
-  const [contextMenuPosition, setContextMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenuPosition({ x: event.clientX, y: event.clientY });
-  }, []);
 
   const cardStyles = `${folderItemGridCardClassName} min-h-[230px] w-full`;
 
@@ -3785,19 +3681,14 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <WorkspaceItemSettings
-            item={item}
-            onDelete={onDelete}
-            contextMenuPosition={contextMenuPosition}
-            onContextMenuClose={() => setContextMenuPosition(null)}
-          />
+          <WorkspaceItemSettings item={item} onDelete={onDelete} />
         </div>
       }
     />
   );
 
-  if (item.kind === "link") {
-    return (
+  const itemCard =
+    item.kind === "link" ? (
       <div
         onClick={(e) => {
           if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
@@ -3805,35 +3696,32 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           }
         }}
         className={cardStyles}
-        onContextMenu={handleContextMenu}
       >
         {cardInnerContent}
       </div>
+    ) : (
+      <IntentPrefetchLink
+        href={details.href}
+        prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
+        className={cardStyles}
+        onClick={(e) => {
+          handleWorkspaceItemAltClick(e, item, openPane, toast);
+        }}
+      >
+        {cardInnerContent}
+      </IntentPrefetchLink>
     );
-  }
-  const itemCard = (
-    <IntentPrefetchLink
-      href={details.href}
-      prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
-      className={cardStyles}
-      onContextMenu={item.kind === "note" ? undefined : handleContextMenu}
-      onClick={(e) => {
-        handleWorkspaceItemAltClick(e, item, openPane, toast);
-      }}
-    >
-      {cardInnerContent}
-    </IntentPrefetchLink>
-  );
 
-  return item.kind === "note" ? (
-    <NoteContextMenu
-      noteId={(item as Note)._id}
-      noteTitle={(item as Note).title}
+  return (
+    <ItemContextMenu
+      itemId={item._id}
+      itemKind={item.kind as ItemSettingsKind}
+      itemTitle={details.title}
+      initialData={item}
+      onDelete={onDelete}
     >
       {itemCard}
-    </NoteContextMenu>
-  ) : (
-    itemCard
+    </ItemContextMenu>
   );
 });
 
@@ -3851,15 +3739,6 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
   const details = getWorkspaceItemDetails(item, workspaceId);
   const { openPane } = useHomePane();
   const { toast } = useToast();
-  const [contextMenuPosition, setContextMenuPosition] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenuPosition({ x: event.clientX, y: event.clientY });
-  }, []);
 
   const link = item.kind === "link" ? (item as LinkItem) : null;
   const isSocialLink = Boolean(link && isSocialLinkPlatform(link.platform));
@@ -3946,18 +3825,13 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
         onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <WorkspaceItemSettings
-          item={item}
-          onDelete={onDelete}
-          contextMenuPosition={contextMenuPosition}
-          onContextMenuClose={() => setContextMenuPosition(null)}
-        />
+        <WorkspaceItemSettings item={item} onDelete={onDelete} />
       </div>
     </CardContent>
   );
 
-  if (item.kind === "link") {
-    return (
+  const itemCard =
+    item.kind === "link" ? (
       <div
         onClick={(e) => {
           if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
@@ -3965,36 +3839,32 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
           }
         }}
         className={cardStyles}
-        onContextMenu={handleContextMenu}
       >
         {cardInnerContent}
       </div>
+    ) : (
+      <IntentPrefetchLink
+        href={details.href}
+        prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
+        className={cardStyles}
+        onClick={(e) => {
+          handleWorkspaceItemAltClick(e, item, openPane, toast);
+        }}
+      >
+        {cardInnerContent}
+      </IntentPrefetchLink>
     );
-  }
 
-  const itemCard = (
-    <IntentPrefetchLink
-      href={details.href}
-      prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
-      className={cardStyles}
-      onContextMenu={item.kind === "note" ? undefined : handleContextMenu}
-      onClick={(e) => {
-        handleWorkspaceItemAltClick(e, item, openPane, toast);
-      }}
-    >
-      {cardInnerContent}
-    </IntentPrefetchLink>
-  );
-
-  return item.kind === "note" ? (
-    <NoteContextMenu
-      noteId={(item as Note)._id}
-      noteTitle={(item as Note).title}
+  return (
+    <ItemContextMenu
+      itemId={item._id}
+      itemKind={item.kind as ItemSettingsKind}
+      itemTitle={details.title}
+      initialData={item}
+      onDelete={onDelete}
     >
       {itemCard}
-    </NoteContextMenu>
-  ) : (
-    itemCard
+    </ItemContextMenu>
   );
 });
 
