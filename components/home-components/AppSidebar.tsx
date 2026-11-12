@@ -120,7 +120,6 @@ const noteTitleSchema = z
   .min(1, "Title cannot be empty")
   .max(60, "Title must be 60 characters or less");
 
-const CREATE_NOTE_WORKSPACE_STORAGE_KEY = "oraizive_create_note_workspace_id";
 const PINNED_SECTION_EXPANDED_STORAGE_KEY =
   "oraizive_sidebar_pinned_section_expanded";
 const PINNED_NOTES_EXPANDED_STORAGE_KEY =

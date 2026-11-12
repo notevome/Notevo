@@ -1,9 +1,9 @@
 export const LAST_VISITED_FOLDER_KEY = "oraizive_last_visited_folder_id";
 export const LAST_VISITED_TABLE_KEY = "oraizive_last_visited_table_id";
-export const CREATE_NOTE_WORKSPACE_STORAGE_KEY =
-  "oraizive_create_note_workspace_id";
+export const CREATE_DOCUMENT_FOLDER_STORAGE_KEY =
+  "oraizive_create_document_folder_id";
 
-export function getWorkspaceLastVisitedTableKey(folderId: string): string {
+export function getFolderLastVisitedTableKey(folderId: string): string {
   return `oraizive_last_visited_table_${folderId}`;
 }
 
@@ -16,10 +16,13 @@ export function recordLastVisitedLocation(
     if (folderId) {
       const folderStr = String(folderId);
       window.localStorage.setItem(LAST_VISITED_FOLDER_KEY, folderStr);
-      window.localStorage.setItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY, folderStr);
+      window.localStorage.setItem(
+        CREATE_DOCUMENT_FOLDER_STORAGE_KEY,
+        folderStr,
+      );
       if (tableId) {
         window.localStorage.setItem(
-          getWorkspaceLastVisitedTableKey(folderStr),
+          getFolderLastVisitedTableKey(folderStr),
           String(tableId),
         );
       }
@@ -32,14 +35,14 @@ export function recordLastVisitedLocation(
   }
 }
 
-export function getLastVisitedTableForWorkspace(
+export function getLastVisitedTableForFolder(
   folderId?: string | null,
 ): string | null {
   if (typeof window === "undefined" || !folderId) return null;
   try {
     return (
       window.localStorage.getItem(
-        getWorkspaceLastVisitedTableKey(String(folderId)),
+        getFolderLastVisitedTableKey(String(folderId)),
       ) || null
     );
   } catch {
@@ -58,12 +61,12 @@ export function getLastVisitedLocation(preferredFolderId?: string | null): {
     const folderId =
       (preferredFolderId ? String(preferredFolderId) : null) ||
       window.localStorage.getItem(LAST_VISITED_FOLDER_KEY) ||
-      window.localStorage.getItem(CREATE_NOTE_WORKSPACE_STORAGE_KEY) ||
+      window.localStorage.getItem(CREATE_DOCUMENT_FOLDER_STORAGE_KEY) ||
       null;
 
     let tableId: string | null = null;
     if (folderId) {
-      tableId = getLastVisitedTableForWorkspace(folderId);
+      tableId = getLastVisitedTableForFolder(folderId);
     }
     if (!tableId) {
       tableId = window.localStorage.getItem(LAST_VISITED_TABLE_KEY) || null;
