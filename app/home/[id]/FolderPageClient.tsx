@@ -61,7 +61,7 @@ import IntentPrefetchLink from "@/components/IntentPrefetchLink";
 import { useHomePane } from "@/components/home-components/HomePaneDrawer";
 import {
   recordLastVisitedLocation,
-  getLastVisitedTableForWorkspace,
+  getLastVisitedTableForFolder,
 } from "@/lib/last-visited";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -1541,9 +1541,9 @@ export default function FolderPageClient({
       const urlTable = params.get("table") || params.get("tableId");
       if (urlTable) return urlTable;
 
-      const workspaceSavedTable =
-        getLastVisitedTableForWorkspace(workingSpaceId);
-      if (workspaceSavedTable) return workspaceSavedTable;
+      const folderSavedTable =
+        getLastVisitedTableForFolder(workingSpaceId);
+      if (folderSavedTable) return folderSavedTable;
 
       return (
         sessionStorage.getItem(`oraizive_active_table_${workingSpaceId}`) ||
@@ -1574,7 +1574,7 @@ export default function FolderPageClient({
       activeTableId && tables.some((t: any) => t._id === activeTableId);
     if (storedTableExists) return activeTableId;
 
-    const savedTableId = getLastVisitedTableForWorkspace(workingSpaceId);
+    const savedTableId = getLastVisitedTableForFolder(workingSpaceId);
     if (savedTableId && tables.some((t: any) => t._id === savedTableId)) {
       return savedTableId;
     }
