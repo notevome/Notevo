@@ -76,7 +76,7 @@ export default function BreadcrumbWithCustomSeparator() {
             if (workspaceName) {
               displayName = workspaceName;
             } else if (segment === "undefined" || segment === "null") {
-              displayName = "Workspace";
+              displayName = "Folder";
             } else {
               displayName = parseSlug(segment);
             }
