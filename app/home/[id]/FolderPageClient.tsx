@@ -2360,9 +2360,6 @@ export function NotesDroppableContainer({
               const renderItem = (item: (typeof displayItems)[number]) => {
                 const draggableEnabled =
                   !searchQuery.trim() && contentFilter === "all";
-                // List cards are inset with mx-6 md:mx-12 xl:mx-32, so the
-                // placeholder needs the same inset (as padding, so the whole
-                // row stays a valid drop zone) or it spans edge to edge.
                 const dropPlaceholder = (
                   <div
                     className={cn(
@@ -2408,9 +2405,6 @@ export function NotesDroppableContainer({
                       }}
                       onDragEnd={handleDragEnd}
                       onClickCapture={(e) => {
-                        // Some browsers fire a stray click/dblclick right
-                        // after a drop lands - don't let that also open the
-                        // card that was just being reordered.
                         if (justDraggedRef.current) {
                           e.preventDefault();
                           e.stopPropagation();

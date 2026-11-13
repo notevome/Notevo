@@ -63,6 +63,7 @@ import {
 } from "@/components/ui/settings-move-hint";
 import { ItemPropertiesMenu } from "./ItemProperties";
 import MoveItemDialog from "./MoveItemDialog";
+import { Badge } from "../ui/badge";
 
 export type ItemSettingsKind =
   | "note"
@@ -271,7 +272,6 @@ export default function ItemSettingsMenu({
     return false;
   }, [normalizedKind, searchParams, pathname, currentSlug, itemId]);
 
-  // Rename commit
   const commitRename = useCallback(
     async (newTitle: string) => {
       const trimmed = newTitle.trim();
@@ -472,7 +472,7 @@ export default function ItemSettingsMenu({
 
   return (
     <>
-      <div className="relative inline-flex items-center">
+      <div className={hideTrigger ? "hidden" : "contents"}>
         {syncBrowserChrome && !hasSeenHint && (
           <div
             aria-hidden="true"
@@ -644,7 +644,6 @@ export default function ItemSettingsMenu({
                 </Button>
               )}
 
-              {/* Download options */}
               {normalizedKind === "note" && (
                 <DropdownMenuSub>
                   <DropdownMenuSubTrigger className="w-full h-8 px-2 text-sm flex items-center gap-2 text-foreground">
@@ -805,11 +804,10 @@ export default function ItemSettingsMenu({
                 : `Are you sure you want to delete this ${kindLabel.toLowerCase()}? This action cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {(normalizedKind === "table" || normalizedKind === "folder") && (
-            <p className="text-xs text-muted-foreground">
-              Hold Shift when clicking Delete to skip this confirmation.
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Hold <Badge className=" bg-card text-muted-foreground">Shift</Badge>{" "}
+            when clicking Delete to skip this confirmation.
+          </p>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
