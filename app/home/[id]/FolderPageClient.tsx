@@ -106,14 +106,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { cn, formatTableName, formatWorkspaceName } from "@/lib/utils";
+import { cn, formatTableName } from "@/lib/utils";
 import {
   extractTextFromTiptap as parseTiptapContentExtractText,
   truncateText as parseTiptapContentTruncateText,
 } from "@/lib/parse-tiptap-content";
 import { generateSlug } from "@/lib/generateSlug";
 import { useHoverTooltip } from "@/hooks/useHoverTooltip";
-import { useDebouncedCallback } from "use-debounce";
 import { Separator } from "@/components/ui/separator";
 
 function getMediaQuery() {
@@ -197,7 +196,7 @@ function isWhiteboardEmpty(board: {
   whiteboardEmptyCache.set(key, empty);
   return empty;
 }
-const workspaceNameSchema = z
+const folderNameSchema = z
   .string()
   .min(1, "Name cannot be empty")
   .max(30, "Name must be 30 characters or less");
@@ -212,9 +211,9 @@ const tableNameSchema = z
   .min(1, "Name cannot be empty")
   .max(30, "Name must be 30 characters or less");
 
-const workspacePageMemoryCache = new Map<
+const folderPageMemoryCache = new Map<
   string,
-  { workspace?: any; tables?: any }
+  { folder?: any; tables?: any }
 >();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
@@ -531,13 +530,13 @@ interface WhiteboardItem {
   kind: "whiteboard";
 }
 
-type WorkspaceEntry =
+type FolderEntry =
   | (Note & { kind: "note" })
   | PdfItem
   | LinkItem
   | WhiteboardItem;
 
-function getTimelineDate(item: WorkspaceEntry) {
+function getTimelineDate(item: FolderEntry) {
   return item.kind !== "link" && item.deadline ? item.deadline : item.createdAt;
 }
 
@@ -545,8 +544,8 @@ interface NotesDroppableContainerProps {
   tableId: Id<"tables">;
   viewMode: ViewMode;
   notes?: Note[];
-  workspaceSlug?: string;
-  workspaceId?: Id<"folders">;
+  folderSlug?: string;
+  folderId?: Id<"folders">;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   tables: any[];
@@ -584,8 +583,8 @@ interface EmptySearchResultsProps {
 
 interface EmptyTableStateProps {
   tableId: Id<"tables">;
-  workspaceSlug?: string;
-  workspaceId?: Id<"folders">;
+  folderSlug?: string;
+  folderId?: Id<"folders">;
 }
 
 const STORAGE_KEYS = {
@@ -846,9 +845,9 @@ function TableTab({ table }: { table: any }) {
   const updateTable = useMutation(api.tables.updateTable).withOptimisticUpdate(
     (local, args) => {
       const { _id, name } = args;
-      const workspaces = local.getQuery(api.folders.getRecentFolders);
-      if (workspaces && Array.isArray(workspaces)) {
-        for (const ws of workspaces) {
+      const folders = local.getQuery(api.folders.getRecentFolders);
+      if (folders && Array.isArray(folders)) {
+        for (const ws of folders) {
           const tables = local.getQuery(api.tables.getTables, {
             folderId: ws._id,
           });
@@ -874,9 +873,9 @@ function TableTab({ table }: { table: any }) {
   const deleteTable = useMutation(api.tables.deleteTable).withOptimisticUpdate(
     (local, args) => {
       const { _id } = args;
-      const workspaces = local.getQuery(api.folders.getRecentFolders);
-      if (workspaces && Array.isArray(workspaces)) {
-        for (const ws of workspaces) {
+      const folders = local.getQuery(api.folders.getRecentFolders);
+      if (folders && Array.isArray(folders)) {
+        for (const ws of folders) {
           const tables = local.getQuery(api.tables.getTables, {
             folderId: ws._id,
           });
@@ -1327,10 +1326,10 @@ export default function FolderPageClient({
   workingSpaceId: Id<"folders">;
   renderedInPane?: boolean;
 }) {
-  const cached = workspacePageMemoryCache.get(
+  const cached = folderPageMemoryCache.get(
     workingSpaceId as unknown as string,
   );
-  const workspaceQuery = useQuery(
+  const folderQuery = useQuery(
     api.folders.getFolderById,
     workingSpaceId ? { _id: workingSpaceId } : "skip",
   ) as any;
@@ -1339,56 +1338,59 @@ export default function FolderPageClient({
     workingSpaceId ? { folderId: workingSpaceId } : "skip",
   ) as any;
 
-  const workspace = workspaceQuery ?? cached?.workspace;
-  const workingSpacesSlug: string | undefined =
-    workspace && (workspace.slug as string);
+  const folder = folderQuery ?? cached?.folder;
+  const folderSlug: string | undefined = folder?.slug as string | undefined;
 
   const tables = tablesQuery !== undefined ? tablesQuery : cached?.tables;
   const { toast } = useToast();
   useEffect(() => {
     const key = workingSpaceId as unknown as string;
-    const prev = workspacePageMemoryCache.get(key) ?? {};
-    if (workspaceQuery !== undefined || tablesQuery !== undefined) {
-      workspacePageMemoryCache.set(key, {
-        workspace:
-          workspaceQuery !== undefined ? workspaceQuery : prev.workspace,
+    const prev = folderPageMemoryCache.get(key) ?? {};
+    if (folderQuery !== undefined || tablesQuery !== undefined) {
+      folderPageMemoryCache.set(key, {
+        folder: folderQuery !== undefined ? folderQuery : prev.folder,
         tables: tablesQuery !== undefined ? tablesQuery : prev.tables,
       });
     }
-  }, [workingSpaceId, workspaceQuery, tablesQuery]);
+  }, [workingSpaceId, folderQuery, tablesQuery]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
-  const updateWorkingSpace = useMutation(
-    api.folders.updateFolder,
-  ).withOptimisticUpdate((local, args) => {
-    const { _id, name } = args;
-    const workspaces = local.getQuery(api.folders.getRecentFolders);
-    if (workspaces && Array.isArray(workspaces)) {
-      local.setQuery(
-        api.folders.getRecentFolders,
-        {},
-        workspaces.map((ws: any) =>
-          ws._id === _id
-            ? { ...ws, name: name ?? ws.name, updatedAt: Date.now() }
-            : ws,
-        ),
-      );
-    }
-    const ws = local.getQuery(api.folders.getFolderById, { _id });
-    if (ws) {
-      local.setQuery(
-        api.folders.getFolderById,
-        { _id },
-        { ...ws, name: name ?? ws.name, updatedAt: Date.now() },
-      );
-    }
-  });
+  const cancelFolderRenameRef = useRef(false);
+  const updateFolder = useMutation(api.folders.updateFolder).withOptimisticUpdate(
+    (local, args) => {
+      const { _id, name } = args;
+      const folders = local.getQuery(api.folders.getRecentFolders);
+      if (folders && Array.isArray(folders)) {
+        local.setQuery(
+          api.folders.getRecentFolders,
+          {},
+          folders.map((folder: any) =>
+            folder._id === _id
+              ? {
+                  ...folder,
+                  name: name ?? folder.name,
+                  updatedAt: Date.now(),
+                }
+              : folder,
+          ),
+        );
+      }
+      const folder = local.getQuery(api.folders.getFolderById, { _id });
+      if (folder) {
+        local.setQuery(
+          api.folders.getFolderById,
+          { _id },
+          { ...folder, name: name ?? folder.name, updatedAt: Date.now() },
+        );
+      }
+    },
+  );
 
   const handleNameDoubleClick = useCallback(() => {
-    if (!workspace) return;
-    setEditedName(workspace.name || "Untitled");
+    if (!folder) return;
+    setEditedName(folder.name || "Untitled");
     setIsEditingName(true);
     requestAnimationFrame(() => {
       const inputRef = nameInputRef.current;
@@ -1397,24 +1399,27 @@ export default function FolderPageClient({
       inputRef.select();
       inputRef.scrollLeft = 0;
     });
-  }, [workspace]);
+  }, [folder]);
 
   const handleNameKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === "Enter") {
-        setIsEditingName(false);
+        e.currentTarget.blur();
       } else if (e.key === "Escape") {
+        cancelFolderRenameRef.current = true;
+        e.currentTarget.blur();
         setIsEditingName(false);
-        setEditedName(workspace?.name || "Untitled");
+        setEditedName(folder?.name || "Untitled");
       }
     },
-    [workspace?.name],
+    [folder?.name],
   );
 
-  const debouncedUpdateWorkSpaceName = useDebouncedCallback(
-    (workspaceName: string) => {
-      const currentTitle = workspace?.name || "";
-      const result = workspaceNameSchema.safeParse(workspaceName);
+  const commitFolderName = useCallback(
+    async (name: string) => {
+      const folderName = name.trim();
+      const currentTitle = folder?.name || "";
+      const result = folderNameSchema.safeParse(folderName);
 
       if (!result.success) {
         const issue = result.error.issues[0];
@@ -1426,7 +1431,7 @@ export default function FolderPageClient({
             variant: "destructive",
           });
         } else if (issue.code === "too_big") {
-          setEditedName(workspace?.name || "Untitled");
+          setEditedName(folder?.name || "Untitled");
           toast({
             title: "Naming failed",
             description: "Name must be 30 characters or less ",
@@ -1436,23 +1441,21 @@ export default function FolderPageClient({
         return;
       }
 
-      if (workspaceName !== currentTitle) {
-        try {
-          updateWorkingSpace({ _id: workingSpaceId, name: workspaceName });
-          if (renderedInPane) {
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set(
-              "paneTitle",
-              generateSlug(workspaceName),
-            );
-            window.history.replaceState({}, "", currentUrl.href);
-          }
-        } catch (error) {
-          console.error("Error updating workspace name:", error);
+      if (folderName === currentTitle) return;
+
+      try {
+        await updateFolder({ _id: workingSpaceId, name: folderName });
+        if (renderedInPane) {
+          const currentUrl = new URL(window.location.href);
+          currentUrl.searchParams.set("paneTitle", generateSlug(folderName));
+          window.history.replaceState({}, "", currentUrl.href);
         }
+      } catch (error) {
+        console.error("Error updating folder name:", error);
+        setEditedName(currentTitle || "Untitled");
       }
     },
-    100,
+    [folder?.name, toast, updateFolder, workingSpaceId, renderedInPane],
   );
 
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -1602,13 +1605,13 @@ export default function FolderPageClient({
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   useEffect(() => {
-    if (!workspace?.name) return;
+    if (!folder?.name) return;
     const originalTitle = document.title;
     const metaDescription = document.querySelector('meta[name="description"]');
     const originalContent = metaDescription?.getAttribute("content");
 
-    document.title = `${workspace.name} - oraizive Workspace`;
-    const descriptionContent = `${workspace.name} workspace. `;
+    document.title = `${folder.name} - oraizive Folder`;
+    const descriptionContent = `${folder.name} folder. `;
 
     if (metaDescription) {
       metaDescription.setAttribute("content", descriptionContent);
@@ -1627,7 +1630,7 @@ export default function FolderPageClient({
         document.querySelector('meta[name="description"]')?.remove();
       }
     };
-  }, [workspace?.name, tables?.length]);
+  }, [folder?.name, tables?.length]);
 
   const isMobile = getMediaQuery();
 
@@ -1643,19 +1646,20 @@ export default function FolderPageClient({
         <div className="border border-border bg-muted app-radius-t-md flex justify-between items-end w-full">
           <div className="flex-1 px-1.5">
             <h1 className="text-2xl md:text-5xl font-bol my-3 h-[2rem] md:h-[4rem] ">
-              {!workspace ? (
+              {!folder ? (
                 <div className="bg-border app-radius-md animate-pulse h-10 w-64 inline-block" />
               ) : isEditingName ? (
                 <Input
                   ref={nameInputRef as any}
                   value={editedName}
-                  onChange={(e: any) => {
-                    setEditedName(e.target.value);
-                    debouncedUpdateWorkSpaceName(e.target.value.trim());
-                  }}
+                  onChange={(e) => setEditedName(e.target.value)}
                   onKeyDown={handleNameKeyDown}
-                  onBlur={() => {
-                    setEditedName(editedName);
+                  onBlur={(e) => {
+                    if (cancelFolderRenameRef.current) {
+                      cancelFolderRenameRef.current = false;
+                      return;
+                    }
+                    void commitFolderName(e.currentTarget.value);
                     setIsEditingName(false);
                   }}
                   placeholder="Untitled Folder"
@@ -1666,9 +1670,9 @@ export default function FolderPageClient({
                   onDoubleClick={handleNameDoubleClick}
                   className="cursor-text border-b border-transparent mx-2 hover:border-muted-foreground/50 leading-normal md:leading-[4rem]"
                 >
-                  {workspace.name.length > 20 && isMobile
-                    ? `${workspace.name.slice(0, 17)}...`
-                    : workspace.name}
+                  {folder.name.length > 20 && isMobile
+                    ? `${folder.name.slice(0, 17)}...`
+                    : folder.name}
                 </span>
               )}
             </h1>
@@ -1697,8 +1701,8 @@ export default function FolderPageClient({
                 <NotesDroppableContainer
                   tableId={table._id}
                   viewMode={viewMode}
-                  workspaceSlug={workingSpacesSlug}
-                  workspaceId={workingSpaceId}
+                  folderSlug={folderSlug}
+                  folderId={workingSpaceId}
                   searchQuery={searchQuery}
                   setSearchQuery={setSearchQuery}
                   tables={tables}
@@ -1721,8 +1725,8 @@ export function NotesDroppableContainer({
   tableId,
   viewMode,
   notes,
-  workspaceSlug,
-  workspaceId,
+  folderSlug,
+  folderId,
   searchQuery,
   setSearchQuery,
   tables,
@@ -1983,16 +1987,16 @@ export function NotesDroppableContainer({
 
   const filteredItems = useMemo(() => {
     const noteItems = stableResults.map(
-      (note) => ({ ...note, kind: "note" }) as WorkspaceEntry,
+      (note) => ({ ...note, kind: "note" }) as FolderEntry,
     );
     const pdfItems = stablePdfs.map(
-      (pdf) => ({ ...pdf, kind: "pdf" }) as WorkspaceEntry,
+      (pdf) => ({ ...pdf, kind: "pdf" }) as FolderEntry,
     );
     const linkItems = stableLinks.map(
-      (link) => ({ ...link, kind: "link" }) as WorkspaceEntry,
+      (link) => ({ ...link, kind: "link" }) as FolderEntry,
     );
     const whiteboardItems = stableWhiteboards.map(
-      (whiteboard) => ({ ...whiteboard, kind: "whiteboard" }) as WorkspaceEntry,
+      (whiteboard) => ({ ...whiteboard, kind: "whiteboard" }) as FolderEntry,
     );
     let items = [...noteItems, ...pdfItems, ...linkItems, ...whiteboardItems]
       .filter((item) => item && !deletedItemIds.has(item._id))
@@ -2166,8 +2170,8 @@ export function NotesDroppableContainer({
             </Button>
           </div>
           <CreateNoteBtn
-            workingSpaceId={workspaceId}
-            workingSpacesSlug={workspaceSlug}
+            workingSpaceId={folderId}
+            workingSpacesSlug={folderSlug}
             CNBP_notesTableId={tableId}
           />
           <DropdownMenu open={isFilterOpen} onOpenChange={setIsFilterOpen}>
@@ -2343,15 +2347,15 @@ export function NotesDroppableContainer({
       ) : filteredItems.length === 0 ? (
         <EmptyTableState
           tableId={tableId}
-          workspaceSlug={workspaceSlug}
-          workspaceId={workspaceId}
+          folderSlug={folderSlug}
+          folderId={folderId}
         />
       ) : (
         <>
           {viewMode === "calendar" ? (
             <CalendarTimelineView
               items={filteredItems}
-              workspaceId={workspaceId}
+              folderId={folderId}
               paginationStatus={aggregateStatus}
               onLoadMore={handleLoadMore}
             />
@@ -2423,17 +2427,17 @@ export function NotesDroppableContainer({
                       )}
                     >
                       {isGridLayout ? (
-                        <WorkspaceGridCard
+                        <FolderGridCard
                           item={item}
-                          workspaceId={workspaceId}
+                          folderId={folderId}
                           onDelete={handleItemDelete}
                           searchQuery={searchQuery}
                         />
                       ) : (
                         <div className=" mx-6 md:mx-12 xl:mx-32">
-                          <WorkspaceListCard
+                          <FolderListCard
                             item={item}
-                            workspaceId={workspaceId}
+                            folderId={folderId}
                             onDelete={handleItemDelete}
                             searchQuery={searchQuery}
                           />
@@ -2508,12 +2512,12 @@ const CALENDAR_GAP_MIN_SAVINGS = 80; // px a gap must save to be worth collapsin
 
 function CalendarTimelineView({
   items,
-  workspaceId,
+  folderId,
   paginationStatus,
   onLoadMore,
 }: {
-  items: WorkspaceEntry[];
-  workspaceId?: Id<"folders">;
+  items: FolderEntry[];
+  folderId?: Id<"folders">;
   paginationStatus: string;
   onLoadMore: () => void;
 }) {
@@ -2703,7 +2707,7 @@ function CalendarTimelineView({
       id: string;
       x: number;
       dayOffset: number;
-      entries: WorkspaceEntry[];
+      entries: FolderEntry[];
     }[] = [];
     for (const item of sorted) {
       const dayOffset = daysBetween(
@@ -3012,7 +3016,7 @@ function CalendarTimelineView({
                     {cluster.entries.length === 1 ? (
                       <TimelineMiniCard
                         item={cluster.entries[0]}
-                        workspaceId={workspaceId}
+                        folderId={folderId}
                       />
                     ) : (
                       <Popover
@@ -3039,7 +3043,7 @@ function CalendarTimelineView({
                         >
                           <TimelineClusterSlider
                             entries={cluster.entries}
-                            workspaceId={workspaceId}
+                            folderId={folderId}
                           />
                         </PopoverContent>
                       </Popover>
@@ -3057,10 +3061,10 @@ function CalendarTimelineView({
 
 function TimelineClusterSlider({
   entries,
-  workspaceId,
+  folderId,
 }: {
-  entries: WorkspaceEntry[];
-  workspaceId?: Id<"folders">;
+  entries: FolderEntry[];
+  folderId?: Id<"folders">;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -3159,7 +3163,7 @@ function TimelineClusterSlider({
           <TimelineMiniCard
             key={entry._id}
             item={entry}
-            workspaceId={workspaceId}
+            folderId={folderId}
           />
         ))}
       </div>
@@ -3222,7 +3226,7 @@ function CalendarGapMarker({
   );
 }
 
-function TimelineHeroBackground({ item }: { item: WorkspaceEntry }) {
+function TimelineHeroBackground({ item }: { item: FolderEntry }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
@@ -3296,33 +3300,33 @@ function TimelineHeroBackground({ item }: { item: WorkspaceEntry }) {
 
 function TimelineMiniCard({
   item,
-  workspaceId,
+  folderId,
 }: {
-  item: WorkspaceEntry;
-  workspaceId?: Id<"folders">;
+  item: FolderEntry;
+  folderId?: Id<"folders">;
 }) {
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
-  const whiteboardWorkspaceId =
+  const whiteboardFolderId =
     (item as WhiteboardItem).workingSpaceId ??
     (item as any).folderId ??
-    workspaceId;
-  const pdfWorkspaceId =
-    (item as PdfItem).workingSpaceId ?? (item as any).folderId ?? workspaceId;
+    folderId;
+  const pdfFolderId =
+    (item as PdfItem).workingSpaceId ?? (item as any).folderId ?? folderId;
   const href = isWhiteboard
-    ? `/home/${whiteboardWorkspaceId}/${buildItemSlug(
+    ? `/home/${whiteboardFolderId}/${buildItemSlug(
         (item as WhiteboardItem).title || "untitled-whiteboard",
         item._id,
       )}`
     : isPdf
-      ? `/home/${pdfWorkspaceId}/${buildItemSlug(
+      ? `/home/${pdfFolderId}/${buildItemSlug(
           (item as PdfItem).title || "untitled-pdf",
           item._id,
         )}`
       : isLink
         ? (item as LinkItem).url
-        : `/home/${workspaceId}/${buildItemSlug((item as Note).title || (item as Note).slug, item._id)}`;
+        : `/home/${folderId}/${buildItemSlug((item as Note).title || (item as Note).slug, item._id)}`;
 
   const openLink = () => {
     if (isLink) window.open(href, "_blank", "noopener,noreferrer");
@@ -3437,7 +3441,7 @@ function TimelineMiniCard({
   const itemCard = isLink ? (
     <div
       onClick={(e) => {
-        if (handleWorkspaceItemAltClick(e, item, openPane, toast)) return;
+        if (handleFolderItemAltClick(e, item, openPane, toast)) return;
         openLink();
       }}
       className={cn(cardClassName, "cursor-pointer")}
@@ -3450,7 +3454,7 @@ function TimelineMiniCard({
       prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
       className={cardClassName}
       onClick={(e) => {
-        handleWorkspaceItemAltClick(e, item, openPane, toast);
+        handleFolderItemAltClick(e, item, openPane, toast);
       }}
     >
       {cardContent}
@@ -3469,16 +3473,16 @@ function TimelineMiniCard({
   );
 }
 
-function getWorkspaceItemDetails(
-  item: WorkspaceEntry,
-  workspaceId?: Id<"folders">,
+function getFolderItemDetails(
+  item: FolderEntry,
+  folderId?: Id<"folders">,
 ) {
   if (item.kind === "whiteboard") {
     const board = item as WhiteboardItem;
     return {
       title: board.title || "Untitled whiteboard",
       subtitle: isWhiteboardEmpty(board) ? EMPTY_WHITEBOARD_MESSAGE : "",
-      href: `/home/${board.workingSpaceId ?? (board as any).folderId ?? workspaceId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
+      href: `/home/${board.workingSpaceId ?? (board as any).folderId ?? folderId}/${buildItemSlug(board.title || "untitled-whiteboard", board._id)}`,
     };
   }
   if (item.kind === "pdf") {
@@ -3486,7 +3490,7 @@ function getWorkspaceItemDetails(
     return {
       title: pdf.title || "Untitled PDF",
       subtitle: "PDF upload",
-      href: `/home/${pdf.workingSpaceId ?? (pdf as any).folderId ?? workspaceId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
+      href: `/home/${pdf.workingSpaceId ?? (pdf as any).folderId ?? folderId}/${buildItemSlug(pdf.title || "untitled-pdf", pdf._id)}`,
     };
   }
   if (item.kind === "link") {
@@ -3507,15 +3511,15 @@ function getWorkspaceItemDetails(
     subtitle: note.preview
       ? parseTiptapContentTruncateText(note.preview, 80)
       : getContentPreviewFromBody(note.body),
-    href: `/home/${workspaceId}/${buildItemSlug(note.title || note.slug, note._id)}`,
+    href: `/home/${folderId}/${buildItemSlug(note.title || note.slug, note._id)}`,
   };
 }
 
-function WorkspaceItemSettings({
+function FolderItemSettings({
   item,
   onDelete,
 }: {
-  item: WorkspaceEntry;
+  item: FolderEntry;
   onDelete?: (id: any) => void;
 }) {
   return (
@@ -3533,11 +3537,11 @@ function WorkspaceItemSettings({
   );
 }
 
-function WorkspaceItemThumbnail({
+function FolderItemThumbnail({
   item,
   compact = false,
 }: {
-  item: WorkspaceEntry;
+  item: FolderEntry;
   compact?: boolean;
 }) {
   const size = compact ? " w-52" : "w-full";
@@ -3577,7 +3581,7 @@ function ItemKindIcon({
   empty = false,
   className,
 }: {
-  item: WorkspaceEntry;
+  item: FolderEntry;
   empty?: boolean;
   className?: string;
 }) {
@@ -3600,9 +3604,9 @@ function ItemKindIcon({
   return null;
 }
 
-function handleWorkspaceItemAltClick(
+function handleFolderItemAltClick(
   event: React.MouseEvent,
-  item: WorkspaceEntry,
+  item: FolderEntry,
   openPane: (paneItem: any) => void,
   toast: any,
 ) {
@@ -3645,18 +3649,18 @@ function handleWorkspaceItemAltClick(
   return false;
 }
 
-const WorkspaceGridCard = memo(function WorkspaceGridCard({
+const FolderGridCard = memo(function FolderGridCard({
   item,
-  workspaceId,
+  folderId,
   onDelete,
   searchQuery,
 }: {
-  item: WorkspaceEntry;
-  workspaceId?: Id<"folders">;
+  item: FolderEntry;
+  folderId?: Id<"folders">;
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {
-  const details = getWorkspaceItemDetails(item, workspaceId);
+  const details = getFolderItemDetails(item, folderId);
   const { openPane } = useHomePane();
   const { toast } = useToast();
 
@@ -3675,7 +3679,7 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
           onPointerDown={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <WorkspaceItemSettings item={item} onDelete={onDelete} />
+          <FolderItemSettings item={item} onDelete={onDelete} />
         </div>
       }
     />
@@ -3685,7 +3689,7 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
     item.kind === "link" ? (
       <div
         onClick={(e) => {
-          if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
+          if (!handleFolderItemAltClick(e, item, openPane, toast)) {
             window.open(details.href, "_blank", "noopener,noreferrer");
           }
         }}
@@ -3699,7 +3703,7 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
         prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
         className={cardStyles}
         onClick={(e) => {
-          handleWorkspaceItemAltClick(e, item, openPane, toast);
+          handleFolderItemAltClick(e, item, openPane, toast);
         }}
       >
         {cardInnerContent}
@@ -3719,18 +3723,18 @@ const WorkspaceGridCard = memo(function WorkspaceGridCard({
   );
 });
 
-const WorkspaceListCard = memo(function WorkspaceListCard({
+const FolderListCard = memo(function FolderListCard({
   item,
-  workspaceId,
+  folderId,
   onDelete,
   searchQuery,
 }: {
-  item: WorkspaceEntry;
-  workspaceId?: Id<"folders">;
+  item: FolderEntry;
+  folderId?: Id<"folders">;
   onDelete?: (id: any) => void;
   searchQuery: string;
 }) {
-  const details = getWorkspaceItemDetails(item, workspaceId);
+  const details = getFolderItemDetails(item, folderId);
   const { openPane } = useHomePane();
   const { toast } = useToast();
 
@@ -3760,9 +3764,9 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
         />
       )}
       {isSocialLink ? (
-        hasRealThumbnail && <WorkspaceItemThumbnail item={item} compact />
+        hasRealThumbnail && <FolderItemThumbnail item={item} compact />
       ) : (
-        <WorkspaceItemThumbnail item={item} compact />
+        <FolderItemThumbnail item={item} compact />
       )}
       <div className="min-w-0 flex-1 overflow-hidden">
         <h3 className="flex max-w-full items-center gap-1.5 break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
@@ -3819,7 +3823,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
         onPointerDown={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <WorkspaceItemSettings item={item} onDelete={onDelete} />
+        <FolderItemSettings item={item} onDelete={onDelete} />
       </div>
     </CardContent>
   );
@@ -3828,7 +3832,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
     item.kind === "link" ? (
       <div
         onClick={(e) => {
-          if (!handleWorkspaceItemAltClick(e, item, openPane, toast)) {
+          if (!handleFolderItemAltClick(e, item, openPane, toast)) {
             window.open(details.href, "_blank", "noopener,noreferrer");
           }
         }}
@@ -3842,7 +3846,7 @@ const WorkspaceListCard = memo(function WorkspaceListCard({
         prefetchNoteId={item.kind === "note" ? (item as Note)._id : undefined}
         className={cardStyles}
         onClick={(e) => {
-          handleWorkspaceItemAltClick(e, item, openPane, toast);
+          handleFolderItemAltClick(e, item, openPane, toast);
         }}
       >
         {cardInnerContent}
@@ -4172,8 +4176,8 @@ function EmptySearchResults({
 
 function EmptyTableState({
   tableId,
-  workspaceSlug,
-  workspaceId,
+  folderSlug,
+  folderId,
 }: EmptyTableStateProps) {
   return (
     <Card className=" bg-transparent border-none shadow-none">
@@ -4189,8 +4193,8 @@ function EmptyTableState({
             Create your first note or upload to get started
           </p>
           <CreateNoteBtn
-            workingSpaceId={workspaceId}
-            workingSpacesSlug={workspaceSlug}
+            workingSpaceId={folderId}
+            workingSpacesSlug={folderSlug}
             CNBP_notesTableId={tableId}
           />
         </div>
