@@ -211,10 +211,7 @@ const tableNameSchema = z
   .min(1, "Name cannot be empty")
   .max(30, "Name must be 30 characters or less");
 
-const folderPageMemoryCache = new Map<
-  string,
-  { folder?: any; tables?: any }
->();
+const folderPageMemoryCache = new Map<string, { folder?: any; tables?: any }>();
 
 const tableNotesMemoryCache = new Map<string, any[]>();
 const tablePdfsMemoryCache = new Map<string, any[]>();
@@ -1300,10 +1297,11 @@ function SliderTabsList({
             </div>
           </div>
           <CreateTableBtn
+            variant="default"
             label="New Table"
             workingSpaceId={workingSpaceId as Id<"folders">}
             compactOnHover
-            className="relative z-20 mb-2.5 ml-2 h-9 shrink-0 !bg-primary !shadow-none !text-primary-foreground app-radius-lg"
+            className="variant-default  relative z-20 mb-2.5 ml-2 h-10 shrink-0  app-radius-lg app-radius-b-none app-radius-r-none "
           />
           <div
             className="absolute right-0 top-0 h-[3.3rem] -bottom-5 w-32 z-[5] pointer-events-none transition-opacity duration-200"
@@ -1326,9 +1324,7 @@ export default function FolderPageClient({
   workingSpaceId: Id<"folders">;
   renderedInPane?: boolean;
 }) {
-  const cached = folderPageMemoryCache.get(
-    workingSpaceId as unknown as string,
-  );
+  const cached = folderPageMemoryCache.get(workingSpaceId as unknown as string);
   const folderQuery = useQuery(
     api.folders.getFolderById,
     workingSpaceId ? { _id: workingSpaceId } : "skip",
@@ -1358,35 +1354,35 @@ export default function FolderPageClient({
   const [editedName, setEditedName] = useState("");
   const nameInputRef = useRef<HTMLInputElement>(null);
   const cancelFolderRenameRef = useRef(false);
-  const updateFolder = useMutation(api.folders.updateFolder).withOptimisticUpdate(
-    (local, args) => {
-      const { _id, name } = args;
-      const folders = local.getQuery(api.folders.getRecentFolders);
-      if (folders && Array.isArray(folders)) {
-        local.setQuery(
-          api.folders.getRecentFolders,
-          {},
-          folders.map((folder: any) =>
-            folder._id === _id
-              ? {
-                  ...folder,
-                  name: name ?? folder.name,
-                  updatedAt: Date.now(),
-                }
-              : folder,
-          ),
-        );
-      }
-      const folder = local.getQuery(api.folders.getFolderById, { _id });
-      if (folder) {
-        local.setQuery(
-          api.folders.getFolderById,
-          { _id },
-          { ...folder, name: name ?? folder.name, updatedAt: Date.now() },
-        );
-      }
-    },
-  );
+  const updateFolder = useMutation(
+    api.folders.updateFolder,
+  ).withOptimisticUpdate((local, args) => {
+    const { _id, name } = args;
+    const folders = local.getQuery(api.folders.getRecentFolders);
+    if (folders && Array.isArray(folders)) {
+      local.setQuery(
+        api.folders.getRecentFolders,
+        {},
+        folders.map((folder: any) =>
+          folder._id === _id
+            ? {
+                ...folder,
+                name: name ?? folder.name,
+                updatedAt: Date.now(),
+              }
+            : folder,
+        ),
+      );
+    }
+    const folder = local.getQuery(api.folders.getFolderById, { _id });
+    if (folder) {
+      local.setQuery(
+        api.folders.getFolderById,
+        { _id },
+        { ...folder, name: name ?? folder.name, updatedAt: Date.now() },
+      );
+    }
+  });
 
   const handleNameDoubleClick = useCallback(() => {
     if (!folder) return;
@@ -3160,11 +3156,7 @@ function TimelineClusterSlider({
         }}
       >
         {entries.map((entry) => (
-          <TimelineMiniCard
-            key={entry._id}
-            item={entry}
-            folderId={folderId}
-          />
+          <TimelineMiniCard key={entry._id} item={entry} folderId={folderId} />
         ))}
       </div>
     </div>
@@ -3473,10 +3465,7 @@ function TimelineMiniCard({
   );
 }
 
-function getFolderItemDetails(
-  item: FolderEntry,
-  folderId?: Id<"folders">,
-) {
+function getFolderItemDetails(item: FolderEntry, folderId?: Id<"folders">) {
   if (item.kind === "whiteboard") {
     const board = item as WhiteboardItem;
     return {
