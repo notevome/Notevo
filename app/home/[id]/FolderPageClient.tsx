@@ -2508,6 +2508,21 @@ const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
 const CALENDAR_GAP_MARKER_WIDTH = 28; // matches the w-7 marker button
 const CALENDAR_GAP_MIN_SAVINGS = 80; // px a gap must save to be worth collapsing
 
+function isEmptyWhiteboard(snapshot?: string) {
+  if (!snapshot) return true;
+  try {
+    const scene = JSON.parse(snapshot);
+    return (
+      !Array.isArray(scene.elements) ||
+      !scene.elements.some(
+        (element: { isDeleted?: boolean }) => !element.isDeleted,
+      )
+    );
+  } catch {
+    return true;
+  }
+}
+
 function TimelineHeroBackground({ item }: { item: FolderEntry }) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const isLink = item.kind === "link";
@@ -2562,13 +2577,18 @@ function TimelineHeroBackground({ item }: { item: FolderEntry }) {
 
   if (isWhiteboard) {
     const board = item as WhiteboardItem;
+    const hasSnapshot = !isEmptyWhiteboard(board.snapshot);
     return (
-      <div className="h-full w-full bg-muted">
-        <WhiteboardPreview
-          snapshot={board.snapshot}
-          preview={board.preview}
-          fill
-        />
+      <div className="relative h-full w-full bg-muted flex items-center justify-center">
+        {hasSnapshot ? (
+          <WhiteboardPreview
+            snapshot={board.snapshot}
+            preview={board.preview}
+            fill
+          />
+        ) : (
+          <PenTool className="h-8 w-8 text-muted-foreground" />
+        )}
       </div>
     );
   }
@@ -2578,21 +2598,15 @@ function TimelineHeroBackground({ item }: { item: FolderEntry }) {
     const previewText = getContentPreviewFromBody(note.body);
     const hasText = previewText && previewText !== EMPTY_CONTENT_MESSAGE;
     return (
-      <div className="flex h-full w-full flex-col justify-start p-3 bg-muted/80 text-muted-foreground select-none overflow-hidden">
-        <div className="flex items-center gap-1.5 mb-2">
-          <FileText className="h-4 w-4 shrink-0 text-muted-foreground/80" />
-          <span className="text-[10px] uppercase font-mono tracking-wider opacity-70">
-            Document
-          </span>
-        </div>
+      <div className="relative h-full w-full bg-muted flex items-center justify-center">
         {hasText ? (
-          <p className="text-[11px] leading-snug line-clamp-6 text-foreground/80 font-normal">
-            {previewText}
-          </p>
-        ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <EmptyFileIcon className="h-6 w-6 text-muted-foreground/40" />
+          <div className="p-3 w-full h-full select-none overflow-hidden">
+            <p className="text-[11px] leading-snug line-clamp-6 text-foreground/80 font-normal">
+              {previewText}
+            </p>
           </div>
+        ) : (
+          <EmptyFileIcon className="h-8 w-8 text-muted-foreground" />
         )}
       </div>
     );
@@ -2623,6 +2637,14 @@ function TimelineStackCard({
   const title = isSocialLink
     ? linkItem?.metadata?.authorName?.trim() || item.title || "Untitled"
     : item.title || (isLink ? linkItem?.url : "Untitled");
+  const isNote = item.kind === "note";
+  const isWhiteboard = item.kind === "whiteboard";
+  const isPdf = item.kind === "pdf";
+  const isEmptyDocument =
+    isNote &&
+    (!item.body ||
+      getContentPreviewFromBody((item as Note).body) ===
+        EMPTY_CONTENT_MESSAGE);
 
   return (
     <div
@@ -2644,13 +2666,25 @@ function TimelineStackCard({
       )}
 
       <div className="relative z-10 flex items-center gap-1.5 p-2 min-w-0">
-        {isSocialLink && authorAvatarUrl && (
+        {isSocialLink && authorAvatarUrl ? (
           <LinkAuthorAvatar
             avatarUrl={authorAvatarUrl}
             authorName={title}
             className="h-4 w-4 shrink-0"
           />
-        )}
+        ) : !isLink ? (
+          isNote ? (
+            isEmptyDocument ? (
+              <EmptyFileIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            )
+          ) : isWhiteboard ? (
+            <PenTool className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          ) : isPdf ? (
+            <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          ) : null
+        ) : null}
         <p className="text-[11px] font-medium text-foreground line-clamp-1 leading-tight text-left truncate">
           {title}
         </p>
@@ -3444,6 +3478,12 @@ function TimelineMiniCard({
   const isPdf = item.kind === "pdf";
   const isLink = item.kind === "link";
   const isWhiteboard = item.kind === "whiteboard";
+  const isNote = item.kind === "note";
+  const isEmptyDocument =
+    isNote &&
+    (!item.body ||
+      getContentPreviewFromBody((item as Note).body) ===
+        EMPTY_CONTENT_MESSAGE);
   const whiteboardFolderId =
     (item as WhiteboardItem).workingSpaceId ??
     (item as any).folderId ??
@@ -3538,9 +3578,24 @@ function TimelineMiniCard({
             />
           )}
           <div className="min-w-0">
-            <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
-              {title}
-            </p>
+            <div className="flex items-center gap-1.5">
+              {!isLink && (
+                isNote ? (
+                  isEmptyDocument ? (
+                    <EmptyFileIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                  )
+                ) : isWhiteboard ? (
+                  <PenTool className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                ) : isPdf ? (
+                  <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                ) : null
+              )}
+              <p className="text-xs font-medium text-foreground line-clamp-2 leading-tight">
+                {title}
+              </p>
+            </div>
             <p className="text-[10px] text-muted-foreground mt-1">
               {isLink && publishedDate ? (
                 <>
@@ -4070,7 +4125,7 @@ function WhiteboardPreview({
         />
       ) : (
         <div className=" min-h-32 w-full flex justify-center items-center">
-          <PanelTop className="h-8 w-8 text-primary/70" />
+          <PenTool className="h-8 w-8 text-muted-foreground" />
         </div>
       )}
     </div>
@@ -4438,22 +4493,19 @@ function NotesSkeleton({ viewMode }: { viewMode: ViewMode }) {
   return (
     <div className="flex flex-col gap-3">
       {Array.from({ length: 5 }).map((_, index) => (
-        <Card key={index} className="bg-card/90 backdrop-blur-sm border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-10 app-radius-md bg-border animate-pulse flex-shrink-0" />
+        <div key={index} className="mx-6 md:mx-12 xl:mx-32">
+          <Card className="min-h-[112px] w-full bg-card/90 backdrop-blur-sm border-border app-radius-lg shadow">
+            <CardContent className="flex w-full items-center gap-4 p-3">
+              <div className="h-10 w-10 app-radius-md bg-border animate-pulse shrink-0" />
               <div className="flex-1 min-w-0 space-y-2">
-                <div className="h-5 w-2/3 bg-border app-radius-md animate-pulse" />
-                <div className="h-4 w-full bg-border app-radius-md animate-pulse" />
+                <div className="h-5 w-1/3 min-w-32 bg-border app-radius-md animate-pulse" />
+                <div className="h-3.5 w-1/2 min-w-44 bg-border app-radius-md animate-pulse" />
+                <div className="h-3.5 w-4/5 bg-border app-radius-md animate-pulse" />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="h-4 w-24 bg-border app-radius-md animate-pulse" />
-                <div className="h-5 w-5 bg-border app-radius-md animate-pulse" />
-                <div className="h-9 w-12 bg-border app-radius-md animate-pulse" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="h-8 w-8 app-radius-md bg-border/50 animate-pulse shrink-0" />
+            </CardContent>
+          </Card>
+        </div>
       ))}
     </div>
   );
