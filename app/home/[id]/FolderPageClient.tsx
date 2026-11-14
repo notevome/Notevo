@@ -2649,7 +2649,7 @@ function TimelineStackCard({
   return (
     <div
       className={cn(
-        "absolute inset-0 select-none overflow-hidden app-radius-lg bg-card transition-all duration-300 ease-out flex flex-col justify-end border border-border/80",
+        "absolute inset-0 select-none overflow-hidden app-radius-lg bg-card transition-all duration-300 ease-out flex flex-col justify-start border border-border/80 shadow-xl shadow-black/50",
         className,
       )}
     >
@@ -2657,20 +2657,21 @@ function TimelineStackCard({
         <TimelineHeroBackground item={item} />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-background/95 via-background/60 to-transparent" />
+      {/* Top gradient so text overlay is readable at the top */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-background/95 via-background/60 to-transparent" />
 
-      {isLink && linkItem?.url && (
-        <div className="absolute top-1.5 right-1.5 z-10 flex h-5 w-5 items-center justify-center app-radius-full bg-background/80 backdrop-blur-xs p-0.5 shadow-xs">
-          <LinkFaviconBadge url={linkItem.url} className="h-full w-full" />
-        </div>
-      )}
-
+      {/* Title & Author Info at the top so it doesn't get covered by overlapping cards */}
       <div className="relative z-10 flex items-center gap-1.5 p-2 min-w-0">
         {isSocialLink && authorAvatarUrl ? (
           <LinkAuthorAvatar
             avatarUrl={authorAvatarUrl}
             authorName={title}
             className="h-4 w-4 shrink-0"
+          />
+        ) : isLink && linkItem?.url ? (
+          <LinkFaviconBadge
+            url={linkItem.url}
+            className="h-3.5 w-3.5 shrink-0"
           />
         ) : !isLink ? (
           isNote ? (
@@ -3427,7 +3428,7 @@ function CalendarGapMarker({
   onToggle: () => void;
 }) {
   const gapTooltip = useHoverTooltip(100);
-  const hiddenDaysLabel = `${gap.emptyDays} hidden day${
+  const hiddenDaysLabel = `${gap.emptyDays} empty hidden day${
     gap.emptyDays === 1 ? "" : "s"
   }`;
   const dateRangeLabel = `${gap.startDate.toLocaleDateString()} - ${gap.endDate.toLocaleDateString()}`;
@@ -3441,7 +3442,7 @@ function CalendarGapMarker({
           size="sm"
           onClick={onToggle}
           className={cn(
-            "absolute z-10 min-h-16 w-7 -translate-x-1/2 flex-col gap-1 px-1 py-2 text-[10px] font-semibold shadow-sm !app-radius-none",
+            "absolute z-10 min-h-12 w-6 -translate-x-1/2 flex items-center justify-center px-0.5 py-1.5 text-[10px] font-semibold shadow-sm !app-radius-none",
             gap.expanded ? "top-20" : "top-16",
           )}
           style={{ left: gap.x }}
@@ -3450,10 +3451,7 @@ function CalendarGapMarker({
           }
           {...gapTooltip.triggerProps}
         >
-          <span className="leading-none">.</span>
-          <span className="leading-none">.</span>
-          <span className="leading-none">.</span>
-          <span className="[writing-mode:vertical-rl]">
+          <span className="[writing-mode:vertical-rl] leading-none select-none">
             {gap.expanded ? "hide" : `${gap.emptyDays}d`}
           </span>
         </Button>
