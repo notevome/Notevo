@@ -33,6 +33,8 @@ import {
   useRef,
   Fragment,
   memo,
+  forwardRef,
+  type ButtonHTMLAttributes,
 } from "react";
 import { useMutation } from "convex/react";
 import { usePaginatedQuery } from "@/cache/usePaginatedQuery";
@@ -2108,7 +2110,7 @@ export function NotesDroppableContainer({
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
               className="pl-10 pr-9 border-border h-[37px] my-0 bg-background"
-              aria-label="search-notes"
+              aria-label="search-documents"
             />
             {!isSearchFocused && !searchQuery && (
               <kbd className="pointer-events-none leading-4 absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-5 min-w-5 items-center justify-center app-radius-md border border-border bg-muted px-1 font-mono text-[11px] text-muted-foreground">
@@ -2506,6 +2508,227 @@ const CALENDAR_COLLAPSE_EMPTY_DAYS = 6;
 const CALENDAR_GAP_MARKER_WIDTH = 28; // matches the w-7 marker button
 const CALENDAR_GAP_MIN_SAVINGS = 80; // px a gap must save to be worth collapsing
 
+function TimelineHeroBackground({ item }: { item: FolderEntry }) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const isLink = item.kind === "link";
+  const isWhiteboard = item.kind === "whiteboard";
+
+  if (isLink) {
+    const linkItem = item as LinkItem;
+    const isSocialLink = isSocialLinkPlatform(linkItem.platform);
+    const rawThumbnailUrl = linkItem.metadata?.thumbnailUrl;
+    const avatarUrl = linkItem.metadata?.authorAvatarUrl;
+    const thumbnailUrl =
+      rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
+        ? rawThumbnailUrl
+        : undefined;
+    const isPending = linkItem.metadata === undefined;
+    const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
+
+    return (
+      <div className="relative h-full w-full bg-muted">
+        {thumbnailUrl && (
+          <img
+            src={thumbnailUrl}
+            alt=""
+            draggable={false}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgLoaded(false)}
+            className={cn(
+              "h-full w-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
+              imgLoaded ? "opacity-100" : "opacity-0",
+            )}
+          />
+        )}
+        {showSkeleton && (
+          <div className="absolute inset-0 bg-border/60 animate-pulse" />
+        )}
+        {!isPending && !thumbnailUrl && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            {isSocialLink && avatarUrl ? (
+              <LinkAuthorAvatar
+                avatarUrl={avatarUrl}
+                authorName={linkItem.metadata?.authorName}
+                className="h-16 w-16"
+              />
+            ) : (
+              <Link2 className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (isWhiteboard) {
+    const board = item as WhiteboardItem;
+    return (
+      <div className="h-full w-full bg-muted">
+        <WhiteboardPreview
+          snapshot={board.snapshot}
+          preview={board.preview}
+          fill
+        />
+      </div>
+    );
+  }
+
+  if (item.kind === "note") {
+    const note = item as Note;
+    const previewText = getContentPreviewFromBody(note.body);
+    const hasText = previewText && previewText !== EMPTY_CONTENT_MESSAGE;
+    return (
+      <div className="flex h-full w-full flex-col justify-start p-3 bg-muted/80 text-muted-foreground select-none overflow-hidden">
+        <div className="flex items-center gap-1.5 mb-2">
+          <FileText className="h-4 w-4 shrink-0 text-muted-foreground/80" />
+          <span className="text-[10px] uppercase font-mono tracking-wider opacity-70">
+            Document
+          </span>
+        </div>
+        {hasText ? (
+          <p className="text-[11px] leading-snug line-clamp-6 text-foreground/80 font-normal">
+            {previewText}
+          </p>
+        ) : (
+          <div className="flex flex-1 items-center justify-center">
+            <EmptyFileIcon className="h-6 w-6 text-muted-foreground/40" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-full w-full items-center justify-center bg-muted">
+      <FileText className="h-8 w-8 text-muted-foreground" />
+    </div>
+  );
+}
+
+function TimelineStackCard({
+  item,
+  className,
+}: {
+  item: FolderEntry;
+  className?: string;
+}) {
+  const isLink = item.kind === "link";
+  const linkItem = isLink ? (item as LinkItem) : null;
+  const isSocialLink = Boolean(
+    linkItem && isSocialLinkPlatform(linkItem.platform),
+  );
+  const authorAvatarUrl = isSocialLink
+    ? linkItem?.metadata?.authorAvatarUrl
+    : undefined;
+  const title = isSocialLink
+    ? linkItem?.metadata?.authorName?.trim() || item.title || "Untitled"
+    : item.title || (isLink ? linkItem?.url : "Untitled");
+
+  return (
+    <div
+      className={cn(
+        "absolute inset-0 select-none overflow-hidden app-radius-lg bg-card transition-all duration-300 ease-out flex flex-col justify-end border border-border/80",
+        className,
+      )}
+    >
+      <div className="absolute inset-0">
+        <TimelineHeroBackground item={item} />
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-background/95 via-background/60 to-transparent" />
+
+      {isLink && linkItem?.url && (
+        <div className="absolute top-1.5 right-1.5 z-10 flex h-5 w-5 items-center justify-center app-radius-full bg-background/80 backdrop-blur-xs p-0.5 shadow-xs">
+          <LinkFaviconBadge url={linkItem.url} className="h-full w-full" />
+        </div>
+      )}
+
+      <div className="relative z-10 flex items-center gap-1.5 p-2 min-w-0">
+        {isSocialLink && authorAvatarUrl && (
+          <LinkAuthorAvatar
+            avatarUrl={authorAvatarUrl}
+            authorName={title}
+            className="h-4 w-4 shrink-0"
+          />
+        )}
+        <p className="text-[11px] font-medium text-foreground line-clamp-1 leading-tight text-left truncate">
+          {title}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+const TimelineClusterTrigger = memo(
+  forwardRef<
+    HTMLButtonElement,
+    {
+      entries: FolderEntry[];
+      className?: string;
+    } & ButtonHTMLAttributes<HTMLButtonElement>
+  >(function TimelineClusterTrigger({ entries, className, ...props }, ref) {
+    const visibleItems = entries.slice(0, 3);
+    const count = entries.length;
+
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(
+          "group relative flex flex-col items-center cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 app-radius-lg select-none",
+          className,
+        )}
+        aria-label={`View ${count} clustered items`}
+        {...props}
+      >
+        <div className="relative w-[140px] h-[180px] transition-transform duration-300 ease-out group-hover:scale-[1.03]">
+          {visibleItems.length === 1 && (
+            <TimelineStackCard
+              item={visibleItems[0]}
+              className="z-10 origin-bottom"
+            />
+          )}
+
+          {visibleItems.length === 2 && (
+            <>
+              <TimelineStackCard
+                item={visibleItems[0]}
+                className="z-10 origin-bottom -rotate-8 -translate-x-3.5 translate-y-1.5 group-hover:-rotate-12 group-hover:-translate-x-5.5 group-hover:translate-y-2"
+              />
+              <TimelineStackCard
+                item={visibleItems[1]}
+                className="z-20 origin-bottom rotate-6 translate-x-3 translate-y-1 group-hover:rotate-10 group-hover:translate-x-5 group-hover:translate-y-1.5"
+              />
+            </>
+          )}
+
+          {visibleItems.length >= 3 && (
+            <>
+              <TimelineStackCard
+                item={visibleItems[0]}
+                className="z-10 origin-bottom -rotate-12 -translate-x-5 translate-y-2 group-hover:-rotate-[17deg] group-hover:-translate-x-7 group-hover:translate-y-2.5"
+              />
+              <TimelineStackCard
+                item={visibleItems[1]}
+                className="z-20 origin-bottom -rotate-1 -translate-x-0.5 -translate-y-0.5 group-hover:-rotate-1 group-hover:-translate-y-1.5"
+              />
+              <TimelineStackCard
+                item={visibleItems[2]}
+                className="z-30 origin-bottom rotate-8 translate-x-4.5 translate-y-1 group-hover:rotate-12 group-hover:translate-x-6.5 group-hover:translate-y-1.5"
+              />
+            </>
+          )}
+
+          <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 px-2.5 py-0.5 app-radius-full bg-card/95 border border-border shadow-md text-[11px] font-medium text-foreground whitespace-nowrap transition-transform duration-200 group-hover:scale-105">
+            <span>{count} items</span>
+            <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform duration-200 group-hover:translate-y-0.5" />
+          </div>
+        </div>
+      </button>
+    );
+  }),
+);
+
 function CalendarTimelineView({
   items,
   folderId,
@@ -2815,7 +3038,7 @@ function CalendarTimelineView({
               size="sm"
               onClick={onLoadMore}
               className="h-8 border-border text-xs px-1.5"
-              aria-label="load-more-notes"
+              aria-label="load-more-documents"
             >
               Show More
             </Button>
@@ -2826,7 +3049,7 @@ function CalendarTimelineView({
               size="sm"
               disabled
               className="h-8 border-border text-xs px-1.5"
-              aria-label="loading-more-notes"
+              aria-label="loading-more-documents"
             >
               <LoadingAnimation className="h-3.5 w-3.5 mr-1.5" />
               Loading
@@ -2933,7 +3156,7 @@ function CalendarTimelineView({
           className="min-w-0 w-full max-w-full overflow-x-scroll [&::-webkit-scrollbar]:h-[0.5rem] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border"
           ref={scrollRef}
         >
-          <div className="relative" style={{ width: totalWidth, height: 300 }}>
+          <div className="relative" style={{ width: totalWidth, height: 350 }}>
             <div className="relative h-7 border-b border-border">
               {monthMarkers.map((m, i) => (
                 <div
@@ -3022,19 +3245,12 @@ function CalendarTimelineView({
                         }
                       >
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            type="button"
-                            className="h-8 px-3 flex items-center gap-1.5  text-xs text-foreground"
-                            aria-label="expand-clustered-items"
-                          >
-                            {cluster.entries.length} items
-                          </Button>
+                          <TimelineClusterTrigger entries={cluster.entries} />
                         </PopoverTrigger>
                         <PopoverContent
                           align="center"
                           side="bottom"
-                          sideOffset={6}
+                          sideOffset={14}
                           className="w-auto p-0 border-border overflow-hidden"
                         >
                           <TimelineClusterSlider
@@ -3215,78 +3431,6 @@ function CalendarGapMarker({
         </div>
       </TooltipContent>
     </Tooltip>
-  );
-}
-
-function TimelineHeroBackground({ item }: { item: FolderEntry }) {
-  const [imgLoaded, setImgLoaded] = useState(false);
-  const isLink = item.kind === "link";
-  const isWhiteboard = item.kind === "whiteboard";
-
-  if (isLink) {
-    const linkItem = item as LinkItem;
-    const isSocialLink = isSocialLinkPlatform(linkItem.platform);
-    const rawThumbnailUrl = linkItem.metadata?.thumbnailUrl;
-    const avatarUrl = linkItem.metadata?.authorAvatarUrl;
-    const thumbnailUrl =
-      rawThumbnailUrl && !isAvatarFallbackThumbnail(rawThumbnailUrl, avatarUrl)
-        ? rawThumbnailUrl
-        : undefined;
-    const isPending = linkItem.metadata === undefined;
-    const showSkeleton = isPending || (Boolean(thumbnailUrl) && !imgLoaded);
-
-    return (
-      <div className="relative h-full w-full bg-muted">
-        {thumbnailUrl && (
-          <img
-            src={thumbnailUrl}
-            alt=""
-            draggable={false}
-            onLoad={() => setImgLoaded(true)}
-            onError={() => setImgLoaded(false)}
-            className={cn(
-              "h-full w-full object-cover select-none [-webkit-user-drag:none] transition-opacity duration-300",
-              imgLoaded ? "opacity-100" : "opacity-0",
-            )}
-          />
-        )}
-        {showSkeleton && (
-          <div className="absolute inset-0 bg-border/60 animate-pulse" />
-        )}
-        {!isPending && !thumbnailUrl && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            {isSocialLink && avatarUrl ? (
-              <LinkAuthorAvatar
-                avatarUrl={avatarUrl}
-                authorName={linkItem.metadata?.authorName}
-                className="h-16 w-16"
-              />
-            ) : (
-              <Link2 className="h-8 w-8 text-muted-foreground" />
-            )}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (isWhiteboard) {
-    const board = item as WhiteboardItem;
-    return (
-      <div className="h-full w-full bg-muted">
-        <WhiteboardPreview
-          snapshot={board.snapshot}
-          preview={board.preview}
-          fill
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-muted">
-      <FileText className="h-8 w-8 text-muted-foreground" />
-    </div>
   );
 }
 
